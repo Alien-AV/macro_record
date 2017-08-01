@@ -4,13 +4,20 @@
 //
 
 #pragma once
-
 #include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <thread>
+
+extern thread_local std::fstream log_file_stream;
+
 #include "targetver.h"
 
-#include <stdio.h>
-#include <tchar.h>
-#include <Windows.h>
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+// Windows Header Files:
+#include <windows.h>
+
 
 
 // TODO: reference additional headers your program requires here

@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "macro_record", "macro_record\macro_record.vcxproj", "{AB89609E-8543-4035-824B-8B834EE73828}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hooks_dll", "hooks_dll\hooks_dll.vcxproj", "{63B9F778-D17B-4A42-AA2B-AFB35CABED47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{AB89609E-8543-4035-824B-8B834EE73828}.Release|x64.Build.0 = Release|x64
 		{AB89609E-8543-4035-824B-8B834EE73828}.Release|x86.ActiveCfg = Release|Win32
 		{AB89609E-8543-4035-824B-8B834EE73828}.Release|x86.Build.0 = Release|Win32
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Debug|x64.ActiveCfg = Debug|x64
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Debug|x64.Build.0 = Debug|x64
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Debug|x86.ActiveCfg = Debug|Win32
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Debug|x86.Build.0 = Debug|Win32
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Release|x64.ActiveCfg = Release|x64
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Release|x64.Build.0 = Release|x64
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Release|x86.ActiveCfg = Release|Win32
+		{63B9F778-D17B-4A42-AA2B-AFB35CABED47}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
