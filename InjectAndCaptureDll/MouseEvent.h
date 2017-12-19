@@ -20,7 +20,7 @@ public:
 		static const DWORD XDown = MOUSEEVENTF_XDOWN;
 		static const DWORD XUp = MOUSEEVENTF_XUP;
 	};
-	DWORD ActionType;
+	DWORD ActionType = 0;
 
 	// more flags here:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646273(v=vs.85).aspx
@@ -28,5 +28,6 @@ public:
 
 	MouseEvent();
 	~MouseEvent();
+	std::string Serialize();
 };
 

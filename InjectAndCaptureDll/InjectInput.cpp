@@ -38,7 +38,7 @@ bool InjectInput::InjectEvent(MouseEvent mouseEvent)
 	// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
 	eventToInject.mi.dx = (mouseEvent.x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
 	eventToInject.mi.dy = (mouseEvent.y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
-	if (!mouseEvent.useRelativePosition) {
+	if (mouseEvent.useRelativePosition == false) {
 		eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
 	}
 

@@ -2,7 +2,7 @@
 #include "KeyboardEvent.h"
 
 
-KeyboardEvent::KeyboardEvent()
+KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(false)
 {
 }
 
