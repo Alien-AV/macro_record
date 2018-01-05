@@ -10,8 +10,16 @@
 #define INJECTANDCAPTUREDLL_API __declspec(dllimport)
 #endif
 
+#include "Common\Event.h"
+
 INJECTANDCAPTUREDLL_API int InjectEvent(void);
 
 INJECTANDCAPTUREDLL_API int RecordEvents(void);
 
-INJECTANDCAPTUREDLL_API void MakeWindow(void);
+INJECTANDCAPTUREDLL_API void Init(void);
+
+typedef void(*CaptureEventsCallback)(Event *);
+
+INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
+
+INJECTANDCAPTUREDLL_API std::list<Event*>* StopCapture(void);

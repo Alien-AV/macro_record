@@ -28,6 +28,6 @@ public:
 
 	MouseEvent();
 	~MouseEvent();
-	std::string Serialize();
+	void print(std::ostream& where) const;
 };
 

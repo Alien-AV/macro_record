@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 #include "CaptureInput.h"
 
 
@@ -30,13 +30,13 @@ CaptureInput::~CaptureInput()
 {
 }
 
-bool CaptureInput::startCapturing(int(*callback)(Event))
+bool CaptureInput::startCapturing(int(*callback)(Event*))
 {
 
 	return false;
 }
 
-std::list<Event> CaptureInput::stopCapturing()
+std::list<Event*> CaptureInput::stopCapturing()
 {
-	return std::list<Event>();
+	return std::list<Event*>();
 }

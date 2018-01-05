@@ -101,6 +101,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;INJECTANDCAPTUREDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -145,18 +146,23 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CaptureInput.h" />
-    <ClInclude Include="Event.h" />
+    <ClInclude Include="Capture\CaptureInput.h" />
+    <ClInclude Include="Capture\WindowForCaptureEvents.h" />
+    <ClInclude Include="Common\Event.h" />
+    <ClInclude Include="Common\KeyboardEvent.h" />
+    <ClInclude Include="Common\MouseEvent.h" />
+    <ClInclude Include="Common\IdleEvent.h" />
     <ClInclude Include="InjectAndCaptureDll.h" />
-    <ClInclude Include="InjectInput.h" />
-    <ClInclude Include="KeyboardEvent.h" />
-    <ClInclude Include="MouseEvent.h" />
+    <ClInclude Include="Inject\InjectInput.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="WindowForCaptureEvents.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CaptureInput.cpp" />
+    <ClCompile Include="Capture\CaptureInput.cpp" />
+    <ClCompile Include="Capture\WindowForCaptureEvents.cpp" />
+    <ClCompile Include="Common\Event.cpp" />
+    <ClCompile Include="Common\KeyboardEvent.cpp" />
+    <ClCompile Include="Common\MouseEvent.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -171,15 +177,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="Common\IdleEvent.cpp" />
     <ClCompile Include="InjectAndCaptureDll.cpp" />
-    <ClCompile Include="InjectInput.cpp" />
-    <ClCompile Include="KeyboardEvent.cpp" />
-    <ClCompile Include="MouseEvent.cpp" />
+    <ClCompile Include="Inject\InjectInput.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="WindowForCaptureEvents.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

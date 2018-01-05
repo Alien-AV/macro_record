@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "InjectInput.h"
 
 
@@ -16,7 +15,7 @@ bool InjectInput::InjectEvent(KeyboardEvent keyboardEvent)
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_KEYBOARD;
 	eventToInject.ki.wVk = keyboardEvent.virtualKeyCode;
-	eventToInject.ki.wScan = keyboardEvent.hardwareScanCode;
+	//eventToInject.ki.wScan = keyboardEvent.hardwareScanCode;
 	//eventToInject.ki.dwFlags = KEYEVENTF_SCANCODE;
 	if (keyboardEvent.keyUp) {
 		eventToInject.ki.dwFlags |= KEYEVENTF_KEYUP;

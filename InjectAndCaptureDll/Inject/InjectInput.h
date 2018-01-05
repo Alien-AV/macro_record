@@ -1,6 +1,6 @@
 #pragma once
-#include "KeyboardEvent.h"
-#include "MouseEvent.h"
+#include "../Common/KeyboardEvent.h"
+#include "../Common/MouseEvent.h"
 
 class InjectInput
 {

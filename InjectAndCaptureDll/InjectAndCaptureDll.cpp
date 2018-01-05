@@ -1,15 +1,16 @@
 // InjectAndCaptureDll.cpp : Defines the exported functions for the DLL application.
 //
 
+#include <memory>
 #include "stdafx.h"
 #include "InjectAndCaptureDll.h"
-#include "InjectInput.h"
+#include "Inject\InjectInput.h"
 
 
 // This is an example of an exported function.
 INJECTANDCAPTUREDLL_API int InjectEvent(void)
 {
-	auto inputInjector = new InjectInput();
+	auto inputInjector = std::make_unique<InjectInput>();
 	Sleep(3000);
 	MouseEvent me;
 	me.ActionType = MouseEvent::ActionTypeFlag::Move | MouseEvent::ActionTypeFlag::LeftDown;

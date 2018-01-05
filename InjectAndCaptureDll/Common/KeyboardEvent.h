@@ -12,5 +12,7 @@ public:
 
 	KeyboardEvent();
 	~KeyboardEvent();
+
+	void print(std::ostream& where) const;
 };
 

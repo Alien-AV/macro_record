@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "KeyboardEvent.h"
 
 
@@ -9,4 +8,9 @@ KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(f
 
 KeyboardEvent::~KeyboardEvent()
 {
+}
+
+void KeyboardEvent::print(std::ostream & where) const
+{
+	where << hardwareScanCode << keyUp;
 }

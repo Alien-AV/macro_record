@@ -27,22 +27,25 @@
     <ClInclude Include="InjectAndCaptureDll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Event.h">
+    <ClInclude Include="Capture\CaptureInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InjectInput.h">
+    <ClInclude Include="Capture\WindowForCaptureEvents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KeyboardEvent.h">
+    <ClInclude Include="Inject\InjectInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MouseEvent.h">
+    <ClInclude Include="Common\Event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CaptureInput.h">
+    <ClInclude Include="Common\KeyboardEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowForCaptureEvents.h">
+    <ClInclude Include="Common\MouseEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\IdleEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,25 +56,28 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Event.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InjectInput.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KeyboardEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MouseEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CaptureInput.cpp">
+    <ClCompile Include="Capture\CaptureInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowForCaptureEvents.cpp">
+    <ClCompile Include="Capture\WindowForCaptureEvents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Inject\InjectInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\KeyboardEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\MouseEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\IdleEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
