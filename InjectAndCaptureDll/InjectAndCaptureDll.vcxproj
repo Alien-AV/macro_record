@@ -146,7 +146,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Capture\CaptureInput.h" />
     <ClInclude Include="Capture\WindowForCaptureEvents.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
@@ -158,7 +157,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Capture\CaptureInput.cpp" />
     <ClCompile Include="Capture\WindowForCaptureEvents.cpp" />
     <ClCompile Include="Common\Event.cpp" />
     <ClCompile Include="Common\KeyboardEvent.cpp" />

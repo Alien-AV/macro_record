@@ -1,5 +1,6 @@
 #pragma once
 
+#include "..\InjectAndCaptureDll.h"
 #include "Event.h"
 class KeyboardEvent :
 	public Event
@@ -10,9 +11,11 @@ public:
 	bool keyUp;
 
 
-	KeyboardEvent();
-	~KeyboardEvent();
+	INJECTANDCAPTUREDLL_API KeyboardEvent();
+	INJECTANDCAPTUREDLL_API ~KeyboardEvent();
 
+	std::string serialize() const;
 	void print(std::ostream& where) const;
+	void inject() const;
 };
 

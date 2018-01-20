@@ -11,15 +11,21 @@
 #endif
 
 #include "Common\Event.h"
+#include "Common\KeyboardEvent.h"
+#include "Common\MouseEvent.h"
+#include "Common\IdleEvent.h"
+#include <memory>
 
-INJECTANDCAPTUREDLL_API int InjectEvent(void);
-
-INJECTANDCAPTUREDLL_API int RecordEvents(void);
+//INJECTANDCAPTUREDLL_API bool InjectEvent(KeyboardEvent &keyboardEvent);
+//INJECTANDCAPTUREDLL_API bool InjectEvent(MouseEvent &mouseEvent);
+//INJECTANDCAPTUREDLL_API bool InjectEvent(IdleEvent &idleEvent);
 
 INJECTANDCAPTUREDLL_API void Init(void);
 
-typedef void(*CaptureEventsCallback)(Event *);
+typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
 
 INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
 
-INJECTANDCAPTUREDLL_API std::list<Event*>* StopCapture(void);
+INJECTANDCAPTUREDLL_API BOOL StopCapture(void);
+
+INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);

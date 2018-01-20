@@ -1,3 +1,4 @@
+#include <memory>
 #include "WindowForCaptureEvents.h"
 #include "../InjectAndCaptureDll.h"
 #include "../Common/Event.h"
@@ -12,8 +13,6 @@
 
 #define WM_STARTCAPTURE WM_USER+1
 #define WM_STOPCAPTURE WM_USER+2
-
-HANDLE canCollectResult = NULL;
 
 CaptureEventsCallback captureEventsCallback = nullptr;
 std::chrono::time_point<std::chrono::high_resolution_clock> idleStartTime;
@@ -76,7 +75,16 @@ bool UnregisterRawInputStuff() {
 
 LRESULT CALLBACK CaptureWindowWndProc(HWND, UINT, WPARAM, LPARAM); //WndProc for the new window
 
-std::list<Event*> *globalEventList;
+void fakeMouseEventForInitialPos() {
+	POINT initialMousePosition;
+	GetCursorPos(&initialMousePosition);
+
+	auto fakeMouseEvent = std::make_unique<MouseEvent>();
+	fakeMouseEvent->x = initialMousePosition.x;
+	fakeMouseEvent->y = initialMousePosition.y;
+	fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlag::Move;
+	captureEventsCallback(std::move(fakeMouseEvent));
+}
 
 DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 {
@@ -98,22 +106,17 @@ DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 		}
 	}
 
-	//RegisterRawInputStuff(hwnd);
-
-	//ShowWindow(hwnd, SW_SHOWNORMAL);
 	while (GetMessage(&messages, NULL, 0, 0))
 	{
 		switch (messages.message) {
 		case WM_STARTCAPTURE:
+			idleStartTime = std::chrono::high_resolution_clock::now();
+			fakeMouseEventForInitialPos();
+
 			RegisterRawInputStuff(hwnd);
 			break;
 		case WM_STOPCAPTURE:
 			UnregisterRawInputStuff();
-			if (!SetEvent(canCollectResult))
-			{
-				printf("SetEvent failed (%d)\n", GetLastError());
-				return 1;
-			}
 			break;
 		default:
 			TranslateMessage(&messages);
@@ -124,67 +127,80 @@ DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 }
 
 void HandleKeyboardEventCapture(RAWKEYBOARD data) {
-	HRESULT hResult;
-
 	auto idleEndTime = std::chrono::high_resolution_clock::now();
 
-	IdleEvent *idleEvent = new IdleEvent(idleEndTime-idleStartTime);
-	globalEventList->push_back(idleEvent);
+	auto idleEvent = std::make_unique<IdleEvent>(idleEndTime-idleStartTime);
+	captureEventsCallback(std::move(idleEvent));
 
-	KeyboardEvent *capturedKbdEvent = new KeyboardEvent();
+	auto capturedKbdEvent = std::make_unique<KeyboardEvent>();
 	capturedKbdEvent->virtualKeyCode = data.VKey;
 	if (data.Flags & RI_KEY_BREAK) {
 		capturedKbdEvent->keyUp = true;
-	}else if (data.Flags & RI_KEY_MAKE) {
-		capturedKbdEvent->keyUp = false;
 	}
 	else {
-		return;
+		capturedKbdEvent->keyUp = false;
 	}
 
-	// stop timer and capture timing data // need for every event
-	// fill keybd event
-	// provide keybd event to client
-	// start timer
-
-
-	globalEventList->push_back(capturedKbdEvent);
+	captureEventsCallback(std::move(capturedKbdEvent));
 
 	idleStartTime = std::chrono::high_resolution_clock::now();
-
-	//TCHAR szTempOutput[1024];
-	//hResult = StringCchPrintf(szTempOutput, STRSAFE_MAX_CCH, TEXT(" Kbd: make=%04x Flags:%04x Reserved:%04x ExtraInformation:%08x, msg=%04x VK=%04x \n"),
-	//	data.MakeCode,
-	//	data.Flags,
-	//	data.Reserved,
-	//	data.ExtraInformation,
-	//	data.Message,
-	//	data.VKey);
-	//if (FAILED(hResult))
-	//{
-	//	// TODO: write error handler
-	//}
-	//OutputDebugString(szTempOutput);
 }
 
 void HandleMouseEventCapture(RAWMOUSE data) {
-	HRESULT hResult;
-	TCHAR szTempOutput[1024];
-	hResult = StringCchPrintf(szTempOutput, STRSAFE_MAX_CCH, TEXT("Mouse: usFlags=%04x ulButtons=%04x usButtonFlags=%04x usButtonData=%04x ulRawButtons=%04x lLastX=%04x lLastY=%04x ulExtraInformation=%04x\r\n"),
-		data.usFlags,
-		data.ulButtons,
-		data.usButtonFlags,
-		data.usButtonData,
-		data.ulRawButtons,
-		data.lLastX,
-		data.lLastY,
-		data.ulExtraInformation);
+	auto idleEndTime = std::chrono::high_resolution_clock::now();
 
-	if (FAILED(hResult))
-	{
-		// TODO: write error handler
+	auto idleEvent = std::make_unique<IdleEvent>(idleEndTime - idleStartTime);
+	//auto idleEvent = std::make_unique<IdleEvent>(std::chrono::duration<__int64, std::nano>(2000));
+	captureEventsCallback(std::move(idleEvent));
+
+	auto capturedMouseEvent = std::make_unique<MouseEvent>();
+	capturedMouseEvent->useRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
+	capturedMouseEvent->mappedToVirtualDesktop = data.usFlags & MOUSE_VIRTUAL_DESKTOP;
+	capturedMouseEvent->x = data.lLastX;
+	capturedMouseEvent->y = data.lLastY;
+
+	capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::Move;
+	
+	if (data.usButtonFlags & RI_MOUSE_WHEEL) {
+		capturedMouseEvent->wheelRotation = data.usButtonData;
 	}
-	OutputDebugString(szTempOutput);
+
+	if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::LeftDown;
+	}
+	
+	if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::LeftUp;
+	}
+	if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::MiddleDown;
+	}
+	
+	if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::MiddleUp;
+	}
+
+	if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::RightDown;
+	}
+	
+	if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::RightUp;
+	}
+
+	if (data.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::XDown;
+	}
+
+	if (data.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::XUp;
+	}
+
+	//TODO: x2 button
+	
+	captureEventsCallback(std::move(capturedMouseEvent));
+
+	idleStartTime = std::chrono::high_resolution_clock::now();
 }
 
 LRESULT CALLBACK CaptureWindowWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -237,28 +253,14 @@ INJECTANDCAPTUREDLL_API void Init(void) {
 		OutputDebugString(L"Init already called");
 		return;
 	}
-	canCollectResult = CreateEvent(NULL, FALSE, FALSE, TEXT("WriteEvent"));
 	CreateThread(0, NULL, CaptureWindowMainLoopThread, (LPVOID)L"Window Title", NULL, &window_thread_id);
 }
 
 INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback newCaptureEventsCallback) {
-	//globalEventList = new std::list<Event*>;
 	captureEventsCallback = newCaptureEventsCallback;
 	return PostThreadMessage(window_thread_id, WM_STARTCAPTURE, NULL, NULL);
 }
 
-INJECTANDCAPTUREDLL_API std::list<Event*>* StopCapture() {
-	if (!PostThreadMessage(window_thread_id, WM_STOPCAPTURE, NULL, NULL)) {
-		return NULL;
-	}
-	DWORD dwWaitResult = WaitForSingleObject(canCollectResult, INFINITE);
-	switch (dwWaitResult)
-	{
-	case WAIT_OBJECT_0:
-		return globalEventList;
-		break;
-	default:
-		printf("Wait error (%d)\n", GetLastError());
-		return NULL;
-	}
+INJECTANDCAPTUREDLL_API BOOL StopCapture() {
+	return PostThreadMessage(window_thread_id, WM_STOPCAPTURE, NULL, NULL);
 }

@@ -1,8 +1,8 @@
 #include <sstream>
 #include "MouseEvent.h"
+#include "..\Inject\InjectInput.h"
 
-
-MouseEvent::MouseEvent() : x(0), y(0), wheelRotation(0), useRelativePosition(false), ActionType(0)
+MouseEvent::MouseEvent() : x(0), y(0), wheelRotation(0), useRelativePosition(false), mappedToVirtualDesktop(false), ActionType(0)
 {
 }
 
@@ -13,12 +13,17 @@ MouseEvent::~MouseEvent()
 
 void MouseEvent::print(std::ostream & where) const
 {
-	where << x << y << wheelRotation << useRelativePosition << ActionType;
+	where << serialize();
 }
 
-//std::string MouseEvent::Serialize()
-//{
-//	std::stringstream dest_buff;
-//	dest_buff << x << y << wheelRotation << useRelativePosition << ActionType;
-//	return dest_buff.str();
-//}
+void MouseEvent::inject() const
+{
+	InjectEvent(*this);
+}
+
+std::string MouseEvent::serialize() const
+{
+	std::stringstream dest_buff;
+	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << useRelativePosition << "," << mappedToVirtualDesktop << "," << ActionType << "}";
+	return dest_buff.str();
+}

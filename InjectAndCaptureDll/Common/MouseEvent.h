@@ -1,5 +1,7 @@
 #pragma once
 #include "Event.h"
+#include "..\InjectAndCaptureDll.h"
+
 class MouseEvent :
 	public Event
 {
@@ -7,6 +9,7 @@ public:
 	LONG x, y;
 	DWORD wheelRotation;
 	bool useRelativePosition;
+	bool mappedToVirtualDesktop;
 	class ActionTypeFlag
 	{
 	public:
@@ -26,8 +29,11 @@ public:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646273(v=vs.85).aspx
 	
 
-	MouseEvent();
-	~MouseEvent();
+	INJECTANDCAPTUREDLL_API MouseEvent();
+	INJECTANDCAPTUREDLL_API ~MouseEvent();
+	std::string MouseEvent::serialize() const;
 	void print(std::ostream& where) const;
+	void inject() const;
 };
 
+//TODO: multiple mousevents subtypes? how to inject them then?
