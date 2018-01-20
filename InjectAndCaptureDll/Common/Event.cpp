@@ -1,7 +1,4 @@
 #include "Event.h"
-#include "IdleEvent.h"
-#include "MouseEvent.h"
-#include "KeyboardEvent.h"
 
 Event::Event()
 {
@@ -12,7 +9,7 @@ Event::~Event()
 {
 }
 
-Event * Event::deserialize(std::string)
+Event * Event::deserialize(std::string str)
 {
 	//TODO: implement
 	return nullptr;

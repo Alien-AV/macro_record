@@ -11,12 +11,6 @@ InjectInput::~InjectInput()
 {
 }
 
-bool InjectEvent(IdleEvent idleEvent)
-{
-	std::this_thread::sleep_for(idleEvent.duration);
-	return true;
-}
-
 bool InjectEvent(KeyboardEvent keyboardEvent)
 {
 	INPUT eventToInject = {}; // null everything

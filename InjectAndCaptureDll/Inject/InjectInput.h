@@ -1,7 +1,6 @@
 #pragma once
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
-#include "../Common/IdleEvent.h"
 
 class InjectInput
 {
@@ -14,4 +13,3 @@ public:
 
 bool InjectEvent(KeyboardEvent keyboardEvent);
 bool InjectEvent(MouseEvent mouseEvent);
-bool InjectEvent(IdleEvent idleEvent);

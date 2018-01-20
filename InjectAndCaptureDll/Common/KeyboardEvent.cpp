@@ -24,6 +24,6 @@ void KeyboardEvent::inject() const
 std::string KeyboardEvent::serialize() const
 {
 	std::stringstream dest_buff;
-	dest_buff << "{k," << virtualKeyCode << "," << keyUp << "}";
+	dest_buff << "{k," << virtualKeyCode << "," << keyUp << "," << idleDurationBefore.count() << "}";
 	return dest_buff.str();
 }

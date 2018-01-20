@@ -46,13 +46,21 @@ int main()
 	{
 		//std::cout << (*event);
 
-		auto maybe_idle_event = dynamic_cast<IdleEvent*>(event.get());
-		if (maybe_idle_event != nullptr) {
-			current_playback_time_offset += maybe_idle_event->duration;
-			maybe_idle_event->duration = (current_playback_time_offset - std::chrono::high_resolution_clock::now());
-		}
+ 		current_playback_time_offset += event->idleDurationBefore;
+ 		auto actualIdleDuration = (current_playback_time_offset - std::chrono::high_resolution_clock::now());
+		std::this_thread::sleep_for(actualIdleDuration);
 		event->inject();
 	}
+	for each (auto &event in event_list)
+	{
+		//std::cout << (*event);
+
+		current_playback_time_offset += event->idleDurationBefore;
+		auto actualIdleDuration = (current_playback_time_offset - std::chrono::high_resolution_clock::now());
+		std::this_thread::sleep_for(actualIdleDuration);
+		event->inject();
+	}
+
 	auto after_playback = std::chrono::high_resolution_clock::now();
 	std::cout << "stopped playing, time: " << (after_playback - before_playback).count() << std::endl;
 	_getch();

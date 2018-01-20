@@ -150,7 +150,6 @@
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
     <ClInclude Include="Common\MouseEvent.h" />
-    <ClInclude Include="Common\IdleEvent.h" />
     <ClInclude Include="InjectAndCaptureDll.h" />
     <ClInclude Include="Inject\InjectInput.h" />
     <ClInclude Include="stdafx.h" />
@@ -175,7 +174,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Common\IdleEvent.cpp" />
     <ClCompile Include="InjectAndCaptureDll.cpp" />
     <ClCompile Include="Inject\InjectInput.cpp" />
     <ClCompile Include="stdafx.cpp">

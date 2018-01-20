@@ -24,6 +24,6 @@ void MouseEvent::inject() const
 std::string MouseEvent::serialize() const
 {
 	std::stringstream dest_buff;
-	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << useRelativePosition << "," << mappedToVirtualDesktop << "," << ActionType << "}";
+	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << useRelativePosition << "," << mappedToVirtualDesktop << "," << ActionType << "," << idleDurationBefore.count() << "}";
 	return dest_buff.str();
 }

@@ -1,15 +1,15 @@
+#include "..\stdafx.h"
 #include <memory>
+#include <Strsafe.h>
+#include <algorithm>
+#include <iostream>
+#include <list>
+#include <chrono>
 #include "WindowForCaptureEvents.h"
 #include "../InjectAndCaptureDll.h"
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
-#include <Strsafe.h>
-#include <algorithm>
-#include <iostream>
-#include <list>
-//#include <chrono>
-#include "../Common/IdleEvent.h"
 
 #define WM_STARTCAPTURE WM_USER+1
 #define WM_STOPCAPTURE WM_USER+2
@@ -80,6 +80,7 @@ void fakeMouseEventForInitialPos() {
 	GetCursorPos(&initialMousePosition);
 
 	auto fakeMouseEvent = std::make_unique<MouseEvent>();
+	fakeMouseEvent->idleDurationBefore = std::chrono::nanoseconds(0);
 	fakeMouseEvent->x = initialMousePosition.x;
 	fakeMouseEvent->y = initialMousePosition.y;
 	fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlag::Move;
@@ -129,10 +130,8 @@ DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 void HandleKeyboardEventCapture(RAWKEYBOARD data) {
 	auto idleEndTime = std::chrono::high_resolution_clock::now();
 
-	auto idleEvent = std::make_unique<IdleEvent>(idleEndTime-idleStartTime);
-	captureEventsCallback(std::move(idleEvent));
-
 	auto capturedKbdEvent = std::make_unique<KeyboardEvent>();
+	capturedKbdEvent->idleDurationBefore = idleEndTime - idleStartTime;
 	capturedKbdEvent->virtualKeyCode = data.VKey;
 	if (data.Flags & RI_KEY_BREAK) {
 		capturedKbdEvent->keyUp = true;
@@ -149,13 +148,10 @@ void HandleKeyboardEventCapture(RAWKEYBOARD data) {
 void HandleMouseEventCapture(RAWMOUSE data) {
 	auto idleEndTime = std::chrono::high_resolution_clock::now();
 
-	auto idleEvent = std::make_unique<IdleEvent>(idleEndTime - idleStartTime);
-	//auto idleEvent = std::make_unique<IdleEvent>(std::chrono::duration<__int64, std::nano>(2000));
-	captureEventsCallback(std::move(idleEvent));
-
 	auto capturedMouseEvent = std::make_unique<MouseEvent>();
+	capturedMouseEvent->idleDurationBefore = idleEndTime - idleStartTime;
 	capturedMouseEvent->useRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
-	capturedMouseEvent->mappedToVirtualDesktop = data.usFlags & MOUSE_VIRTUAL_DESKTOP;
+	capturedMouseEvent->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
 	capturedMouseEvent->x = data.lLastX;
 	capturedMouseEvent->y = data.lLastY;
 
@@ -210,8 +206,6 @@ LRESULT CALLBACK CaptureWindowWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 	case WM_INPUT:
 	{
 		UINT dwSize;
-		HRESULT hResult;
-		TCHAR szTempOutput[1024];
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize,
 			sizeof(RAWINPUTHEADER));
 		LPBYTE lpb = new BYTE[dwSize];

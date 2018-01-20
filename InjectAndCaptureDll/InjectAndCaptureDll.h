@@ -13,12 +13,7 @@
 #include "Common\Event.h"
 #include "Common\KeyboardEvent.h"
 #include "Common\MouseEvent.h"
-#include "Common\IdleEvent.h"
 #include <memory>
-
-//INJECTANDCAPTUREDLL_API bool InjectEvent(KeyboardEvent &keyboardEvent);
-//INJECTANDCAPTUREDLL_API bool InjectEvent(MouseEvent &mouseEvent);
-//INJECTANDCAPTUREDLL_API bool InjectEvent(IdleEvent &idleEvent);
 
 INJECTANDCAPTUREDLL_API void Init(void);
 
