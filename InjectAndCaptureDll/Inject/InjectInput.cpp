@@ -33,7 +33,6 @@ bool InjectEvent(KeyboardEvent keyboardEvent)
 bool InjectEvent(MouseEvent mouseEvent)
 {
 	INPUT eventToInject = {}; // null everything
-	
 	eventToInject.type = INPUT_MOUSE;
 	if (mouseEvent.useRelativePosition == false) {
 		eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;

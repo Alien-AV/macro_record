@@ -1,7 +1,10 @@
 #pragma once
-class WindowForCaptureEvents
-{
-public:
-	WindowForCaptureEvents();
-	~WindowForCaptureEvents();
-};
+
+namespace iac_dll {
+	class WindowForCaptureEvents
+	{
+	public:
+		WindowForCaptureEvents();
+		~WindowForCaptureEvents();
+	};
+}

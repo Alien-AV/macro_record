@@ -1,4 +1,3 @@
-#include <sstream>
 #include "MouseEvent.h"
 #include "..\Inject\InjectInput.h"
 

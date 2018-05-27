@@ -13,14 +13,25 @@
 #include "Common\Event.h"
 #include "Common\KeyboardEvent.h"
 #include "Common\MouseEvent.h"
+#include "Common\DeserializeEvent.h"
 #include <memory>
 
-INJECTANDCAPTUREDLL_API void Init(void);
+namespace iac_dll {
+	INJECTANDCAPTUREDLL_API void Init(void);
 
-typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
+	typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
 
-INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
+	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
 
-INJECTANDCAPTUREDLL_API BOOL StopCapture(void);
+	INJECTANDCAPTUREDLL_API BOOL StopCapture(void);
 
-INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
+	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
+}
+
+extern "C" {
+	typedef void(*iac_dll_capture_event_cb)(const char[]);
+	INJECTANDCAPTUREDLL_API void iac_dll_init();
+	INJECTANDCAPTUREDLL_API void iac_dll_start_capture(iac_dll_capture_event_cb cb);
+	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();
+	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const char[]);
+}
