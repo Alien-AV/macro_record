@@ -8,6 +8,7 @@ namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
+        private InjectAndCaptureDLL.iac_dll_capture_event_cb captureEventCbDelegate;
         public ObservableCollection<string> eventsObsColl = new ObservableCollection<string>();
         private void Iac_Dll_Capture_Event_Cb(string evt)
         {
@@ -19,6 +20,7 @@ namespace MacroRecorderGUI
             InitializeComponent();
             InjectAndCaptureDLL.iac_dll_init();
             listBox.ItemsSource = eventsObsColl;
+            captureEventCbDelegate = Iac_Dll_Capture_Event_Cb;
         }
 
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -29,7 +31,7 @@ namespace MacroRecorderGUI
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             //(new Thread(() => {
-                InjectAndCaptureDLL.iac_dll_start_capture(Iac_Dll_Capture_Event_Cb);
+                InjectAndCaptureDLL.iac_dll_start_capture(captureEventCbDelegate);
             //})).Start();
         }
 
