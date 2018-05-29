@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message InputEvent {
+  message KeyboardEventType {
+	uint32 virtualKeyCode = 1;
+	bool keyUp = 2;
+  }
+  message MouseEventType {
+	uint32 x = 1;
+	uint32 y = 2;
+	uint32 actionType = 3;
+	bool mappedToVirtualDesktop = 4;
+  }
+
+  uint64 timeSinceStartOfRecording = 1;
+
+  oneof Event {
+     KeyboardEventType keyboardEvent  = 2;
+     MouseEventType mouseEvent = 3;
+  }
+}
