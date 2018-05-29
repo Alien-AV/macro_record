@@ -25,7 +25,7 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		kbdevent = std::make_unique<KeyboardEvent>();
 		kbdevent->virtualKeyCode = virtualKeyCode;
 		kbdevent->keyUp = keyUp;
-		kbdevent->idleDurationBefore = std::chrono::nanoseconds(durationNanoseconds);
+		kbdevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
 		return std::move(kbdevent);
 		break;
 	case 'm':
@@ -57,7 +57,7 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		mouseevent->useRelativePosition = useRelativePosition;
 		mouseevent->mappedToVirtualDesktop = mappedToVirtualDesktop;
 		mouseevent->ActionType = ActionType;
-		mouseevent->idleDurationBefore = std::chrono::nanoseconds(durationNanoseconds);
+		mouseevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
 		return std::move(mouseevent);
 		break;
 	}

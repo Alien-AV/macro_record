@@ -18,12 +18,13 @@ void KeyboardEvent::print(std::ostream & where) const
 
 void KeyboardEvent::inject() const
 {
-	InjectEvent(*this);
+	WindowsInjectionAPI::InjectKeyboardEvent(virtualKeyCode, keyUp);
 }
 
 std::string KeyboardEvent::serialize() const
 {
 	std::stringstream dest_buff;
-	dest_buff << "{k," << virtualKeyCode << "," << keyUp << "," << idleDurationBefore.count() << "}";
+	//auto timeInSecondsFloat = std::chrono::duration_cast<std::chrono::duration<float, std::micro>>(timeSinceStartOfRecording);
+	dest_buff << "{k," << virtualKeyCode << "," << keyUp << "," << timeSinceStartOfRecording.count() << "}";
 	return dest_buff.str();
 }

@@ -10,7 +10,7 @@ public:
 	DWORD wheelRotation;
 	bool useRelativePosition;
 	bool mappedToVirtualDesktop;
-	class ActionTypeFlag
+	class ActionTypeFlags
 	{
 	public:
 		static const DWORD Move = MOUSEEVENTF_MOVE;

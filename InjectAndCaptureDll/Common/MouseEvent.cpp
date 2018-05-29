@@ -17,12 +17,13 @@ void MouseEvent::print(std::ostream & where) const
 
 void MouseEvent::inject() const
 {
-	InjectEvent(*this);
+	WindowsInjectionAPI::InjectMouseEvent(x, y, useRelativePosition, wheelRotation, ActionType);
 }
 
 std::string MouseEvent::serialize() const
 {
 	std::stringstream dest_buff;
-	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << useRelativePosition << "," << mappedToVirtualDesktop << "," << ActionType << "," << idleDurationBefore.count() << "}";
+	//auto timeInSecondsFloat = std::chrono::duration_cast<std::chrono::duration<float,std::micro>>(timeSinceStartOfRecording);
+	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << useRelativePosition << "," << mappedToVirtualDesktop << "," << ActionType << "," << timeSinceStartOfRecording.count() << "}";
 	return dest_buff.str();
 }

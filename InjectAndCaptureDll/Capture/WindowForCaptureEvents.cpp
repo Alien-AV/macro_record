@@ -17,7 +17,7 @@
 namespace iac_dll {
 
 	CaptureEventsCallback captureEventsCallback = nullptr;
-	std::chrono::time_point<std::chrono::high_resolution_clock> idleStartTime;
+	std::chrono::time_point<std::chrono::high_resolution_clock> timeOfStartOfRecording;
 
 	WindowForCaptureEvents::WindowForCaptureEvents()
 	{
@@ -82,10 +82,10 @@ namespace iac_dll {
 		GetCursorPos(&initialMousePosition);
 
 		auto fakeMouseEvent = std::make_unique<MouseEvent>();
-		fakeMouseEvent->idleDurationBefore = std::chrono::nanoseconds(0);
+		fakeMouseEvent->timeSinceStartOfRecording = std::chrono::nanoseconds(0);
 		fakeMouseEvent->x = initialMousePosition.x;
 		fakeMouseEvent->y = initialMousePosition.y;
-		fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlag::Move;
+		fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlags::Move;
 		captureEventsCallback(std::move(fakeMouseEvent));
 	}
 
@@ -113,7 +113,7 @@ namespace iac_dll {
 		{
 			switch (messages.message) {
 			case WM_STARTCAPTURE:
-				idleStartTime = std::chrono::high_resolution_clock::now();
+				timeOfStartOfRecording = std::chrono::high_resolution_clock::now();
 				fakeMouseEventForInitialPos();
 
 				RegisterRawInputStuff(hwnd);
@@ -130,11 +130,9 @@ namespace iac_dll {
 	}
 
 	void HandleKeyboardEventCapture(RAWKEYBOARD data) {
-		auto idleEndTime = std::chrono::high_resolution_clock::now();
-		auto idleDurationBefore = idleEndTime - idleStartTime;
-		idleStartTime = idleEndTime;
+		auto timeSinceStartOfRecording = std::chrono::high_resolution_clock::now() - timeOfStartOfRecording;
 		auto capturedKbdEvent = std::make_unique<KeyboardEvent>();
-		capturedKbdEvent->idleDurationBefore = idleDurationBefore;
+		capturedKbdEvent->timeSinceStartOfRecording = timeSinceStartOfRecording;
 		capturedKbdEvent->virtualKeyCode = data.VKey;
 		if (data.Flags & RI_KEY_BREAK) {
 			capturedKbdEvent->keyUp = true;
@@ -145,62 +143,58 @@ namespace iac_dll {
 
 		captureEventsCallback(std::move(capturedKbdEvent));
 
-		idleStartTime = std::chrono::high_resolution_clock::now();
 	}
 
 	void HandleMouseEventCapture(RAWMOUSE data) {
-		auto idleEndTime = std::chrono::high_resolution_clock::now();
-		auto idleDurationBefore = idleEndTime - idleStartTime;
+		auto timeSinceStartOfRecording = std::chrono::high_resolution_clock::now() - timeOfStartOfRecording;
 
 		auto capturedMouseEvent = std::make_unique<MouseEvent>();
-		capturedMouseEvent->idleDurationBefore = idleDurationBefore;
+		capturedMouseEvent->timeSinceStartOfRecording = timeSinceStartOfRecording;
 		capturedMouseEvent->useRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
 		capturedMouseEvent->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
 		capturedMouseEvent->x = data.lLastX;
 		capturedMouseEvent->y = data.lLastY;
 
-		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::Move;
+		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::Move;
 
 		if (data.usButtonFlags & RI_MOUSE_WHEEL) {
 			capturedMouseEvent->wheelRotation = data.usButtonData;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::LeftDown;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::LeftUp;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
 		}
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::MiddleDown;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::MiddleUp;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::RightDown;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::RightUp;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::XDown;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::XDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlag::XUp;
+			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::XUp;
 		}
 
 		//TODO: x2 button
 
 		captureEventsCallback(std::move(capturedMouseEvent));
-
-		idleStartTime = std::chrono::high_resolution_clock::now();
 	}
 
 	LRESULT CALLBACK CaptureWindowWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

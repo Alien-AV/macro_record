@@ -4,11 +4,8 @@
 #include <iostream>
 #include <fstream>
 
-std::ofstream myfile;
-
 INJECTANDCAPTUREDLL_API void iac_dll_init() {
 	iac_dll::Init();
-	myfile.open("c:\test\log.txt");
 }
 
 iac_dll_capture_event_cb c_wrapper_c_api_capture_events_callback = nullptr;

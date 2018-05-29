@@ -2,23 +2,12 @@
 #include "../InjectAndCaptureDll.h"
 #include <thread>
 
-InjectInput::InjectInput()
-{
-}
-
-
-InjectInput::~InjectInput()
-{
-}
-
-bool InjectEvent(KeyboardEvent keyboardEvent)
+bool WindowsInjectionAPI::InjectKeyboardEvent(WORD virtualKeyCode, bool keyUp)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_KEYBOARD;
-	eventToInject.ki.wVk = keyboardEvent.virtualKeyCode;
-	//eventToInject.ki.wScan = keyboardEvent.hardwareScanCode;
-	//eventToInject.ki.dwFlags = KEYEVENTF_SCANCODE;
-	if (keyboardEvent.keyUp) {
+	eventToInject.ki.wVk = virtualKeyCode;
+	if (keyUp) {
 		eventToInject.ki.dwFlags |= KEYEVENTF_KEYUP;
 	}
 
@@ -30,23 +19,23 @@ bool InjectEvent(KeyboardEvent keyboardEvent)
 	return (result != 0);
 }
 
-bool InjectEvent(MouseEvent mouseEvent)
+bool WindowsInjectionAPI::InjectMouseEvent(LONG x, LONG y, bool useRelativePosition, DWORD wheelRotation, DWORD flags)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_MOUSE;
-	if (mouseEvent.useRelativePosition == false) {
+	if (useRelativePosition == false) { // should never use relative position?
 		eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
 		// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
-		eventToInject.mi.dx = (mouseEvent.x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
-		eventToInject.mi.dy = (mouseEvent.y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
+		eventToInject.mi.dx = (x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
+		eventToInject.mi.dy = (y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
 																					// SM_XVIRTUALSCREEN
 	}
 	else {
-		eventToInject.mi.dx = mouseEvent.x;
-		eventToInject.mi.dy = mouseEvent.y;
+		eventToInject.mi.dx = x;
+		eventToInject.mi.dy = y;
 	}
-	
-	eventToInject.mi.dwFlags |= mouseEvent.ActionType;
+
+	eventToInject.mi.dwFlags |= flags;
 
 	INPUT eventToInjectArr[1] = { eventToInject };
 	UINT result = SendInput(1, eventToInjectArr, sizeof(eventToInject));
