@@ -18,6 +18,8 @@ namespace iac_dll {
 
 	CaptureEventsCallback captureEventsCallback = nullptr;
 	std::chrono::time_point<std::chrono::high_resolution_clock> timeOfStartOfRecording;
+	LONG previousMousePosX, previousMousePosY;
+
 
 	WindowForCaptureEvents::WindowForCaptureEvents()
 	{
@@ -80,6 +82,9 @@ namespace iac_dll {
 	void fakeMouseEventForInitialPos() {
 		POINT initialMousePosition;
 		GetCursorPos(&initialMousePosition);
+
+		previousMousePosX = initialMousePosition.x;
+		previousMousePosY = initialMousePosition.y;
 
 		auto fakeMouseEvent = std::make_unique<MouseEvent>();
 		fakeMouseEvent->timeSinceStartOfRecording = std::chrono::nanoseconds(0);
@@ -150,10 +155,21 @@ namespace iac_dll {
 
 		auto capturedMouseEvent = std::make_unique<MouseEvent>();
 		capturedMouseEvent->timeSinceStartOfRecording = timeSinceStartOfRecording;
-		capturedMouseEvent->useRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
 		capturedMouseEvent->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
-		capturedMouseEvent->x = data.lLastX;
-		capturedMouseEvent->y = data.lLastY;
+
+		auto usedRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
+		if (usedRelativePosition) {
+			capturedMouseEvent->x = data.lLastX + previousMousePosX;
+			capturedMouseEvent->y = data.lLastY + previousMousePosY;
+		}
+		else
+		{
+			capturedMouseEvent->x = data.lLastX;
+			capturedMouseEvent->y = data.lLastY;
+		}
+
+		previousMousePosX = capturedMouseEvent->x;
+		previousMousePosY = capturedMouseEvent->y;
 
 		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::Move;
 

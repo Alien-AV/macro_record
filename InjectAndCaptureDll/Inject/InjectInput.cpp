@@ -19,21 +19,16 @@ bool WindowsInjectionAPI::InjectKeyboardEvent(WORD virtualKeyCode, bool keyUp)
 	return (result != 0);
 }
 
-bool WindowsInjectionAPI::InjectMouseEvent(LONG x, LONG y, bool useRelativePosition, DWORD wheelRotation, DWORD flags)
+bool WindowsInjectionAPI::InjectMouseEvent(LONG x, LONG y, DWORD wheelRotation, DWORD flags)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_MOUSE;
-	if (useRelativePosition == false) { // should never use relative position?
-		eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
-		// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
-		eventToInject.mi.dx = (x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
-		eventToInject.mi.dy = (y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
-																					// SM_XVIRTUALSCREEN
-	}
-	else {
-		eventToInject.mi.dx = x;
-		eventToInject.mi.dy = y;
-	}
+
+	eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
+	// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
+	eventToInject.mi.dx = (x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
+	eventToInject.mi.dy = (y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
+	// SM_XVIRTUALSCREEN
 
 	eventToInject.mi.dwFlags |= flags;
 

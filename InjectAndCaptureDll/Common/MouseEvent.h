@@ -8,7 +8,6 @@ class MouseEvent :
 public:
 	LONG x, y;
 	DWORD wheelRotation;
-	bool useRelativePosition;
 	bool mappedToVirtualDesktop;
 	class ActionTypeFlags
 	{

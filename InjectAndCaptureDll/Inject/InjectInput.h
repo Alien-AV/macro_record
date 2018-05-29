@@ -6,5 +6,5 @@
 class WindowsInjectionAPI {
 public:
 	static bool InjectKeyboardEvent(WORD virtualKeyCode, bool keyUp);
-	static bool InjectMouseEvent(LONG x, LONG y, bool useRelativePosition, DWORD wheelRotation, DWORD flags);
+	static bool InjectMouseEvent(LONG x, LONG y, DWORD wheelRotation, DWORD flags);
 };

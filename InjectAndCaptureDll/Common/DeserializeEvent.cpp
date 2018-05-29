@@ -31,7 +31,6 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 	case 'm':
 		LONG x, y;
 		DWORD wheelRotation;
-		bool useRelativePosition;
 		bool mappedToVirtualDesktop;
 		DWORD ActionType = 0;
 
@@ -41,8 +40,6 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		strstr >> y;
 		strstr.ignore(1, ',');
 		strstr >> wheelRotation;
-		strstr.ignore(1, ',');
-		strstr >> useRelativePosition;
 		strstr.ignore(1, ',');
 		strstr >> mappedToVirtualDesktop;
 		strstr.ignore(1, ',');
@@ -54,7 +51,6 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		mouseevent->x = x;
 		mouseevent->y = y;
 		mouseevent->wheelRotation = wheelRotation;
-		mouseevent->useRelativePosition = useRelativePosition;
 		mouseevent->mappedToVirtualDesktop = mappedToVirtualDesktop;
 		mouseevent->ActionType = ActionType;
 		mouseevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
