@@ -18,7 +18,7 @@ void KeyboardEvent::print(std::ostream & where) const
 
 void KeyboardEvent::inject() const
 {
-	WindowsInjectionAPI::InjectKeyboardEvent(virtualKeyCode, keyUp);
+	WindowsInjectionAPI::inject_keyboard_event(virtualKeyCode, keyUp);
 }
 
 std::string KeyboardEvent::serialize() const

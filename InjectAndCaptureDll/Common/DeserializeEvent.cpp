@@ -1,7 +1,11 @@
 #include "..\stdafx.h"
-#include "DeserializeEvent.h"
+#include <cassert>
+#include "Event.h"
+#include "KeyboardEvent.h"
+#include "MouseEvent.h"
 
-std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations maybe? error codes?
+
+std::unique_ptr<Event> iac_dll::deserializeEvent(std::string str) //TODO: validations maybe? error codes?
 {
 	std::stringstream strstr(str);
 	char type;
@@ -32,7 +36,7 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		LONG x, y;
 		DWORD wheelRotation;
 		bool mappedToVirtualDesktop;
-		DWORD ActionType = 0;
+		DWORD ActionType;
 
 		strstr.ignore(1, ',');
 		strstr >> x;
@@ -56,6 +60,8 @@ std::unique_ptr<Event> deserializeEvent(std::string str) //TODO: validations may
 		mouseevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
 		return std::move(mouseevent);
 		break;
+	default:
+		assert("unknown event type"); //TODO: is this thing legal?
 	}
 	return nullptr;
 }

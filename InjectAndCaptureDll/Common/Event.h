@@ -1,6 +1,5 @@
 #pragma once
 #include <chrono>
-#include <memory>
 #include <sstream>
 
 class Event

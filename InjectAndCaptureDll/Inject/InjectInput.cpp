@@ -2,12 +2,14 @@
 #include "../InjectAndCaptureDll.h"
 #include <thread>
 
-bool WindowsInjectionAPI::InjectKeyboardEvent(WORD virtualKeyCode, bool keyUp)
+LONG previous_x=0, previous_y=0;
+
+bool WindowsInjectionAPI::inject_keyboard_event(const WORD virtual_key_code, const bool key_up)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_KEYBOARD;
-	eventToInject.ki.wVk = virtualKeyCode;
-	if (keyUp) {
+	eventToInject.ki.wVk = virtual_key_code;
+	if (key_up) {
 		eventToInject.ki.dwFlags |= KEYEVENTF_KEYUP;
 	}
 
@@ -19,16 +21,25 @@ bool WindowsInjectionAPI::InjectKeyboardEvent(WORD virtualKeyCode, bool keyUp)
 	return (result != 0);
 }
 
-bool WindowsInjectionAPI::InjectMouseEvent(LONG x, LONG y, DWORD wheelRotation, DWORD flags)
+bool WindowsInjectionAPI::inject_mouse_event(LONG x, LONG y, DWORD wheel_rotation, const DWORD flags)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_MOUSE;
+	//if (previousX == 0 && previousY == 0) {
+	if (true) {
+		eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
+		// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
+		eventToInject.mi.dx = (x << 16) / (GetSystemMetrics(SM_CXSCREEN) - 1); // multiply by 65536, then divide by screen size
+		eventToInject.mi.dy = (y << 16) / (GetSystemMetrics(SM_CYSCREEN) - 1); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
+		// SM_XVIRTUALSCREEN
+	}
+	else {
+		eventToInject.mi.dx = x - previous_x;
+		eventToInject.mi.dy = y - previous_y;
+	}
 
-	eventToInject.mi.dwFlags |= MOUSEEVENTF_ABSOLUTE;
-	// mi.dx expects value between 0 and 65535, and converts it to pixel coords internally. since we store mouse positions by pixels, we need to do math.
-	eventToInject.mi.dx = (x << 16) / GetSystemMetrics(SM_CXSCREEN); // multiply by 65536, then divide by screen size
-	eventToInject.mi.dy = (y << 16) / GetSystemMetrics(SM_CYSCREEN); // GetDeviceCaps( hdcPrimaryMonitor, VERTRES)
-	// SM_XVIRTUALSCREEN
+	previous_x = x;
+	previous_y = y;
 
 	eventToInject.mi.dwFlags |= flags;
 

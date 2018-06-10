@@ -1,8 +1,4 @@
 #include "InjectAndCaptureDll.h"
-#include "Common\DeserializeEvent.h"
-
-#include <iostream>
-#include <fstream>
 
 INJECTANDCAPTUREDLL_API void iac_dll_init() {
 	iac_dll::Init();
@@ -23,6 +19,6 @@ INJECTANDCAPTUREDLL_API void iac_dll_stop_capture() {
 	iac_dll::StopCapture();
 }
 INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const char serialized_event[]) {
-	auto event = deserializeEvent(serialized_event);
+	const auto event = iac_dll::deserializeEvent(serialized_event);
 	event->inject();
 }

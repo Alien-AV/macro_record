@@ -17,7 +17,7 @@ void MouseEvent::print(std::ostream & where) const
 
 void MouseEvent::inject() const
 {
-	WindowsInjectionAPI::InjectMouseEvent(x, y, wheelRotation, ActionType);
+	WindowsInjectionAPI::inject_mouse_event(x, y, wheelRotation, ActionType);
 }
 
 std::string MouseEvent::serialize() const

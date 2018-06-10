@@ -34,5 +34,3 @@ public:
 	void print(std::ostream& where) const;
 	void inject() const;
 };
-
-//TODO: multiple mousevents subtypes? how to inject them then?

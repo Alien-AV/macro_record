@@ -1,34 +1,24 @@
 #include "..\stdafx.h"
 #include <memory>
-#include <Strsafe.h>
+#include <strsafe.h>
 #include <algorithm>
-#include <iostream>
-#include <list>
 #include <chrono>
-#include "WindowForCaptureEvents.h"
 #include "../InjectAndCaptureDll.h"
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 
-#define WM_STARTCAPTURE WM_USER+1
-#define WM_STOPCAPTURE WM_USER+2
+
+#include "../Inject/InjectInput.h"
+
+#define WM_STARTCAPTURE (WM_USER+1)
+#define WM_STOPCAPTURE (WM_USER+2)
 
 namespace iac_dll {
 
-	CaptureEventsCallback captureEventsCallback = nullptr;
-	std::chrono::time_point<std::chrono::high_resolution_clock> timeOfStartOfRecording;
-	LONG previousMousePosX, previousMousePosY;
-
-
-	WindowForCaptureEvents::WindowForCaptureEvents()
-	{
-	}
-
-
-	WindowForCaptureEvents::~WindowForCaptureEvents()
-	{
-	}
+	CaptureEventsCallback capture_events_callback = nullptr;
+	std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording;
+	LONG previous_mouse_pos_x, previous_mouse_pos_y;
 
 	DWORD window_thread_id = NULL;
 
@@ -61,12 +51,12 @@ namespace iac_dll {
 		Rid[0].usUsagePage = 0x01;
 		Rid[0].usUsage = 0x02;
 		Rid[0].dwFlags = RIDEV_REMOVE;
-		Rid[0].hwndTarget = NULL;
+		Rid[0].hwndTarget = nullptr;
 
 		Rid[1].usUsagePage = 0x01;
 		Rid[1].usUsage = 0x06;
 		Rid[1].dwFlags = RIDEV_REMOVE;
-		Rid[1].hwndTarget = NULL;
+		Rid[1].hwndTarget = nullptr;
 
 		OutputDebugString(TEXT("Unregistering RawInput Device\n"));
 
@@ -83,42 +73,42 @@ namespace iac_dll {
 		POINT initialMousePosition;
 		GetCursorPos(&initialMousePosition);
 
-		previousMousePosX = initialMousePosition.x;
-		previousMousePosY = initialMousePosition.y;
+		previous_mouse_pos_x = initialMousePosition.x;
+		previous_mouse_pos_y = initialMousePosition.y;
 
 		auto fakeMouseEvent = std::make_unique<MouseEvent>();
 		fakeMouseEvent->timeSinceStartOfRecording = std::chrono::nanoseconds(0);
 		fakeMouseEvent->x = initialMousePosition.x;
 		fakeMouseEvent->y = initialMousePosition.y;
 		fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlags::Move;
-		captureEventsCallback(std::move(fakeMouseEvent));
+		capture_events_callback(std::move(fakeMouseEvent));
 	}
 
 	DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 	{
 		MSG messages;
-		wchar_t *pString = reinterpret_cast<wchar_t *> (lpParam);
+		auto p_string = reinterpret_cast<wchar_t *> (lpParam);
 
-		HWND hwnd = NULL;
+		HWND hwnd = nullptr;
 
-		LPCWSTR class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
+		const LPCWSTR class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
 		WNDCLASSEX wx = {};
 		wx.cbSize = sizeof(WNDCLASSEX);
-		wx.lpfnWndProc = CaptureWindowWndProc;        // function which will handle messages
+		wx.lpfnWndProc = CaptureWindowWndProc;
 		wx.lpszClassName = class_name;
 
 		if (RegisterClassEx(&wx)) {
-			hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+			hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, nullptr);
 			if (!hwnd) {
 				return 1;
 			}
 		}
 
-		while (GetMessage(&messages, NULL, 0, 0))
+		while (GetMessage(&messages, nullptr, 0, 0))
 		{
 			switch (messages.message) {
 			case WM_STARTCAPTURE:
-				timeOfStartOfRecording = std::chrono::high_resolution_clock::now();
+				time_of_start_of_recording = std::chrono::high_resolution_clock::now();
 				fakeMouseEventForInitialPos();
 
 				RegisterRawInputStuff(hwnd);
@@ -135,82 +125,81 @@ namespace iac_dll {
 	}
 
 	void HandleKeyboardEventCapture(RAWKEYBOARD data) {
-		auto timeSinceStartOfRecording = std::chrono::high_resolution_clock::now() - timeOfStartOfRecording;
-		auto capturedKbdEvent = std::make_unique<KeyboardEvent>();
-		capturedKbdEvent->timeSinceStartOfRecording = timeSinceStartOfRecording;
-		capturedKbdEvent->virtualKeyCode = data.VKey;
+		const auto time_since_start_of_recording = std::chrono::high_resolution_clock::now() - time_of_start_of_recording;
+		auto captured_kbd_event = std::make_unique<KeyboardEvent>();
+		captured_kbd_event->timeSinceStartOfRecording = time_since_start_of_recording;
+		captured_kbd_event->virtualKeyCode = data.VKey;
 		if (data.Flags & RI_KEY_BREAK) {
-			capturedKbdEvent->keyUp = true;
+			captured_kbd_event->keyUp = true;
 		}
 		else {
-			capturedKbdEvent->keyUp = false;
+			captured_kbd_event->keyUp = false;
 		}
 
-		captureEventsCallback(std::move(capturedKbdEvent));
-
+		capture_events_callback(std::move(captured_kbd_event));
 	}
 
 	void HandleMouseEventCapture(RAWMOUSE data) {
-		auto timeSinceStartOfRecording = std::chrono::high_resolution_clock::now() - timeOfStartOfRecording;
+		const auto time_since_start_of_recording = std::chrono::high_resolution_clock::now() - time_of_start_of_recording;
 
-		auto capturedMouseEvent = std::make_unique<MouseEvent>();
-		capturedMouseEvent->timeSinceStartOfRecording = timeSinceStartOfRecording;
-		capturedMouseEvent->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
+		auto captured_mouse_event = std::make_unique<MouseEvent>();
+		captured_mouse_event->timeSinceStartOfRecording = time_since_start_of_recording;
+		captured_mouse_event->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
 
-		auto usedRelativePosition = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
-		if (usedRelativePosition) {
-			capturedMouseEvent->x = data.lLastX + previousMousePosX;
-			capturedMouseEvent->y = data.lLastY + previousMousePosY;
+		const auto used_relative_position = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
+		if (used_relative_position) {
+			captured_mouse_event->x = data.lLastX + previous_mouse_pos_x;
+			captured_mouse_event->y = data.lLastY + previous_mouse_pos_y;
 		}
 		else
 		{
-			capturedMouseEvent->x = data.lLastX;
-			capturedMouseEvent->y = data.lLastY;
+			captured_mouse_event->x = data.lLastX;
+			captured_mouse_event->y = data.lLastY;
 		}
 
-		previousMousePosX = capturedMouseEvent->x;
-		previousMousePosY = capturedMouseEvent->y;
+		previous_mouse_pos_x = captured_mouse_event->x;
+		previous_mouse_pos_y = captured_mouse_event->y;
 
-		capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::Move;
+		captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::Move;
 
 		if (data.usButtonFlags & RI_MOUSE_WHEEL) {
-			capturedMouseEvent->wheelRotation = data.usButtonData;
+			captured_mouse_event->wheelRotation = data.usButtonData;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
 		}
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::XDown;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XDown;
 		}
 
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
-			capturedMouseEvent->ActionType |= MouseEvent::ActionTypeFlags::XUp;
+			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XUp;
 		}
 
 		//TODO: x2 button
 
-		captureEventsCallback(std::move(capturedMouseEvent));
+		capture_events_callback(std::move(captured_mouse_event));
 	}
 
 	LRESULT CALLBACK CaptureWindowWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -220,10 +209,10 @@ namespace iac_dll {
 		case WM_INPUT:
 		{
 			UINT dwSize;
-			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize,
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize,
 				sizeof(RAWINPUTHEADER));
-			LPBYTE lpb = new BYTE[dwSize];
-			if (lpb == NULL)
+			const auto lpb = new BYTE[dwSize];
+			if (lpb == nullptr)
 			{
 				return 0;
 			}
@@ -232,7 +221,7 @@ namespace iac_dll {
 				sizeof(RAWINPUTHEADER)) != dwSize)
 				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
 
-			RAWINPUT* raw = (RAWINPUT*)lpb;
+			auto raw = (RAWINPUT*)lpb;
 
 			if (raw->header.dwType == RIM_TYPEKEYBOARD)
 			{
@@ -261,11 +250,11 @@ namespace iac_dll {
 			OutputDebugString(L"Init already called");
 			return;
 		}
-		CreateThread(0, NULL, CaptureWindowMainLoopThread, (LPVOID)L"Window Title", NULL, &window_thread_id);
+		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, (LPVOID)L"Window Title", NULL, &window_thread_id);
 	}
 
 	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback newCaptureEventsCallback) {
-		captureEventsCallback = newCaptureEventsCallback;
+		capture_events_callback = newCaptureEventsCallback;
 		return PostThreadMessage(window_thread_id, WM_STARTCAPTURE, NULL, NULL);
 	}
 

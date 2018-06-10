@@ -27,9 +27,6 @@
     <ClInclude Include="InjectAndCaptureDll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Capture\WindowForCaptureEvents.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Inject\InjectInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -42,7 +39,7 @@
     <ClInclude Include="Common\MouseEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Common\DeserializeEvent.h">
+    <ClInclude Include="Capture\WindowForCaptureEvents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -74,5 +71,8 @@
     <ClCompile Include="Common\DeserializeEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\protobuf\Events.proto" />
   </ItemGroup>
 </Project>

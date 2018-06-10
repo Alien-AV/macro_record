@@ -1,10 +1,4 @@
 #pragma once
+#include "../stdafx.h"
 
-namespace iac_dll {
-	class WindowForCaptureEvents
-	{
-	public:
-		WindowForCaptureEvents();
-		~WindowForCaptureEvents();
-	};
-}
+void HandleMouseEventCapture(RAWMOUSE data);

@@ -12,10 +12,7 @@
 #define INJECTANDCAPTUREDLL_API __declspec(dllimport)
 #endif
 
-#include "Common\Event.h"
-#include "Common\KeyboardEvent.h"
-#include "Common\MouseEvent.h"
-#include "Common\DeserializeEvent.h"
+#include "Common/Event.h"
 #include <memory>
 #include <Windows.h>
 
@@ -29,6 +26,8 @@ namespace iac_dll {
 	INJECTANDCAPTUREDLL_API BOOL StopCapture(void);
 
 	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
+	
+	INJECTANDCAPTUREDLL_API std::unique_ptr<Event> deserializeEvent(std::string);
 }
 
 extern "C" {
