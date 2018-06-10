@@ -6,14 +6,33 @@
         xmlns:local="clr-namespace:MacroRecorderGUI"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
+
+    <Window.Resources>
+        <RoutedUICommand x:Key="MyCommand1" Text="Text" />
+        <RoutedUICommand x:Key="MyCommand2" Text="Another Text" />
+    </Window.Resources>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource MyCommand1}" 
+                        Executed="StartRecord_Click" />
+        <CommandBinding Command="{StaticResource MyCommand2}" 
+                        Executed="StopRecordButton_Click" />
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{StaticResource MyCommand1}" />
+        <KeyBinding Key="W" Modifiers="Ctrl" Command="{StaticResource MyCommand2}" />
+    </Window.InputBindings>
+
     <Grid>
-        <Button x:Name="StartRecordButton" Content="StartRecord" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="StartRecord_Click"/>
-        <Button x:Name="StopRecordButton" Content="StopRecord" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="75" Click="StopRecordButton_Click"/>
+        <Button x:Name="StartRecordButton" Content="StartRecord" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Command="{StaticResource MyCommand1}"/>
+        <Button x:Name="StopRecordButton" Content="StopRecord" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="75" Command="{StaticResource MyCommand2}"/>
         <Button x:Name="InjectButton" Content="Inject" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="75" Click="InjectButton_Click"/>
         <ListBox x:Name="listBox" Margin="90,10,10,10">
             
         </ListBox>
         <Button x:Name="AddEvent" Content="AddEvent" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="75" Click="AddEvent_Click"/>
+        <Button x:Name="button" Content="Clear" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Width="75" Click="button_Click"/>
 
     </Grid>
 </Window>

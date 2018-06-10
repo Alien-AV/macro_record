@@ -56,5 +56,10 @@ namespace MacroRecorderGUI
         {
             eventsObsColl.Add("{m:280,280,0,0,0,1,0}");
         }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            eventsObsColl.Clear();
+        }
     }
 }
