@@ -1,4 +1,6 @@
 #pragma once
 #include "../stdafx.h"
 
-void HandleMouseEventCapture(RAWMOUSE data);
+namespace iac_dll {
+	void HandleMouseEventCapture(RAWMOUSE data);
+}

@@ -17,6 +17,10 @@
 #include <Windows.h>
 
 namespace iac_dll {
+	INJECTANDCAPTUREDLL_API void HandleMouseEventCapture(RAWMOUSE data);
+}
+
+namespace iac_dll {
 	INJECTANDCAPTUREDLL_API void Init(void);
 
 	typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
