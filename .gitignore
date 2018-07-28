@@ -241,3 +241,6 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 /MacroRecorderGUI/Resources/InjectAndCaptureDll.dll
+/InjectAndCaptureDll/cmake-build-debug
+/InjectAndCaptureDll/.idea
+/InjectAndCaptureDll/CMakeLists.txt

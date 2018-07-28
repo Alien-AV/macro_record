@@ -35,6 +35,7 @@ std::unique_ptr<Event> iac_dll::deserializeEvent(std::string str) //TODO: valida
 	case 'm':
 		LONG x, y;
 		DWORD wheelRotation;
+		bool relative_position;
 		bool mappedToVirtualDesktop;
 		DWORD ActionType;
 
@@ -45,16 +46,19 @@ std::unique_ptr<Event> iac_dll::deserializeEvent(std::string str) //TODO: valida
 		strstr.ignore(1, ',');
 		strstr >> wheelRotation;
 		strstr.ignore(1, ',');
+		strstr >> relative_position;
+		strstr.ignore(1, ',');
 		strstr >> mappedToVirtualDesktop;
 		strstr.ignore(1, ',');
 		strstr >> ActionType;
 		strstr.ignore(1, ',');
 		strstr >> durationNanoseconds;
 
-		mouseevent = std::make_unique<MouseEvent>();
+		mouseevent = std::make_unique<MouseEvent>(); //TODO: fill the mouseevent fields directly from strstr >>
 		mouseevent->x = x;
 		mouseevent->y = y;
 		mouseevent->wheelRotation = wheelRotation;
+		mouseevent->relative_position = relative_position;
 		mouseevent->mappedToVirtualDesktop = mappedToVirtualDesktop;
 		mouseevent->ActionType = ActionType;
 		mouseevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);

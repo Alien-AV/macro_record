@@ -6,9 +6,10 @@ class MouseEvent :
 	public Event
 {
 public:
-	LONG x, y;
-	DWORD wheelRotation;
-	bool mappedToVirtualDesktop;
+	LONG x = 0, y = 0;
+	DWORD wheelRotation = 0;
+	bool mappedToVirtualDesktop = false;
+	bool relative_position = false;
 	class ActionTypeFlags
 	{
 	public:
