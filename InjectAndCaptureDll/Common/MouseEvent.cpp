@@ -1,10 +1,14 @@
 #include "MouseEvent.h"
-#include "..\Inject\InjectInput.h"
+#include "../Inject/InjectInput.h"
+#include "protobuf/cpp/Events.pb.h"
 
 MouseEvent::MouseEvent()
 {
 }
 
+MouseEvent::MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position)
+						:x(x),y(y),ActionType(action_type),wheelRotation(wheelRotation),mappedToVirtualDesktop(mappedToVirtualDesktop),relative_position(relative_position)
+{}
 
 MouseEvent::~MouseEvent()
 {
@@ -22,8 +26,21 @@ void MouseEvent::inject() const
 
 std::string MouseEvent::serialize() const
 {
-	std::stringstream dest_buff;
-	//auto timeInSecondsFloat = std::chrono::duration_cast<std::chrono::duration<float,std::micro>>(timeSinceStartOfRecording);
-	dest_buff << "{m," << x << "," << y << "," << wheelRotation << "," << relative_position << "," << mappedToVirtualDesktop << "," << ActionType << "," << timeSinceStartOfRecording.count() << "}";
-	return dest_buff.str();
+	auto serialized_event = std::make_unique<InputEvent>();
+	auto serialized_mouse_event = serialized_event->mutable_mouseevent();
+	serialized_mouse_event->set_x(x);
+	serialized_mouse_event->set_y(y);
+	serialized_mouse_event->set_actiontype(ActionType);
+	serialized_mouse_event->set_wheelrotation(wheelRotation);
+	serialized_mouse_event->set_relativeposition(relative_position);
+	serialized_mouse_event->set_mappedtovirtualdesktop(mappedToVirtualDesktop);
+
+	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
+
+	std::string result_string;
+	if(!serialized_event->SerializeToString(&result_string))
+	{
+		return "";
+	}
+	return result_string;
 }

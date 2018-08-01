@@ -244,3 +244,6 @@ ModelManifest.xml
 /InjectAndCaptureDll/cmake-build-debug
 /InjectAndCaptureDll/.idea
 /InjectAndCaptureDll/CMakeLists.txt
+/InjectAndCaptureDll/Common/protobuf/protoc.exe
+/InjectAndCaptureDll/Common/protobuf/libprotoc.dll
+/InjectAndCaptureDll/Common/protobuf/libprotobuf.dll

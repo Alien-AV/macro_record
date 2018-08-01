@@ -3,69 +3,46 @@
 #include "Event.h"
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
+#include "protobuf/cpp/Events.pb.h"
 
 
 std::unique_ptr<Event> iac_dll::deserializeEvent(std::string str) //TODO: validations maybe? error codes?
 {
-	std::stringstream strstr(str);
-	char type;
-	std::unique_ptr<KeyboardEvent> kbdevent;
-	std::unique_ptr<MouseEvent> mouseevent;
-	long long durationNanoseconds;
-	strstr.ignore(1, '{');
-	strstr >> type;
-	switch (type) {
-	case 'k':
-		WORD virtualKeyCode;
-		bool keyUp;
-		
-		strstr.ignore(1, ',');
-		strstr >> virtualKeyCode;
-		strstr.ignore(1, ',');
-		strstr >> keyUp;
-		strstr.ignore(1, ',');
-		strstr >> durationNanoseconds;
+	auto serialized_event = std::make_unique<InputEvent>();
+	serialized_event->ParseFromString(str);
 
-		kbdevent = std::make_unique<KeyboardEvent>();
-		kbdevent->virtualKeyCode = virtualKeyCode;
-		kbdevent->keyUp = keyUp;
-		kbdevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
-		return std::move(kbdevent);
+	switch(serialized_event->Event_case())
+	{
+		case InputEvent::EventCase::kKeyboardEvent:
+		{
+			auto serialized_kbdevent = serialized_event->keyboardevent();
+			auto kbdevent = std::make_unique<KeyboardEvent>();
+			
+			kbdevent->virtualKeyCode = serialized_kbdevent.virtualkeycode();
+			kbdevent->keyUp = serialized_kbdevent.keyup();
+			kbdevent->time_since_start_of_recording = std::chrono::nanoseconds(serialized_event->timesincestartofrecording());
+			
+			return std::move(kbdevent);
+		}
+		case InputEvent::EventCase::kMouseEvent:
+		{
+			auto serialized_mouseevent = serialized_event->mouseevent();
+			auto mouseevent = std::make_unique<MouseEvent>(serialized_mouseevent.x(), serialized_mouseevent.y(), serialized_mouseevent.actiontype(),
+				serialized_mouseevent.wheelrotation(), serialized_mouseevent.mappedtovirtualdesktop(), serialized_mouseevent.relativeposition());
+
+			mouseevent->time_since_start_of_recording = std::chrono::nanoseconds(serialized_event->timesincestartofrecording());
+
+			//mouseevent->x = serialized_mouseevent.x();
+			//mouseevent->y = serialized_mouseevent.y();
+			//mouseevent->ActionType = serialized_mouseevent.actiontype();
+			//mouseevent->wheelRotation = serialized_mouseevent.wheelrotation();
+			//mouseevent->relative_position = serialized_mouseevent.relativeposition();
+			//mouseevent->mappedToVirtualDesktop = serialized_mouseevent.mappedtovirtualdesktop();
+			return std::move(mouseevent);
+		}		
+		default:
+			//TODO: handle error here?
+			return nullptr;
 		break;
-	case 'm':
-		LONG x, y;
-		DWORD wheelRotation;
-		bool relative_position;
-		bool mappedToVirtualDesktop;
-		DWORD ActionType;
-
-		strstr.ignore(1, ',');
-		strstr >> x;
-		strstr.ignore(1, ',');
-		strstr >> y;
-		strstr.ignore(1, ',');
-		strstr >> wheelRotation;
-		strstr.ignore(1, ',');
-		strstr >> relative_position;
-		strstr.ignore(1, ',');
-		strstr >> mappedToVirtualDesktop;
-		strstr.ignore(1, ',');
-		strstr >> ActionType;
-		strstr.ignore(1, ',');
-		strstr >> durationNanoseconds;
-
-		mouseevent = std::make_unique<MouseEvent>(); //TODO: fill the mouseevent fields directly from strstr >>
-		mouseevent->x = x;
-		mouseevent->y = y;
-		mouseevent->wheelRotation = wheelRotation;
-		mouseevent->relative_position = relative_position;
-		mouseevent->mappedToVirtualDesktop = mappedToVirtualDesktop;
-		mouseevent->ActionType = ActionType;
-		mouseevent->timeSinceStartOfRecording = std::chrono::nanoseconds(durationNanoseconds);
-		return std::move(mouseevent);
-		break;
-	default:
-		assert("unknown event type"); //TODO: is this thing legal?
 	}
-	return nullptr;
 }

@@ -1,6 +1,7 @@
 #include <sstream>
 #include "KeyboardEvent.h"
 #include "..\Inject\InjectInput.h"
+#include "protobuf/cpp/Events.pb.h"
 
 KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(false)
 {
@@ -23,8 +24,17 @@ void KeyboardEvent::inject() const
 
 std::string KeyboardEvent::serialize() const
 {
-	std::stringstream dest_buff;
-	//auto timeInSecondsFloat = std::chrono::duration_cast<std::chrono::duration<float, std::micro>>(timeSinceStartOfRecording);
-	dest_buff << "{k," << virtualKeyCode << "," << keyUp << "," << timeSinceStartOfRecording.count() << "}";
-	return dest_buff.str();
+	auto serialized_event = std::make_unique<InputEvent>();
+	auto serialized_keyboard_event = serialized_event->mutable_keyboardevent();
+	serialized_keyboard_event->set_virtualkeycode(virtualKeyCode);
+	serialized_keyboard_event->set_keyup(keyUp);
+
+	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
+
+	std::string result_string;
+	if(!serialized_event->SerializeToString(&result_string))
+	{
+		return "";
+	}
+	return result_string;
 }

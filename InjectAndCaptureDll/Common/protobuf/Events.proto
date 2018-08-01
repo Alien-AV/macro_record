@@ -9,7 +9,9 @@ message InputEvent {
 	uint32 x = 1;
 	uint32 y = 2;
 	uint32 actionType = 3;
-	bool mappedToVirtualDesktop = 4;
+	uint32 wheelRotation = 4;
+	bool relativePosition = 5;
+	bool mappedToVirtualDesktop = 6;
   }
 
   uint64 timeSinceStartOfRecording = 1;

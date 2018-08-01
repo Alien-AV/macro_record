@@ -42,6 +42,9 @@
     <ClInclude Include="Capture\WindowForCaptureEvents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\protobuf\cpp\Events.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InjectAndCaptureDll.cpp">
@@ -69,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Common\DeserializeEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\protobuf\cpp\Events.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

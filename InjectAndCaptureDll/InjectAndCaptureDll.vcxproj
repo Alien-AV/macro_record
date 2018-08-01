@@ -103,7 +103,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>PROTOBUF_USE_DLLS;_DEBUG;_WINDOWS;_USRDLL;INJECTANDCAPTUREDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;INJECTANDCAPTUREDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <DisableSpecificWarnings>4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -157,6 +157,7 @@
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
     <ClInclude Include="Common\MouseEvent.h" />
+    <ClInclude Include="Common\protobuf\cpp\Events.pb.h" />
     <ClInclude Include="InjectAndCaptureDll.h" />
     <ClInclude Include="Inject\InjectInput.h" />
     <ClInclude Include="stdafx.h" />
@@ -168,6 +169,7 @@
     <ClCompile Include="Common\Event.cpp" />
     <ClCompile Include="Common\KeyboardEvent.cpp" />
     <ClCompile Include="Common\MouseEvent.cpp" />
+    <ClCompile Include="Common\protobuf\cpp\Events.pb.cc" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
