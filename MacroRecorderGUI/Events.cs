@@ -27,8 +27,8 @@ public static partial class EventsReflection {
           "SW5wdXRFdmVudC5LZXlib2FyZEV2ZW50VHlwZUgAEjAKCm1vdXNlRXZlbnQY",
           "AyABKAsyGi5JbnB1dEV2ZW50Lk1vdXNlRXZlbnRUeXBlSAAaOgoRS2V5Ym9h",
           "cmRFdmVudFR5cGUSFgoOdmlydHVhbEtleUNvZGUYASABKA0SDQoFa2V5VXAY",
-          "AiABKAgaiwEKDk1vdXNlRXZlbnRUeXBlEgkKAXgYASABKAUSCQoBeRgCIAEo",
-          "BRISCgphY3Rpb25UeXBlGAMgASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0S",
+          "AiABKAgaiwEKDk1vdXNlRXZlbnRUeXBlEgkKAXgYASABKA0SCQoBeRgCIAEo",
+          "DRISCgphY3Rpb25UeXBlGAMgASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0S",
           "GAoQcmVsYXRpdmVQb3NpdGlvbhgFIAEoCBIeChZtYXBwZWRUb1ZpcnR1YWxE",
           "ZXNrdG9wGAYgASgIQgcKBUV2ZW50YgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
@@ -474,9 +474,9 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
 
       /// <summary>Field number for the "x" field.</summary>
       public const int XFieldNumber = 1;
-      private int x_;
+      private uint x_;
       [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-      public int X {
+      public uint X {
         get { return x_; }
         set {
           x_ = value;
@@ -485,9 +485,9 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
 
       /// <summary>Field number for the "y" field.</summary>
       public const int YFieldNumber = 2;
-      private int y_;
+      private uint y_;
       [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-      public int Y {
+      public uint Y {
         get { return y_; }
         set {
           y_ = value;
@@ -584,11 +584,11 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
       public void WriteTo(pb::CodedOutputStream output) {
         if (X != 0) {
           output.WriteRawTag(8);
-          output.WriteInt32(X);
+          output.WriteUInt32(X);
         }
         if (Y != 0) {
           output.WriteRawTag(16);
-          output.WriteInt32(Y);
+          output.WriteUInt32(Y);
         }
         if (ActionType != 0) {
           output.WriteRawTag(24);
@@ -615,10 +615,10 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
       public int CalculateSize() {
         int size = 0;
         if (X != 0) {
-          size += 1 + pb::CodedOutputStream.ComputeInt32Size(X);
+          size += 1 + pb::CodedOutputStream.ComputeUInt32Size(X);
         }
         if (Y != 0) {
-          size += 1 + pb::CodedOutputStream.ComputeInt32Size(Y);
+          size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Y);
         }
         if (ActionType != 0) {
           size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ActionType);
@@ -673,11 +673,11 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
               _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
               break;
             case 8: {
-              X = input.ReadInt32();
+              X = input.ReadUInt32();
               break;
             }
             case 16: {
-              Y = input.ReadInt32();
+              Y = input.ReadUInt32();
               break;
             }
             case 24: {

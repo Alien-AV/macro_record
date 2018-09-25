@@ -261,17 +261,17 @@ class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc
 
   // accessors -------------------------------------------------------
 
-  // uint32 x = 1;
+  // int32 x = 1;
   void clear_x();
   static const int kXFieldNumber = 1;
-  ::google::protobuf::uint32 x() const;
-  void set_x(::google::protobuf::uint32 value);
+  ::google::protobuf::int32 x() const;
+  void set_x(::google::protobuf::int32 value);
 
-  // uint32 y = 2;
+  // int32 y = 2;
   void clear_y();
   static const int kYFieldNumber = 2;
-  ::google::protobuf::uint32 y() const;
-  void set_y(::google::protobuf::uint32 value);
+  ::google::protobuf::int32 y() const;
+  void set_y(::google::protobuf::int32 value);
 
   // uint32 actionType = 3;
   void clear_actiontype();
@@ -301,8 +301,8 @@ class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 x_;
-  ::google::protobuf::uint32 y_;
+  ::google::protobuf::int32 x_;
+  ::google::protobuf::int32 y_;
   ::google::protobuf::uint32 actiontype_;
   ::google::protobuf::uint32 wheelrotation_;
   bool relativeposition_;
@@ -503,29 +503,29 @@ inline void InputEvent_KeyboardEventType::set_keyup(bool value) {
 
 // InputEvent_MouseEventType
 
-// uint32 x = 1;
+// int32 x = 1;
 inline void InputEvent_MouseEventType::clear_x() {
-  x_ = 0u;
+  x_ = 0;
 }
-inline ::google::protobuf::uint32 InputEvent_MouseEventType::x() const {
+inline ::google::protobuf::int32 InputEvent_MouseEventType::x() const {
   // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.x)
   return x_;
 }
-inline void InputEvent_MouseEventType::set_x(::google::protobuf::uint32 value) {
+inline void InputEvent_MouseEventType::set_x(::google::protobuf::int32 value) {
   
   x_ = value;
   // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.x)
 }
 
-// uint32 y = 2;
+// int32 y = 2;
 inline void InputEvent_MouseEventType::clear_y() {
-  y_ = 0u;
+  y_ = 0;
 }
-inline ::google::protobuf::uint32 InputEvent_MouseEventType::y() const {
+inline ::google::protobuf::int32 InputEvent_MouseEventType::y() const {
   // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.y)
   return y_;
 }
-inline void InputEvent_MouseEventType::set_y(::google::protobuf::uint32 value) {
+inline void InputEvent_MouseEventType::set_y(::google::protobuf::int32 value) {
   
   y_ = value;
   // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.y)

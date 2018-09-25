@@ -161,7 +161,7 @@ void AddDescriptorsImpl() {
       "\0220\n\nmouseEvent\030\003 \001(\0132\032.InputEvent.MouseE"
       "ventTypeH\000\032:\n\021KeyboardEventType\022\026\n\016virtu"
       "alKeyCode\030\001 \001(\r\022\r\n\005keyUp\030\002 \001(\010\032\213\001\n\016Mouse"
-      "EventType\022\t\n\001x\030\001 \001(\r\022\t\n\001y\030\002 \001(\r\022\022\n\nactio"
+      "EventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\022\022\n\nactio"
       "nType\030\003 \001(\r\022\025\n\rwheelRotation\030\004 \001(\r\022\030\n\020re"
       "lativePosition\030\005 \001(\010\022\036\n\026mappedToVirtualD"
       "esktop\030\006 \001(\010B\007\n\005Eventb\006proto3"
@@ -527,13 +527,13 @@ bool InputEvent_MouseEventType::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // uint32 x = 1;
+      // int32 x = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
 
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
                  input, &x_)));
         } else {
           goto handle_unusual;
@@ -541,13 +541,13 @@ bool InputEvent_MouseEventType::MergePartialFromCodedStream(
         break;
       }
 
-      // uint32 y = 2;
+      // int32 y = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
 
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
                  input, &y_)));
         } else {
           goto handle_unusual;
@@ -637,14 +637,14 @@ void InputEvent_MouseEventType::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // uint32 x = 1;
+  // int32 x = 1;
   if (this->x() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt32(1, this->x(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->x(), output);
   }
 
-  // uint32 y = 2;
+  // int32 y = 2;
   if (this->y() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->y(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->y(), output);
   }
 
   // uint32 actionType = 3;
@@ -681,14 +681,14 @@ void InputEvent_MouseEventType::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // uint32 x = 1;
+  // int32 x = 1;
   if (this->x() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(1, this->x(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->x(), target);
   }
 
-  // uint32 y = 2;
+  // int32 y = 2;
   if (this->y() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(2, this->y(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(2, this->y(), target);
   }
 
   // uint32 actionType = 3;
@@ -728,17 +728,17 @@ size_t InputEvent_MouseEventType::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // uint32 x = 1;
+  // int32 x = 1;
   if (this->x() != 0) {
     total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::UInt32Size(
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
         this->x());
   }
 
-  // uint32 y = 2;
+  // int32 y = 2;
   if (this->y() != 0) {
     total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::UInt32Size(
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
         this->y());
   }
 

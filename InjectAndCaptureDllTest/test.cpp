@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "../InjectAndCaptureDll/InjectAndCaptureDll.h"
-#include "../InjectAndCaptureDll/Capture/WindowForCaptureEvents.h"
 #include "../InjectAndCaptureDll/Common/KeyboardEvent.h"
 #include "../InjectAndCaptureDll/Common/MouseEvent.h"
 
@@ -15,16 +14,16 @@ TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
 			EXPECT_EQ(100,reinterpret_cast<MouseEvent *>(ev.get())->x);
 			break;
 		case 1:
-			EXPECT_EQ(101,reinterpret_cast<MouseEvent *>(ev.get())->x);
+			EXPECT_EQ(1,reinterpret_cast<MouseEvent *>(ev.get())->x);
 			break;
 		case 2:
-			EXPECT_EQ(101,reinterpret_cast<MouseEvent *>(ev.get())->x);
+			EXPECT_EQ(0,reinterpret_cast<MouseEvent *>(ev.get())->x);
 			break;
 		case 3:
-			EXPECT_EQ(103,reinterpret_cast<MouseEvent *>(ev.get())->x);
+			EXPECT_EQ(2,reinterpret_cast<MouseEvent *>(ev.get())->x);
 			break;
 		case 4:
-			EXPECT_EQ(102,reinterpret_cast<MouseEvent *>(ev.get())->x);
+			EXPECT_EQ(-1,reinterpret_cast<MouseEvent *>(ev.get())->x);
 			break;
 		default:
 			FAIL();

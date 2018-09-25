@@ -1,78 +1,46 @@
 #include "stdafx.h"
-
 #include <thread>
-#include <memory>
 #include <chrono>
-#include <fstream>
-#include <iostream>
 #include <list>
 
 #include "../InjectAndCaptureDll/InjectAndCaptureDll.h"
 #include <conio.h>
+#include <vector>
+#include <iostream>
 
+std::list<std::vector<unsigned char>> serialized_events;
 
-std::list<std::unique_ptr<Event>> event_list;
+const auto time_to_capture = std::chrono::seconds(5);
+const auto time_to_sleep_after_capture = std::chrono::seconds(1);
 
-std::list<const char*> serialized_events;
+const auto time_between_events = std::chrono::milliseconds(20);
 
-void ProcessEvent(std::unique_ptr<Event> event) {
-	//std::cout << (*event) << std::endl;
-	event_list.push_back(std::move(event));
-}
-
-
-
-const unsigned int SleepTime = 1;
-
-
-void cb(const char evt[]) {
-	std::cout << evt << std::endl;
-	serialized_events.push_back(_strdup(evt));
+void c_style_cb(const unsigned char buffer[], int buf_size) {
+	const std::vector<unsigned char> serialized_event_vec(buffer, buffer+buf_size);
+	serialized_events.push_back(serialized_event_vec);
 }
 
 int main()
 {
-	puts("started");
-	iac_dll::Init();
-	//iac_dll_init();
-	puts("initialized.\npress a key to start capturing");
+	std::cout << "started" << std::endl;
+	iac_dll_init();
+	std::cout << "initialized. press a key to start capturing" << std::endl;
 	_getch();
 
-	iac_dll_start_capture(cb);
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	iac_dll_start_capture(c_style_cb);
+	std::cout << "started capture" << std::endl;
+	std::this_thread::sleep_for(time_to_capture);
 	iac_dll_stop_capture();
-
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	std::cout << "stopped capture, events in queue: " << serialized_events.size() << std::endl;
+	std::this_thread::sleep_for(time_to_sleep_after_capture);
 
 	for each(auto serialized_event in serialized_events) {
-		iac_dll_inject_event(serialized_event);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		iac_dll_inject_event(serialized_event.data(),serialized_event.size());
+		std::this_thread::sleep_for(time_between_events);
 	}
+	std::cout << "finished playback" << std::endl;
 
-	//std::cout << "sleeping " << SleepTime << std::endl;
-	//std::this_thread::sleep_for(std::chrono::seconds(SleepTime));
-	//auto before_capture = std::chrono::high_resolution_clock::now();
-	//auto result = iac_dll::StartCapture(ProcessEvent);
-	//printf("started capturing, retval: %d.\npress a key to stop capturing\n", result);
-	//_getch();
-	//result = iac_dll::StopCapture();
-	//auto after_capture = std::chrono::high_resolution_clock::now();
-	//std::cout << "stopped capturing, time: " << (after_capture-before_capture).count() << ", sleeping " << SleepTime << " to playback" << std::endl;
-	//std::this_thread::sleep_for(std::chrono::seconds(SleepTime));
-	//printf("playing back\n");
-
-	//auto before_playback = std::chrono::high_resolution_clock::now();
-	//auto current_playback_time_offset = std::chrono::high_resolution_clock::now();
-	//for each (auto &event in event_list)
-	//{
- //		current_playback_time_offset += event->idleDurationBefore;
- //		auto actualIdleDuration = (current_playback_time_offset - std::chrono::high_resolution_clock::now());
-	//	std::this_thread::sleep_for(actualIdleDuration);
-	//	event->inject();
-	//}
-
-	//auto after_playback = std::chrono::high_resolution_clock::now();
-	//std::cout << "stopped playing, time: " << (after_playback - before_playback).count() << std::endl;
 	_getch();
 	_getch();
+	std::cout << "done" << std::endl;
 }

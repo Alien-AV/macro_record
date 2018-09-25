@@ -20,7 +20,7 @@ public:
 		static const DWORD XUp = MOUSEEVENTF_XUP;
 	};
 
-	LONG x = 0, y = 0;
+	LONG x = 0, y = 0; //TODO: change to signed int?
 	DWORD ActionType = 0;
 	DWORD wheelRotation = 0;
 	bool mappedToVirtualDesktop = false;
@@ -31,9 +31,9 @@ public:
 	
 
 	INJECTANDCAPTUREDLL_API MouseEvent();
-	INJECTANDCAPTUREDLL_API MouseEvent::MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position);
+	INJECTANDCAPTUREDLL_API MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position);
 	INJECTANDCAPTUREDLL_API ~MouseEvent();
-	std::string MouseEvent::serialize() const;
-	void print(std::ostream& where) const;
-	void inject() const;
+	std::unique_ptr<std::vector<unsigned char>> serialize() const override;
+	void print(std::ostream& where) const override;
+	void inject() const override;
 };

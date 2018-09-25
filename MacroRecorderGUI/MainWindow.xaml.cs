@@ -1,65 +1,86 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
+using Google.Protobuf;
 
 namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
-        private InjectAndCaptureDLL.iac_dll_capture_event_cb captureEventCbDelegate;
-        public ObservableCollection<string> eventsObsColl = new ObservableCollection<string>();
-        private void Iac_Dll_Capture_Event_Cb(string evt)
+        private readonly InjectAndCaptureDll.IacDllCaptureEventCb _captureEventCbDelegate;
+        public ObservableCollection<InputEvent> EventsObsColl = new ObservableCollection<InputEvent>();
+        private void Iac_Dll_Capture_Event_Cb(IntPtr evtBufPtr, int bufSize)
         {
-            Dispatcher.Invoke(()=> eventsObsColl.Add(evt));
+            var evtBuf = new byte[bufSize];
+            Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
+            var parsedEvent = InputEvent.Parser.ParseFrom(evtBuf);
+            var eventString = parsedEvent.ToString();
+
+            Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
         }
 
         public MainWindow()
         {
             InitializeComponent();
-            InjectAndCaptureDLL.iac_dll_init();
-            listBox.ItemsSource = eventsObsColl;
-            captureEventCbDelegate = Iac_Dll_Capture_Event_Cb;
-        }
-
-        private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
+            InjectAndCaptureDll.iac_dll_init();
+            EventsListBox.ItemsSource = EventsObsColl;
+            _captureEventCbDelegate = Iac_Dll_Capture_Event_Cb;
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
-            //(new Thread(() => {
-                InjectAndCaptureDLL.iac_dll_start_capture(captureEventCbDelegate);
-            //})).Start();
+               InjectAndCaptureDll.iac_dll_start_capture(_captureEventCbDelegate);
         }
 
         private void StopRecordButton_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDLL.iac_dll_stop_capture();
+            InjectAndCaptureDll.iac_dll_stop_capture();
         }
 
         private void InjectButton_Click(object sender, RoutedEventArgs e)
         {
             (new Thread(() =>
             {
-                foreach (var evt in eventsObsColl)
+                ulong firstEventTime = EventsObsColl[0].TimeSinceStartOfRecording;
+                foreach (var evt in EventsObsColl)
                 {
-                    Thread.Sleep(5);
-                    InjectAndCaptureDLL.iac_dll_inject_event(evt);
+                    ulong timeToSleepInNanoseconds = evt.TimeSinceStartOfRecording - firstEventTime;
+                    int timeToSleepInMilliseconds = (int)(timeToSleepInNanoseconds / 1000000);
+
+                    var serializedEvent = evt.ToByteArray();
+                    var sizeOfCppBuffer = Marshal.SizeOf(serializedEvent[0]) * serializedEvent.Length;
+                    var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
+                    try
+                    {
+                        Marshal.Copy(serializedEvent, 0, cppBuffer, sizeOfCppBuffer);
+                        Thread.Sleep(timeToSleepInMilliseconds);
+                        InjectAndCaptureDll.iac_dll_inject_event(cppBuffer, sizeOfCppBuffer);
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(cppBuffer);
+                    }
                 }
             })).Start();
         }
 
-        private void AddEvent_Click(object sender, RoutedEventArgs e)
+        private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-            eventsObsColl.Add("{m:280,280,0,0,0,1,0}");
+            var selectedItems = EventsListBox.SelectedItems.Cast<InputEvent>().ToList();
+            foreach (var eventToRemove in selectedItems)
+            {
+                EventsObsColl.Remove(eventToRemove);
+            }
+            //EventsObsColl.Remove(EventsListBox.SelectedItem as InputEvent);
         }
 
-        private void button_Click(object sender, RoutedEventArgs e)
+        private void ClearList_Click(object sender, RoutedEventArgs e)
         {
-            eventsObsColl.Clear();
+            EventsObsColl.Clear();
         }
     }
 }

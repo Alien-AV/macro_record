@@ -14,7 +14,7 @@ public:
 	INJECTANDCAPTUREDLL_API KeyboardEvent();
 	INJECTANDCAPTUREDLL_API ~KeyboardEvent();
 
-	std::string serialize() const;
+	std::unique_ptr<std::vector<unsigned char>> serialize() const override;
 	void print(std::ostream& where) const;
 	void inject() const;
 };

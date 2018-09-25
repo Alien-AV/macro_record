@@ -2,21 +2,17 @@
 #include "../Inject/InjectInput.h"
 #include "protobuf/cpp/Events.pb.h"
 
-MouseEvent::MouseEvent()
-{
-}
+MouseEvent::MouseEvent() = default;
 
 MouseEvent::MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position)
 						:x(x),y(y),ActionType(action_type),wheelRotation(wheelRotation),mappedToVirtualDesktop(mappedToVirtualDesktop),relative_position(relative_position)
 {}
 
-MouseEvent::~MouseEvent()
-{
-}
+MouseEvent::~MouseEvent() = default;
 
 void MouseEvent::print(std::ostream & where) const
 {
-	where << serialize();
+	where << "x: " << x << ", y: " << y << ", ActionType: " << ActionType << ", wheelRotation: " << wheelRotation << ", relative_position: " << relative_position << ", mappedToVirtualDesktop: " << mappedToVirtualDesktop << std::endl;
 }
 
 void MouseEvent::inject() const
@@ -24,7 +20,7 @@ void MouseEvent::inject() const
 	WindowsInjectionAPI::inject_mouse_event(x, y, wheelRotation, relative_position, ActionType);
 }
 
-std::string MouseEvent::serialize() const
+std::unique_ptr<std::vector<unsigned char>> MouseEvent::serialize() const
 {
 	auto serialized_event = std::make_unique<InputEvent>();
 	auto serialized_mouse_event = serialized_event->mutable_mouseevent();
@@ -37,10 +33,5 @@ std::string MouseEvent::serialize() const
 
 	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
 
-	std::string result_string;
-	if(!serialized_event->SerializeToString(&result_string))
-	{
-		return "";
-	}
-	return result_string;
+	return input_event_to_uchar_vector(serialized_event);
 }

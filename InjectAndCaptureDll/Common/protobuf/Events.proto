@@ -6,8 +6,8 @@ message InputEvent {
 	bool keyUp = 2;
   }
   message MouseEventType {
-	uint32 x = 1;
-	uint32 y = 2;
+	int32 x = 1;
+	int32 y = 2;
 	uint32 actionType = 3;
 	uint32 wheelRotation = 4;
 	bool relativePosition = 5;

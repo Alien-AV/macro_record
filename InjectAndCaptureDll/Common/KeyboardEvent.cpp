@@ -14,7 +14,7 @@ KeyboardEvent::~KeyboardEvent()
 
 void KeyboardEvent::print(std::ostream & where) const
 {
-	where << serialize();
+	where << "virtualKeyCode: " << virtualKeyCode << ", keyUp: " << keyUp << std::endl;
 }
 
 void KeyboardEvent::inject() const
@@ -22,7 +22,7 @@ void KeyboardEvent::inject() const
 	WindowsInjectionAPI::inject_keyboard_event(virtualKeyCode, keyUp);
 }
 
-std::string KeyboardEvent::serialize() const
+std::unique_ptr<std::vector<unsigned char>> KeyboardEvent::serialize() const
 {
 	auto serialized_event = std::make_unique<InputEvent>();
 	auto serialized_keyboard_event = serialized_event->mutable_keyboardevent();
@@ -31,10 +31,5 @@ std::string KeyboardEvent::serialize() const
 
 	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
 
-	std::string result_string;
-	if(!serialized_event->SerializeToString(&result_string))
-	{
-		return "";
-	}
-	return result_string;
+	return input_event_to_uchar_vector(serialized_event);
 }
