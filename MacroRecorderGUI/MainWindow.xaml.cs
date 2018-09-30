@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using Google.Protobuf;
 
@@ -18,7 +16,6 @@ namespace MacroRecorderGUI
             var evtBuf = new byte[bufSize];
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
             var parsedEvent = InputEvent.Parser.ParseFrom(evtBuf);
-            var eventString = parsedEvent.ToString();
 
             Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
         }

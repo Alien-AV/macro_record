@@ -15,19 +15,20 @@
 #include "Common/Event.h"
 #include <memory>
 #include <Windows.h>
+#include <vector>
 
 namespace iac_dll {
 	INJECTANDCAPTUREDLL_API void HandleMouseEventCapture(RAWMOUSE data);
 }
 
 namespace iac_dll {
-	INJECTANDCAPTUREDLL_API void Init(void);
+	INJECTANDCAPTUREDLL_API void Init();
 
 	typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
 
 	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
 
-	INJECTANDCAPTUREDLL_API BOOL StopCapture(void);
+	INJECTANDCAPTUREDLL_API BOOL StopCapture();
 
 	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
 	
@@ -40,6 +41,6 @@ extern "C" {
 	INJECTANDCAPTUREDLL_API void iac_dll_init();
 	INJECTANDCAPTUREDLL_API void iac_dll_start_capture(iac_dll_capture_event_cb cb);
 	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();
-	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], const size_t buf_size);
-	INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], const size_t buf_size);
+	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], size_t buf_size);
+	INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], size_t buf_size);
 }

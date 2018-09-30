@@ -1,4 +1,5 @@
 #include "InjectAndCaptureDll.h"
+#include <thread>
 
 INJECTANDCAPTUREDLL_API void iac_dll_init() {
 	iac_dll::Init();

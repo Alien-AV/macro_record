@@ -1,4 +1,3 @@
-#include <sstream>
 #include "KeyboardEvent.h"
 #include "..\Inject\InjectInput.h"
 #include "protobuf/cpp/Events.pb.h"
@@ -7,10 +6,7 @@ KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(f
 {
 }
 
-
-KeyboardEvent::~KeyboardEvent()
-{
-}
+KeyboardEvent::~KeyboardEvent() = default;
 
 void KeyboardEvent::print(std::ostream & where) const
 {

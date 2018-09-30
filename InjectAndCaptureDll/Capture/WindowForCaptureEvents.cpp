@@ -8,9 +8,6 @@
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 
-
-#include "../Inject/InjectInput.h"
-
 #define WM_STARTCAPTURE (WM_USER+1)
 #define WM_STOPCAPTURE (WM_USER+2)
 
@@ -83,7 +80,6 @@ namespace iac_dll {
 	DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
 	{
 		MSG messages;
-		auto p_string = reinterpret_cast<wchar_t *> (lpParam);
 
 		HWND hwnd = nullptr;
 
@@ -196,7 +192,7 @@ namespace iac_dll {
 		case WM_INPUT:
 		{
 			UINT dwSize;
-			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize,
+			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dwSize,
 				sizeof(RAWINPUTHEADER));
 			const auto lpb = new BYTE[dwSize];
 			if (lpb == nullptr)
@@ -204,11 +200,11 @@ namespace iac_dll {
 				return 0;
 			}
 
-			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize,
+			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb, &dwSize,
 				sizeof(RAWINPUTHEADER)) != dwSize)
 				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
 
-			auto raw = (RAWINPUT*)lpb;
+			const auto raw = reinterpret_cast<RAWINPUT*>(lpb);
 
 			if (raw->header.dwType == RIM_TYPEKEYBOARD)
 			{
@@ -232,12 +228,12 @@ namespace iac_dll {
 	}
 
 
-	INJECTANDCAPTUREDLL_API void Init(void) {
+	INJECTANDCAPTUREDLL_API void Init() {
 		if (window_thread_id) {
 			OutputDebugString(L"Init already called");
 			return;
 		}
-		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, (LPVOID)L"Window Title", NULL, &window_thread_id);
+		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, LPVOID(L"Window Title"), NULL, &window_thread_id);
 	}
 
 	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback newCaptureEventsCallback) {

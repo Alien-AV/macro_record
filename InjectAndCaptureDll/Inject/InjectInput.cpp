@@ -1,5 +1,4 @@
 #include "InjectInput.h"
-#include "../InjectAndCaptureDll.h"
 #include <thread>
 
 bool WindowsInjectionAPI::inject_keyboard_event(const WORD virtual_key_code, const bool key_up)
@@ -11,8 +10,7 @@ bool WindowsInjectionAPI::inject_keyboard_event(const WORD virtual_key_code, con
 		eventToInject.ki.dwFlags |= KEYEVENTF_KEYUP;
 	}
 
-	INPUT eventToInjectArr[1] = { eventToInject };
-	UINT result = SendInput(1, &eventToInject, sizeof(eventToInject));
+	const UINT result = SendInput(1, &eventToInject, sizeof(eventToInject));
 	if (result == 0) {
 		DWORD lastError = GetLastError(); //TODO:handle this correctly
 	}
@@ -39,9 +37,9 @@ bool WindowsInjectionAPI::inject_mouse_event(LONG x, LONG y, DWORD wheel_rotatio
 	eventToInject.mi.dwFlags |= flags;
 
 	INPUT eventToInjectArr[1] = { eventToInject };
-	UINT result = SendInput(1, eventToInjectArr, sizeof(eventToInject));
+	const UINT result = SendInput(1, eventToInjectArr, sizeof(eventToInject));
 	if (result == 0) {
-		DWORD lastError = GetLastError();
+		DWORD lastError = GetLastError(); //TODO:handle this correctly
 	}
 	return (result != 0);
 }

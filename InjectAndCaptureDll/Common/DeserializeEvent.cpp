@@ -1,12 +1,12 @@
 #include "..\stdafx.h"
-#include <cassert>
 #include "Event.h"
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
 #include "protobuf/cpp/Events.pb.h"
+#include <vector>
 
 
-std::unique_ptr<Event> makeEventFromProtobufInputEvent(const InputEvent& serialized_event)
+std::unique_ptr<Event> make_event_from_protobuf_input_event(const InputEvent& serialized_event)
 {
 	switch(serialized_event.Event_case())
 	{
@@ -33,29 +33,29 @@ std::unique_ptr<Event> makeEventFromProtobufInputEvent(const InputEvent& seriali
 		}		
 	default:
 		//TODO: handle error here?
-		return nullptr;
 		break;
 	}
+	return nullptr;
 }
 
 std::unique_ptr<Event> iac_dll::deserialize_event(std::vector<unsigned char> serialized_event_vec) //TODO: validations maybe? error codes?
 {
 	auto serialized_event = std::make_unique<InputEvent>();
-	serialized_event->ParseFromArray(serialized_event_vec.data(), serialized_event_vec.size());
+	serialized_event->ParseFromArray(serialized_event_vec.data(), int(serialized_event_vec.size()));
 
-	return makeEventFromProtobufInputEvent(*serialized_event);
+	return make_event_from_protobuf_input_event(*serialized_event);
 }
 
 std::vector<std::unique_ptr<Event>> iac_dll::deserialize_events(std::vector<unsigned char> serialized_events_vec)
 {
 	auto serialized_events = std::make_unique<InputEventList>();
-	serialized_events->ParseFromArray(serialized_events_vec.data(), serialized_events_vec.size());
+	serialized_events->ParseFromArray(serialized_events_vec.data(), static_cast<int>(serialized_events_vec.size()));
 	std::vector<std::unique_ptr<Event>> deserialized_events_vec;
 	deserialized_events_vec.reserve(serialized_events->inputevents_size());
 	
 	for (int i = 0; i < serialized_events->inputevents_size(); ++i)
 	{
-		deserialized_events_vec.push_back( makeEventFromProtobufInputEvent(serialized_events->inputevents(i)) );
+		deserialized_events_vec.push_back( make_event_from_protobuf_input_event(serialized_events->inputevents(i)) );
 	}
 
 	return deserialized_events_vec;

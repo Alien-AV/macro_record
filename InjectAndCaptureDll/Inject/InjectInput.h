@@ -1,7 +1,5 @@
 #pragma once
 #include <Windows.h>
-#include "../Common/KeyboardEvent.h"
-#include "../Common/MouseEvent.h"
 
 class WindowsInjectionAPI {
 public:

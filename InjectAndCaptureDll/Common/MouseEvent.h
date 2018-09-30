@@ -19,17 +19,16 @@ public:
 		static const DWORD XDown = MOUSEEVENTF_XDOWN;
 		static const DWORD XUp = MOUSEEVENTF_XUP;
 	};
+	// more flags here:
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646273(v=vs.85).aspx
+
 
 	LONG x = 0, y = 0; //TODO: change to signed int?
 	DWORD ActionType = 0;
 	DWORD wheelRotation = 0;
 	bool mappedToVirtualDesktop = false;
 	bool relative_position = false;
-
-	// more flags here:
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646273(v=vs.85).aspx
 	
-
 	INJECTANDCAPTUREDLL_API MouseEvent();
 	INJECTANDCAPTUREDLL_API MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position);
 	INJECTANDCAPTUREDLL_API ~MouseEvent();
