@@ -1,9 +1,24 @@
-# InjectAndCaptureDll
-the DLL is the C++ code which does the injecting and capturing of input
-it exposes an API which is used by the UI part, they communicate using protobuf
-# InjectAndCaptureDllTest
-unittests for the dll
-# MacroRecorderGUI
-C# WPF project, calls InjectAndCaptureDll for the actual work
-# macro_record
-c++ console executable that's using the dll
+# Requirements
+Use [vcpkg](https://github.com/Microsoft/vcpkg/) to install protobuf libraries.
+Run commands from "Quick Start" section in vcpkg readme. Then install protobuf like so:
+```
+vcpkg install protobuf:x32-windows
+vcpkg install protobuf:x64-windows
+```
+# Building
+Either open the `macro_record.sln` file in VS2017 and press Build,
+Or, in command-line, cd to the repository, and run (you'll need a [NuGet CLI](https://www.nuget.org/downloads) for this):
+```
+nuget restore
+msbuild
+```
+# Projects
+## InjectAndCaptureDll
+The DLL is the C++ code which does the injecting and capturing of input.
+It exposes an API which is used by the GUI part, they communicate using [protobuf](https://developers.google.com/protocol-buffers/).
+## InjectAndCaptureDllTest
+Unit tests for the DLL.
+## MacroRecorderGUI
+C# WPF project, calls InjectAndCaptureDll for the actual work.
+## macro_record
+C++ console executable that's using the DLL.
