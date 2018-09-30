@@ -27,15 +27,17 @@ public static partial class EventsReflection {
           "SW5wdXRFdmVudC5LZXlib2FyZEV2ZW50VHlwZUgAEjAKCm1vdXNlRXZlbnQY",
           "AyABKAsyGi5JbnB1dEV2ZW50Lk1vdXNlRXZlbnRUeXBlSAAaOgoRS2V5Ym9h",
           "cmRFdmVudFR5cGUSFgoOdmlydHVhbEtleUNvZGUYASABKA0SDQoFa2V5VXAY",
-          "AiABKAgaiwEKDk1vdXNlRXZlbnRUeXBlEgkKAXgYASABKA0SCQoBeRgCIAEo",
-          "DRISCgphY3Rpb25UeXBlGAMgASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0S",
+          "AiABKAgaiwEKDk1vdXNlRXZlbnRUeXBlEgkKAXgYASABKAUSCQoBeRgCIAEo",
+          "BRISCgphY3Rpb25UeXBlGAMgASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0S",
           "GAoQcmVsYXRpdmVQb3NpdGlvbhgFIAEoCBIeChZtYXBwZWRUb1ZpcnR1YWxE",
-          "ZXNrdG9wGAYgASgIQgcKBUV2ZW50YgZwcm90bzM="));
+          "ZXNrdG9wGAYgASgIQgcKBUV2ZW50IjIKDklucHV0RXZlbnRMaXN0EiAKC2lu",
+          "cHV0RXZlbnRzGAEgAygLMgsuSW5wdXRFdmVudGIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::InputEvent), global::InputEvent.Parser, new[]{ "TimeSinceStartOfRecording", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::InputEvent.Types.KeyboardEventType), global::InputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputEvent.Types.MouseEventType), global::InputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null)})
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputEvent.Types.MouseEventType), global::InputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null)}),
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputEventList), global::InputEventList.Parser, new[]{ "InputEvents" }, null, null, null)
         }));
   }
   #endregion
@@ -474,9 +476,9 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
 
       /// <summary>Field number for the "x" field.</summary>
       public const int XFieldNumber = 1;
-      private uint x_;
+      private int x_;
       [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-      public uint X {
+      public int X {
         get { return x_; }
         set {
           x_ = value;
@@ -485,9 +487,9 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
 
       /// <summary>Field number for the "y" field.</summary>
       public const int YFieldNumber = 2;
-      private uint y_;
+      private int y_;
       [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-      public uint Y {
+      public int Y {
         get { return y_; }
         set {
           y_ = value;
@@ -584,11 +586,11 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
       public void WriteTo(pb::CodedOutputStream output) {
         if (X != 0) {
           output.WriteRawTag(8);
-          output.WriteUInt32(X);
+          output.WriteInt32(X);
         }
         if (Y != 0) {
           output.WriteRawTag(16);
-          output.WriteUInt32(Y);
+          output.WriteInt32(Y);
         }
         if (ActionType != 0) {
           output.WriteRawTag(24);
@@ -615,10 +617,10 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
       public int CalculateSize() {
         int size = 0;
         if (X != 0) {
-          size += 1 + pb::CodedOutputStream.ComputeUInt32Size(X);
+          size += 1 + pb::CodedOutputStream.ComputeInt32Size(X);
         }
         if (Y != 0) {
-          size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Y);
+          size += 1 + pb::CodedOutputStream.ComputeInt32Size(Y);
         }
         if (ActionType != 0) {
           size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ActionType);
@@ -673,11 +675,11 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
               _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
               break;
             case 8: {
-              X = input.ReadUInt32();
+              X = input.ReadInt32();
               break;
             }
             case 16: {
-              Y = input.ReadUInt32();
+              Y = input.ReadInt32();
               break;
             }
             case 24: {
@@ -704,6 +706,127 @@ public sealed partial class InputEvent : pb::IMessage<InputEvent> {
 
   }
   #endregion
+
+}
+
+public sealed partial class InputEventList : pb::IMessage<InputEventList> {
+  private static readonly pb::MessageParser<InputEventList> _parser = new pb::MessageParser<InputEventList>(() => new InputEventList());
+  private pb::UnknownFieldSet _unknownFields;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public static pb::MessageParser<InputEventList> Parser { get { return _parser; } }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public static pbr::MessageDescriptor Descriptor {
+    get { return global::EventsReflection.Descriptor.MessageTypes[1]; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  pbr::MessageDescriptor pb::IMessage.Descriptor {
+    get { return Descriptor; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public InputEventList() {
+    OnConstruction();
+  }
+
+  partial void OnConstruction();
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public InputEventList(InputEventList other) : this() {
+    inputEvents_ = other.inputEvents_.Clone();
+    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public InputEventList Clone() {
+    return new InputEventList(this);
+  }
+
+  /// <summary>Field number for the "inputEvents" field.</summary>
+  public const int InputEventsFieldNumber = 1;
+  private static readonly pb::FieldCodec<global::InputEvent> _repeated_inputEvents_codec
+      = pb::FieldCodec.ForMessage(10, global::InputEvent.Parser);
+  private readonly pbc::RepeatedField<global::InputEvent> inputEvents_ = new pbc::RepeatedField<global::InputEvent>();
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public pbc::RepeatedField<global::InputEvent> InputEvents {
+    get { return inputEvents_; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public override bool Equals(object other) {
+    return Equals(other as InputEventList);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public bool Equals(InputEventList other) {
+    if (ReferenceEquals(other, null)) {
+      return false;
+    }
+    if (ReferenceEquals(other, this)) {
+      return true;
+    }
+    if(!inputEvents_.Equals(other.inputEvents_)) return false;
+    return Equals(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public override int GetHashCode() {
+    int hash = 1;
+    hash ^= inputEvents_.GetHashCode();
+    if (_unknownFields != null) {
+      hash ^= _unknownFields.GetHashCode();
+    }
+    return hash;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public override string ToString() {
+    return pb::JsonFormatter.ToDiagnosticString(this);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public void WriteTo(pb::CodedOutputStream output) {
+    inputEvents_.WriteTo(output, _repeated_inputEvents_codec);
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(output);
+    }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public int CalculateSize() {
+    int size = 0;
+    size += inputEvents_.CalculateSize(_repeated_inputEvents_codec);
+    if (_unknownFields != null) {
+      size += _unknownFields.CalculateSize();
+    }
+    return size;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public void MergeFrom(InputEventList other) {
+    if (other == null) {
+      return;
+    }
+    inputEvents_.Add(other.inputEvents_);
+    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  public void MergeFrom(pb::CodedInputStream input) {
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+      switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+          break;
+        case 10: {
+          inputEvents_.AddEntriesFrom(input, _repeated_inputEvents_codec);
+          break;
+        }
+      }
+    }
+  }
 
 }
 

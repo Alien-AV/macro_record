@@ -38,7 +38,7 @@ namespace protobuf_Events_2eproto {
 struct TableStruct {
   static const ::google::protobuf::internal::ParseTableField entries[];
   static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-  static const ::google::protobuf::internal::ParseTable schema[3];
+  static const ::google::protobuf::internal::ParseTable schema[4];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
   static const ::google::protobuf::internal::SerializationTable serialization_table[];
   static const ::google::protobuf::uint32 offsets[];
@@ -48,6 +48,9 @@ void AddDescriptors();
 class InputEvent;
 class InputEventDefaultTypeInternal;
 extern InputEventDefaultTypeInternal _InputEvent_default_instance_;
+class InputEventList;
+class InputEventListDefaultTypeInternal;
+extern InputEventListDefaultTypeInternal _InputEventList_default_instance_;
 class InputEvent_KeyboardEventType;
 class InputEvent_KeyboardEventTypeDefaultTypeInternal;
 extern InputEvent_KeyboardEventTypeDefaultTypeInternal _InputEvent_KeyboardEventType_default_instance_;
@@ -57,6 +60,7 @@ extern InputEvent_MouseEventTypeDefaultTypeInternal _InputEvent_MouseEventType_d
 namespace google {
 namespace protobuf {
 template<> ::InputEvent* Arena::CreateMaybeMessage<::InputEvent>(Arena*);
+template<> ::InputEventList* Arena::CreateMaybeMessage<::InputEventList>(Arena*);
 template<> ::InputEvent_KeyboardEventType* Arena::CreateMaybeMessage<::InputEvent_KeyboardEventType>(Arena*);
 template<> ::InputEvent_MouseEventType* Arena::CreateMaybeMessage<::InputEvent_MouseEventType>(Arena*);
 }  // namespace protobuf
@@ -460,6 +464,115 @@ class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   friend struct ::protobuf_Events_2eproto::TableStruct;
 };
+// -------------------------------------------------------------------
+
+class InputEventList : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:InputEventList) */ {
+ public:
+  InputEventList();
+  virtual ~InputEventList();
+
+  InputEventList(const InputEventList& from);
+
+  inline InputEventList& operator=(const InputEventList& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  InputEventList(InputEventList&& from) noexcept
+    : InputEventList() {
+    *this = ::std::move(from);
+  }
+
+  inline InputEventList& operator=(InputEventList&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const InputEventList& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const InputEventList* internal_default_instance() {
+    return reinterpret_cast<const InputEventList*>(
+               &_InputEventList_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    3;
+
+  void Swap(InputEventList* other);
+  friend void swap(InputEventList& a, InputEventList& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline InputEventList* New() const final {
+    return CreateMaybeMessage<InputEventList>(NULL);
+  }
+
+  InputEventList* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<InputEventList>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const InputEventList& from);
+  void MergeFrom(const InputEventList& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(InputEventList* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // repeated .InputEvent inputEvents = 1;
+  int inputevents_size() const;
+  void clear_inputevents();
+  static const int kInputEventsFieldNumber = 1;
+  ::InputEvent* mutable_inputevents(int index);
+  ::google::protobuf::RepeatedPtrField< ::InputEvent >*
+      mutable_inputevents();
+  const ::InputEvent& inputevents(int index) const;
+  ::InputEvent* add_inputevents();
+  const ::google::protobuf::RepeatedPtrField< ::InputEvent >&
+      inputevents() const;
+
+  // @@protoc_insertion_point(class_scope:InputEventList)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::RepeatedPtrField< ::InputEvent > inputevents_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  friend struct ::protobuf_Events_2eproto::TableStruct;
+};
 // ===================================================================
 
 
@@ -702,9 +815,45 @@ inline void InputEvent::clear_has_Event() {
 inline InputEvent::EventCase InputEvent::Event_case() const {
   return InputEvent::EventCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// InputEventList
+
+// repeated .InputEvent inputEvents = 1;
+inline int InputEventList::inputevents_size() const {
+  return inputevents_.size();
+}
+inline void InputEventList::clear_inputevents() {
+  inputevents_.Clear();
+}
+inline ::InputEvent* InputEventList::mutable_inputevents(int index) {
+  // @@protoc_insertion_point(field_mutable:InputEventList.inputEvents)
+  return inputevents_.Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField< ::InputEvent >*
+InputEventList::mutable_inputevents() {
+  // @@protoc_insertion_point(field_mutable_list:InputEventList.inputEvents)
+  return &inputevents_;
+}
+inline const ::InputEvent& InputEventList::inputevents(int index) const {
+  // @@protoc_insertion_point(field_get:InputEventList.inputEvents)
+  return inputevents_.Get(index);
+}
+inline ::InputEvent* InputEventList::add_inputevents() {
+  // @@protoc_insertion_point(field_add:InputEventList.inputEvents)
+  return inputevents_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::InputEvent >&
+InputEventList::inputevents() const {
+  // @@protoc_insertion_point(field_list:InputEventList.inputEvents)
+  return inputevents_;
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

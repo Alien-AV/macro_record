@@ -22,6 +22,7 @@ namespace MacroRecorderGUI
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_event")]
         public static extern void iac_dll_inject_event(IntPtr cppBuffer, int sizeOfCppBuffer);
 
-
+        [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_events")]
+        public static extern void iac_dll_inject_events(IntPtr cppBuffer, int sizeOfCppBuffer);
     }
 }

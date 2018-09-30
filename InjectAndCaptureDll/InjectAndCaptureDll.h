@@ -32,6 +32,7 @@ namespace iac_dll {
 	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
 	
 	INJECTANDCAPTUREDLL_API std::unique_ptr<Event> deserialize_event(std::vector<unsigned char>);
+	INJECTANDCAPTUREDLL_API std::vector<std::unique_ptr<Event>> deserialize_events(std::vector<unsigned char>);
 }
 
 extern "C" {
@@ -40,4 +41,5 @@ extern "C" {
 	INJECTANDCAPTUREDLL_API void iac_dll_start_capture(iac_dll_capture_event_cb cb);
 	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();
 	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], const size_t buf_size);
+	INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], const size_t buf_size);
 }

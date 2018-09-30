@@ -43,29 +43,22 @@ namespace MacroRecorderGUI
 
         private void InjectButton_Click(object sender, RoutedEventArgs e)
         {
-            (new Thread(() =>
+            var serializedEvents = new InputEventList();
+            
+            serializedEvents.InputEvents.AddRange(EventsObsColl);
+            
+            var serializedEventsByteArray = serializedEvents.ToByteArray();
+            var sizeOfCppBuffer = Marshal.SizeOf(serializedEventsByteArray[0]) * serializedEventsByteArray.Length;
+            var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
+            try
             {
-                ulong firstEventTime = EventsObsColl[0].TimeSinceStartOfRecording;
-                foreach (var evt in EventsObsColl)
-                {
-                    ulong timeToSleepInNanoseconds = evt.TimeSinceStartOfRecording - firstEventTime;
-                    int timeToSleepInMilliseconds = (int)(timeToSleepInNanoseconds / 1000000);
-
-                    var serializedEvent = evt.ToByteArray();
-                    var sizeOfCppBuffer = Marshal.SizeOf(serializedEvent[0]) * serializedEvent.Length;
-                    var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
-                    try
-                    {
-                        Marshal.Copy(serializedEvent, 0, cppBuffer, sizeOfCppBuffer);
-                        Thread.Sleep(timeToSleepInMilliseconds);
-                        InjectAndCaptureDll.iac_dll_inject_event(cppBuffer, sizeOfCppBuffer);
-                    }
-                    finally
-                    {
-                        Marshal.FreeHGlobal(cppBuffer);
-                    }
-                }
-            })).Start();
+                Marshal.Copy(serializedEventsByteArray, 0, cppBuffer, sizeOfCppBuffer);
+                InjectAndCaptureDll.iac_dll_inject_events(cppBuffer, sizeOfCppBuffer);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(cppBuffer);
+            }
         }
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
@@ -75,7 +68,6 @@ namespace MacroRecorderGUI
             {
                 EventsObsColl.Remove(eventToRemove);
             }
-            //EventsObsColl.Remove(EventsListBox.SelectedItem as InputEvent);
         }
 
         private void ClearList_Click(object sender, RoutedEventArgs e)

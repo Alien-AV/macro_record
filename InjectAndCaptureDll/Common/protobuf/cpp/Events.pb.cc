@@ -22,6 +22,7 @@
 namespace protobuf_Events_2eproto {
 extern PROTOBUF_INTERNAL_EXPORT_protobuf_Events_2eproto ::google::protobuf::internal::SCCInfo<0> scc_info_InputEvent_KeyboardEventType;
 extern PROTOBUF_INTERNAL_EXPORT_protobuf_Events_2eproto ::google::protobuf::internal::SCCInfo<0> scc_info_InputEvent_MouseEventType;
+extern PROTOBUF_INTERNAL_EXPORT_protobuf_Events_2eproto ::google::protobuf::internal::SCCInfo<2> scc_info_InputEvent;
 }  // namespace protobuf_Events_2eproto
 class InputEvent_KeyboardEventTypeDefaultTypeInternal {
  public:
@@ -40,6 +41,11 @@ class InputEventDefaultTypeInternal {
   const ::InputEvent_KeyboardEventType* keyboardevent_;
   const ::InputEvent_MouseEventType* mouseevent_;
 } _InputEvent_default_instance_;
+class InputEventListDefaultTypeInternal {
+ public:
+  ::google::protobuf::internal::ExplicitlyConstructed<InputEventList>
+      _instance;
+} _InputEventList_default_instance_;
 namespace protobuf_Events_2eproto {
 static void InitDefaultsInputEvent_KeyboardEventType() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -85,13 +91,29 @@ static void InitDefaultsInputEvent() {
       &protobuf_Events_2eproto::scc_info_InputEvent_KeyboardEventType.base,
       &protobuf_Events_2eproto::scc_info_InputEvent_MouseEventType.base,}};
 
+static void InitDefaultsInputEventList() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::_InputEventList_default_instance_;
+    new (ptr) ::InputEventList();
+    ::google::protobuf::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::InputEventList::InitAsDefaultInstance();
+}
+
+::google::protobuf::internal::SCCInfo<1> scc_info_InputEventList =
+    {{ATOMIC_VAR_INIT(::google::protobuf::internal::SCCInfoBase::kUninitialized), 1, InitDefaultsInputEventList}, {
+      &protobuf_Events_2eproto::scc_info_InputEvent.base,}};
+
 void InitDefaults() {
   ::google::protobuf::internal::InitSCC(&scc_info_InputEvent_KeyboardEventType.base);
   ::google::protobuf::internal::InitSCC(&scc_info_InputEvent_MouseEventType.base);
   ::google::protobuf::internal::InitSCC(&scc_info_InputEvent.base);
+  ::google::protobuf::internal::InitSCC(&scc_info_InputEventList.base);
 }
 
-::google::protobuf::Metadata file_level_metadata[3];
+::google::protobuf::Metadata file_level_metadata[4];
 
 const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
@@ -121,17 +143,25 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   offsetof(::InputEventDefaultTypeInternal, keyboardevent_),
   offsetof(::InputEventDefaultTypeInternal, mouseevent_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::InputEvent, Event_),
+  ~0u,  // no _has_bits_
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::InputEventList, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::InputEventList, inputevents_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::InputEvent_KeyboardEventType)},
   { 7, -1, sizeof(::InputEvent_MouseEventType)},
   { 18, -1, sizeof(::InputEvent)},
+  { 27, -1, sizeof(::InputEventList)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
   reinterpret_cast<const ::google::protobuf::Message*>(&::_InputEvent_KeyboardEventType_default_instance_),
   reinterpret_cast<const ::google::protobuf::Message*>(&::_InputEvent_MouseEventType_default_instance_),
   reinterpret_cast<const ::google::protobuf::Message*>(&::_InputEvent_default_instance_),
+  reinterpret_cast<const ::google::protobuf::Message*>(&::_InputEventList_default_instance_),
 };
 
 void protobuf_AssignDescriptors() {
@@ -149,7 +179,7 @@ void protobuf_AssignDescriptorsOnce() {
 void protobuf_RegisterTypes(const ::std::string&) GOOGLE_PROTOBUF_ATTRIBUTE_COLD;
 void protobuf_RegisterTypes(const ::std::string&) {
   protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::internal::RegisterAllTypes(file_level_metadata, 3);
+  ::google::protobuf::internal::RegisterAllTypes(file_level_metadata, 4);
 }
 
 void AddDescriptorsImpl() {
@@ -164,10 +194,12 @@ void AddDescriptorsImpl() {
       "EventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\022\022\n\nactio"
       "nType\030\003 \001(\r\022\025\n\rwheelRotation\030\004 \001(\r\022\030\n\020re"
       "lativePosition\030\005 \001(\010\022\036\n\026mappedToVirtualD"
-      "esktop\030\006 \001(\010B\007\n\005Eventb\006proto3"
+      "esktop\030\006 \001(\010B\007\n\005Event\"2\n\016InputEventList\022"
+      " \n\013inputEvents\030\001 \003(\0132\013.InputEventb\006proto"
+      "3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 389);
+      descriptor, 441);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "Events.proto", &protobuf_RegisterTypes);
 }
@@ -1231,6 +1263,235 @@ void InputEvent::InternalSwap(InputEvent* other) {
 }
 
 
+// ===================================================================
+
+void InputEventList::InitAsDefaultInstance() {
+}
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int InputEventList::kInputEventsFieldNumber;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
+
+InputEventList::InputEventList()
+  : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  ::google::protobuf::internal::InitSCC(
+      &protobuf_Events_2eproto::scc_info_InputEventList.base);
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:InputEventList)
+}
+InputEventList::InputEventList(const InputEventList& from)
+  : ::google::protobuf::Message(),
+      _internal_metadata_(NULL),
+      inputevents_(from.inputevents_) {
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:InputEventList)
+}
+
+void InputEventList::SharedCtor() {
+}
+
+InputEventList::~InputEventList() {
+  // @@protoc_insertion_point(destructor:InputEventList)
+  SharedDtor();
+}
+
+void InputEventList::SharedDtor() {
+}
+
+void InputEventList::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const ::google::protobuf::Descriptor* InputEventList::descriptor() {
+  ::protobuf_Events_2eproto::protobuf_AssignDescriptorsOnce();
+  return ::protobuf_Events_2eproto::file_level_metadata[kIndexInFileMessages].descriptor;
+}
+
+const InputEventList& InputEventList::default_instance() {
+  ::google::protobuf::internal::InitSCC(&protobuf_Events_2eproto::scc_info_InputEventList.base);
+  return *internal_default_instance();
+}
+
+
+void InputEventList::Clear() {
+// @@protoc_insertion_point(message_clear_start:InputEventList)
+  ::google::protobuf::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  inputevents_.Clear();
+  _internal_metadata_.Clear();
+}
+
+bool InputEventList::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
+  ::google::protobuf::uint32 tag;
+  // @@protoc_insertion_point(parse_start:InputEventList)
+  for (;;) {
+    ::std::pair<::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // repeated .InputEvent inputEvents = 1;
+      case 1: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessage(
+                input, add_inputevents()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, _internal_metadata_.mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+success:
+  // @@protoc_insertion_point(parse_success:InputEventList)
+  return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:InputEventList)
+  return false;
+#undef DO_
+}
+
+void InputEventList::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:InputEventList)
+  ::google::protobuf::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // repeated .InputEvent inputEvents = 1;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->inputevents_size()); i < n; i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1,
+      this->inputevents(static_cast<int>(i)),
+      output);
+  }
+
+  if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
+  }
+  // @@protoc_insertion_point(serialize_end:InputEventList)
+}
+
+::google::protobuf::uint8* InputEventList::InternalSerializeWithCachedSizesToArray(
+    bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
+  // @@protoc_insertion_point(serialize_to_array_start:InputEventList)
+  ::google::protobuf::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // repeated .InputEvent inputEvents = 1;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->inputevents_size()); i < n; i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      InternalWriteMessageToArray(
+        1, this->inputevents(static_cast<int>(i)), deterministic, target);
+  }
+
+  if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:InputEventList)
+  return target;
+}
+
+size_t InputEventList::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:InputEventList)
+  size_t total_size = 0;
+
+  if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
+  }
+  // repeated .InputEvent inputEvents = 1;
+  {
+    unsigned int count = static_cast<unsigned int>(this->inputevents_size());
+    total_size += 1UL * count;
+    for (unsigned int i = 0; i < count; i++) {
+      total_size +=
+        ::google::protobuf::internal::WireFormatLite::MessageSize(
+          this->inputevents(static_cast<int>(i)));
+    }
+  }
+
+  int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void InputEventList::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:InputEventList)
+  GOOGLE_DCHECK_NE(&from, this);
+  const InputEventList* source =
+      ::google::protobuf::internal::DynamicCastToGenerated<const InputEventList>(
+          &from);
+  if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:InputEventList)
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:InputEventList)
+    MergeFrom(*source);
+  }
+}
+
+void InputEventList::MergeFrom(const InputEventList& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:InputEventList)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ::google::protobuf::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  inputevents_.MergeFrom(from.inputevents_);
+}
+
+void InputEventList::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:InputEventList)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void InputEventList::CopyFrom(const InputEventList& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:InputEventList)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool InputEventList::IsInitialized() const {
+  return true;
+}
+
+void InputEventList::Swap(InputEventList* other) {
+  if (other == this) return;
+  InternalSwap(other);
+}
+void InputEventList::InternalSwap(InputEventList* other) {
+  using std::swap;
+  CastToBase(&inputevents_)->InternalSwap(CastToBase(&other->inputevents_));
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+}
+
+::google::protobuf::Metadata InputEventList::GetMetadata() const {
+  protobuf_Events_2eproto::protobuf_AssignDescriptorsOnce();
+  return ::protobuf_Events_2eproto::file_level_metadata[kIndexInFileMessages];
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {
@@ -1242,6 +1503,9 @@ template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::InputEvent_MouseEventType* Arena
 }
 template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::InputEvent* Arena::CreateMaybeMessage< ::InputEvent >(Arena* arena) {
   return Arena::CreateInternal< ::InputEvent >(arena);
+}
+template<> GOOGLE_PROTOBUF_ATTRIBUTE_NOINLINE ::InputEventList* Arena::CreateMaybeMessage< ::InputEventList >(Arena* arena) {
+  return Arena::CreateInternal< ::InputEventList >(arena);
 }
 }  // namespace protobuf
 }  // namespace google
