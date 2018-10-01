@@ -1,3 +1,4 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/dbelbyyagqukwslb?svg=true)](https://ci.appveyor.com/project/Alien-AV/macro-record)
 # Requirements
 Use [vcpkg](https://github.com/Microsoft/vcpkg/) to install protobuf libraries.
 Run commands from "Quick Start" section in vcpkg readme. Then install protobuf like so:
