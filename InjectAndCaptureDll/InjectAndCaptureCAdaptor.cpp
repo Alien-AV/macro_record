@@ -35,11 +35,11 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialize
 	auto events_vec = iac_dll::deserialize_events(serialized_events);	// I originally marked this as const, but then the lambda capture below didn't let me capture by value
 																		// (and capturing by ref would use the deallocated vector as it went out of scope in the end of this func)
 																		// consting this made it probably to ignore the std::move and try to copy the unique_ptrs in the vector
-	static auto start_time = std::chrono::high_resolution_clock::now();
 
 	//TODO: replace with something less stupid:
 	std::thread injection_list_thread{
 		[events_vec=std::move(events_vec)]{
+			const auto start_time = std::chrono::high_resolution_clock::now();
 			for (auto&& event : events_vec)
 			{
 				std::this_thread::sleep_until(start_time + event->time_since_start_of_recording);
