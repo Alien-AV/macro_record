@@ -40,6 +40,11 @@ namespace MacroRecorderGUI
 
         private void InjectButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!EventsObsColl.Any())
+            {
+                return;
+            }
+
             var serializedEvents = new InputEventList();
             
             serializedEvents.InputEvents.AddRange(EventsObsColl);
