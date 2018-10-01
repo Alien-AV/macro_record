@@ -10,6 +10,7 @@ KeyboardEvent::~KeyboardEvent() = default;
 
 void KeyboardEvent::print(std::ostream & where) const
 {
+	Event::print(where);
 	where << "virtualKeyCode: " << virtualKeyCode << ", keyUp: " << keyUp << std::endl;
 }
 
@@ -26,6 +27,6 @@ std::unique_ptr<std::vector<unsigned char>> KeyboardEvent::serialize() const
 	serialized_keyboard_event->set_keyup(keyUp);
 
 	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
-
+	
 	return input_event_to_uchar_vector(serialized_event);
 }

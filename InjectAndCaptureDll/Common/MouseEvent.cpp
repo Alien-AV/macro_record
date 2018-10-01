@@ -12,6 +12,7 @@ MouseEvent::~MouseEvent() = default;
 
 void MouseEvent::print(std::ostream & where) const
 {
+	Event::print(where);
 	where << "x: " << x << ", y: " << y << ", ActionType: " << ActionType << ", wheelRotation: " << wheelRotation << ", relative_position: " << relative_position << ", mappedToVirtualDesktop: " << mappedToVirtualDesktop << std::endl;
 }
 
