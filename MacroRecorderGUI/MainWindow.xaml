@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MacroRecorderGUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="600" Width="600">
 
     <Window.Resources>
         <RoutedUICommand x:Key="StartRecord" Text="Ctrl+Q StartRecord" />
@@ -25,11 +25,11 @@
     </Window.InputBindings>
 
     <Grid>
-        <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Command="{StaticResource StartRecord}"/>
-        <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="75" Command="{StaticResource StopRecord}"/>
-        <Button x:Name="InjectButton" Content="Inject Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="75" Click="InjectButton_Click"/>
-        <Button x:Name="RemoveEvent" Content="Remove Event" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="75" Click="RemoveEvent_Click"/>
-        <Button x:Name="ClearEventsList" Content="Clear" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Width="75" Click="ClearList_Click"/>
-        <ListBox x:Name="EventsListBox" Margin="90,10,10,10" SelectionMode="Extended"/>
+        <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StartRecord}"/>
+        <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StopRecord}"/>
+        <Button x:Name="InjectButton" Content="Play Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="100" Click="InjectButton_Click"/>
+        <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click"/>
+        <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
+        <ListBox x:Name="EventsListBox" Margin="115,10,10,10" SelectionMode="Extended"/>
     </Grid>
 </Window>
