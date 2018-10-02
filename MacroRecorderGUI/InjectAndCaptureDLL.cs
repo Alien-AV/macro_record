@@ -5,6 +5,7 @@ namespace MacroRecorderGUI
 {
     class InjectAndCaptureDll
     {
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void IacDllCaptureEventCb(IntPtr evtBufPtr, int bufSize);
 
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_init", CallingConvention = CallingConvention.Cdecl)]
