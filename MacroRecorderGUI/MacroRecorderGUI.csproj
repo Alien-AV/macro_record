@@ -128,6 +128,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Events.cs" />
+    <Compile Include="GlobalHotkeys.cs" />
     <Compile Include="InjectAndCaptureDLL.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
