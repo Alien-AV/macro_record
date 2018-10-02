@@ -3,8 +3,8 @@
 Use [vcpkg](https://github.com/Microsoft/vcpkg/) to install protobuf libraries.
 Run commands from "Quick Start" section in vcpkg readme. Then install protobuf like so:
 ```
-vcpkg install protobuf:x64-windows
-vcpkg install protobuf:x86-windows
+vcpkg install protobuf:x64-windows-static
+vcpkg install protobuf:x86-windows-static
 ```
 # Building
 Either open the `macro_record.sln` file in VS2017 and press Build,
