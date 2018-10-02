@@ -32,9 +32,7 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized
 
 INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], const size_t buf_size) {
 	const std::vector<unsigned char> serialized_events(serialized_event_buf,serialized_event_buf+buf_size); //TODO: is this safe? should -1 in the end?
-	auto events_vec = iac_dll::deserialize_events(serialized_events);	// I originally marked this as const, but then the lambda capture below didn't let me capture by value
-																		// (and capturing by ref would use the deallocated vector as it went out of scope in the end of this func)
-																		// consting this made it probably to ignore the std::move and try to copy the unique_ptrs in the vector
+	auto events_vec = iac_dll::deserialize_events(serialized_events);
 
 	//TODO: replace with something less stupid:
 	std::thread injection_list_thread{
