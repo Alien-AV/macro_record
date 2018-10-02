@@ -33,7 +33,7 @@ namespace MacroRecorderGUI
                InjectAndCaptureDll.iac_dll_start_capture(_captureEventCbDelegate);
         }
 
-        private void StopRecordButton_Click(object sender, RoutedEventArgs e)
+        private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
             InjectAndCaptureDll.iac_dll_stop_capture();
         }

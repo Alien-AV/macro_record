@@ -17,7 +17,7 @@
         <CommandBinding Command="{StaticResource StartRecord}" 
                         Executed="StartRecord_Click" />
         <CommandBinding Command="{StaticResource StopRecord}" 
-                        Executed="StopRecordButton_Click" />
+                        Executed="StopRecord_Click" />
         <CommandBinding Command="{StaticResource PlayEvents}" 
                         Executed="PlayEvents_Click" />
     </Window.CommandBindings>
