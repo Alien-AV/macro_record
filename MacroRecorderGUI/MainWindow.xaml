@@ -5,11 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MacroRecorderGUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="600">
+        Title="Macro Recorder" Height="600" Width="600">
 
     <Window.Resources>
         <RoutedUICommand x:Key="StartRecord" Text="Ctrl+Q StartRecord" />
         <RoutedUICommand x:Key="StopRecord" Text="Ctrl+W StopRecord" />
+        <RoutedUICommand x:Key="PlayEvents" Text="Ctrl+E PlayEvents" />
     </Window.Resources>
 
     <Window.CommandBindings>
@@ -17,17 +18,20 @@
                         Executed="StartRecord_Click" />
         <CommandBinding Command="{StaticResource StopRecord}" 
                         Executed="StopRecordButton_Click" />
+        <CommandBinding Command="{StaticResource PlayEvents}" 
+                        Executed="PlayEvents_Click" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{StaticResource StartRecord}" />
         <KeyBinding Key="W" Modifiers="Ctrl" Command="{StaticResource StopRecord}" />
+        <KeyBinding Key="E" Modifiers="Ctrl" Command="{StaticResource PlayEvents}" />
     </Window.InputBindings>
 
     <Grid>
         <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StartRecord}"/>
         <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StopRecord}"/>
-        <Button x:Name="InjectButton" Content="Play Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="100" Click="InjectButton_Click"/>
+        <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
         <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click"/>
         <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
         <ListBox x:Name="EventsListBox" Margin="115,10,10,10" SelectionMode="Extended"/>

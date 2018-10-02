@@ -38,7 +38,7 @@ namespace MacroRecorderGUI
             InjectAndCaptureDll.iac_dll_stop_capture();
         }
 
-        private void InjectButton_Click(object sender, RoutedEventArgs e)
+        private void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
             if (!EventsObsColl.Any())
             {
