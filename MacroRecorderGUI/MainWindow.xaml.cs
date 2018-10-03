@@ -2,7 +2,10 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Data;
+using System.Windows.Input;
 using Google.Protobuf;
 
 namespace MacroRecorderGUI
@@ -75,6 +78,28 @@ namespace MacroRecorderGUI
         private void ClearList_Click(object sender, RoutedEventArgs e)
         {
             EventsObsColl.Clear();
+        }
+
+        private void AllowOnlyNumbersInTextBox(object sender, TextCompositionEventArgs e)
+        {
+            var regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void ShortenDelays_Click(object sender, RoutedEventArgs e)
+        {
+            if (!DelayTextBox.Text.Any())
+            {
+                return;
+            }
+            var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
+            var currentTimeOffset = 0ul;
+            foreach(var inputEvent in EventsObsColl)
+            {
+                inputEvent.TimeSinceStartOfRecording = currentTimeOffset;
+                currentTimeOffset += timeIncrement;
+            }
+            CollectionViewSource.GetDefaultView(EventsObsColl).Refresh(); //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
         }
     }
 }
