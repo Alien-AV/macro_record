@@ -70,7 +70,7 @@ namespace iac_dll {
 		GetCursorPos(&initialMousePosition);
 
 		auto fakeMouseEvent = std::make_unique<MouseEvent>();
-		fakeMouseEvent->time_since_start_of_recording = std::chrono::nanoseconds(0);
+		fakeMouseEvent->time_since_start_of_recording = std::chrono::microseconds(0);
 		fakeMouseEvent->x = initialMousePosition.x;
 		fakeMouseEvent->y = initialMousePosition.y;
 		fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlags::Move;
@@ -117,7 +117,7 @@ namespace iac_dll {
 	}
 
 	void HandleKeyboardEventCapture(RAWKEYBOARD data) {
-		const auto time_since_start_of_recording = std::chrono::high_resolution_clock::now() - time_of_start_of_recording;
+		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording);
 		auto captured_kbd_event = std::make_unique<KeyboardEvent>();
 		captured_kbd_event->time_since_start_of_recording = time_since_start_of_recording;
 		captured_kbd_event->virtualKeyCode = data.VKey;
@@ -132,7 +132,7 @@ namespace iac_dll {
 	}
 
 	void HandleMouseEventCapture(RAWMOUSE data) {
-		const auto time_since_start_of_recording = std::chrono::high_resolution_clock::now() - time_of_start_of_recording;
+		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording);
 
 		auto captured_mouse_event = std::make_unique<MouseEvent>();
 		captured_mouse_event->time_since_start_of_recording = time_since_start_of_recording;
