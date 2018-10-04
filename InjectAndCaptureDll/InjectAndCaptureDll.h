@@ -19,26 +19,28 @@
 
 namespace iac_dll {
 	INJECTANDCAPTUREDLL_API void HandleMouseEventCapture(RAWMOUSE data);
-}
+} //TODO: exporting for tests - and I don't like it - isn't there other way?
 
 namespace iac_dll {
+	using error_callback_t = void(*)(const std::string& error);
+	INJECTANDCAPTUREDLL_API void init_with_error_cb(error_callback_t);
 	INJECTANDCAPTUREDLL_API void Init();
 
 	typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
-
 	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
-
 	INJECTANDCAPTUREDLL_API BOOL StopCapture();
-
+	//TODO: need to add "InjectEvent" export?
 	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
-	
 	INJECTANDCAPTUREDLL_API std::unique_ptr<Event> deserialize_event(std::vector<unsigned char>);
 	INJECTANDCAPTUREDLL_API std::vector<std::unique_ptr<Event>> deserialize_events(std::vector<unsigned char>);
 }
 
 extern "C" {
-	typedef void(*iac_dll_capture_event_cb)(const unsigned char buffer[], int buf_size);
+	using iac_dll_error_callback_t = void(*)(const char* error);
+	INJECTANDCAPTUREDLL_API void iac_dll_init_with_error_cb(iac_dll_error_callback_t);
 	INJECTANDCAPTUREDLL_API void iac_dll_init();
+	
+	typedef void(*iac_dll_capture_event_cb)(const unsigned char buffer[], int buf_size);
 	INJECTANDCAPTUREDLL_API void iac_dll_start_capture(iac_dll_capture_event_cb cb);
 	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();
 	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], size_t buf_size);

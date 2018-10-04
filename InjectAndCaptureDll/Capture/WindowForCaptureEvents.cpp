@@ -228,9 +228,9 @@ namespace iac_dll {
 	}
 
 
-	INJECTANDCAPTUREDLL_API void Init() {
+	void InitCapture() {
 		if (window_thread_id) {
-			OutputDebugString(L"Init already called");
+			OutputDebugString(L"InitCapture already called");
 			return;
 		}
 		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, LPVOID(L"Window Title"), NULL, &window_thread_id);

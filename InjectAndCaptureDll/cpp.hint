@@ -1,0 +1,1 @@
+#define INJECTANDCAPTUREDLL_API __declspec(dllexport)

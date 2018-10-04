@@ -12,9 +12,12 @@ namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
-        private readonly InjectAndCaptureDll.IacDllCaptureEventCb _captureEventCbDelegate;
+        private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
+        private readonly InjectAndCaptureDll.ErrorCallback _errorCallbackDelegate;
+
         public ObservableCollection<InputEvent> EventsObsColl = new ObservableCollection<InputEvent>();
-        private void Iac_Dll_Capture_Event_Cb(IntPtr evtBufPtr, int bufSize)
+
+        private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
             var evtBuf = new byte[bufSize];
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
@@ -23,22 +26,28 @@ namespace MacroRecorderGUI
             Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
         }
 
+        private void ErrorCb(string error)
+        {
+            MessageBox.Show(error);
+        }
+
         public MainWindow()
         {
             InitializeComponent();
-            InjectAndCaptureDll.iac_dll_init();
+            _errorCallbackDelegate = ErrorCb;
+            _captureEventCallbackDelegate = CaptureEventCb;
             EventsListBox.ItemsSource = EventsObsColl;
-            _captureEventCbDelegate = Iac_Dll_Capture_Event_Cb;
+            InjectAndCaptureDll.InitWithErrorCb(_errorCallbackDelegate);
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
-               InjectAndCaptureDll.iac_dll_start_capture(_captureEventCbDelegate);
+               InjectAndCaptureDll.StartCapture(_captureEventCallbackDelegate);
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDll.iac_dll_stop_capture();
+            InjectAndCaptureDll.StopCapture();
         }
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)
@@ -58,7 +67,7 @@ namespace MacroRecorderGUI
             try
             {
                 Marshal.Copy(serializedEventsByteArray, 0, cppBuffer, sizeOfCppBuffer);
-                InjectAndCaptureDll.iac_dll_inject_events(cppBuffer, sizeOfCppBuffer);
+                InjectAndCaptureDll.InjectEvents(cppBuffer, sizeOfCppBuffer);
             }
             finally
             {
