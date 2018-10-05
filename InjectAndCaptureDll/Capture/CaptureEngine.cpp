@@ -7,122 +7,133 @@
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
-
-#define WM_STARTCAPTURE (WM_USER)
-#define WM_STOPCAPTURE (WM_USER + 1)
+#include "CaptureEngine.h"
 
 namespace iac_dll {
-
-	class CaptureEngine
+	bool CaptureEngine::register_raw_input_stuff(HWND hwnd)
 	{
-	private:
-		const static UINT WM_STARTCAPTURE2 = WM_USER;
-		const static UINT WM_STOPCAPTURE2 = WM_USER + 1;
+		RAWINPUTDEVICE rid[2];
 
-		capture_events_callback_t capture_events_callback_ = nullptr;
-		error_callback_t error_callback_ = nullptr;
+		rid[0].usUsagePage = 0x01;
+		rid[0].usUsage = 0x02;
+		rid[0].dwFlags = RIDEV_INPUTSINK;
+		rid[0].hwndTarget = hwnd;
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_;
+		rid[1].usUsagePage = 0x01;
+		rid[1].usUsage = 0x06;
+		rid[1].dwFlags = RIDEV_INPUTSINK;
+		rid[1].hwndTarget = hwnd;
 
-		DWORD window_thread_id_ = NULL;
+		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
+	}
 
-		bool register_raw_input_stuff(HWND hwnd);
-		bool unregister_raw_input_stuff();
-		LRESULT CALLBACK capture_window_wnd_proc(HWND, UINT, WPARAM, LPARAM);
-		DWORD WINAPI capture_window_main_loop_thread(LPVOID lpParam);
+	bool CaptureEngine::unregister_raw_input_stuff()
+	{
+		RAWINPUTDEVICE rid[2];
 
-		void handle_keyboard_event_capture(RAWKEYBOARD data);
-		void handle_mouse_event_capture(RAWMOUSE data);
-		void fake_mouse_event_for_initial_pos();
-	public:
-		CaptureEngine(capture_events_callback_t capture_events_callback, error_callback_t error_callback);
-		~CaptureEngine();
-		CaptureEngine(CaptureEngine&& other) noexcept;
-		CaptureEngine(CaptureEngine& other) = delete;
-		CaptureEngine& operator=(CaptureEngine&& other) noexcept;
-		CaptureEngine& operator=(const CaptureEngine& other) = delete;
-		INJECTANDCAPTUREDLL_API BOOL start_capture();
-		INJECTANDCAPTUREDLL_API BOOL stop_capture();
-	};
+		rid[0].usUsagePage = 0x01;
+		rid[0].usUsage = 0x02;
+		rid[0].dwFlags = RIDEV_REMOVE;
+		rid[0].hwndTarget = nullptr;
 
-	capture_events_callback_t capture_events_callback = nullptr;
-	std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording;
+		rid[1].usUsagePage = 0x01;
+		rid[1].usUsage = 0x06;
+		rid[1].dwFlags = RIDEV_REMOVE;
+		rid[1].hwndTarget = nullptr;
 
-	DWORD window_thread_id = NULL;
+		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
+	}
 
-
-	bool RegisterRawInputStuff(HWND hwnd) {
-		RAWINPUTDEVICE Rid[2];
-
-		Rid[0].usUsagePage = 0x01;
-		Rid[0].usUsage = 0x02;
-		Rid[0].dwFlags = RIDEV_INPUTSINK; // | RIDEV_NOLEGACY;
-		Rid[0].hwndTarget = hwnd;
-
-		Rid[1].usUsagePage = 0x01;
-		Rid[1].usUsage = 0x06;
-		Rid[1].dwFlags = RIDEV_INPUTSINK; // | RIDEV_NOLEGACY;
-		Rid[1].hwndTarget = hwnd;
-
-		OutputDebugString(TEXT("Registering RawInput Device\n"));
-
-		if (RegisterRawInputDevices(Rid, 2, sizeof(Rid[0])) == FALSE) {
-			OutputDebugString(TEXT("Registering RawInput Device failed\n"));
-			return false;
+	bool CaptureEngine::save_engine_ptr_to_window(const HWND &hwnd, const LPARAM &createstruct_l_param)
+	{
+		auto engine_object_ptr = (reinterpret_cast<CREATESTRUCT*>(createstruct_l_param)->lpCreateParams);
+		SetLastError(0);
+		if (!SetWindowLongPtr(hwnd, GWLP_USERDATA, LONG_PTR(engine_object_ptr)))
+		{
+			if (GetLastError() != 0)
+			{
+				return false;
+			}
 		}
 		return true;
 	}
 
-	bool UnregisterRawInputStuff() {
-		RAWINPUTDEVICE Rid[2];
-
-		Rid[0].usUsagePage = 0x01;
-		Rid[0].usUsage = 0x02;
-		Rid[0].dwFlags = RIDEV_REMOVE;
-		Rid[0].hwndTarget = nullptr;
-
-		Rid[1].usUsagePage = 0x01;
-		Rid[1].usUsage = 0x06;
-		Rid[1].dwFlags = RIDEV_REMOVE;
-		Rid[1].hwndTarget = nullptr;
-
-		OutputDebugString(TEXT("Unregistering RawInput Device\n"));
-
-		if (RegisterRawInputDevices(Rid, 2, sizeof(Rid[0])) == FALSE) {
-			OutputDebugString(TEXT("Unregistering RawInput Device failed\n"));
+	bool CaptureEngine::get_engine_ptr_from_window(const HWND &hwnd, iac_dll::CaptureEngine** capture_engine_p)
+	{
+		SetLastError(0);
+		const auto stored_ptr = GetWindowLongPtr(hwnd, GWLP_USERDATA);
+		if(stored_ptr == 0 && GetLastError() != 0)
+		{
 			return false;
 		}
+		*capture_engine_p = reinterpret_cast<CaptureEngine*>(stored_ptr);
 		return true;
 	}
 
-	LRESULT CALLBACK CaptureWindowWndProc(HWND, UINT, WPARAM, LPARAM); //WndProc for the new window
+	LRESULT CaptureEngine::capture_window_wnd_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+	{
+		switch (message)
+		{
+		case WM_CREATE:
+			if(!save_engine_ptr_to_window(hwnd, lParam)) //TODO: instead split to "get engine" and "save to window" (for sake of error reporting)
+			{
+				//TODO: report error and exit
+				PostQuitMessage(0);
+			}
+			break;
+		case WM_INPUT:
+		{
+			CaptureEngine* engine_object;
+			if(!get_engine_ptr_from_window(hwnd, &engine_object))
+			{
+				//TODO: report error and exit
+				PostQuitMessage(0);
+			}
+			
+			UINT dwSize;
+			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+			const auto lpb = std::make_unique<BYTE[]>(dwSize);
 
-	void fakeMouseEventForInitialPos() {
-		POINT initialMousePosition;
-		GetCursorPos(&initialMousePosition);
+			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize){
+				//TODO: report error and exit
+				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
+			}
 
-		auto fakeMouseEvent = std::make_unique<MouseEvent>();
-		fakeMouseEvent->time_since_start_of_recording = std::chrono::microseconds(0);
-		fakeMouseEvent->x = initialMousePosition.x;
-		fakeMouseEvent->y = initialMousePosition.y;
-		fakeMouseEvent->ActionType = MouseEvent::ActionTypeFlags::Move;
-		capture_events_callback(std::move(fakeMouseEvent));
+			const auto raw_input = reinterpret_cast<RAWINPUT*>(lpb.get());
+
+			if (raw_input->header.dwType == RIM_TYPEKEYBOARD)
+			{
+				engine_object->handle_keyboard_event_capture(raw_input->data.keyboard);
+			}
+			else if (raw_input->header.dwType == RIM_TYPEMOUSE)
+			{
+				engine_object->handle_mouse_event_capture(raw_input->data.mouse);
+			}
+			break;
+		}
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			break;
+		default:
+			return DefWindowProc(hwnd, message, wParam, lParam);
+		}
+		return 0;
 	}
 
-	DWORD WINAPI CaptureWindowMainLoopThread(LPVOID lpParam)
+	DWORD CaptureEngine::capture_window_main_loop_thread(LPVOID engine_object_void_p)
 	{
 		MSG messages;
-
 		HWND hwnd = nullptr;
+		auto engine_object = static_cast<CaptureEngine*>(engine_object_void_p);
 
-		const LPCWSTR class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
+		const auto class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
 		WNDCLASSEX wx = {};
 		wx.cbSize = sizeof(WNDCLASSEX);
-		wx.lpfnWndProc = CaptureWindowWndProc;
+		wx.lpfnWndProc = capture_window_wnd_proc;
 		wx.lpszClassName = class_name;
 
 		if (RegisterClassEx(&wx)) {
-			hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, nullptr);
+			hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, engine_object);
 			if (!hwnd) {
 				return 1;
 			}
@@ -132,13 +143,19 @@ namespace iac_dll {
 		{
 			switch (messages.message) {
 			case WM_STARTCAPTURE:
-				time_of_start_of_recording = std::chrono::high_resolution_clock::now();
-				fakeMouseEventForInitialPos();
+				engine_object->time_of_start_of_recording_ = std::chrono::high_resolution_clock::now();
+				engine_object->fake_mouse_event_for_initial_pos();
 
-				RegisterRawInputStuff(hwnd);
+				if(!engine_object->register_raw_input_stuff(hwnd))
+				{
+					//TODO: report error and exit
+				}
 				break;
 			case WM_STOPCAPTURE:
-				UnregisterRawInputStuff();
+				if(!engine_object->unregister_raw_input_stuff())
+				{
+					//TODO: report error and exit
+				}
 				break;
 			default:
 				TranslateMessage(&messages);
@@ -148,8 +165,9 @@ namespace iac_dll {
 		return 1;
 	}
 
-	void HandleKeyboardEventCapture(RAWKEYBOARD data) {
-		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording);
+	void CaptureEngine::handle_keyboard_event_capture(const RAWKEYBOARD data) const
+	{
+		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
 		auto captured_kbd_event = std::make_unique<KeyboardEvent>();
 		captured_kbd_event->time_since_start_of_recording = time_since_start_of_recording;
 		captured_kbd_event->virtualKeyCode = data.VKey;
@@ -160,11 +178,12 @@ namespace iac_dll {
 			captured_kbd_event->keyUp = false;
 		}
 
-		capture_events_callback(std::move(captured_kbd_event));
+		capture_events_callback_(std::move(captured_kbd_event)); //TODO: add layer of abstraction here - will need to queue events before calling the cb
 	}
 
-	void HandleMouseEventCapture(RAWMOUSE data) {
-		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording);
+	void CaptureEngine::handle_mouse_event_capture(RAWMOUSE data) const
+	{
+		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
 
 		auto captured_mouse_event = std::make_unique<MouseEvent>();
 		captured_mouse_event->time_since_start_of_recording = time_since_start_of_recording;
@@ -214,72 +233,53 @@ namespace iac_dll {
 
 		//TODO: x2 button
 
-		capture_events_callback(std::move(captured_mouse_event));
+		capture_events_callback_(std::move(captured_mouse_event));
 	}
 
-	LRESULT CALLBACK CaptureWindowWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+	void CaptureEngine::fake_mouse_event_for_initial_pos() const
 	{
-		switch (message)
+		POINT initial_mouse_position;
+		GetCursorPos(&initial_mouse_position);
+
+		auto fake_mouse_event = std::make_unique<MouseEvent>();
+		fake_mouse_event->time_since_start_of_recording = std::chrono::microseconds(0);
+		fake_mouse_event->x = initial_mouse_position.x;
+		fake_mouse_event->y = initial_mouse_position.y;
+		fake_mouse_event->ActionType = MouseEvent::ActionTypeFlags::Move;
+		capture_events_callback_(std::move(fake_mouse_event));
+	}
+
+	CaptureEngine::CaptureEngine(capture_events_callback_t capture_events_cb, error_callback_t error_cb) :
+								capture_events_callback_(capture_events_cb), error_callback_(error_cb)
+	{
+		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, &window_thread_id_);
+		//TODO: wait for a notification from the capture window that the init (thread creation, window creation) is finished
+	}
+
+	CaptureEngine::~CaptureEngine()
+	{
+		if(window_thread_id_ != 0)
 		{
-		case WM_INPUT:
+			stop_capture();
+			PostThreadMessage(window_thread_id_, WM_CLOSE, NULL, NULL);
+			//TODO: verify that this indeed closes the bg window
+			//TODO: wait here until the window is really closed?
+		}
+	}
+
+	void CaptureEngine::start_capture() const
+	{
+		if(PostThreadMessage(window_thread_id_, WM_STARTCAPTURE, NULL, NULL) == FALSE)
 		{
-			UINT dwSize;
-			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dwSize,
-				sizeof(RAWINPUTHEADER));
-			const auto lpb = new BYTE[dwSize];
-			if (lpb == nullptr)
-			{
-				return 0;
-			}
-
-			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize){
-				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
-			}
-
-			const auto raw = reinterpret_cast<RAWINPUT*>(lpb);
-
-			if (raw->header.dwType == RIM_TYPEKEYBOARD)
-			{
-				HandleKeyboardEventCapture(raw->data.keyboard);
-			}
-			else if (raw->header.dwType == RIM_TYPEMOUSE)
-			{
-				HandleMouseEventCapture(raw->data.mouse);
-			}
-
-			delete[] lpb;
-			return 0;
+			//TODO: report error and exit
 		}
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			break;
-		default:
-			return DefWindowProc(hwnd, message, wParam, lParam);
-		}
-		return 0;
 	}
 
-
-	void InitCapture() 
+	void CaptureEngine::stop_capture() const
 	{
-		if (window_thread_id) {
-			OutputDebugString(L"InitCapture already called");
-			return;
+		if(PostThreadMessage(window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
+		{
+			//TODO: report error and exit
 		}
-		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, LPVOID(L"Window Title"), NULL, &window_thread_id);
-	}
-
-	void fini_capture()
-	{
-		
-	}
-
-	INJECTANDCAPTUREDLL_API BOOL StartCapture(capture_events_callback_t newCaptureEventsCallback) {
-		capture_events_callback = newCaptureEventsCallback;
-		return PostThreadMessage(window_thread_id, WM_STARTCAPTURE, NULL, NULL);
-	}
-
-	INJECTANDCAPTUREDLL_API BOOL StopCapture() {
-		return PostThreadMessage(window_thread_id, WM_STOPCAPTURE, NULL, NULL);
 	}
 }

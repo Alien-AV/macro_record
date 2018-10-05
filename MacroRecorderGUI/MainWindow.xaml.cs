@@ -37,12 +37,12 @@ namespace MacroRecorderGUI
             _errorCallbackDelegate = ErrorCb;
             _captureEventCallbackDelegate = CaptureEventCb;
             EventsListBox.ItemsSource = EventsObsColl;
-            InjectAndCaptureDll.InitWithErrorCb(_errorCallbackDelegate);
+            InjectAndCaptureDll.Init(_captureEventCallbackDelegate,_errorCallbackDelegate);
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
-               InjectAndCaptureDll.StartCapture(_captureEventCallbackDelegate);
+               InjectAndCaptureDll.StartCapture();
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)

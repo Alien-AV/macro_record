@@ -1,24 +1,15 @@
 #include "InjectAndCaptureDll.h"
 #include <thread>
+#include "Capture/CaptureEngine.h"
 
-iac_dll_error_callback_t c_callback_for_error_reporting = nullptr;
+iac_dll_error_cb_t c_callback_for_error_reporting = nullptr;
+iac_dll_capture_event_cb_t c_callback_for_event_capture_reporting = nullptr;
+std::unique_ptr<iac_dll::CaptureEngine> capture_engine_singleton;
+
 void convert_cpp_error_to_c_error_and_call_callback(const std::string& error_string)
 {
 	c_callback_for_error_reporting(error_string.c_str());
 }
-
-INJECTANDCAPTUREDLL_API void iac_dll_init_with_error_cb(const iac_dll_error_callback_t error_cb)
-{
-	c_callback_for_error_reporting = error_cb;
-	iac_dll::init_with_error_cb(convert_cpp_error_to_c_error_and_call_callback);
-}
-
-INJECTANDCAPTUREDLL_API void iac_dll_init() {
-	iac_dll::Init();
-}
-
-iac_dll_capture_event_cb c_callback_for_event_capture_reporting = nullptr;
-
 void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event) {
 	auto serialized_event_vec = event->serialize();
 	const auto buf_size = serialized_event_vec->size();
@@ -27,13 +18,19 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	c_callback_for_event_capture_reporting(serialized_event_buf, buf_size);
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_start_capture(const iac_dll_capture_event_cb event_capture_cb) {
+INJECTANDCAPTUREDLL_API void iac_dll_init(const iac_dll_capture_event_cb_t event_capture_cb, const iac_dll_error_cb_t error_cb)
+{
 	c_callback_for_event_capture_reporting = event_capture_cb;
-	iac_dll::StartCapture(convert_cpp_event_to_c_and_call_callback);
+	c_callback_for_error_reporting = error_cb;
+	capture_engine_singleton = std::make_unique<iac_dll::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_error_to_c_error_and_call_callback);
+}
+
+INJECTANDCAPTUREDLL_API void iac_dll_start_capture() {
+	capture_engine_singleton->start_capture();
 }
 
 INJECTANDCAPTUREDLL_API void iac_dll_stop_capture() {
-	iac_dll::StopCapture();
+	capture_engine_singleton->stop_capture();
 }
 
 INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], const size_t buf_size) {

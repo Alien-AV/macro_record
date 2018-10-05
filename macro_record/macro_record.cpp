@@ -15,19 +15,23 @@ const auto time_to_sleep_after_capture = std::chrono::seconds(1);
 
 const auto time_between_events = std::chrono::milliseconds(20);
 
-void c_style_cb(const unsigned char buffer[], int buf_size) {
+void c_style_event_cb(const unsigned char buffer[], int buf_size) {
 	const std::vector<unsigned char> serialized_event_vec(buffer, buffer+buf_size);
 	serialized_events.push_back(serialized_event_vec);
+}
+void c_style_error_cb(const char* error)
+{
+	std::cout << "got error:" << error << std::endl;
 }
 
 int main()
 {
 	std::cout << "started" << std::endl;
-	iac_dll_init();
+	iac_dll_init(c_style_event_cb, c_style_error_cb);
 	std::cout << "initialized. press a key to start capturing" << std::endl;
 	_getch();
 
-	iac_dll_start_capture(c_style_cb);
+	iac_dll_start_capture();
 	std::cout << "started capture" << std::endl;
 	std::this_thread::sleep_for(time_to_capture);
 	iac_dll_stop_capture();
