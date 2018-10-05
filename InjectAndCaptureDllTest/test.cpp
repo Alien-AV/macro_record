@@ -4,7 +4,7 @@
 #include "../InjectAndCaptureDll/Common/MouseEvent.h"
 
 TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
-	const iac_dll::CaptureEventsCallback cb = [](std::unique_ptr<Event> ev)
+	const iac_dll::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
 	{
 		static u_int test_no = 0;
 		std::cout << "test_no:" << test_no << std::endl;
@@ -48,7 +48,7 @@ TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
 }
 
 TEST(CaptureMouseEvents, ShouldCaptureAbsoluteMouseMovement) {
-	const iac_dll::CaptureEventsCallback cb = [](std::unique_ptr<Event> ev)
+	const iac_dll::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
 	{
 		static u_int test_no = 0;
 		std::cout << "test_no:" << test_no << std::endl;

@@ -1,5 +1,6 @@
 #include "Event.h"
 #include <vector>
+#include "../InjectAndCaptureDll.h"
 
 Event::Event() = default;
 Event::~Event() = default;
@@ -21,7 +22,9 @@ std::unique_ptr<std::vector<unsigned char>> Event::input_event_to_uchar_vector(c
 	return serialized_buf;
 }
 
-__declspec(dllexport) std::ostream &operator<<(std::ostream &outstream, Event const &event) {
-	event.print(outstream);
-	return outstream;
+namespace iac_dll{
+	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event) {
+		event.print(outstream);
+		return outstream;
+	}
 }

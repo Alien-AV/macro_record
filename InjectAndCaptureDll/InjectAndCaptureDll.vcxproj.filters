@@ -39,15 +39,12 @@
     <ClInclude Include="Common\protobuf\cpp\Events.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Capture\WindowForCaptureEvents.h">
+    <ClInclude Include="Capture\CaptureEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Capture\WindowForCaptureEvents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Inject\InjectInput.cpp">
@@ -72,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InjectAndCaptureDll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Capture\CaptureEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

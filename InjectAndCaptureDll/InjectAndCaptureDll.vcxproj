@@ -165,7 +165,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Capture\WindowForCaptureEvents.h" />
+    <ClInclude Include="Capture\CaptureEngine.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
     <ClInclude Include="Common\MouseEvent.h" />
@@ -176,7 +176,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Capture\WindowForCaptureEvents.cpp" />
+    <ClCompile Include="Capture\CaptureEngine.cpp" />
     <ClCompile Include="Common\DeserializeEvent.cpp" />
     <ClCompile Include="Common\Event.cpp" />
     <ClCompile Include="Common\KeyboardEvent.cpp" />
