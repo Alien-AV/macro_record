@@ -26,8 +26,8 @@ namespace iac_dll {
 	INJECTANDCAPTUREDLL_API void init_with_error_cb(error_callback_t);
 	INJECTANDCAPTUREDLL_API void Init();
 
-	typedef void(*CaptureEventsCallback)(std::unique_ptr<Event>);
-	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback);
+	typedef void(*capture_events_callback_t)(std::unique_ptr<Event>);
+	INJECTANDCAPTUREDLL_API BOOL StartCapture(capture_events_callback_t);
 	INJECTANDCAPTUREDLL_API BOOL StopCapture();
 	//TODO: need to add "InjectEvent" export?
 	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);

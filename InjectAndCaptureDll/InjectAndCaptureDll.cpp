@@ -1,7 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
 #include "InjectAndCaptureDll.h"
-#include "Capture/WindowForCaptureEvents.h"
+#include "Capture/CaptureEngine.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,

@@ -8,12 +8,44 @@
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 
-#define WM_STARTCAPTURE (WM_USER+1)
-#define WM_STOPCAPTURE (WM_USER+2)
+#define WM_STARTCAPTURE (WM_USER)
+#define WM_STOPCAPTURE (WM_USER + 1)
 
 namespace iac_dll {
 
-	CaptureEventsCallback capture_events_callback = nullptr;
+	class CaptureEngine
+	{
+	private:
+		const static UINT WM_STARTCAPTURE2 = WM_USER;
+		const static UINT WM_STOPCAPTURE2 = WM_USER + 1;
+
+		capture_events_callback_t capture_events_callback_ = nullptr;
+		error_callback_t error_callback_ = nullptr;
+
+		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_;
+
+		DWORD window_thread_id_ = NULL;
+
+		bool register_raw_input_stuff(HWND hwnd);
+		bool unregister_raw_input_stuff();
+		LRESULT CALLBACK capture_window_wnd_proc(HWND, UINT, WPARAM, LPARAM);
+		DWORD WINAPI capture_window_main_loop_thread(LPVOID lpParam);
+
+		void handle_keyboard_event_capture(RAWKEYBOARD data);
+		void handle_mouse_event_capture(RAWMOUSE data);
+		void fake_mouse_event_for_initial_pos();
+	public:
+		CaptureEngine(capture_events_callback_t capture_events_callback, error_callback_t error_callback);
+		~CaptureEngine();
+		CaptureEngine(CaptureEngine&& other) noexcept;
+		CaptureEngine(CaptureEngine& other) = delete;
+		CaptureEngine& operator=(CaptureEngine&& other) noexcept;
+		CaptureEngine& operator=(const CaptureEngine& other) = delete;
+		INJECTANDCAPTUREDLL_API BOOL start_capture();
+		INJECTANDCAPTUREDLL_API BOOL stop_capture();
+	};
+
+	capture_events_callback_t capture_events_callback = nullptr;
 	std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording;
 
 	DWORD window_thread_id = NULL;
@@ -200,9 +232,9 @@ namespace iac_dll {
 				return 0;
 			}
 
-			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb, &dwSize,
-				sizeof(RAWINPUTHEADER)) != dwSize)
+			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize){
 				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
+			}
 
 			const auto raw = reinterpret_cast<RAWINPUT*>(lpb);
 
@@ -228,7 +260,8 @@ namespace iac_dll {
 	}
 
 
-	void InitCapture() {
+	void InitCapture() 
+	{
 		if (window_thread_id) {
 			OutputDebugString(L"InitCapture already called");
 			return;
@@ -236,7 +269,12 @@ namespace iac_dll {
 		CreateThread(nullptr, NULL, CaptureWindowMainLoopThread, LPVOID(L"Window Title"), NULL, &window_thread_id);
 	}
 
-	INJECTANDCAPTUREDLL_API BOOL StartCapture(CaptureEventsCallback newCaptureEventsCallback) {
+	void fini_capture()
+	{
+		
+	}
+
+	INJECTANDCAPTUREDLL_API BOOL StartCapture(capture_events_callback_t newCaptureEventsCallback) {
 		capture_events_callback = newCaptureEventsCallback;
 		return PostThreadMessage(window_thread_id, WM_STARTCAPTURE, NULL, NULL);
 	}
@@ -244,5 +282,4 @@ namespace iac_dll {
 	INJECTANDCAPTUREDLL_API BOOL StopCapture() {
 		return PostThreadMessage(window_thread_id, WM_STOPCAPTURE, NULL, NULL);
 	}
-
 }
