@@ -110,5 +110,13 @@ namespace MacroRecorderGUI
             }
             CollectionViewSource.GetDefaultView(EventsObsColl).Refresh(); //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
         }
+
+        private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete)
+            {
+                RemoveEvent_Click(sender, e);
+            }
+        }
     }
 }

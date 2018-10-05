@@ -32,11 +32,12 @@
         <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StartRecord}"/>
         <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StopRecord}"/>
         <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
-        <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click"/>
+        <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
         <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
         <Button x:Name="ShortenDelays" Content="Change Delays" HorizontalAlignment="Left" Margin="10,135,0,0" VerticalAlignment="Top" Width="100" Click="ShortenDelays_Click"/>
 
-        <ListBox x:Name="EventsListBox" Margin="115,10,10,10" SelectionMode="Extended"/>
+        <ListBox x:Name="EventsListBox" Margin="115,10,10,10" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
+        
         <TextBox x:Name="DelayTextBox" PreviewTextInput="AllowOnlyNumbersInTextBox" HorizontalAlignment="Left" Height="23" Margin="10,160,0,0" TextWrapping="Wrap" Text="5000" VerticalAlignment="Top" Width="78"/>
         <TextBlock x:Name="MicroSecondsTextBlock" HorizontalAlignment="Left" Margin="93,161,0,0" TextWrapping="Wrap" Text="μs" VerticalAlignment="Top" Width="17" RenderTransformOrigin="-0.118,5.514"/>
     </Grid>
