@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -57,11 +58,7 @@ namespace MacroRecorderGUI
                 return;
             }
 
-            var serializedEvents = new InputEventList();
-            
-            serializedEvents.InputEvents.AddRange(EventsObsColl);
-            
-            var serializedEventsByteArray = serializedEvents.ToByteArray();
+            var serializedEventsByteArray = SerializeEventsToByteArray(EventsObsColl);
             var sizeOfCppBuffer = Marshal.SizeOf(serializedEventsByteArray[0]) * serializedEventsByteArray.Length;
             var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
             try
@@ -95,7 +92,7 @@ namespace MacroRecorderGUI
             e.Handled = regex.IsMatch(e.Text);
         }
 
-        private void ShortenDelays_Click(object sender, RoutedEventArgs e)
+        private void ChangeDelays_Click(object sender, RoutedEventArgs e)
         {
             if (!DelayTextBox.Text.Any())
             {
@@ -117,6 +114,43 @@ namespace MacroRecorderGUI
             {
                 RemoveEvent_Click(sender, e);
             }
+        }
+
+        private void SaveEvents_Click(object sender, RoutedEventArgs e)
+        {
+            FileOperations.SaveEventsToFile(EventsObsColl);
+        }
+
+        private void LoadEvents_Click(object sender, RoutedEventArgs e)
+        {
+            var deserializedEvents = FileOperations.LoadEventsFromFile();
+            if (deserializedEvents != null)
+            {
+                PopulateEventCollectionWithNewEvents(deserializedEvents);
+            }
+        }
+
+        private void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
+        {
+            EventsObsColl.Clear();
+            foreach (var deserializedEvent in deserializedEvents)
+            {
+                EventsObsColl.Add(deserializedEvent);
+            }
+        }
+
+        internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
+        {
+            var serializedEvents = new InputEventList();
+            serializedEvents.InputEvents.AddRange(inputEventList);
+            var serializedEventsByteArray = serializedEvents.ToByteArray();
+            return serializedEventsByteArray;
+        }
+
+        internal static IEnumerable<InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
+        {
+            var deserializedEvents = InputEventList.Parser.ParseFrom(serializedEvents);
+            return deserializedEvents.InputEvents;
         }
     }
 }
