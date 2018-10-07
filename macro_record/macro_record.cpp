@@ -8,17 +8,18 @@
 #include <vector>
 #include <iostream>
 
-std::list<std::vector<unsigned char>> serialized_events;
+using buffer_t = std::vector<unsigned char>;
+std::list<buffer_t> serialized_events;
 
 const auto time_to_capture = std::chrono::seconds(5);
 const auto time_to_sleep_after_capture = std::chrono::seconds(1);
 
 const auto time_between_events = std::chrono::milliseconds(20);
 
-void c_style_event_cb(const unsigned char buffer[], int buf_size) {
-	const std::vector<unsigned char> serialized_event_vec(buffer, buffer+buf_size);
-	serialized_events.push_back(serialized_event_vec);
+void c_style_event_cb(const unsigned char buffer[], const int buf_size) {
+	serialized_events.emplace_back(buffer, buffer+buf_size);
 }
+
 void c_style_error_cb(const char* error)
 {
 	std::cout << "got error:" << error << std::endl;
