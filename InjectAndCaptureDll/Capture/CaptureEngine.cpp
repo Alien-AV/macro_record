@@ -120,6 +120,16 @@ namespace iac_dll {
 		return 0;
 	}
 
+	bool CaptureEngine::register_window_class_if_needed(const wchar_t* const class_name)
+	{
+		WNDCLASSEX wx = {};
+		wx.cbSize = sizeof(WNDCLASSEX);
+		wx.lpfnWndProc = capture_window_wnd_proc;
+		wx.lpszClassName = class_name;
+
+		return RegisterClassEx(&wx) || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
+	}
+
 	DWORD CaptureEngine::capture_window_main_loop_thread(LPVOID engine_object_void_p)
 	{
 		MSG messages;
@@ -127,16 +137,15 @@ namespace iac_dll {
 		auto engine_object = static_cast<CaptureEngine*>(engine_object_void_p);
 
 		const auto class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
-		WNDCLASSEX wx = {};
-		wx.cbSize = sizeof(WNDCLASSEX);
-		wx.lpfnWndProc = capture_window_wnd_proc;
-		wx.lpszClassName = class_name;
-
-		if (RegisterClassEx(&wx)) {
-			hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, engine_object);
-			if (!hwnd) {
-				return 1;
-			}
+		if(!register_window_class_if_needed(class_name))
+		{
+			//TODO: report error and exit
+			return 1;
+		}
+		hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, engine_object);
+		if (!hwnd) {
+			//TODO: report error and exit
+			return 1;
 		}
 
 		while (GetMessage(&messages, nullptr, 0, 0))
@@ -252,24 +261,28 @@ namespace iac_dll {
 	CaptureEngine::CaptureEngine(capture_events_callback_t capture_events_cb, error_callback_t error_cb) :
 								capture_events_callback_(capture_events_cb), error_callback_(error_cb)
 	{
-		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, &window_thread_id_);
+		window_thread_id_ = std::make_unique<DWORD>(0);
+		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, window_thread_id_.get());
 		//TODO: wait for a notification from the capture window that the init (thread creation, window creation) is finished
 	}
 
 	CaptureEngine::~CaptureEngine()
 	{
-		if(window_thread_id_ != 0)
+		if(!window_thread_id_)
 		{
-			stop_capture();
-			PostThreadMessage(window_thread_id_, WM_CLOSE, NULL, NULL);
-			//TODO: verify that this indeed closes the bg window
-			//TODO: wait here until the window is really closed?
+			return;
 		}
+
+		stop_capture();
+		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);
+		//TODO: verify that this indeed closes the bg window
+		//TODO: wait here until the window is really closed?
+		//TODO: unregister window class? (MSDN: No window classes registered by a DLL are unregistered when the DLL is unloaded)
 	}
 
 	void CaptureEngine::start_capture() const
 	{
-		if(PostThreadMessage(window_thread_id_, WM_STARTCAPTURE, NULL, NULL) == FALSE)
+		if(PostThreadMessage(*window_thread_id_, WM_STARTCAPTURE, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit
 		}
@@ -277,7 +290,7 @@ namespace iac_dll {
 
 	void CaptureEngine::stop_capture() const
 	{
-		if(PostThreadMessage(window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
+		if(PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit
 		}
