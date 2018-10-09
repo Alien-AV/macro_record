@@ -1,4 +1,6 @@
 #pragma once
+#include <queue>
+
 namespace iac_dll
 {
 	class CaptureEngine
@@ -29,6 +31,9 @@ namespace iac_dll
 
 		std::unique_ptr<DWORD> window_thread_id_ = nullptr;
 
+		std::unique_ptr<std::mutex> outbound_event_queue_mt_;
+		std::unique_ptr<std::queue<Event>> outbound_event_queue_;
+
 		static bool register_raw_input_stuff(HWND hwnd);
 		static bool unregister_raw_input_stuff();
 		static bool save_engine_ptr_to_window(const HWND&, const LPARAM&);
@@ -39,6 +44,7 @@ namespace iac_dll
 
 		void handle_keyboard_event_capture(RAWKEYBOARD data) const;
 		void handle_mouse_event_capture(RAWMOUSE data) const;
+		void process_captured_event(std::unique_ptr<Event> event) const;
 		void fake_mouse_event_for_initial_pos() const;
 	};
 

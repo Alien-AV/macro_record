@@ -187,7 +187,7 @@ namespace iac_dll {
 			captured_kbd_event->keyUp = false;
 		}
 
-		capture_events_callback_(std::move(captured_kbd_event)); //TODO: add layer of abstraction here - will need to queue events before calling the cb
+		process_captured_event(std::move(captured_kbd_event));
 	}
 
 	void CaptureEngine::handle_mouse_event_capture(RAWMOUSE data) const
@@ -242,7 +242,13 @@ namespace iac_dll {
 
 		//TODO: x2 button
 
-		capture_events_callback_(std::move(captured_mouse_event));
+		process_captured_event(std::move(captured_mouse_event));
+	}
+
+	void CaptureEngine::process_captured_event(std::unique_ptr<Event> event) const
+	{
+		std::lock_guard<std::mutex> lock(*outbound_event_queue_mt_);
+		capture_events_callback_(std::move(event));
 	}
 
 	void CaptureEngine::fake_mouse_event_for_initial_pos() const
