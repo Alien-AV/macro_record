@@ -89,7 +89,6 @@ namespace iac_dll {
 				//TODO: report error and exit
 				PostQuitMessage(0);
 			}
-			
 			UINT dwSize;
 			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 			const auto lpb = std::make_unique<BYTE[]>(dwSize);
@@ -150,6 +149,7 @@ namespace iac_dll {
 
 		while (GetMessage(&messages, nullptr, 0, 0))
 		{
+			const auto time_start = std::chrono::steady_clock::now();
 			switch (messages.message) {
 			case WM_STARTCAPTURE:
 				engine_object->time_of_start_of_recording_ = std::chrono::high_resolution_clock::now();
@@ -170,8 +170,27 @@ namespace iac_dll {
 				TranslateMessage(&messages);
 				DispatchMessage(&messages);
 			}
+			if(engine_object->average_duration_ == std::chrono::microseconds(0)) engine_object->average_duration_ = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_start);
+			else engine_object->average_duration_ = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_start) + engine_object->average_duration_) / 2;
 		}
 		return 1;
+	}
+
+	void CaptureEngine::event_fast_collector_thread_method()
+	{
+		while(true){
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			{
+				std::lock_guard<std::mutex> lock(*fast_collect_event_queue_mt_);
+				std::swap(fast_collect_events_queue_, collected_events_further_processing_queue_);
+			}
+			while(!collected_events_further_processing_queue_->empty())
+			{
+				auto event = std::move(collected_events_further_processing_queue_->front());
+				collected_events_further_processing_queue_->pop();
+				capture_events_callback_(std::move(event));
+			}
+		}
 	}
 
 	void CaptureEngine::handle_keyboard_event_capture(const RAWKEYBOARD data) const
@@ -247,8 +266,9 @@ namespace iac_dll {
 
 	void CaptureEngine::process_captured_event(std::unique_ptr<Event> event) const
 	{
-		std::lock_guard<std::mutex> lock(*outbound_event_queue_mt_);
-		capture_events_callback_(std::move(event));
+		std::lock_guard<std::mutex> lock(*fast_collect_event_queue_mt_);
+		fast_collect_events_queue_->push(std::move(event));
+		//outbound_event_queue_->push(std::move(event));
 	}
 
 	void CaptureEngine::fake_mouse_event_for_initial_pos() const
@@ -261,14 +281,21 @@ namespace iac_dll {
 		fake_mouse_event->x = initial_mouse_position.x;
 		fake_mouse_event->y = initial_mouse_position.y;
 		fake_mouse_event->ActionType = MouseEvent::ActionTypeFlags::Move;
-		capture_events_callback_(std::move(fake_mouse_event));
+		process_captured_event(std::move(fake_mouse_event));
 	}
 
 	CaptureEngine::CaptureEngine(capture_events_callback_t capture_events_cb, error_callback_t error_cb) :
 								capture_events_callback_(capture_events_cb), error_callback_(error_cb)
 	{
 		window_thread_id_ = std::make_unique<DWORD>(0);
+		fast_collect_event_queue_mt_ = std::make_unique<std::mutex>();
+		fast_collect_events_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
+		collected_events_further_processing_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
+		//outbound_event_queue_ = std::make_unique<event_lockfree_queue>();
 		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, window_thread_id_.get());
+
+		event_fast_collector_thread_ = std::thread{&CaptureEngine::event_fast_collector_thread_method, this};
+		
 		//TODO: wait for a notification from the capture window that the init (thread creation, window creation) is finished
 	}
 
@@ -294,8 +321,11 @@ namespace iac_dll {
 		}
 	}
 
-	void CaptureEngine::stop_capture() const
+	void CaptureEngine::stop_capture()
 	{
+		//OutputDebugString((std::wstring(L"average duration = ") + std::to_wstring(average_duration_.count()) + std::wstring(L"\n")).c_str());
+		error_callback_(std::string("average duration = ") + std::to_string(average_duration_.count()) + std::string("\n"));
+		average_duration_ = std::chrono::microseconds(0);
 		if(PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit

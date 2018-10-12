@@ -8,12 +8,13 @@ std::unique_ptr<iac_dll::CaptureEngine> capture_engine_singleton;
 
 void convert_cpp_error_to_c_error_and_call_callback(const std::string& error_string)
 {
-	c_callback_for_error_reporting(error_string.c_str());
+
+	c_callback_for_error_reporting(_strdup(error_string.c_str())); //TODO: error reporting exceptions somewhere with "the string binding is invalid", what does it even mean?
 }
 void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event) {
 	auto serialized_event_vec = event->serialize();
 	const auto buf_size = serialized_event_vec->size();
-	const auto serialized_event_buf = new unsigned char[buf_size];
+	const auto serialized_event_buf = new unsigned char[buf_size]; //TODO: what frees it?
 	memcpy(serialized_event_buf, serialized_event_vec->data(), buf_size);
 	c_callback_for_event_capture_reporting(serialized_event_buf, buf_size);
 }

@@ -1,5 +1,7 @@
 #pragma once
 #include <queue>
+//#include <boost/lockfree/spsc_queue.hpp>
+
 
 namespace iac_dll
 {
@@ -8,6 +10,7 @@ namespace iac_dll
 	public:
 		using error_callback_t = void(*)(const std::string&);
 		using capture_events_callback_t = void(*)(std::unique_ptr<Event>);
+		// using event_lockfree_queue = boost::lockfree::spsc_queue<std::unique_ptr<Event>, boost::lockfree::capacity<1024>>; //TODO: boost::lockfree doesn't currently support move-only objects
 		
 		CaptureEngine(capture_events_callback_t, error_callback_t);
 		~CaptureEngine();
@@ -18,21 +21,26 @@ namespace iac_dll
 		CaptureEngine& operator=(const CaptureEngine& other) = delete;
 		
 		void start_capture() const;
-		void stop_capture() const;
+		void stop_capture();
 
 	private:
+
+		std::chrono::microseconds average_duration_ = std::chrono::microseconds(0);
+
 		const static UINT WM_STARTCAPTURE = WM_USER;
 		const static UINT WM_STOPCAPTURE = WM_USER + 1;
 
 		capture_events_callback_t capture_events_callback_ = nullptr;
 		error_callback_t error_callback_ = nullptr;
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_;
+		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_{};
 
 		std::unique_ptr<DWORD> window_thread_id_ = nullptr;
 
-		std::unique_ptr<std::mutex> outbound_event_queue_mt_;
-		std::unique_ptr<std::queue<Event>> outbound_event_queue_;
+		std::unique_ptr<std::mutex> fast_collect_event_queue_mt_;
+		std::unique_ptr<std::queue<std::unique_ptr<Event>>> fast_collect_events_queue_;
+		std::unique_ptr<std::queue<std::unique_ptr<Event>>> collected_events_further_processing_queue_;
+		//std::unique_ptr<event_lockfree_queue> outbound_event_queue_;
 
 		static bool register_raw_input_stuff(HWND hwnd);
 		static bool unregister_raw_input_stuff();
@@ -41,6 +49,8 @@ namespace iac_dll
 		static LRESULT CALLBACK capture_window_wnd_proc(HWND, UINT, WPARAM, LPARAM);
 		static bool register_window_class_if_needed(const wchar_t* class_name);
 		static DWORD WINAPI capture_window_main_loop_thread(LPVOID);
+		void event_fast_collector_thread_method();
+		std::thread event_fast_collector_thread_;
 
 		void handle_keyboard_event_capture(RAWKEYBOARD data) const;
 		void handle_mouse_event_capture(RAWMOUSE data) const;
