@@ -179,6 +179,7 @@ namespace iac_dll {
 	void CaptureEngine::event_fast_collector_thread_method()
 	{
 		while(true){
+			if(event_fast_collector_thread_should_close_) return;
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			{
 				std::lock_guard<std::mutex> lock(*fast_collect_event_queue_mt_);
@@ -305,9 +306,11 @@ namespace iac_dll {
 		{
 			return;
 		}
+		event_fast_collector_thread_should_close_ = true;
+		event_fast_collector_thread_.join();
 
-		stop_capture();
-		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);
+		PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL); // if calling stop_capture, too many things happen (like error_callback_ being called while managed is dying)
+		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);		// do I even need to call "stopcapture"?
 		//TODO: verify that this indeed closes the bg window
 		//TODO: wait here until the window is really closed?
 		//TODO: unregister window class? (MSDN: No window classes registered by a DLL are unregistered when the DLL is unloaded)
@@ -323,12 +326,12 @@ namespace iac_dll {
 
 	void CaptureEngine::stop_capture()
 	{
-		//OutputDebugString((std::wstring(L"average duration = ") + std::to_wstring(average_duration_.count()) + std::wstring(L"\n")).c_str());
-		error_callback_(std::string("average duration = ") + std::to_string(average_duration_.count()) + std::string("\n"));
-		average_duration_ = std::chrono::microseconds(0);
 		if(PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit
 		}
+		//OutputDebugString((std::wstring(L"average duration = ") + std::to_wstring(average_duration_.count()) + std::wstring(L"\n")).c_str());
+		error_callback_(std::string("average duration = ") + std::to_string(average_duration_.count()) + std::string("\n"));
+		average_duration_ = std::chrono::microseconds(0);
 	}
 }

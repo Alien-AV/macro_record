@@ -51,6 +51,7 @@ namespace iac_dll
 		static DWORD WINAPI capture_window_main_loop_thread(LPVOID);
 		void event_fast_collector_thread_method();
 		std::thread event_fast_collector_thread_;
+		bool event_fast_collector_thread_should_close_ = false;
 
 		void handle_keyboard_event_capture(RAWKEYBOARD data) const;
 		void handle_mouse_event_capture(RAWMOUSE data) const;
