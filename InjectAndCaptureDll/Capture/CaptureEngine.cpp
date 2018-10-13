@@ -89,11 +89,11 @@ namespace iac_dll {
 				//TODO: report error and exit
 				PostQuitMessage(0);
 			}
-			UINT dwSize;
-			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
-			const auto lpb = std::make_unique<BYTE[]>(dwSize);
+			UINT dw_size;
+			GetRawInputData(HRAWINPUT(lParam), RID_INPUT, nullptr, &dw_size, sizeof(RAWINPUTHEADER));
+			const auto lpb = std::make_unique<BYTE[]>(dw_size);
 
-			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize){
+			if (GetRawInputData(HRAWINPUT(lParam), RID_INPUT, lpb.get(), &dw_size, sizeof(RAWINPUTHEADER)) != dw_size){
 				//TODO: report error and exit
 				OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
 			}
@@ -170,8 +170,6 @@ namespace iac_dll {
 				TranslateMessage(&messages);
 				DispatchMessage(&messages);
 			}
-			if(engine_object->average_duration_ == std::chrono::microseconds(0)) engine_object->average_duration_ = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_start);
-			else engine_object->average_duration_ = (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_start) + engine_object->average_duration_) / 2;
 		}
 		return 1;
 	}
@@ -269,7 +267,6 @@ namespace iac_dll {
 	{
 		std::lock_guard<std::mutex> lock(*fast_collect_event_queue_mt_);
 		fast_collect_events_queue_->push(std::move(event));
-		//outbound_event_queue_->push(std::move(event));
 	}
 
 	void CaptureEngine::fake_mouse_event_for_initial_pos() const
@@ -292,7 +289,6 @@ namespace iac_dll {
 		fast_collect_event_queue_mt_ = std::make_unique<std::mutex>();
 		fast_collect_events_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
 		collected_events_further_processing_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
-		//outbound_event_queue_ = std::make_unique<event_lockfree_queue>();
 		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, window_thread_id_.get());
 
 		event_fast_collector_thread_ = std::thread{&CaptureEngine::event_fast_collector_thread_method, this};
@@ -330,8 +326,5 @@ namespace iac_dll {
 		{
 			//TODO: report error and exit
 		}
-		//OutputDebugString((std::wstring(L"average duration = ") + std::to_wstring(average_duration_.count()) + std::wstring(L"\n")).c_str());
-		error_callback_(std::string("average duration = ") + std::to_string(average_duration_.count()) + std::string("\n"));
-		average_duration_ = std::chrono::microseconds(0);
 	}
 }

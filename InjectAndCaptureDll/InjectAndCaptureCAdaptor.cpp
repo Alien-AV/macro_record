@@ -8,9 +8,9 @@ std::unique_ptr<iac_dll::CaptureEngine> capture_engine_singleton;
 
 void convert_cpp_error_to_c_error_and_call_callback(const std::string& error_string)
 {
-
-	c_callback_for_error_reporting(_strdup(error_string.c_str())); //TODO: error reporting exceptions somewhere with "the string binding is invalid", what does it even mean?
+	c_callback_for_error_reporting(error_string.c_str());
 }
+
 void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event) {
 	auto serialized_event_vec = event->serialize();
 	const auto buf_size = serialized_event_vec->size();

@@ -1,6 +1,5 @@
 #pragma once
 #include <queue>
-//#include <boost/lockfree/spsc_queue.hpp>
 
 
 namespace iac_dll
@@ -10,7 +9,6 @@ namespace iac_dll
 	public:
 		using error_callback_t = void(*)(const std::string&);
 		using capture_events_callback_t = void(*)(std::unique_ptr<Event>);
-		// using event_lockfree_queue = boost::lockfree::spsc_queue<std::unique_ptr<Event>, boost::lockfree::capacity<1024>>; //TODO: boost::lockfree doesn't currently support move-only objects
 		
 		CaptureEngine(capture_events_callback_t, error_callback_t);
 		~CaptureEngine();
@@ -24,9 +22,6 @@ namespace iac_dll
 		void stop_capture();
 
 	private:
-
-		std::chrono::microseconds average_duration_ = std::chrono::microseconds(0);
-
 		const static UINT WM_STARTCAPTURE = WM_USER;
 		const static UINT WM_STOPCAPTURE = WM_USER + 1;
 
@@ -40,7 +35,6 @@ namespace iac_dll
 		std::unique_ptr<std::mutex> fast_collect_event_queue_mt_;
 		std::unique_ptr<std::queue<std::unique_ptr<Event>>> fast_collect_events_queue_;
 		std::unique_ptr<std::queue<std::unique_ptr<Event>>> collected_events_further_processing_queue_;
-		//std::unique_ptr<event_lockfree_queue> outbound_event_queue_;
 
 		static bool register_raw_input_stuff(HWND hwnd);
 		static bool unregister_raw_input_stuff();
