@@ -152,5 +152,10 @@ namespace MacroRecorderGUI
             var deserializedEvents = InputEventList.Parser.ParseFrom(serializedEvents);
             return deserializedEvents.InputEvents;
         }
+
+        private void AbortPlayback_Click(object sender, RoutedEventArgs e)
+        {
+            InjectAndCaptureDll.InjectEventAbort();
+        }
     }
 }

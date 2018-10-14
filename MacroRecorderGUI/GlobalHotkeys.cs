@@ -23,6 +23,7 @@ namespace MacroRecorderGUI
         private const int StartRecordHotkeyId = 9000;
         private const int StopRecordHotkeyId = 9001;
         private const int PlayBackHotkeyId = 9002;
+        private const int PlayBackAbortHotkeyId = 9003;
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -47,6 +48,7 @@ namespace MacroRecorderGUI
             const uint VK_Q = 0x51;
             const uint VK_W = 0x57;
             const uint VK_E = 0x45;
+            const uint VK_R = 0x52;
             const uint MOD_CTRL = 0x0002;
             if(!RegisterHotKey(helper.Handle, StartRecordHotkeyId, MOD_CTRL, VK_Q))
             {
@@ -57,6 +59,10 @@ namespace MacroRecorderGUI
                 // handle error
             }
             if(!RegisterHotKey(helper.Handle, PlayBackHotkeyId, MOD_CTRL, VK_E))
+            {
+                // handle error
+            }
+            if(!RegisterHotKey(helper.Handle, PlayBackAbortHotkeyId, MOD_CTRL, VK_R))
             {
                 // handle error
             }
@@ -88,6 +94,10 @@ namespace MacroRecorderGUI
                             OnPlayBackHotkeyPressed();
                             handled = true;
                             break;
+                        case PlayBackAbortHotkeyId:
+                            OnPlayBackAbortHotkeyPressed();
+                            handled = true;
+                            break;
                     }
                     break;
             }
@@ -105,6 +115,10 @@ namespace MacroRecorderGUI
         private void OnPlayBackHotkeyPressed()
         {
             PlayEvents_Click(null, null);
+        }
+        private void OnPlayBackAbortHotkeyPressed()
+        {
+            AbortPlayback_Click(null, null);
         }
     }
 }
