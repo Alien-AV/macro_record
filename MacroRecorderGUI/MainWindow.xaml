@@ -7,30 +7,9 @@
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
 
-    <Window.Resources>
-        <RoutedUICommand x:Key="StartRecord" Text="Ctrl+Q StartRecord" />
-        <RoutedUICommand x:Key="StopRecord" Text="Ctrl+W StopRecord" />
-        <RoutedUICommand x:Key="PlayEvents" Text="Ctrl+E PlayEvents" />
-    </Window.Resources>
-
-    <Window.CommandBindings>
-        <CommandBinding Command="{StaticResource StartRecord}" 
-                        Executed="StartRecord_Click" />
-        <CommandBinding Command="{StaticResource StopRecord}" 
-                        Executed="StopRecord_Click" />
-        <CommandBinding Command="{StaticResource PlayEvents}" 
-                        Executed="PlayEvents_Click" />
-    </Window.CommandBindings>
-
-    <Window.InputBindings>
-        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{StaticResource StartRecord}" />
-        <KeyBinding Key="W" Modifiers="Ctrl" Command="{StaticResource StopRecord}" />
-        <KeyBinding Key="E" Modifiers="Ctrl" Command="{StaticResource PlayEvents}" />
-    </Window.InputBindings>
-
     <Grid>
-        <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StartRecord}"/>
-        <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100" Command="{StaticResource StopRecord}"/>
+        <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100"/>
+        <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100"/>
         <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
         <Separator HorizontalAlignment="Left" Height="1" Margin="10,85,0,0" VerticalAlignment="Top" Width="100"/>
         <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,91,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
