@@ -282,8 +282,8 @@ namespace iac_dll {
 		process_captured_event(std::move(fake_mouse_event));
 	}
 
-	CaptureEngine::CaptureEngine(const capture_events_callback_t capture_events_cb, const error_callback_t error_cb) :
-								capture_events_callback_(capture_events_cb), error_callback_(error_cb)
+	CaptureEngine::CaptureEngine(const capture_events_callback_t capture_events_cb, const status_callback_t status_cb) :
+								capture_events_callback_(capture_events_cb), status_callback_(status_cb)
 	{
 		window_thread_id_ = std::make_unique<DWORD>(0);
 		fast_collect_event_queue_mt_ = std::make_unique<std::mutex>();
@@ -305,7 +305,7 @@ namespace iac_dll {
 		event_fast_collector_thread_should_close_ = true;
 		event_fast_collector_thread_.join();
 
-		PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL); // if calling stop_capture, too many things happen (like error_callback_ being called while managed is dying)
+		PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL); // if calling stop_capture, too many things happen (like status_callback_ being called while managed is dying)
 		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);		// do I even need to call "stopcapture"?
 		//TODO: verify that this indeed closes the bg window
 		//TODO: wait here until the window is really closed?

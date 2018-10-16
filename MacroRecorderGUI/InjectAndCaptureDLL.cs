@@ -8,10 +8,10 @@ namespace MacroRecorderGUI
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void CaptureEventCallback(IntPtr evtBufPtr, int bufSize);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void ErrorCallback(string error);
+        public delegate void StatusCallback(InjectAndCaptureDllEnums.StatusCode statusCode);
 
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_init", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Init(CaptureEventCallback eventCb, ErrorCallback errorCb);
+        public static extern void Init(CaptureEventCallback eventCb, StatusCallback statusCb);
         
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_start_capture", CallingConvention = CallingConvention.Cdecl)]
         public static extern void StartCapture();

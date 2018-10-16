@@ -11,10 +11,12 @@
 #include <Windows.h>
 #include <vector>
 
+#include "../Common/StatusEnum.cs"
+
 namespace iac_dll {
 	// INJECTANDCAPTUREDLL_API void HandleMouseEventCapture(RAWMOUSE data); //TODO: exporting for tests - and I don't like it - isn't there other way?
  //
-	// using error_callback_t = void(*)(const std::string& error);
+	// using status_callback_t = void(*)(const std::string& error);
 	// typedef void(*capture_events_callback_t)(std::unique_ptr<Event>);
 	// INJECTANDCAPTUREDLL_API void Init();
  //
@@ -27,9 +29,9 @@ namespace iac_dll {
 }
 
 extern "C" {
-	using iac_dll_error_cb_t = void(*)(const char* error);
+	using iac_dll_status_cb_t = void(*)(InjectAndCaptureDllEnums::StatusCode status_code);
 	using iac_dll_capture_event_cb_t = void(*)(const unsigned char buffer[], int buf_size);
-	INJECTANDCAPTUREDLL_API void iac_dll_init(const iac_dll_capture_event_cb_t event_capture_cb, const iac_dll_error_cb_t error_cb);
+	INJECTANDCAPTUREDLL_API void iac_dll_init(const iac_dll_capture_event_cb_t event_capture_cb, const iac_dll_status_cb_t status_cb);
 	
 	INJECTANDCAPTUREDLL_API void iac_dll_start_capture();
 	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();

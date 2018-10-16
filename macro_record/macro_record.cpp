@@ -7,6 +7,7 @@
 #include <conio.h>
 #include <vector>
 #include <iostream>
+#include "../Common/StatusEnum.cs"
 
 using buffer_t = std::vector<unsigned char>;
 std::list<buffer_t> serialized_events;
@@ -20,9 +21,9 @@ void c_style_event_cb(const unsigned char buffer[], const int buf_size) {
 	serialized_events.emplace_back(buffer, buffer+buf_size);
 }
 
-void c_style_error_cb(const char* error)
+void c_style_error_cb(InjectAndCaptureDllEnums::StatusCode status_code)
 {
-	std::cout << "got error:" << error << std::endl;
+	std::cout << "got error:" << status_code << std::endl;
 }
 
 int main()

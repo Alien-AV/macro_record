@@ -2,13 +2,13 @@
 #include <thread>
 #include "Capture/CaptureEngine.h"
 
-iac_dll_error_cb_t c_callback_for_error_reporting = nullptr;
+iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
 iac_dll_capture_event_cb_t c_callback_for_event_capture_reporting = nullptr;
 std::unique_ptr<iac_dll::CaptureEngine> capture_engine_singleton;
 
-void convert_cpp_error_to_c_error_and_call_callback(const std::string& error_string)
+void convert_cpp_status_to_c_status_and_call_callback(const InjectAndCaptureDllEnums::StatusCode status_code)
 {
-	c_callback_for_error_reporting(error_string.c_str());
+	c_callback_for_status_reporting(status_code);
 }
 
 void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event) {
@@ -19,11 +19,11 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	c_callback_for_event_capture_reporting(serialized_event_buf, buf_size);
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_init(const iac_dll_capture_event_cb_t event_capture_cb, const iac_dll_error_cb_t error_cb)
+INJECTANDCAPTUREDLL_API void iac_dll_init(iac_dll_capture_event_cb_t event_capture_cb, iac_dll_status_cb_t status_cb)
 {
 	c_callback_for_event_capture_reporting = event_capture_cb;
-	c_callback_for_error_reporting = error_cb;
-	capture_engine_singleton = std::make_unique<iac_dll::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_error_to_c_error_and_call_callback);
+	c_callback_for_status_reporting = status_cb;
+	capture_engine_singleton = std::make_unique<iac_dll::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
 }
 
 INJECTANDCAPTUREDLL_API void iac_dll_start_capture() {
@@ -66,6 +66,7 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialize
 				std::this_thread::sleep_until(start_time + event->time_since_start_of_recording);
 				event->inject();
 			}
+			c_callback_for_status_reporting(InjectAndCaptureDllEnums::PlaybackFinished); // <- ye this is pretty dumb
 		}
 	};
 	injection_list_thread.detach();

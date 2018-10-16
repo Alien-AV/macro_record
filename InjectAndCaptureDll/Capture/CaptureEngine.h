@@ -1,16 +1,16 @@
 #pragma once
 #include <queue>
-
+#include "../../Common/StatusEnum.cs"
 
 namespace iac_dll
 {
 	class CaptureEngine
 	{
 	public:
-		using error_callback_t = void(*)(const std::string&);
+		using status_callback_t = void(*)(InjectAndCaptureDllEnums::StatusCode);
 		using capture_events_callback_t = void(*)(std::unique_ptr<Event>);
 		
-		CaptureEngine(capture_events_callback_t, error_callback_t);
+		CaptureEngine(capture_events_callback_t, status_callback_t);
 		~CaptureEngine();
 		
 		CaptureEngine(CaptureEngine&& other) noexcept = default;
@@ -26,7 +26,7 @@ namespace iac_dll
 		const static UINT WM_STOPCAPTURE = WM_USER + 1;
 
 		capture_events_callback_t capture_events_callback_ = nullptr;
-		error_callback_t error_callback_ = nullptr;
+		status_callback_t status_callback_ = nullptr;
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_{};
 

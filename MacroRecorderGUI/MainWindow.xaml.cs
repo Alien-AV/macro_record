@@ -8,13 +8,14 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using Google.Protobuf;
+using InjectAndCaptureDllEnums;
 
 namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
         private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
-        private readonly InjectAndCaptureDll.ErrorCallback _errorCallbackDelegate;
+        private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
 
         public ObservableCollection<InputEvent> EventsObsColl = new ObservableCollection<InputEvent>();
 
@@ -27,18 +28,25 @@ namespace MacroRecorderGUI
             Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
         }
 
-        private void ErrorCb(string error)
+        private void StatusCb(InjectAndCaptureDllEnums.StatusCode statusCode)
         {
-            MessageBox.Show(error);
+            if (statusCode == StatusCode.PlaybackFinished)
+            {
+                //TODO: publish an event here?
+            }
+            else
+            {
+                MessageBox.Show("Status reported: \"" + statusCode + "\".");
+            }
         }
 
         public MainWindow()
         {
             InitializeComponent();
-            _errorCallbackDelegate = ErrorCb;
+            _statusCallbackDelegate = StatusCb;
             _captureEventCallbackDelegate = CaptureEventCb;
             EventsListBox.ItemsSource = EventsObsColl;
-            InjectAndCaptureDll.Init(_captureEventCallbackDelegate,_errorCallbackDelegate);
+            InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
