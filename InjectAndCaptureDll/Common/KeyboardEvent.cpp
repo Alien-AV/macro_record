@@ -1,6 +1,5 @@
 #include "KeyboardEvent.h"
 #include "..\Inject\InjectInput.h"
-#include "protobuf/cpp/Events.pb.h"
 
 KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(false)
 {

@@ -1,6 +1,5 @@
 #include "MouseEvent.h"
 #include "../Inject/InjectInput.h"
-#include "protobuf/cpp/Events.pb.h"
 
 MouseEvent::MouseEvent() = default;
 

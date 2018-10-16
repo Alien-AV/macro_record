@@ -3,8 +3,6 @@
 #include "Event.h"
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
-#include "protobuf/cpp/Events.pb.h"
-
 
 std::unique_ptr<Event> make_event_from_protobuf_input_event(const InputEvent& serialized_event)
 {

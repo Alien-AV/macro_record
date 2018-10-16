@@ -1,7 +1,7 @@
 #pragma once
 #include <chrono>
-#include "protobuf/cpp/Events.pb.h"
 #include <vector>
+#include "../../Common/protobuf/cpp/Events.pb.h"
 
 class Event
 {

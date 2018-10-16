@@ -123,6 +123,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="..\Common\protobuf\csharp\Events.cs">
+      <Link>Events.cs</Link>
+    </Compile>
     <Compile Include="..\Common\StatusEnum.cs">
       <Link>StatusEnum.cs</Link>
     </Compile>
@@ -130,7 +133,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Events.cs" />
     <Compile Include="FileOperations.cs" />
     <Compile Include="GlobalHotkeys.cs" />
     <Compile Include="InjectAndCaptureDLL.cs" />
