@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package protobufGenerated;
+
 message InputEvent {
   message KeyboardEventType {
 	uint32 virtualKeyCode = 1;

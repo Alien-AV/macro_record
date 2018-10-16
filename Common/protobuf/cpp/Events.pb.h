@@ -45,6 +45,7 @@ struct TableStruct {
 };
 void AddDescriptors();
 }  // namespace protobuf_Events_2eproto
+namespace protobufGenerated {
 class InputEvent;
 class InputEventDefaultTypeInternal;
 extern InputEventDefaultTypeInternal _InputEvent_default_instance_;
@@ -57,18 +58,20 @@ extern InputEvent_KeyboardEventTypeDefaultTypeInternal _InputEvent_KeyboardEvent
 class InputEvent_MouseEventType;
 class InputEvent_MouseEventTypeDefaultTypeInternal;
 extern InputEvent_MouseEventTypeDefaultTypeInternal _InputEvent_MouseEventType_default_instance_;
+}  // namespace protobufGenerated
 namespace google {
 namespace protobuf {
-template<> ::InputEvent* Arena::CreateMaybeMessage<::InputEvent>(Arena*);
-template<> ::InputEventList* Arena::CreateMaybeMessage<::InputEventList>(Arena*);
-template<> ::InputEvent_KeyboardEventType* Arena::CreateMaybeMessage<::InputEvent_KeyboardEventType>(Arena*);
-template<> ::InputEvent_MouseEventType* Arena::CreateMaybeMessage<::InputEvent_MouseEventType>(Arena*);
+template<> ::protobufGenerated::InputEvent* Arena::CreateMaybeMessage<::protobufGenerated::InputEvent>(Arena*);
+template<> ::protobufGenerated::InputEventList* Arena::CreateMaybeMessage<::protobufGenerated::InputEventList>(Arena*);
+template<> ::protobufGenerated::InputEvent_KeyboardEventType* Arena::CreateMaybeMessage<::protobufGenerated::InputEvent_KeyboardEventType>(Arena*);
+template<> ::protobufGenerated::InputEvent_MouseEventType* Arena::CreateMaybeMessage<::protobufGenerated::InputEvent_MouseEventType>(Arena*);
 }  // namespace protobuf
 }  // namespace google
+namespace protobufGenerated {
 
 // ===================================================================
 
-class InputEvent_KeyboardEventType : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:InputEvent.KeyboardEventType) */ {
+class InputEvent_KeyboardEventType : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:protobufGenerated.InputEvent.KeyboardEventType) */ {
  public:
   InputEvent_KeyboardEventType();
   virtual ~InputEvent_KeyboardEventType();
@@ -167,7 +170,7 @@ class InputEvent_KeyboardEventType : public ::google::protobuf::Message /* @@pro
   bool keyup() const;
   void set_keyup(bool value);
 
-  // @@protoc_insertion_point(class_scope:InputEvent.KeyboardEventType)
+  // @@protoc_insertion_point(class_scope:protobufGenerated.InputEvent.KeyboardEventType)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -178,7 +181,7 @@ class InputEvent_KeyboardEventType : public ::google::protobuf::Message /* @@pro
 };
 // -------------------------------------------------------------------
 
-class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:InputEvent.MouseEventType) */ {
+class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:protobufGenerated.InputEvent.MouseEventType) */ {
  public:
   InputEvent_MouseEventType();
   virtual ~InputEvent_MouseEventType();
@@ -301,7 +304,7 @@ class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc
   bool mappedtovirtualdesktop() const;
   void set_mappedtovirtualdesktop(bool value);
 
-  // @@protoc_insertion_point(class_scope:InputEvent.MouseEventType)
+  // @@protoc_insertion_point(class_scope:protobufGenerated.InputEvent.MouseEventType)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -316,7 +319,7 @@ class InputEvent_MouseEventType : public ::google::protobuf::Message /* @@protoc
 };
 // -------------------------------------------------------------------
 
-class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:InputEvent) */ {
+class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:protobufGenerated.InputEvent) */ {
  public:
   InputEvent();
   virtual ~InputEvent();
@@ -418,33 +421,33 @@ class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::uint64 timesincestartofrecording() const;
   void set_timesincestartofrecording(::google::protobuf::uint64 value);
 
-  // .InputEvent.KeyboardEventType keyboardEvent = 2;
+  // .protobufGenerated.InputEvent.KeyboardEventType keyboardEvent = 2;
   bool has_keyboardevent() const;
   void clear_keyboardevent();
   static const int kKeyboardEventFieldNumber = 2;
   private:
-  const ::InputEvent_KeyboardEventType& _internal_keyboardevent() const;
+  const ::protobufGenerated::InputEvent_KeyboardEventType& _internal_keyboardevent() const;
   public:
-  const ::InputEvent_KeyboardEventType& keyboardevent() const;
-  ::InputEvent_KeyboardEventType* release_keyboardevent();
-  ::InputEvent_KeyboardEventType* mutable_keyboardevent();
-  void set_allocated_keyboardevent(::InputEvent_KeyboardEventType* keyboardevent);
+  const ::protobufGenerated::InputEvent_KeyboardEventType& keyboardevent() const;
+  ::protobufGenerated::InputEvent_KeyboardEventType* release_keyboardevent();
+  ::protobufGenerated::InputEvent_KeyboardEventType* mutable_keyboardevent();
+  void set_allocated_keyboardevent(::protobufGenerated::InputEvent_KeyboardEventType* keyboardevent);
 
-  // .InputEvent.MouseEventType mouseEvent = 3;
+  // .protobufGenerated.InputEvent.MouseEventType mouseEvent = 3;
   bool has_mouseevent() const;
   void clear_mouseevent();
   static const int kMouseEventFieldNumber = 3;
   private:
-  const ::InputEvent_MouseEventType& _internal_mouseevent() const;
+  const ::protobufGenerated::InputEvent_MouseEventType& _internal_mouseevent() const;
   public:
-  const ::InputEvent_MouseEventType& mouseevent() const;
-  ::InputEvent_MouseEventType* release_mouseevent();
-  ::InputEvent_MouseEventType* mutable_mouseevent();
-  void set_allocated_mouseevent(::InputEvent_MouseEventType* mouseevent);
+  const ::protobufGenerated::InputEvent_MouseEventType& mouseevent() const;
+  ::protobufGenerated::InputEvent_MouseEventType* release_mouseevent();
+  ::protobufGenerated::InputEvent_MouseEventType* mutable_mouseevent();
+  void set_allocated_mouseevent(::protobufGenerated::InputEvent_MouseEventType* mouseevent);
 
   void clear_Event();
   EventCase Event_case() const;
-  // @@protoc_insertion_point(class_scope:InputEvent)
+  // @@protoc_insertion_point(class_scope:protobufGenerated.InputEvent)
  private:
   void set_has_keyboardevent();
   void set_has_mouseevent();
@@ -456,8 +459,8 @@ class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::uint64 timesincestartofrecording_;
   union EventUnion {
     EventUnion() {}
-    ::InputEvent_KeyboardEventType* keyboardevent_;
-    ::InputEvent_MouseEventType* mouseevent_;
+    ::protobufGenerated::InputEvent_KeyboardEventType* keyboardevent_;
+    ::protobufGenerated::InputEvent_MouseEventType* mouseevent_;
   } Event_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   ::google::protobuf::uint32 _oneof_case_[1];
@@ -466,7 +469,7 @@ class InputEvent : public ::google::protobuf::Message /* @@protoc_insertion_poin
 };
 // -------------------------------------------------------------------
 
-class InputEventList : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:InputEventList) */ {
+class InputEventList : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:protobufGenerated.InputEventList) */ {
  public:
   InputEventList();
   virtual ~InputEventList();
@@ -553,23 +556,23 @@ class InputEventList : public ::google::protobuf::Message /* @@protoc_insertion_
 
   // accessors -------------------------------------------------------
 
-  // repeated .InputEvent inputEvents = 1;
+  // repeated .protobufGenerated.InputEvent inputEvents = 1;
   int inputevents_size() const;
   void clear_inputevents();
   static const int kInputEventsFieldNumber = 1;
-  ::InputEvent* mutable_inputevents(int index);
-  ::google::protobuf::RepeatedPtrField< ::InputEvent >*
+  ::protobufGenerated::InputEvent* mutable_inputevents(int index);
+  ::google::protobuf::RepeatedPtrField< ::protobufGenerated::InputEvent >*
       mutable_inputevents();
-  const ::InputEvent& inputevents(int index) const;
-  ::InputEvent* add_inputevents();
-  const ::google::protobuf::RepeatedPtrField< ::InputEvent >&
+  const ::protobufGenerated::InputEvent& inputevents(int index) const;
+  ::protobufGenerated::InputEvent* add_inputevents();
+  const ::google::protobuf::RepeatedPtrField< ::protobufGenerated::InputEvent >&
       inputevents() const;
 
-  // @@protoc_insertion_point(class_scope:InputEventList)
+  // @@protoc_insertion_point(class_scope:protobufGenerated.InputEventList)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::InputEvent > inputevents_;
+  ::google::protobuf::RepeatedPtrField< ::protobufGenerated::InputEvent > inputevents_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_Events_2eproto::TableStruct;
 };
@@ -589,13 +592,13 @@ inline void InputEvent_KeyboardEventType::clear_virtualkeycode() {
   virtualkeycode_ = 0u;
 }
 inline ::google::protobuf::uint32 InputEvent_KeyboardEventType::virtualkeycode() const {
-  // @@protoc_insertion_point(field_get:InputEvent.KeyboardEventType.virtualKeyCode)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.KeyboardEventType.virtualKeyCode)
   return virtualkeycode_;
 }
 inline void InputEvent_KeyboardEventType::set_virtualkeycode(::google::protobuf::uint32 value) {
   
   virtualkeycode_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.KeyboardEventType.virtualKeyCode)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.KeyboardEventType.virtualKeyCode)
 }
 
 // bool keyUp = 2;
@@ -603,13 +606,13 @@ inline void InputEvent_KeyboardEventType::clear_keyup() {
   keyup_ = false;
 }
 inline bool InputEvent_KeyboardEventType::keyup() const {
-  // @@protoc_insertion_point(field_get:InputEvent.KeyboardEventType.keyUp)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.KeyboardEventType.keyUp)
   return keyup_;
 }
 inline void InputEvent_KeyboardEventType::set_keyup(bool value) {
   
   keyup_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.KeyboardEventType.keyUp)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.KeyboardEventType.keyUp)
 }
 
 // -------------------------------------------------------------------
@@ -621,13 +624,13 @@ inline void InputEvent_MouseEventType::clear_x() {
   x_ = 0;
 }
 inline ::google::protobuf::int32 InputEvent_MouseEventType::x() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.x)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.x)
   return x_;
 }
 inline void InputEvent_MouseEventType::set_x(::google::protobuf::int32 value) {
   
   x_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.x)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.x)
 }
 
 // int32 y = 2;
@@ -635,13 +638,13 @@ inline void InputEvent_MouseEventType::clear_y() {
   y_ = 0;
 }
 inline ::google::protobuf::int32 InputEvent_MouseEventType::y() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.y)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.y)
   return y_;
 }
 inline void InputEvent_MouseEventType::set_y(::google::protobuf::int32 value) {
   
   y_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.y)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.y)
 }
 
 // uint32 actionType = 3;
@@ -649,13 +652,13 @@ inline void InputEvent_MouseEventType::clear_actiontype() {
   actiontype_ = 0u;
 }
 inline ::google::protobuf::uint32 InputEvent_MouseEventType::actiontype() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.actionType)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.actionType)
   return actiontype_;
 }
 inline void InputEvent_MouseEventType::set_actiontype(::google::protobuf::uint32 value) {
   
   actiontype_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.actionType)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.actionType)
 }
 
 // uint32 wheelRotation = 4;
@@ -663,13 +666,13 @@ inline void InputEvent_MouseEventType::clear_wheelrotation() {
   wheelrotation_ = 0u;
 }
 inline ::google::protobuf::uint32 InputEvent_MouseEventType::wheelrotation() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.wheelRotation)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.wheelRotation)
   return wheelrotation_;
 }
 inline void InputEvent_MouseEventType::set_wheelrotation(::google::protobuf::uint32 value) {
   
   wheelrotation_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.wheelRotation)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.wheelRotation)
 }
 
 // bool relativePosition = 5;
@@ -677,13 +680,13 @@ inline void InputEvent_MouseEventType::clear_relativeposition() {
   relativeposition_ = false;
 }
 inline bool InputEvent_MouseEventType::relativeposition() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.relativePosition)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.relativePosition)
   return relativeposition_;
 }
 inline void InputEvent_MouseEventType::set_relativeposition(bool value) {
   
   relativeposition_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.relativePosition)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.relativePosition)
 }
 
 // bool mappedToVirtualDesktop = 6;
@@ -691,13 +694,13 @@ inline void InputEvent_MouseEventType::clear_mappedtovirtualdesktop() {
   mappedtovirtualdesktop_ = false;
 }
 inline bool InputEvent_MouseEventType::mappedtovirtualdesktop() const {
-  // @@protoc_insertion_point(field_get:InputEvent.MouseEventType.mappedToVirtualDesktop)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.MouseEventType.mappedToVirtualDesktop)
   return mappedtovirtualdesktop_;
 }
 inline void InputEvent_MouseEventType::set_mappedtovirtualdesktop(bool value) {
   
   mappedtovirtualdesktop_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.MouseEventType.mappedToVirtualDesktop)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.MouseEventType.mappedToVirtualDesktop)
 }
 
 // -------------------------------------------------------------------
@@ -709,16 +712,16 @@ inline void InputEvent::clear_timesincestartofrecording() {
   timesincestartofrecording_ = GOOGLE_ULONGLONG(0);
 }
 inline ::google::protobuf::uint64 InputEvent::timesincestartofrecording() const {
-  // @@protoc_insertion_point(field_get:InputEvent.timeSinceStartOfRecording)
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.timeSinceStartOfRecording)
   return timesincestartofrecording_;
 }
 inline void InputEvent::set_timesincestartofrecording(::google::protobuf::uint64 value) {
   
   timesincestartofrecording_ = value;
-  // @@protoc_insertion_point(field_set:InputEvent.timeSinceStartOfRecording)
+  // @@protoc_insertion_point(field_set:protobufGenerated.InputEvent.timeSinceStartOfRecording)
 }
 
-// .InputEvent.KeyboardEventType keyboardEvent = 2;
+// .protobufGenerated.InputEvent.KeyboardEventType keyboardEvent = 2;
 inline bool InputEvent::has_keyboardevent() const {
   return Event_case() == kKeyboardEvent;
 }
@@ -731,38 +734,38 @@ inline void InputEvent::clear_keyboardevent() {
     clear_has_Event();
   }
 }
-inline const ::InputEvent_KeyboardEventType& InputEvent::_internal_keyboardevent() const {
+inline const ::protobufGenerated::InputEvent_KeyboardEventType& InputEvent::_internal_keyboardevent() const {
   return *Event_.keyboardevent_;
 }
-inline ::InputEvent_KeyboardEventType* InputEvent::release_keyboardevent() {
-  // @@protoc_insertion_point(field_release:InputEvent.keyboardEvent)
+inline ::protobufGenerated::InputEvent_KeyboardEventType* InputEvent::release_keyboardevent() {
+  // @@protoc_insertion_point(field_release:protobufGenerated.InputEvent.keyboardEvent)
   if (has_keyboardevent()) {
     clear_has_Event();
-      ::InputEvent_KeyboardEventType* temp = Event_.keyboardevent_;
+      ::protobufGenerated::InputEvent_KeyboardEventType* temp = Event_.keyboardevent_;
     Event_.keyboardevent_ = NULL;
     return temp;
   } else {
     return NULL;
   }
 }
-inline const ::InputEvent_KeyboardEventType& InputEvent::keyboardevent() const {
-  // @@protoc_insertion_point(field_get:InputEvent.keyboardEvent)
+inline const ::protobufGenerated::InputEvent_KeyboardEventType& InputEvent::keyboardevent() const {
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.keyboardEvent)
   return has_keyboardevent()
       ? *Event_.keyboardevent_
-      : *reinterpret_cast< ::InputEvent_KeyboardEventType*>(&::_InputEvent_KeyboardEventType_default_instance_);
+      : *reinterpret_cast< ::protobufGenerated::InputEvent_KeyboardEventType*>(&::protobufGenerated::_InputEvent_KeyboardEventType_default_instance_);
 }
-inline ::InputEvent_KeyboardEventType* InputEvent::mutable_keyboardevent() {
+inline ::protobufGenerated::InputEvent_KeyboardEventType* InputEvent::mutable_keyboardevent() {
   if (!has_keyboardevent()) {
     clear_Event();
     set_has_keyboardevent();
-    Event_.keyboardevent_ = CreateMaybeMessage< ::InputEvent_KeyboardEventType >(
+    Event_.keyboardevent_ = CreateMaybeMessage< ::protobufGenerated::InputEvent_KeyboardEventType >(
         GetArenaNoVirtual());
   }
-  // @@protoc_insertion_point(field_mutable:InputEvent.keyboardEvent)
+  // @@protoc_insertion_point(field_mutable:protobufGenerated.InputEvent.keyboardEvent)
   return Event_.keyboardevent_;
 }
 
-// .InputEvent.MouseEventType mouseEvent = 3;
+// .protobufGenerated.InputEvent.MouseEventType mouseEvent = 3;
 inline bool InputEvent::has_mouseevent() const {
   return Event_case() == kMouseEvent;
 }
@@ -775,34 +778,34 @@ inline void InputEvent::clear_mouseevent() {
     clear_has_Event();
   }
 }
-inline const ::InputEvent_MouseEventType& InputEvent::_internal_mouseevent() const {
+inline const ::protobufGenerated::InputEvent_MouseEventType& InputEvent::_internal_mouseevent() const {
   return *Event_.mouseevent_;
 }
-inline ::InputEvent_MouseEventType* InputEvent::release_mouseevent() {
-  // @@protoc_insertion_point(field_release:InputEvent.mouseEvent)
+inline ::protobufGenerated::InputEvent_MouseEventType* InputEvent::release_mouseevent() {
+  // @@protoc_insertion_point(field_release:protobufGenerated.InputEvent.mouseEvent)
   if (has_mouseevent()) {
     clear_has_Event();
-      ::InputEvent_MouseEventType* temp = Event_.mouseevent_;
+      ::protobufGenerated::InputEvent_MouseEventType* temp = Event_.mouseevent_;
     Event_.mouseevent_ = NULL;
     return temp;
   } else {
     return NULL;
   }
 }
-inline const ::InputEvent_MouseEventType& InputEvent::mouseevent() const {
-  // @@protoc_insertion_point(field_get:InputEvent.mouseEvent)
+inline const ::protobufGenerated::InputEvent_MouseEventType& InputEvent::mouseevent() const {
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEvent.mouseEvent)
   return has_mouseevent()
       ? *Event_.mouseevent_
-      : *reinterpret_cast< ::InputEvent_MouseEventType*>(&::_InputEvent_MouseEventType_default_instance_);
+      : *reinterpret_cast< ::protobufGenerated::InputEvent_MouseEventType*>(&::protobufGenerated::_InputEvent_MouseEventType_default_instance_);
 }
-inline ::InputEvent_MouseEventType* InputEvent::mutable_mouseevent() {
+inline ::protobufGenerated::InputEvent_MouseEventType* InputEvent::mutable_mouseevent() {
   if (!has_mouseevent()) {
     clear_Event();
     set_has_mouseevent();
-    Event_.mouseevent_ = CreateMaybeMessage< ::InputEvent_MouseEventType >(
+    Event_.mouseevent_ = CreateMaybeMessage< ::protobufGenerated::InputEvent_MouseEventType >(
         GetArenaNoVirtual());
   }
-  // @@protoc_insertion_point(field_mutable:InputEvent.mouseEvent)
+  // @@protoc_insertion_point(field_mutable:protobufGenerated.InputEvent.mouseEvent)
   return Event_.mouseevent_;
 }
 
@@ -819,33 +822,33 @@ inline InputEvent::EventCase InputEvent::Event_case() const {
 
 // InputEventList
 
-// repeated .InputEvent inputEvents = 1;
+// repeated .protobufGenerated.InputEvent inputEvents = 1;
 inline int InputEventList::inputevents_size() const {
   return inputevents_.size();
 }
 inline void InputEventList::clear_inputevents() {
   inputevents_.Clear();
 }
-inline ::InputEvent* InputEventList::mutable_inputevents(int index) {
-  // @@protoc_insertion_point(field_mutable:InputEventList.inputEvents)
+inline ::protobufGenerated::InputEvent* InputEventList::mutable_inputevents(int index) {
+  // @@protoc_insertion_point(field_mutable:protobufGenerated.InputEventList.inputEvents)
   return inputevents_.Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField< ::InputEvent >*
+inline ::google::protobuf::RepeatedPtrField< ::protobufGenerated::InputEvent >*
 InputEventList::mutable_inputevents() {
-  // @@protoc_insertion_point(field_mutable_list:InputEventList.inputEvents)
+  // @@protoc_insertion_point(field_mutable_list:protobufGenerated.InputEventList.inputEvents)
   return &inputevents_;
 }
-inline const ::InputEvent& InputEventList::inputevents(int index) const {
-  // @@protoc_insertion_point(field_get:InputEventList.inputEvents)
+inline const ::protobufGenerated::InputEvent& InputEventList::inputevents(int index) const {
+  // @@protoc_insertion_point(field_get:protobufGenerated.InputEventList.inputEvents)
   return inputevents_.Get(index);
 }
-inline ::InputEvent* InputEventList::add_inputevents() {
-  // @@protoc_insertion_point(field_add:InputEventList.inputEvents)
+inline ::protobufGenerated::InputEvent* InputEventList::add_inputevents() {
+  // @@protoc_insertion_point(field_add:protobufGenerated.InputEventList.inputEvents)
   return inputevents_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::InputEvent >&
+inline const ::google::protobuf::RepeatedPtrField< ::protobufGenerated::InputEvent >&
 InputEventList::inputevents() const {
-  // @@protoc_insertion_point(field_list:InputEventList.inputEvents)
+  // @@protoc_insertion_point(field_list:protobufGenerated.InputEventList.inputEvents)
   return inputevents_;
 }
 
@@ -861,6 +864,7 @@ InputEventList::inputevents() const {
 
 // @@protoc_insertion_point(namespace_scope)
 
+}  // namespace protobufGenerated
 
 // @@protoc_insertion_point(global_scope)
 

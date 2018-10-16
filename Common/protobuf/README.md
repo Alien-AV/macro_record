@@ -1,0 +1,2 @@
+## Rebuild the C++ and C# implementations of the Events protocol
+If you change the *Events.proto* file in this folder, and want your changes to take effect, you need to copy the *your_vcpkg_folder/packages/protobuf_x64-windows-static/tools/protobuf/protoc.exe* into this folder, and run *regenerate-protoc-events.bat*

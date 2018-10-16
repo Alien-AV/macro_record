@@ -20,7 +20,7 @@ void KeyboardEvent::inject() const
 
 std::unique_ptr<std::vector<unsigned char>> KeyboardEvent::serialize() const
 {
-	auto serialized_event = std::make_unique<InputEvent>();
+	auto serialized_event = std::make_unique<protobufGenerated::InputEvent>();
 	auto serialized_keyboard_event = serialized_event->mutable_keyboardevent();
 	serialized_keyboard_event->set_virtualkeycode(virtualKeyCode);
 	serialized_keyboard_event->set_keyup(keyUp);

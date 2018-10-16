@@ -8,7 +8,7 @@ namespace MacroRecorderGUI
 {
     internal class FileOperations
     {
-        internal static void SaveEventsToFile(IEnumerable<InputEvent> inputEventList)
+        internal static void SaveEventsToFile(IEnumerable<ProtobufGenerated.InputEvent> inputEventList)
         {
             var saveFileDialog = new SaveFileDialog();
             if (saveFileDialog.ShowDialog() != true) return;
@@ -17,7 +17,7 @@ namespace MacroRecorderGUI
             File.WriteAllBytes(saveFileDialog.FileName, serializedEvents);
         }
 
-        internal static IEnumerable<InputEvent> LoadEventsFromFile()
+        internal static IEnumerable<ProtobufGenerated.InputEvent> LoadEventsFromFile()
         {
             var openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() != true) return null;

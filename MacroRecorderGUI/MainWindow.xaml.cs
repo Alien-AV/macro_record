@@ -17,13 +17,13 @@ namespace MacroRecorderGUI
         private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
         private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
 
-        public ObservableCollection<InputEvent> EventsObsColl = new ObservableCollection<InputEvent>();
+        public ObservableCollection<ProtobufGenerated.InputEvent> EventsObsColl = new ObservableCollection<ProtobufGenerated.InputEvent>();
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
             var evtBuf = new byte[bufSize];
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
-            var parsedEvent = InputEvent.Parser.ParseFrom(evtBuf);
+            var parsedEvent = ProtobufGenerated.InputEvent.Parser.ParseFrom(evtBuf);
 
             Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
         }
@@ -82,7 +82,7 @@ namespace MacroRecorderGUI
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItems = EventsListBox.SelectedItems.Cast<InputEvent>().ToList();
+            var selectedItems = EventsListBox.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
             foreach (var eventToRemove in selectedItems)
             {
                 EventsObsColl.Remove(eventToRemove);
@@ -138,7 +138,7 @@ namespace MacroRecorderGUI
             }
         }
 
-        private void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
+        private void PopulateEventCollectionWithNewEvents(IEnumerable<ProtobufGenerated.InputEvent> deserializedEvents)
         {
             EventsObsColl.Clear();
             foreach (var deserializedEvent in deserializedEvents)
@@ -147,17 +147,17 @@ namespace MacroRecorderGUI
             }
         }
 
-        internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
+        internal static byte[] SerializeEventsToByteArray(IEnumerable<ProtobufGenerated.InputEvent> inputEventList)
         {
-            var serializedEvents = new InputEventList();
+            var serializedEvents = new ProtobufGenerated.InputEventList();
             serializedEvents.InputEvents.AddRange(inputEventList);
             var serializedEventsByteArray = serializedEvents.ToByteArray();
             return serializedEventsByteArray;
         }
 
-        internal static IEnumerable<InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
+        internal static IEnumerable<ProtobufGenerated.InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
         {
-            var deserializedEvents = InputEventList.Parser.ParseFrom(serializedEvents);
+            var deserializedEvents = ProtobufGenerated.InputEventList.Parser.ParseFrom(serializedEvents);
             return deserializedEvents.InputEvents;
         }
 

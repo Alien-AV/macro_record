@@ -23,3 +23,5 @@ Unit tests for the DLL.
 C# WPF project, calls InjectAndCaptureDll for the actual work.
 ## macro_record
 C++ console executable that's using the DLL.
+## Common
+The files common to the C++ and C# implementation, such as the protobuf definitions, protobuf-generated code, and the status codes enum.
