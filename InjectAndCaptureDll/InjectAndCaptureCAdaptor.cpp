@@ -1,6 +1,7 @@
 #include "InjectAndCaptureDll.h"
 #include <thread>
 #include "Capture/CaptureEngine.h"
+#include "Common/DeserializeEvent.h"
 
 iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
 iac_dll_capture_event_cb_t c_callback_for_event_capture_reporting = nullptr;

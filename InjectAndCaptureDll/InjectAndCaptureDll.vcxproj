@@ -166,6 +166,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Capture\CaptureEngine.h" />
+    <ClInclude Include="Common\DeserializeEvent.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
     <ClInclude Include="Common\MouseEvent.h" />

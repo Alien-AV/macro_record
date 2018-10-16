@@ -6,26 +6,12 @@
 #define INJECTANDCAPTUREDLL_API __declspec(dllimport)
 #endif
 
-#include "Common/Event.h"
-#include <memory>
 #include <Windows.h>
-#include <vector>
 
 #include "../Common/StatusEnum.cs"
 
 namespace iac_dll {
 	// INJECTANDCAPTUREDLL_API void HandleMouseEventCapture(RAWMOUSE data); //TODO: exporting for tests - and I don't like it - isn't there other way?
- //
-	// using status_callback_t = void(*)(const std::string& error);
-	// typedef void(*capture_events_callback_t)(std::unique_ptr<Event>);
-	// INJECTANDCAPTUREDLL_API void Init();
- //
-	// INJECTANDCAPTUREDLL_API BOOL StartCapture(capture_events_callback_t);
-	// INJECTANDCAPTUREDLL_API BOOL StopCapture();
-	// //TODO: need to add "InjectEvent" export?
-	INJECTANDCAPTUREDLL_API std::ostream &operator<<(std::ostream &outstream, Event const &event);
-	INJECTANDCAPTUREDLL_API std::unique_ptr<Event> deserialize_event(std::vector<unsigned char>);
-	INJECTANDCAPTUREDLL_API std::vector<std::unique_ptr<Event>> deserialize_events(std::vector<unsigned char>);
 }
 
 extern "C" {

@@ -1,5 +1,6 @@
 #pragma once
 #include <queue>
+#include "../Common/Event.h"
 #include "../../Common/StatusEnum.cs"
 
 namespace iac_dll
