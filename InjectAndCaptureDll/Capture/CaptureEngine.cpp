@@ -282,7 +282,7 @@ namespace iac_dll {
 		process_captured_event(std::move(fake_mouse_event));
 	}
 
-	CaptureEngine::CaptureEngine(capture_events_callback_t capture_events_cb, error_callback_t error_cb) :
+	CaptureEngine::CaptureEngine(const capture_events_callback_t capture_events_cb, const error_callback_t error_cb) :
 								capture_events_callback_(capture_events_cb), error_callback_(error_cb)
 	{
 		window_thread_id_ = std::make_unique<DWORD>(0);
@@ -320,7 +320,7 @@ namespace iac_dll {
 		}
 	}
 
-	void CaptureEngine::stop_capture()
+	void CaptureEngine::stop_capture() const
 	{
 		if(PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
 		{

@@ -19,7 +19,7 @@ namespace iac_dll
 		CaptureEngine& operator=(const CaptureEngine& other) = delete;
 		
 		void start_capture() const;
-		void stop_capture();
+		void stop_capture() const;
 
 	private:
 		const static UINT WM_STARTCAPTURE = WM_USER;
