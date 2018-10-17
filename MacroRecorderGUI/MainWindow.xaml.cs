@@ -33,6 +33,10 @@ namespace MacroRecorderGUI
             if (statusCode == StatusCode.PlaybackFinished)
             {
                 //TODO: publish an event here?
+                Dispatcher.Invoke(() =>
+                {
+                    if (LoopIndefinitely.IsChecked == true) PlayEvents_Click(null, null);
+                });
             }
             else
             {

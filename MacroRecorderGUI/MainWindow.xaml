@@ -24,5 +24,7 @@
         <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="10,231,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
         <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="10,256,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Left" Margin="115,0,0,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
+        <Separator HorizontalAlignment="Left" Height="1" Margin="10,281,0,0" VerticalAlignment="Top" Width="100"/>
+        <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="10,287,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>
