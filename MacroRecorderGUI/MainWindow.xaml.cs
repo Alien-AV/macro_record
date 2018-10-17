@@ -23,6 +23,8 @@ namespace MacroRecorderGUI
 
         //public ObservableCollection<ProtobufGenerated.InputEvent> Events = new ObservableCollection<ProtobufGenerated.InputEvent>();
 
+        private MainWindowModel model = MainWindowModel.Instance;
+
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
             var evtBuf = new byte[bufSize];
@@ -71,7 +73,11 @@ namespace MacroRecorderGUI
         {
             if (!_currentMacro.Events.Any()) return;
 
-            var serializedEventsByteArray = Macro.SerializeEventsToByteArray(_currentMacro.Events);
+            var eventsCollClone = new ObservableCollection<ProtobufGenerated.InputEvent>(_currentMacro.Events);
+            model.InsertReleasedHotkeysAtStart(eventsCollClone);
+            model.InsertReleasedHotkeysAtEnd(eventsCollClone);
+
+            var serializedEventsByteArray = Macro.SerializeEventsToByteArray(eventsCollClone);
             InjectAndCaptureDll.InjectEvents(serializedEventsByteArray);
         }
         
@@ -144,5 +150,6 @@ namespace MacroRecorderGUI
         {
             InjectAndCaptureDll.InjectEventAbort();
         }
+
     }
 }
