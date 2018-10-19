@@ -23,9 +23,24 @@ namespace MacroRecorderGUI
         public static extern void InjectEventAbort();
 
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_event", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void InjectEvent(IntPtr cppBuffer, int sizeOfCppBuffer);
+        private static extern void InjectEventCppBuffer(IntPtr cppBuffer, int sizeOfCppBuffer);
 
         [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_events", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void InjectEvents(IntPtr cppBuffer, int sizeOfCppBuffer);
+        private static extern void InjectEventsCppBuffer(IntPtr cppBuffer, int sizeOfCppBuffer);
+
+        public static void InjectEvents(byte[] cSharpByteArray)
+        {
+            var sizeOfCppBuffer = Marshal.SizeOf(cSharpByteArray[0]) * cSharpByteArray.Length;
+            var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
+            try
+            {
+                Marshal.Copy(cSharpByteArray, 0, cppBuffer, sizeOfCppBuffer);
+                InjectEventsCppBuffer(cppBuffer, sizeOfCppBuffer);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(cppBuffer);
+            }
+        }
     }
 }

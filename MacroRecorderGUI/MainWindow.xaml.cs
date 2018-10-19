@@ -14,10 +14,14 @@ namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
 
-        public ObservableCollection<ProtobufGenerated.InputEvent> EventsObsColl = new ObservableCollection<ProtobufGenerated.InputEvent>();
+        private readonly Macro _currentMacro = new Macro();
+
+        //public ObservableCollection<ProtobufGenerated.InputEvent> Events = new ObservableCollection<ProtobufGenerated.InputEvent>();
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
@@ -25,7 +29,7 @@ namespace MacroRecorderGUI
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
             var parsedEvent = ProtobufGenerated.InputEvent.Parser.ParseFrom(evtBuf);
 
-            Dispatcher.Invoke(()=> EventsObsColl.Add(parsedEvent));
+            Dispatcher.Invoke(()=> _currentMacro.Events.Add(parsedEvent));
         }
 
         private void StatusCb(InjectAndCaptureDllEnums.StatusCode statusCode)
@@ -49,13 +53,13 @@ namespace MacroRecorderGUI
             InitializeComponent();
             _statusCallbackDelegate = StatusCb;
             _captureEventCallbackDelegate = CaptureEventCb;
-            EventsListBox.ItemsSource = EventsObsColl;
+            EventsListBox.ItemsSource = _currentMacro.Events;
             InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
-               InjectAndCaptureDll.StartCapture();
+            InjectAndCaptureDll.StartCapture();
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)
@@ -65,37 +69,24 @@ namespace MacroRecorderGUI
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
-            if (!EventsObsColl.Any())
-            {
-                return;
-            }
+            if (!_currentMacro.Events.Any()) return;
 
-            var serializedEventsByteArray = SerializeEventsToByteArray(EventsObsColl);
-            var sizeOfCppBuffer = Marshal.SizeOf(serializedEventsByteArray[0]) * serializedEventsByteArray.Length;
-            var cppBuffer = Marshal.AllocHGlobal(sizeOfCppBuffer);
-            try
-            {
-                Marshal.Copy(serializedEventsByteArray, 0, cppBuffer, sizeOfCppBuffer);
-                InjectAndCaptureDll.InjectEvents(cppBuffer, sizeOfCppBuffer);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(cppBuffer);
-            }
+            var serializedEventsByteArray = Macro.SerializeEventsToByteArray(_currentMacro.Events);
+            InjectAndCaptureDll.InjectEvents(serializedEventsByteArray);
         }
-
+        
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
             var selectedItems = EventsListBox.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
             foreach (var eventToRemove in selectedItems)
             {
-                EventsObsColl.Remove(eventToRemove);
+                _currentMacro.Events.Remove(eventToRemove);
             }
         }
 
         private void ClearList_Click(object sender, RoutedEventArgs e)
         {
-            EventsObsColl.Clear();
+            _currentMacro.Events.Clear();
         }
 
         private void AllowOnlyNumbersInTextBox(object sender, TextCompositionEventArgs e)
@@ -106,18 +97,16 @@ namespace MacroRecorderGUI
 
         private void ChangeDelays_Click(object sender, RoutedEventArgs e)
         {
-            if (!DelayTextBox.Text.Any())
-            {
-                return;
-            }
+            if (!DelayTextBox.Text.Any()) return;
+
             var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
             var currentTimeOffset = 0ul;
-            foreach(var inputEvent in EventsObsColl)
+            foreach(var inputEvent in _currentMacro.Events)
             {
                 inputEvent.TimeSinceStartOfRecording = currentTimeOffset;
                 currentTimeOffset += timeIncrement;
             }
-            CollectionViewSource.GetDefaultView(EventsObsColl).Refresh(); //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
+            CollectionViewSource.GetDefaultView(_currentMacro.Events).Refresh(); //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
         }
 
         private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)
@@ -130,7 +119,7 @@ namespace MacroRecorderGUI
 
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {
-            FileOperations.SaveEventsToFile(EventsObsColl);
+            FileOperations.SaveEventsToFile(_currentMacro.Events);
         }
 
         private void LoadEvents_Click(object sender, RoutedEventArgs e)
@@ -144,25 +133,11 @@ namespace MacroRecorderGUI
 
         private void PopulateEventCollectionWithNewEvents(IEnumerable<ProtobufGenerated.InputEvent> deserializedEvents)
         {
-            EventsObsColl.Clear();
+            _currentMacro.Events.Clear();
             foreach (var deserializedEvent in deserializedEvents)
             {
-                EventsObsColl.Add(deserializedEvent);
+                _currentMacro.Events.Add(deserializedEvent);
             }
-        }
-
-        internal static byte[] SerializeEventsToByteArray(IEnumerable<ProtobufGenerated.InputEvent> inputEventList)
-        {
-            var serializedEvents = new ProtobufGenerated.InputEventList();
-            serializedEvents.InputEvents.AddRange(inputEventList);
-            var serializedEventsByteArray = serializedEvents.ToByteArray();
-            return serializedEventsByteArray;
-        }
-
-        internal static IEnumerable<ProtobufGenerated.InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
-        {
-            var deserializedEvents = ProtobufGenerated.InputEventList.Parser.ParseFrom(serializedEvents);
-            return deserializedEvents.InputEvents;
         }
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)
