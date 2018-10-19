@@ -1,61 +1,40 @@
 ﻿using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Input;
 
 namespace MacroRecorderGUI
 {
+    internal sealed class MainWindowModel
+    {
+        private static readonly Lazy<MainWindowModel> LazyInstance =
+            new Lazy<MainWindowModel>(() => new MainWindowModel());
 
-    internal sealed class MainWindowModel {
-        private static readonly Lazy<MainWindowModel> lazy = new Lazy<MainWindowModel>(() => new MainWindowModel());
+        public static MainWindowModel Instance => LazyInstance.Value;
 
-        public static MainWindowModel Instance { get { return lazy.Value; } }
+        private static readonly Key[] FakeKeys =
+        {
+            Key.LeftShift,
+            Key.LeftCtrl,
+            Key.LeftAlt,
+            Key.RightShift,
+            Key.RightCtrl,
+            Key.RightAlt
+        };
 
-        private ObservableCollection<ProtobufGenerated.InputEvent> ReleasedHotkeysObsColl = new ObservableCollection<ProtobufGenerated.InputEvent>();
-
-
-        private MainWindowModel() {
-            InitReleasedHotkeyCodes();
-        }
-
-        private void InitReleasedHotkeyCodes() {
-
-            Key[] fakeKeys = {
-                Key.LeftShift,
-                Key.LeftCtrl,
-                Key.LeftAlt,
-                Key.RightShift,
-                Key.RightCtrl,
-                Key.RightAlt
-            };
-
-            foreach (var keyCode in fakeKeys) {
-                AddReleasedHotkey(keyCode);
-            }
-
-        }
-
-        private void AddReleasedHotkey(Key vkey) {
-            ReleasedHotkeysObsColl.Add(new ProtobufGenerated.InputEvent {
-                KeyboardEvent = new ProtobufGenerated.InputEvent.Types.KeyboardEventType {
+        public IEnumerable<ProtobufGenerated.InputEvent> ReleasedHotkeysObsColl = FakeKeys.Select((key) =>
+            new ProtobufGenerated.InputEvent
+            {
+                KeyboardEvent = new ProtobufGenerated.InputEvent.Types.KeyboardEventType
+                {
                     KeyUp = true,
-                    VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(vkey))
+                    VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(key))
                 }
             });
-        }
 
-        internal void InsertReleasedHotkeysAtEnd(ObservableCollection<ProtobufGenerated.InputEvent> eventObsColl) {
-            foreach (var item in ReleasedHotkeysObsColl) {
-                eventObsColl.Add(item);
-            }
-        }
 
-        internal void InsertReleasedHotkeysAtStart(ObservableCollection<ProtobufGenerated.InputEvent> eventObsColl) {
-            var startIdx = 0;
-
-            foreach (var item in ReleasedHotkeysObsColl) {
-                eventObsColl.Insert(startIdx, item);
-            }
-
+        private MainWindowModel()
+        {
         }
     }
 }
