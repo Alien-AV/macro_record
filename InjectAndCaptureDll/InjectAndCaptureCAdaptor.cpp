@@ -56,6 +56,10 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialize
 	std::thread injection_list_thread{
 		[events_vec=std::move(events_vec)]{
 			stop_injection = false;
+			if(!BlockInput(true))
+			{
+				OutputDebugString(std::to_wstring(GetLastError()).c_str());
+			}
 
 			const auto start_time = std::chrono::high_resolution_clock::now();
 			for (auto&& event : events_vec)
@@ -67,6 +71,7 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialize
 				std::this_thread::sleep_until(start_time + event->time_since_start_of_recording);
 				event->inject();
 			}
+			BlockInput(false);
 			c_callback_for_status_reporting(InjectAndCaptureDllEnums::PlaybackFinished); // <- ye this is pretty dumb
 		}
 	};
