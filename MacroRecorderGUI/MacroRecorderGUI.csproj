@@ -119,6 +119,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Event\KeyboardEvent.cs" />
+    <Compile Include="Event\MouseEvent.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
