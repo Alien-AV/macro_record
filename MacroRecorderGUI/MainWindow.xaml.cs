@@ -63,6 +63,7 @@ namespace MacroRecorderGUI
         private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
             InjectAndCaptureDll.StopCapture();
+            if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)

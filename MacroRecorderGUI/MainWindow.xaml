@@ -20,11 +20,12 @@
         <ListBox x:Name="EventsListBox" Margin="115,10,10,31" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
         <TextBox x:Name="DelayTextBox" PreviewTextInput="AllowOnlyNumbersInTextBox" HorizontalAlignment="Left" Height="23" Margin="10,197,0,0" TextWrapping="Wrap" Text="5000" VerticalAlignment="Top" Width="78"/>
         <TextBlock x:Name="MicroSecondsTextBlock" HorizontalAlignment="Left" Margin="93,198,0,0" TextWrapping="Wrap" Text="μs" VerticalAlignment="Top" Width="17" RenderTransformOrigin="-0.118,5.514"/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,225,0,0" VerticalAlignment="Top" Width="100"/>
-        <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="10,231,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
-        <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="10,256,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
+        <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Left" Margin="10,225,0,0" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
+        <Separator HorizontalAlignment="Left" Height="1" Margin="10,245,0,0" VerticalAlignment="Top" Width="100"/>
+        <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="10,251,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
+        <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="10,276,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Left" Margin="115,0,0,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,281,0,0" VerticalAlignment="Top" Width="100"/>
-        <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="10,287,0,0" VerticalAlignment="Top"/>
+        <Separator HorizontalAlignment="Left" Height="1" Margin="10,301,0,0" VerticalAlignment="Top" Width="100"/>
+        <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>
