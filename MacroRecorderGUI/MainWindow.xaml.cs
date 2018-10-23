@@ -57,6 +57,7 @@ namespace MacroRecorderGUI
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
+            if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
             InjectAndCaptureDll.StartCapture();
         }
 
