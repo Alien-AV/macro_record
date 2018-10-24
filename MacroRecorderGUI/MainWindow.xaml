@@ -8,26 +8,34 @@
         Title="Macro Recorder" Height="600" Width="800">
 
     <Grid>
-        <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
-        <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
-        <CheckBox x:Name="ClearListOnStartRecord" Content="Auto Clear List" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" ToolTip="Clear list when starting a new recording."/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,80,0,0" VerticalAlignment="Top" Width="100"/>
-        <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="10,86,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
-        <Button x:Name="AbortPlayback" Content="Abort Playback" HorizontalAlignment="Left" Margin="10,111,0,0" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,136,0,0" VerticalAlignment="Top" Width="100"/>
-        <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="10,142,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
-        <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="10,167,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,192,0,0" VerticalAlignment="Top" Width="100"/>
-        <Button x:Name="ChangeDelays" Content="Change Delays" HorizontalAlignment="Left" Margin="10,198,0,0" VerticalAlignment="Top" Width="100" Click="ChangeDelays_Click"/>
-        <ListBox x:Name="EventsListBox" Margin="115,10,10,31" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
-        <TextBox x:Name="DelayTextBox" PreviewTextInput="AllowOnlyNumbersInTextBox" HorizontalAlignment="Left" Height="23" Margin="10,223,0,0" TextWrapping="Wrap" Text="5000" VerticalAlignment="Top" Width="78"/>
-        <TextBlock x:Name="MicroSecondsTextBlock" HorizontalAlignment="Left" Margin="93,224,0,0" TextWrapping="Wrap" Text="μs" VerticalAlignment="Top" Width="17" RenderTransformOrigin="-0.118,5.514"/>
-        <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Left" Margin="10,251,0,0" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,271,0,0" VerticalAlignment="Top" Width="100"/>
-        <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="10,277,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
-        <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="10,302,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
-        <TextBlock x:Name="Instructions" HorizontalAlignment="Left" Margin="115,0,0,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <Separator HorizontalAlignment="Left" Height="1" Margin="10,327,0,0" VerticalAlignment="Top" Width="100"/>
-        <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="10,333,0,0" VerticalAlignment="Top"/>
+        <StackPanel HorizontalAlignment="Left" Width="100" Margin="10,10,0,10">
+            <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
+            <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
+            <CheckBox x:Name="ClearListOnStartRecord" Content="Auto Clear List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Clear list when starting a new recording." IsChecked="True"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
+            <Button x:Name="AbortPlayback" Content="Abort Playback" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
+            <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
+            <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="ChangeDelays" Content="Change Delays" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ChangeDelays_Click"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="DelayTextBox" PreviewTextInput="AllowOnlyNumbersInTextBox" HorizontalAlignment="Left" Height="23" Margin="0,4,0,0" TextWrapping="Wrap" Text="5000" VerticalAlignment="Top" Width="78"/>
+                <TextBlock x:Name="MicroSecondsTextBlock" HorizontalAlignment="Left" Margin="4,6,0,0" TextWrapping="Wrap" Text="μs" VerticalAlignment="Top" Width="17" RenderTransformOrigin="-0.118,5.514"/>
+            </StackPanel>
+            <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
+            <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
+        </StackPanel>
+        <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
+        <TabControl x:Name="TabControl" Margin="120,10,10,31">
+            <TabItem Header="Macro">
+                <ListBox x:Name="EventsListBox" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
+            </TabItem>
+        </TabControl>
+
     </Grid>
 </Window>
