@@ -32,7 +32,15 @@
         </StackPanel>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
         <TabControl x:Name="TabControl" Margin="120,10,10,31">
-            <TabItem Header="Macro">
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock>Macro1</TextBlock>
+                        <Button HorizontalAlignment="Right" Margin="4,0" Height="14" Background="White" Padding="1">
+                            <Label Content="x" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0" RenderTransformOrigin="0.5,0.5" Height="18"/>
+                        </Button>
+                    </StackPanel>
+                </TabItem.Header>
                 <ListBox x:Name="EventsListBox" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
             </TabItem>
         </TabControl>
