@@ -122,6 +122,10 @@
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
+    <Page Include="CrossButton.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -36,9 +36,7 @@
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock>Macro1</TextBlock>
-                        <Button HorizontalAlignment="Right" Margin="4,0" Height="14" Background="White" Padding="1">
-                            <Label Content="x" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0" RenderTransformOrigin="0.5,0.5" Height="18"/>
-                        </Button>
+                        <Button Style="{StaticResource CrossButton}"  HorizontalAlignment="Right" Height="14" Margin="2,2,0,0"/>
                     </StackPanel>
                 </TabItem.Header>
                 <ListBox x:Name="EventsListBox" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
