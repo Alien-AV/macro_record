@@ -10,7 +10,7 @@ namespace MacroRecorderGUI
 {
     public class Macro
     {
-        public ObservableCollection<InputEvent> Events = new ObservableCollection<InputEvent>();
+        public ObservableCollection<InputEvent> Events { get; } = new ObservableCollection<InputEvent>();
 
         internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
         {
@@ -75,18 +75,18 @@ namespace MacroRecorderGUI
             }
         }
 
-        public void PopulateEventCollectionWithNewEvents(IEnumerable<ProtobufGenerated.InputEvent> deserializedEvents)
+        public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
         {
-            this.Events.Clear();
+            Events.Clear();
             foreach (var deserializedEvent in deserializedEvents)
             {
-                this.Events.Add(deserializedEvent);
+                Events.Add(deserializedEvent);
             }
         }
 
         public void AddEvent(InputEvent parsedEvent)
         {
-            this.Events.Add(parsedEvent);
+            Events.Add(parsedEvent);
         }
     }
 }

@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:MacroRecorderGUI"
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
+    <Window.DataContext>
+        <local:MainWindowModel/>
+    </Window.DataContext>
 
     <Grid>
         <StackPanel HorizontalAlignment="Left" Width="100" Margin="10,10,0,10">
@@ -31,17 +34,22 @@
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         </StackPanel>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <TabControl x:Name="TabControl" Margin="120,10,10,31">
-            <TabItem>
-                <TabItem.Header>
+        <TabControl x:Name="TabControl" Margin="120,10,10,31" ItemsSource="{Binding MacroTabs}">
+            <TabControl.ItemTemplate>
+                <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock>Macro1</TextBlock>
+                        <TextBlock Text="{Binding Name}"/>
                         <Button Style="{StaticResource CrossButton}"  HorizontalAlignment="Right" Height="14" Margin="2,2,0,0"/>
                     </StackPanel>
-                </TabItem.Header>
-                <ListBox x:Name="EventsListBox" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
-            </TabItem>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <DataTemplate>
+                    <ListBox ItemsSource="{Binding Macro.Events}" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
         </TabControl>
 
     </Grid>
 </Window>
+

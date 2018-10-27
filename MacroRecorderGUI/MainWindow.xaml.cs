@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -15,11 +16,7 @@ namespace MacroRecorderGUI
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
 
-        private readonly Macro _currentMacro = new Macro();
-
-        //public ObservableCollection<ProtobufGenerated.InputEvent> Events = new ObservableCollection<ProtobufGenerated.InputEvent>();
-
-        private MainWindowModel _model = MainWindowModel.Instance;
+        internal static readonly Macro _currentMacro = new Macro();
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
@@ -51,7 +48,7 @@ namespace MacroRecorderGUI
             InitializeComponent();
             _statusCallbackDelegate = StatusCb;
             _captureEventCallbackDelegate = CaptureEventCb;
-            EventsListBox.ItemsSource = _currentMacro.Events;
+
             InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
 
@@ -74,8 +71,8 @@ namespace MacroRecorderGUI
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItems = EventsListBox.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
-            _currentMacro.RemoveEvents(selectedItems);
+//            var selectedItems = EventsListBox.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
+//            _currentMacro.RemoveEvents(selectedItems);
         }
 
         private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)
