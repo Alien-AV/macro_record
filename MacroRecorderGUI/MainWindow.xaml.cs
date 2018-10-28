@@ -1,55 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
-using InjectAndCaptureDllEnums;
 
 namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
-
-        internal static readonly Macro _currentMacro = new Macro();
-
-        private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
-        {
-            var evtBuf = new byte[bufSize];
-            Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
-            var parsedEvent = ProtobufGenerated.InputEvent.Parser.ParseFrom(evtBuf);
-
-            Dispatcher.Invoke(()=> _currentMacro.AddEvent(parsedEvent));
-        }
-
-        private void StatusCb(InjectAndCaptureDllEnums.StatusCode statusCode)
-        {
-            if (statusCode == StatusCode.PlaybackFinished)
-            {
-                //TODO: publish an event here?
-                Dispatcher.Invoke(() =>
-                {
-                    if (LoopIndefinitely.IsChecked == true) PlayEvents_Click(null, null);
-                });
-            }
-            else
-            {
-                MessageBox.Show("Status reported: \"" + statusCode + "\".");
-            }
-        }
-
         public MainWindow()
         {
             InitializeComponent();
-            _statusCallbackDelegate = StatusCb;
-            _captureEventCallbackDelegate = CaptureEventCb;
-
-            InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
 
         private void StartRecord_Click(object sender, RoutedEventArgs e)
@@ -66,7 +27,7 @@ namespace MacroRecorderGUI
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
-            _currentMacro.PlayMacro();
+            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.PlayMacro();
         }
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
@@ -85,7 +46,7 @@ namespace MacroRecorderGUI
 
         private void ClearList_Click(object sender, RoutedEventArgs e)
         {
-            _currentMacro.Clear();
+            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.Clear();
         }
 
         private void AllowOnlyNumbersInTextBox(object sender, TextCompositionEventArgs e)
@@ -98,17 +59,17 @@ namespace MacroRecorderGUI
         {
             if (!DelayTextBox.Text.Any()) return;
             var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
-            _currentMacro.ChangeDelays(timeIncrement);
+            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.ChangeDelays(timeIncrement);
         }
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {
-            _currentMacro.SaveToFile(); //TODO: inject "filesaver" or whatever
+            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.SaveToFile(); //TODO: inject "filesaver" or whatever
         }
 
         private void LoadEvents_Click(object sender, RoutedEventArgs e)
         {
-            _currentMacro.LoadFromFile(); //TODO: inject "fileloader" or whatever
+            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.LoadFromFile(); //TODO: inject "fileloader" or whatever
         }
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)

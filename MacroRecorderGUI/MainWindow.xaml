@@ -18,7 +18,7 @@
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
             <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
             <Button x:Name="AbortPlayback" Content="Abort Playback" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
-            <CheckBox x:Name="LoopIndefinitely" Content="Loop" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="LoopIndefinitely"  IsChecked="{Binding LoopIndefinitely}" Content="Loop" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
             <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
             <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
@@ -34,7 +34,7 @@
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         </StackPanel>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <TabControl x:Name="TabControl" Margin="120,10,10,31" ItemsSource="{Binding MacroTabs}">
+        <TabControl x:Name="TabControl" Margin="120,10,10,31" ItemsSource="{Binding MacroTabs}" SelectedIndex="{Binding SelectedTabIndex}">
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
