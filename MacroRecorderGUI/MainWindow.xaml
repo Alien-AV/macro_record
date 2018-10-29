@@ -12,7 +12,9 @@
 
     <Grid>
         <StackPanel HorizontalAlignment="Left" Width="100" Margin="10,10,0,10">
-            <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
+            <Button x:Name="AddTab" Content="Add Tab" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AddTab_Click"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
             <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
             <CheckBox x:Name="ClearListOnStartRecord" Content="Auto Clear List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Clear list when starting a new recording." IsChecked="True"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>

@@ -77,5 +77,9 @@ namespace MacroRecorderGUI
             InjectAndCaptureDll.InjectEventAbort();
         }
 
+        private void AddTab_Click(object sender, RoutedEventArgs e)
+        {
+            (DataContext as MainWindowModel).AddNewTab();
+        }
     }
 }

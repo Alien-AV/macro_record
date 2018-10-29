@@ -15,7 +15,7 @@ namespace MacroRecorderGUI
 
         public MainWindowModel()
         {
-            MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro1"), new MacroTab(new Macro(), "macro2")};
+            MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro0"), new MacroTab(new Macro(), "macro1")};
             InitCaptureEngine();
         }
 
@@ -33,8 +33,15 @@ namespace MacroRecorderGUI
         }
         public ObservableCollection<MacroTab> MacroTabs { get; set; }
 
-        public int SelectedTabIndex { get; set; } = 0;
-        public bool LoopIndefinitely { get; set; } = false;
+        public int SelectedTabIndex { get; set; }
+
+        public bool LoopIndefinitely { get; set; }
+
+        public void AddNewTab()
+        {
+            MacroTabs.Add(new MacroTab(new Macro(), $"macro{MacroTabs.Count}"));
+            SelectedTabIndex = MacroTabs.Count - 1;
+        }
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
