@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using InjectAndCaptureDllEnums;
 
-namespace MacroRecorderGUI
+namespace MacroRecorderGUI.Models
 {
     public class MainWindowModel
     {

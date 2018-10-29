@@ -119,10 +119,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
-    <Page Include="CrossButton.xaml">
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Page Include="Utils\CrossButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -141,7 +144,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Event\Event.cs" />
-    <Compile Include="FileOperations.cs" />
+    <Compile Include="Utils\FileOperations.cs" />
     <Compile Include="GlobalHotkeys.cs" />
     <Compile Include="InjectAndCaptureDLL.cs" />
     <Compile Include="Macro.cs" />
@@ -151,7 +154,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainWindowModel.cs" />
+    <Compile Include="Models\MainWindowModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -197,6 +200,7 @@
   <ItemGroup>
     <Resource Include="mouse.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

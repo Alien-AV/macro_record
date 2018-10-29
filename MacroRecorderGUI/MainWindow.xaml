@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MacroRecorderGUI"
+        xmlns:local="clr-namespace:MacroRecorderGUI" 
+        xmlns:models="clr-namespace:MacroRecorderGUI.Models"
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
     <Window.DataContext>
-        <local:MainWindowModel/>
+        <models:MainWindowModel/>
     </Window.DataContext>
 
     <Grid>

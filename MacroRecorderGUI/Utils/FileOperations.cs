@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32;
 
-namespace MacroRecorderGUI
+namespace MacroRecorderGUI.Utils
 {
     internal class FileOperations
     {
