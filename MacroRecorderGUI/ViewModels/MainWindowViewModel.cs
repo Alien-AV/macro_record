@@ -4,7 +4,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using InjectAndCaptureDllEnums;
+using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Models;
 using ProtobufGenerated;
 
@@ -42,6 +44,8 @@ namespace MacroRecorderGUI.ViewModels
         }
 
         public bool LoopPlayback { get; set; }
+        public Macro ActiveMacro => MacroTabs[SelectedTabIndex].Macro;
+
 
         public void AddNewTab()
         {
@@ -49,7 +53,16 @@ namespace MacroRecorderGUI.ViewModels
             SelectedTabIndex = MacroTabs.Count - 1;
         }
 
-        public Macro ActiveMacro => MacroTabs[SelectedTabIndex].Macro;
+        private ICommand _closeTabCommand;
+
+        public ICommand CloseTabCommand
+        {
+            get
+            {
+                return _closeTabCommand ?? (_closeTabCommand =
+                           new DelegateCommand<MacroTab>(macroTab => MacroTabs.Remove(macroTab)));
+            }
+        }
 
 
         #region CaptureEngineStuff
