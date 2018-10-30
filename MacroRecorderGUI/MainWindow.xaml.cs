@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using MacroRecorderGUI.ViewModels;
+using ProtobufGenerated;
 
 namespace MacroRecorderGUI
 {
@@ -31,15 +34,24 @@ namespace MacroRecorderGUI
             (DataContext as MainWindowViewModel)?.ActiveMacro.PlayMacro();
         }
 
+        private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //TODO: the need to handle this manually disgusts me, however there's no native way in wpf to bind to SelectedItems. another possible WA:
+            // when Events will be wrapped in a presentable class, it can have a "isSelected" property which is bound per item in the list
+            // (not sure about the overhead of such a mass binding)
+            foreach (ProtobufGenerated.InputEvent addedItem in e.AddedItems)
+            {
+                ((sender as ListBox)?.DataContext as MainWindowViewModel.MacroTab)?.Macro.SelectedEvents.Add(addedItem);
+            }
+            foreach (ProtobufGenerated.InputEvent removedItem in e.RemovedItems)
+            {
+                ((sender as ListBox)?.DataContext as MainWindowViewModel.MacroTab)?.Macro.SelectedEvents.Remove(removedItem);
+            }
+        }
+
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine(sender.GetType());
-            // TODO: broken. TabControl.SelectedContent is actually a MacroTab type. how to get a the specific instance of the tab content template and fetch the ListBox from it?
-            // various WAs
-            // 1. eventually when Events are wrapped in a presentable class, it will have a "isSelected" property which will be bound to each item
-            // 2. SelectionChanged="ListBox_SelectionChanged" and edit a SelectedItems on the bound macro manually in codebehind?
-//            var selectedEvents = (TabControl.SelectedContent as ListBox)?.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
-//            (DataContext as MainWindowViewModel)?.ActiveMacro.RemoveSelectedEvents(selectedEvents);
+            (DataContext as MainWindowViewModel)?.ActiveMacro.RemoveSelectedEvents();
         }
 
         private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)

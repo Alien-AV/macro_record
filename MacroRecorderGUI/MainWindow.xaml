@@ -49,7 +49,7 @@
             </TabControl.ItemTemplate>
             <TabControl.ContentTemplate>
                 <DataTemplate>
-                    <ListBox ItemsSource="{Binding Macro.Events}" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown"/>
+                    <ListBox ItemsSource="{Binding Macro.Events}" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown" SelectionChanged="Selector_OnSelectionChanged"/>
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
