@@ -6,7 +6,7 @@ namespace MacroRecorderGUI.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void RaisePropertyChangedEvent(string propertyName)
+        protected void OnPropertyChanged(string propertyName)
         {
             var handler = PropertyChanged;
             handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));

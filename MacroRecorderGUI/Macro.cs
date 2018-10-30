@@ -40,8 +40,9 @@ namespace MacroRecorderGUI
             Events.Clear();
         }
 
-        public void RemoveEvents(IEnumerable<InputEvent> selectedItems)
+        public void RemoveSelectedEvents(IEnumerable<InputEvent> selectedItems)
         {
+            if (selectedItems == null) return;
             foreach (var eventToRemove in selectedItems)
             {
                 Events.Remove(eventToRemove);

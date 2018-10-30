@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
-using MacroRecorderGUI.Models;
+using MacroRecorderGUI.ViewModels;
 
 namespace MacroRecorderGUI
 {
@@ -28,13 +28,18 @@ namespace MacroRecorderGUI
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
-            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.PlayMacro();
+            (DataContext as MainWindowViewModel)?.ActiveMacro.PlayMacro();
         }
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-//            var selectedItems = EventsListBox.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
-//            _currentMacro.RemoveEvents(selectedItems);
+            Console.WriteLine(sender.GetType());
+            // TODO: broken. TabControl.SelectedContent is actually a MacroTab type. how to get a the specific instance of the tab content template and fetch the ListBox from it?
+            // various WAs
+            // 1. eventually when Events are wrapped in a presentable class, it will have a "isSelected" property which will be bound to each item
+            // 2. SelectionChanged="ListBox_SelectionChanged" and edit a SelectedItems on the bound macro manually in codebehind?
+//            var selectedEvents = (TabControl.SelectedContent as ListBox)?.SelectedItems.Cast<ProtobufGenerated.InputEvent>().ToList();
+//            (DataContext as MainWindowViewModel)?.ActiveMacro.RemoveSelectedEvents(selectedEvents);
         }
 
         private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)
@@ -47,7 +52,7 @@ namespace MacroRecorderGUI
 
         private void ClearList_Click(object sender, RoutedEventArgs e)
         {
-            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.Clear();
+            (DataContext as MainWindowViewModel)?.ActiveMacro.Clear();
         }
 
         private void AllowOnlyNumbersInTextBox(object sender, TextCompositionEventArgs e)
@@ -60,17 +65,17 @@ namespace MacroRecorderGUI
         {
             if (!DelayTextBox.Text.Any()) return;
             var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
-            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.ChangeDelays(timeIncrement);
+            (DataContext as MainWindowViewModel)?.ActiveMacro.ChangeDelays(timeIncrement);
         }
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {
-            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.SaveToFile(); //TODO: inject "filesaver" or whatever
+            (DataContext as MainWindowViewModel)?.ActiveMacro.SaveToFile(); //TODO: inject "filesaver" or whatever
         }
 
         private void LoadEvents_Click(object sender, RoutedEventArgs e)
         {
-            (TabControl.SelectedContent as MainWindowModel.MacroTab).Macro.LoadFromFile(); //TODO: inject "fileloader" or whatever
+            (DataContext as MainWindowViewModel)?.ActiveMacro.LoadFromFile(); //TODO: inject "fileloader" or whatever
         }
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)
@@ -80,7 +85,7 @@ namespace MacroRecorderGUI
 
         private void AddTab_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowModel).AddNewTab();
+            (DataContext as MainWindowViewModel)?.AddNewTab();
         }
     }
 }
