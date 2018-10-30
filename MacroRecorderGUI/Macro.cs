@@ -2,7 +2,9 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Data;
+using System.Windows.Input;
 using Google.Protobuf;
+using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
@@ -10,7 +12,24 @@ namespace MacroRecorderGUI
 {
     public class Macro
     {
+        public Macro(string name)
+        {
+            Name = name;
+        }
+
         public ObservableCollection<InputEvent> Events { get; } = new ObservableCollection<InputEvent>();
+
+        public string Name { get; set; }
+            
+        private ICommand _closeTabCommand;
+        public ICommand CloseTabCommand
+        {
+            get
+            {
+                return _closeTabCommand ?? (_closeTabCommand =
+                           new DelegateCommand<ObservableCollection<Macro>>(macroTabs => macroTabs.Remove(this)));
+            }
+        }
 
         internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
         {
