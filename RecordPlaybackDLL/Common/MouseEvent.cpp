@@ -1,5 +1,5 @@
 #include "MouseEvent.h"
-#include "../Inject/InjectInput.h"
+#include "../Playback/PlaybackInput.h"
 
 MouseEvent::MouseEvent() = default;
 
@@ -15,9 +15,9 @@ void MouseEvent::print(std::ostream & where) const
 	where << "x: " << x << ", y: " << y << ", ActionType: " << ActionType << ", wheelRotation: " << wheelRotation << ", relative_position: " << relative_position << ", mappedToVirtualDesktop: " << mappedToVirtualDesktop << std::endl;
 }
 
-void MouseEvent::inject() const
+void MouseEvent::playback() const
 {
-	WindowsInjectionAPI::inject_mouse_event(x, y, wheelRotation, relative_position, ActionType);
+	WindowsInjectionAPI::playback_mouse_event(x, y, wheelRotation, relative_position, ActionType);
 }
 
 std::unique_ptr<std::vector<unsigned char>> MouseEvent::serialize() const

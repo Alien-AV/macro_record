@@ -20,12 +20,12 @@ namespace MacroRecorderGUI
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
-            InjectAndCaptureDll.StartCapture();
+            RecordPlaybackDll.StartCapture();
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDll.StopCapture();
+            RecordPlaybackDll.StopCapture();
             if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 
@@ -92,7 +92,7 @@ namespace MacroRecorderGUI
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDll.InjectEventAbort();
+            RecordPlaybackDll.PlaybackEventAbort();
         }
 
         private void AddTab_Click(object sender, RoutedEventArgs e)

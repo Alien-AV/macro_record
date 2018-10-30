@@ -32,7 +32,7 @@ namespace MacroRecorderGUI
             var eventsWrappedWithReleasingModKeys = ReleaseModifierKeys.ReleaseModKeysEvents
                 .Concat(Events).Concat(ReleaseModifierKeys.ReleaseModKeysEvents);
             var serializedEventsByteArray = SerializeEventsToByteArray(eventsWrappedWithReleasingModKeys);
-            InjectAndCaptureDll.InjectEvents(serializedEventsByteArray);
+            RecordPlaybackDll.PlaybackEvents(serializedEventsByteArray);
         }
 
         public void Clear()

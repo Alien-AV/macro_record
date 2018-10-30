@@ -3,12 +3,12 @@
 #include "../Common/Event.h"
 #include "../../Common/StatusEnum.cs"
 
-namespace iac_dll
+namespace record_playback
 {
 	class CaptureEngine
 	{
 	public:
-		using status_callback_t = void(*)(InjectAndCaptureDllEnums::StatusCode);
+		using status_callback_t = void(*)(RecordPlaybackDLLEnums::StatusCode);
 		using capture_events_callback_t = void(*)(std::unique_ptr<Event>);
 		
 		CaptureEngine(capture_events_callback_t, status_callback_t);
@@ -40,7 +40,7 @@ namespace iac_dll
 		static bool register_raw_input_stuff(HWND hwnd);
 		static bool unregister_raw_input_stuff();
 		static bool save_engine_ptr_to_window(const HWND&, const LPARAM&);
-		static bool get_engine_ptr_from_window(const HWND&, iac_dll::CaptureEngine**);
+		static bool get_engine_ptr_from_window(const HWND&, record_playback::CaptureEngine**);
 		static LRESULT CALLBACK capture_window_wnd_proc(HWND, UINT, WPARAM, LPARAM);
 		static bool register_window_class_if_needed(const wchar_t* class_name);
 		static DWORD WINAPI capture_window_main_loop_thread(LPVOID);

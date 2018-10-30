@@ -149,7 +149,7 @@
     <Compile Include="Event\Event.cs" />
     <Compile Include="Utils\FileOperations.cs" />
     <Compile Include="GlobalHotkeys.cs" />
-    <Compile Include="InjectAndCaptureDLL.cs" />
+    <Compile Include="RecordPlaybackDLL.cs" />
     <Compile Include="Macro.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

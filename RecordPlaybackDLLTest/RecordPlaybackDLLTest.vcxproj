@@ -60,7 +60,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\InjectAndCaptureDll\InjectAndCaptureDll.vcxproj">
+    <ProjectReference Include="..\RecordPlaybackDLL\RecordPlaybackDLL.vcxproj">
       <Project>{e3232931-d6e1-4673-8b1d-4831f9fc736b}</Project>
     </ProjectReference>
   </ItemGroup>

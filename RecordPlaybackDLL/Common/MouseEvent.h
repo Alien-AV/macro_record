@@ -1,6 +1,6 @@
 #pragma once
 #include "Event.h"
-#include "..\InjectAndCaptureDll.h"
+#include "..\RecordPlaybackDLL.h"
 
 class MouseEvent :
 	public Event
@@ -29,10 +29,10 @@ public:
 	bool mappedToVirtualDesktop = false;
 	bool relative_position = false;
 	
-	INJECTANDCAPTUREDLL_API MouseEvent();
-	INJECTANDCAPTUREDLL_API MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position);
-	INJECTANDCAPTUREDLL_API ~MouseEvent();
+	RECORD_PLAYBACK_DLL_API MouseEvent();
+	RECORD_PLAYBACK_DLL_API MouseEvent(LONG x, LONG y, DWORD action_type, DWORD wheelRotation, bool mappedToVirtualDesktop, bool relative_position);
+	RECORD_PLAYBACK_DLL_API ~MouseEvent();
 	std::unique_ptr<std::vector<unsigned char>> serialize() const override;
 	void print(std::ostream& where) const override;
-	void inject() const override;
+	void playback() const override;
 };

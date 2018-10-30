@@ -1,13 +1,13 @@
-#include "InjectAndCaptureDll.h"
+#include "RecordPlaybackDLL.h"
 #include <thread>
 #include "Capture/CaptureEngine.h"
 #include "Common/DeserializeEvent.h"
 
 iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
 iac_dll_capture_event_cb_t c_callback_for_event_capture_reporting = nullptr;
-std::unique_ptr<iac_dll::CaptureEngine> capture_engine_singleton;
+std::unique_ptr<record_playback::CaptureEngine> capture_engine_singleton;
 
-void convert_cpp_status_to_c_status_and_call_callback(const InjectAndCaptureDllEnums::StatusCode status_code)
+void convert_cpp_status_to_c_status_and_call_callback(const RecordPlaybackDLLEnums::StatusCode status_code)
 {
 	c_callback_for_status_reporting(status_code);
 }
@@ -20,55 +20,55 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	c_callback_for_event_capture_reporting(serialized_event_buf, buf_size);
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_init(iac_dll_capture_event_cb_t event_capture_cb, iac_dll_status_cb_t status_cb)
+RECORD_PLAYBACK_DLL_API void iac_dll_init(iac_dll_capture_event_cb_t event_capture_cb, iac_dll_status_cb_t status_cb)
 {
 	c_callback_for_event_capture_reporting = event_capture_cb;
 	c_callback_for_status_reporting = status_cb;
-	capture_engine_singleton = std::make_unique<iac_dll::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
+	capture_engine_singleton = std::make_unique<record_playback::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_start_capture() {
+RECORD_PLAYBACK_DLL_API void iac_dll_start_capture() {
 	capture_engine_singleton->start_capture();
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_stop_capture() {
+RECORD_PLAYBACK_DLL_API void iac_dll_stop_capture() {
 	capture_engine_singleton->stop_capture();
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_playback_event(const unsigned char serialized_event_buf[], const size_t buf_size) {
+RECORD_PLAYBACK_DLL_API void iac_dll_playback_event(const unsigned char serialized_event_buf[], const size_t buf_size) {
 	const std::vector<unsigned char> serialized_event(serialized_event_buf,serialized_event_buf+buf_size); //TODO: is this safe? should -1 in the end?
-	const auto event = iac_dll::deserialize_event(serialized_event);
-	event->inject();
+	const auto event = record_playback::deserialize_event(serialized_event);
+	event->playback();
 }
 
-bool stop_injection;
+bool stop_playback;
 
-INJECTANDCAPTUREDLL_API void iac_dll_playback_events_abort()
+RECORD_PLAYBACK_DLL_API void iac_dll_playback_events_abort()
 {
-	stop_injection = true;
+	stop_playback = true;
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_playback_events(const unsigned char serialized_event_buf[], const size_t buf_size) {
+RECORD_PLAYBACK_DLL_API void iac_dll_playback_events(const unsigned char serialized_event_buf[], const size_t buf_size) {
 	const std::vector<unsigned char> serialized_events(serialized_event_buf,serialized_event_buf+buf_size); //TODO: is this safe? should -1 in the end?
-	auto events_vec = iac_dll::deserialize_events(serialized_events);
+	auto events_vec = record_playback::deserialize_events(serialized_events);
 
 	//TODO: should this logic be in the c adaptor layer?
-	std::thread injection_list_thread{
+	std::thread playback_list_thread{
 		[events_vec=std::move(events_vec)]{
-			stop_injection = false;
+			stop_playback = false;
 
 			const auto start_time = std::chrono::high_resolution_clock::now();
 			for (auto&& event : events_vec)
 			{
-				if(stop_injection)
+				if(stop_playback)
 				{
 					return;
 				}
 				std::this_thread::sleep_until(start_time + event->time_since_start_of_recording);
-				event->inject();
+				event->playback();
 			}
-			c_callback_for_status_reporting(InjectAndCaptureDllEnums::PlaybackFinished); // <- ye this is pretty dumb
+			c_callback_for_status_reporting(RecordPlaybackDLLEnums::PlaybackFinished); // <- ye this is pretty dumb
 		}
 	};
-	injection_list_thread.detach();
+	playback_list_thread.detach();
 }

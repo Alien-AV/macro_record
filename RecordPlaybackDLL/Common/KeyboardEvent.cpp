@@ -1,5 +1,5 @@
 #include "KeyboardEvent.h"
-#include "..\Inject\InjectInput.h"
+#include "..\Playback\PlaybackInput.h"
 
 KeyboardEvent::KeyboardEvent() : virtualKeyCode(0), hardwareScanCode(0), keyUp(false)
 {
@@ -13,9 +13,9 @@ void KeyboardEvent::print(std::ostream & where) const
 	where << "virtualKeyCode: " << virtualKeyCode << ", keyUp: " << keyUp << std::endl;
 }
 
-void KeyboardEvent::inject() const
+void KeyboardEvent::playback() const
 {
-	WindowsInjectionAPI::inject_keyboard_event(virtualKeyCode, keyUp);
+	WindowsInjectionAPI::playback_keyboard_event(virtualKeyCode, keyUp);
 }
 
 std::unique_ptr<std::vector<unsigned char>> KeyboardEvent::serialize() const

@@ -3,13 +3,13 @@
 #include <strsafe.h>
 #include <algorithm>
 #include <chrono>
-#include "../InjectAndCaptureDll.h"
+#include "../RecordPlaybackDLL.h"
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 #include "CaptureEngine.h"
 
-namespace iac_dll {
+namespace record_playback {
 	bool CaptureEngine::register_raw_input_stuff(HWND hwnd)
 	{
 		RAWINPUTDEVICE rid[2];
@@ -58,7 +58,7 @@ namespace iac_dll {
 		return true;
 	}
 
-	bool CaptureEngine::get_engine_ptr_from_window(const HWND &hwnd, iac_dll::CaptureEngine** capture_engine_p)
+	bool CaptureEngine::get_engine_ptr_from_window(const HWND &hwnd, record_playback::CaptureEngine** capture_engine_p)
 	{
 		SetLastError(0);
 		const auto stored_ptr = GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -135,13 +135,13 @@ namespace iac_dll {
 		HWND hwnd = nullptr;
 		auto engine_object = static_cast<CaptureEngine*>(engine_object_void_p);
 
-		const auto class_name = L"INJECT_AND_CAPTURE_DLL_WINDOW_CLASS";
+		const auto class_name = L"RECORD_PLAYBACK_DLL_WINDOW_CLASS";
 		if(!register_window_class_if_needed(class_name))
 		{
 			//TODO: report error and exit
 			return 1;
 		}
-		hwnd = CreateWindowEx(0, class_name, L"inject_and_capture_dll", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, engine_object);
+		hwnd = CreateWindowEx(0, class_name, L"RecordPlaybackDLL", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr, engine_object);
 		if (!hwnd) {
 			//TODO: report error and exit
 			return 1;

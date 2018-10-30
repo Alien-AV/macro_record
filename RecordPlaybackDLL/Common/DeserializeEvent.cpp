@@ -36,7 +36,7 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 	return nullptr;
 }
 
-std::unique_ptr<Event> iac_dll::deserialize_event(std::vector<unsigned char> serialized_event_vec) //TODO: validations maybe? error codes?
+std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned char> serialized_event_vec) //TODO: validations maybe? error codes?
 {
 	auto serialized_event = std::make_unique<protobufGenerated::InputEvent>();
 	serialized_event->ParseFromArray(serialized_event_vec.data(), int(serialized_event_vec.size()));
@@ -44,7 +44,7 @@ std::unique_ptr<Event> iac_dll::deserialize_event(std::vector<unsigned char> ser
 	return make_event_from_protobuf_input_event(*serialized_event);
 }
 
-std::vector<std::unique_ptr<Event>> iac_dll::deserialize_events(std::vector<unsigned char> serialized_events_vec)
+std::vector<std::unique_ptr<Event>> record_playback::deserialize_events(std::vector<unsigned char> serialized_events_vec)
 {
 	auto serialized_events = std::make_unique<protobufGenerated::InputEventList>();
 	serialized_events->ParseFromArray(serialized_events_vec.data(), static_cast<int>(serialized_events_vec.size()));

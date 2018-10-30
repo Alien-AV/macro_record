@@ -1,6 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
-#include "InjectAndCaptureDll.h"
+#include "RecordPlaybackDLL.h"
 #include "Capture/CaptureEngine.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,

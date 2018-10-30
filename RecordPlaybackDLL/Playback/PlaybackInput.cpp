@@ -1,7 +1,7 @@
-#include "InjectInput.h"
+#include "PlaybackInput.h"
 #include <thread>
 
-bool WindowsInjectionAPI::inject_keyboard_event(const WORD virtual_key_code, const bool key_up)
+bool WindowsInjectionAPI::playback_keyboard_event(const WORD virtual_key_code, const bool key_up)
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_KEYBOARD;
@@ -17,7 +17,7 @@ bool WindowsInjectionAPI::inject_keyboard_event(const WORD virtual_key_code, con
 	return (result != 0);
 }
 
-bool WindowsInjectionAPI::inject_mouse_event(LONG x, LONG y, DWORD wheel_rotation, bool relative_position, const DWORD flags) //TODO: implement wheel rotation injection
+bool WindowsInjectionAPI::playback_mouse_event(LONG x, LONG y, DWORD wheel_rotation, bool relative_position, const DWORD flags) //TODO: implement wheel rotation injection
 {
 	INPUT eventToInject = {}; // null everything
 	eventToInject.type = INPUT_MOUSE;

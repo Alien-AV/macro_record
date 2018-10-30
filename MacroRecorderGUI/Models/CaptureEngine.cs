@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using InjectAndCaptureDllEnums;
+using RecordPlaybackDLLEnums;
 using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Models
@@ -10,7 +10,7 @@ namespace MacroRecorderGUI.Models
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void CaptureEventCallback(IntPtr evtBufPtr, int bufSize);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void StatusCallback(InjectAndCaptureDllEnums.StatusCode statusCode);
+        public delegate void StatusCallback(RecordPlaybackDLLEnums.StatusCode statusCode);
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init", CallingConvention = CallingConvention.Cdecl)]
         public static extern void Init(CaptureEventCallback eventCb, StatusCallback statusCb);
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_capture", CallingConvention = CallingConvention.Cdecl)]
@@ -41,7 +41,7 @@ namespace MacroRecorderGUI.Models
             OnCapturedEvent(new CaptureEventsEventArgs(parsedEvent));
         }
 
-        private void StatusCb(InjectAndCaptureDllEnums.StatusCode statusCode)
+        private void StatusCb(RecordPlaybackDLLEnums.StatusCode statusCode)
         {
              OnCaptureStatus(new CaptureStatusEventArgs(statusCode));
         }

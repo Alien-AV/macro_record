@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "../RecordPlaybackDLL/InjectAndCaptureDll.h"
+#include "../RecordPlaybackDLL/RecordPlaybackDLL.h"
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
 #include "../RecordPlaybackDLL/Common/MouseEvent.h"
 
 // TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
-// 	const iac_dll::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// 	const record_playback::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -34,21 +34,21 @@
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
 // 	
-// 	iac_dll::StartCapture(cb);
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::StartCapture(cb);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 1;
 // 	data.usFlags = 0;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 0;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 2;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = -1;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // }
 //
 // TEST(CaptureMouseEvents, ShouldCaptureAbsoluteMouseMovement) {
-// 	const iac_dll::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// 	const record_playback::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -78,14 +78,14 @@
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
 // 	
-// 	iac_dll::StartCapture(cb);
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::StartCapture(cb);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 101;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 101;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 103;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // 	data.lLastX = 102;
-// 	iac_dll::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventCapture(data);
 // }

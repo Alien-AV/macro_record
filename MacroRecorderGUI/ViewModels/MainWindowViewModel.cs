@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
-using InjectAndCaptureDllEnums;
+using RecordPlaybackDLLEnums;
 using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Models;
 using ProtobufGenerated;
@@ -65,10 +65,10 @@ namespace MacroRecorderGUI.ViewModels
 
         #region CaptureEngineStuff
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
+        private RecordPlaybackDll.CaptureEventCallback _captureEventCallbackDelegate;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
+        private RecordPlaybackDll.StatusCallback _statusCallbackDelegate;
         private int _selectedTabIndex;
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
@@ -80,7 +80,7 @@ namespace MacroRecorderGUI.ViewModels
             Application.Current.Dispatcher.Invoke(()=> ActiveMacro.AddEvent(parsedEvent));
         }
 
-        private void StatusCb(InjectAndCaptureDllEnums.StatusCode statusCode)
+        private void StatusCb(RecordPlaybackDLLEnums.StatusCode statusCode)
         {
             if (statusCode == StatusCode.PlaybackFinished)
             {
@@ -98,7 +98,7 @@ namespace MacroRecorderGUI.ViewModels
             _statusCallbackDelegate = StatusCb;
             _captureEventCallbackDelegate = CaptureEventCb;
 
-            InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
+            RecordPlaybackDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
     }
     #endregion
