@@ -122,6 +122,7 @@
     <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
+    <Compile Include="Models\CaptureEngine.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
@@ -155,7 +156,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\MainWindowModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

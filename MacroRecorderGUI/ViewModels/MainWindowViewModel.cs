@@ -14,11 +14,8 @@ namespace MacroRecorderGUI.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private readonly MainWindowModel _mainWindowModel;
-
         public MainWindowViewModel()
         {
-            _mainWindowModel = new MainWindowModel();
             MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro0"), new MacroTab(new Macro(), "macro1")};
             InitCaptureEngine();
         }
