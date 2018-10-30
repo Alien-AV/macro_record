@@ -34,6 +34,18 @@ namespace MacroRecorderGUI.ViewModels
             }
 
             public string Name { get; set; }
+            
+            private ICommand _closeTabCommand;
+
+            public ICommand CloseTabCommand
+            {
+                get
+                {
+                    return _closeTabCommand ?? (_closeTabCommand =
+                               new DelegateCommand<ObservableCollection<MacroTab>>(macroTabs => macroTabs.Remove(this)));
+                }
+            }
+
         }
         public ObservableCollection<MacroTab> MacroTabs { get; set; }
 
@@ -51,17 +63,6 @@ namespace MacroRecorderGUI.ViewModels
         {
             MacroTabs.Add(new MacroTab(new Macro(), $"macro{MacroTabs.Count}"));
             SelectedTabIndex = MacroTabs.Count - 1;
-        }
-
-        private ICommand _closeTabCommand;
-
-        public ICommand CloseTabCommand
-        {
-            get
-            {
-                return _closeTabCommand ?? (_closeTabCommand =
-                           new DelegateCommand<MacroTab>(macroTab => MacroTabs.Remove(macroTab)));
-            }
         }
 
 
