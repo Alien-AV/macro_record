@@ -123,6 +123,7 @@
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
     <Compile Include="Models\CaptureEngine.cs" />
+    <Compile Include="Models\PlaybackEngine.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />

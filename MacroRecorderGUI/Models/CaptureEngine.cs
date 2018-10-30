@@ -23,14 +23,14 @@ namespace MacroRecorderGUI.Models
             _statusCallbackDelegate = StatusCb;
             _captureEventCallbackDelegate = CaptureEventCb;
 
-            InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
+            Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
 
         // if turned to a local variable, those delegates will be cleaned up and callbacks from the DLL will fail
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
+        private readonly CaptureEventCallback _captureEventCallbackDelegate;
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
+        private readonly StatusCallback _statusCallbackDelegate;
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
