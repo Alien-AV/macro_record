@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using RecordPlaybackDLLEnums;
 using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Models;
-using ProtobufGenerated;
 
 namespace MacroRecorderGUI.ViewModels
 {
@@ -16,9 +13,31 @@ namespace MacroRecorderGUI.ViewModels
     {
         public MainWindowViewModel()
         {
-            MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro0"), new MacroTab(new Macro(), "macro1")};
-            InitRecordEngine();
+            MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro0")};
+            _recordEngine = new RecordEngine();
+            _recordEngine.RecordStatus += _recordEngine_RecordStatus;
+            _recordEngine.RecordedEvent += _recordEngine_RecordedEvent;
         }
+
+        #region record engine event handlers
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private readonly RecordEngine _recordEngine;
+        private void _recordEngine_RecordStatus(object sender, RecordEngine.RecordStatusEventArgs e)
+        {
+            if (e.StatusCode == StatusCode.PlaybackFinished)
+            {
+                if (LoopPlayback) ActiveMacro.PlayMacro();
+            }
+            else
+            {
+                MessageBox.Show("Status reported: \"" + e.StatusCode + "\".");
+            }
+        }
+        private void _recordEngine_RecordedEvent(object sender, RecordEngine.RecordEventsEventArgs e)
+        {
+            Application.Current.Dispatcher.Invoke(()=> ActiveMacro.AddEvent(e.InputEvent));
+        }
+        #endregion
 
         public class MacroTab
         {
@@ -33,7 +52,6 @@ namespace MacroRecorderGUI.ViewModels
             public string Name { get; set; }
             
             private ICommand _closeTabCommand;
-
             public ICommand CloseTabCommand
             {
                 get
@@ -45,7 +63,8 @@ namespace MacroRecorderGUI.ViewModels
 
         }
         public ObservableCollection<MacroTab> MacroTabs { get; set; }
-
+        
+        private int _selectedTabIndex;
         public int SelectedTabIndex
         {
             get => _selectedTabIndex;
@@ -61,45 +80,5 @@ namespace MacroRecorderGUI.ViewModels
             MacroTabs.Add(new MacroTab(new Macro(), $"macro{MacroTabs.Count}"));
             SelectedTabIndex = MacroTabs.Count - 1;
         }
-
-
-        #region RecordEngineStuff
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private RecordPlaybackDll.RecordEventCallback _recordEventCallbackDelegate;
-
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private RecordPlaybackDll.StatusCallback _statusCallbackDelegate;
-        private int _selectedTabIndex;
-
-        private void RecordEventCb(IntPtr evtBufPtr, int bufSize)
-        {
-            var evtBuf = new byte[bufSize];
-            Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
-            var parsedEvent = ProtobufGenerated.InputEvent.Parser.ParseFrom(evtBuf);
-
-            Application.Current.Dispatcher.Invoke(()=> ActiveMacro.AddEvent(parsedEvent));
-        }
-
-        private void StatusCb(RecordPlaybackDLLEnums.StatusCode statusCode)
-        {
-            if (statusCode == StatusCode.PlaybackFinished)
-            {
-                //TODO: publish an event here?
-                if (LoopPlayback) ActiveMacro.PlayMacro();
-            }
-            else
-            {
-                MessageBox.Show("Status reported: \"" + statusCode + "\".");
-            }
-        }
-
-        private void InitRecordEngine()
-        {
-            _statusCallbackDelegate = StatusCb;
-            _recordEventCallbackDelegate = RecordEventCb;
-
-            RecordPlaybackDll.Init(_recordEventCallbackDelegate, _statusCallbackDelegate);
-        }
     }
-    #endregion
 }
