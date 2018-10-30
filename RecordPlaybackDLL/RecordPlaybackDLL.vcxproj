@@ -165,7 +165,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\protobuf\cpp\Events.pb.h" />
-    <ClInclude Include="Capture\CaptureEngine.h" />
+    <ClInclude Include="Record\RecordEngine.h" />
     <ClInclude Include="Common\DeserializeEvent.h" />
     <ClInclude Include="Common\Event.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
@@ -177,7 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\protobuf\cpp\Events.pb.cc" />
-    <ClCompile Include="Capture\CaptureEngine.cpp" />
+    <ClCompile Include="Record\RecordEngine.cpp" />
     <ClCompile Include="Common\DeserializeEvent.cpp" />
     <ClCompile Include="Common\Event.cpp" />
     <ClCompile Include="Common\KeyboardEvent.cpp" />

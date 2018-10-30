@@ -1,1 +1,1 @@
-#define INJECTANDCAPTUREDLL_API __declspec(dllexport)
+#define RECORD_PLAYBACK_DLL_API __declspec(dllexport)

@@ -3,8 +3,8 @@
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
 #include "../RecordPlaybackDLL/Common/MouseEvent.h"
 
-// TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
-// 	const record_playback::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// TEST(RecordMouseEvents, ShouldRecordRelativeMouseMovement) {
+// 	const record_playback::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -34,21 +34,21 @@
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
 // 	
-// 	record_playback::StartCapture(cb);
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::StartRecord(cb);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 1;
 // 	data.usFlags = 0;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 0;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 2;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = -1;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // }
 //
-// TEST(CaptureMouseEvents, ShouldCaptureAbsoluteMouseMovement) {
-// 	const record_playback::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// TEST(RecordMouseEvents, ShouldRecordAbsoluteMouseMovement) {
+// 	const record_playback::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -78,14 +78,14 @@
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
 // 	
-// 	record_playback::StartCapture(cb);
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::StartRecord(cb);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 101;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 101;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 103;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // 	data.lLastX = 102;
-// 	record_playback::HandleMouseEventCapture(data);
+// 	record_playback::HandleMouseEventRecord(data);
 // }

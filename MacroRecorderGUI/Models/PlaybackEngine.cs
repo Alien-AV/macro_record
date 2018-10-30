@@ -7,7 +7,7 @@ namespace MacroRecorderGUI.Models
     class PlaybackEngine
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void StatusCallback(RecordPlaybackDLLEnums.StatusCode statusCode); //TODO: separate status codes for capture and playback
+        public delegate void StatusCallback(RecordPlaybackDLLEnums.StatusCode statusCode); //TODO: separate status codes for recording and playback
         //TODO: create init function for playback engine
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_events_abort", CallingConvention = CallingConvention.Cdecl)]
         public static extern void PlaybackEventAbort();

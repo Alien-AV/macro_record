@@ -1,11 +1,11 @@
 #include "RecordPlaybackDLL.h"
 #include <thread>
-#include "Capture/CaptureEngine.h"
+#include "Record/RecordEngine.h"
 #include "Common/DeserializeEvent.h"
 
 iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
-iac_dll_capture_event_cb_t c_callback_for_event_capture_reporting = nullptr;
-std::unique_ptr<record_playback::CaptureEngine> capture_engine_singleton;
+iac_dll_record_event_cb_t c_callback_for_record_event_reporting = nullptr;
+std::unique_ptr<record_playback::RecordEngine> record_engine_singleton;
 
 void convert_cpp_status_to_c_status_and_call_callback(const RecordPlaybackDLLEnums::StatusCode status_code)
 {
@@ -17,22 +17,22 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	const auto buf_size = serialized_event_vec->size();
 	const auto serialized_event_buf = new unsigned char[buf_size]; //TODO: what frees it?
 	memcpy(serialized_event_buf, serialized_event_vec->data(), buf_size);
-	c_callback_for_event_capture_reporting(serialized_event_buf, buf_size);
+	c_callback_for_record_event_reporting(serialized_event_buf, buf_size);
 }
 
-RECORD_PLAYBACK_DLL_API void iac_dll_init(iac_dll_capture_event_cb_t event_capture_cb, iac_dll_status_cb_t status_cb)
+RECORD_PLAYBACK_DLL_API void iac_dll_init(iac_dll_record_event_cb_t event_record_cb, iac_dll_status_cb_t status_cb)
 {
-	c_callback_for_event_capture_reporting = event_capture_cb;
+	c_callback_for_record_event_reporting = event_record_cb;
 	c_callback_for_status_reporting = status_cb;
-	capture_engine_singleton = std::make_unique<record_playback::CaptureEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
+	record_engine_singleton = std::make_unique<record_playback::RecordEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
 }
 
-RECORD_PLAYBACK_DLL_API void iac_dll_start_capture() {
-	capture_engine_singleton->start_capture();
+RECORD_PLAYBACK_DLL_API void iac_dll_start_record() {
+	record_engine_singleton->start_record();
 }
 
-RECORD_PLAYBACK_DLL_API void iac_dll_stop_capture() {
-	capture_engine_singleton->stop_capture();
+RECORD_PLAYBACK_DLL_API void iac_dll_stop_record() {
+	record_engine_singleton->stop_record();
 }
 
 RECORD_PLAYBACK_DLL_API void iac_dll_playback_event(const unsigned char serialized_event_buf[], const size_t buf_size) {

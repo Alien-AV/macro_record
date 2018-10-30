@@ -20,12 +20,12 @@ namespace MacroRecorderGUI
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
-            RecordPlaybackDll.StartCapture();
+            RecordPlaybackDll.StartRecord();
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
-            RecordPlaybackDll.StopCapture();
+            RecordPlaybackDll.StopRecord();
             if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 

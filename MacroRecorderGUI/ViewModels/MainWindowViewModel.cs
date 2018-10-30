@@ -17,7 +17,7 @@ namespace MacroRecorderGUI.ViewModels
         public MainWindowViewModel()
         {
             MacroTabs = new ObservableCollection<MacroTab> {new MacroTab(new Macro(), "macro0"), new MacroTab(new Macro(), "macro1")};
-            InitCaptureEngine();
+            InitRecordEngine();
         }
 
         public class MacroTab
@@ -63,15 +63,15 @@ namespace MacroRecorderGUI.ViewModels
         }
 
 
-        #region CaptureEngineStuff
+        #region RecordEngineStuff
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private RecordPlaybackDll.CaptureEventCallback _captureEventCallbackDelegate;
+        private RecordPlaybackDll.RecordEventCallback _recordEventCallbackDelegate;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private RecordPlaybackDll.StatusCallback _statusCallbackDelegate;
         private int _selectedTabIndex;
 
-        private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
+        private void RecordEventCb(IntPtr evtBufPtr, int bufSize)
         {
             var evtBuf = new byte[bufSize];
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
@@ -93,12 +93,12 @@ namespace MacroRecorderGUI.ViewModels
             }
         }
 
-        private void InitCaptureEngine()
+        private void InitRecordEngine()
         {
             _statusCallbackDelegate = StatusCb;
-            _captureEventCallbackDelegate = CaptureEventCb;
+            _recordEventCallbackDelegate = RecordEventCb;
 
-            RecordPlaybackDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
+            RecordPlaybackDll.Init(_recordEventCallbackDelegate, _statusCallbackDelegate);
         }
     }
     #endregion

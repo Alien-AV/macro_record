@@ -7,10 +7,10 @@
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
-#include "CaptureEngine.h"
+#include "RecordEngine.h"
 
 namespace record_playback {
-	bool CaptureEngine::register_raw_input_stuff(HWND hwnd)
+	bool RecordEngine::register_raw_input_stuff(HWND hwnd)
 	{
 		RAWINPUTDEVICE rid[2];
 
@@ -27,7 +27,7 @@ namespace record_playback {
 		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
 	}
 
-	bool CaptureEngine::unregister_raw_input_stuff()
+	bool RecordEngine::unregister_raw_input_stuff()
 	{
 		RAWINPUTDEVICE rid[2];
 
@@ -44,7 +44,7 @@ namespace record_playback {
 		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
 	}
 
-	bool CaptureEngine::save_engine_ptr_to_window(const HWND &hwnd, const LPARAM &createstruct_l_param)
+	bool RecordEngine::save_engine_ptr_to_window(const HWND &hwnd, const LPARAM &createstruct_l_param)
 	{
 		auto engine_object_ptr = (reinterpret_cast<CREATESTRUCT*>(createstruct_l_param)->lpCreateParams);
 		SetLastError(0);
@@ -58,7 +58,7 @@ namespace record_playback {
 		return true;
 	}
 
-	bool CaptureEngine::get_engine_ptr_from_window(const HWND &hwnd, record_playback::CaptureEngine** capture_engine_p)
+	bool RecordEngine::get_engine_ptr_from_window(const HWND &hwnd, record_playback::RecordEngine** record_engine_p)
 	{
 		SetLastError(0);
 		const auto stored_ptr = GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -66,11 +66,11 @@ namespace record_playback {
 		{
 			return false;
 		}
-		*capture_engine_p = reinterpret_cast<CaptureEngine*>(stored_ptr);
+		*record_engine_p = reinterpret_cast<RecordEngine*>(stored_ptr);
 		return true;
 	}
 
-	LRESULT CaptureEngine::capture_window_wnd_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+	LRESULT RecordEngine::recording_window_wnd_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		switch (message)
 		{
@@ -83,7 +83,7 @@ namespace record_playback {
 			break;
 		case WM_INPUT:
 		{
-			CaptureEngine* engine_object;
+			RecordEngine* engine_object;
 			if(!get_engine_ptr_from_window(hwnd, &engine_object))
 			{
 				//TODO: report error and exit
@@ -102,11 +102,11 @@ namespace record_playback {
 
 			if (raw_input->header.dwType == RIM_TYPEKEYBOARD)
 			{
-				engine_object->handle_keyboard_event_capture(raw_input->data.keyboard);
+				engine_object->handle_keyboard_event(raw_input->data.keyboard);
 			}
 			else if (raw_input->header.dwType == RIM_TYPEMOUSE)
 			{
-				engine_object->handle_mouse_event_capture(raw_input->data.mouse);
+				engine_object->handle_mouse_event(raw_input->data.mouse);
 			}
 			break;
 		}
@@ -119,21 +119,21 @@ namespace record_playback {
 		return 0;
 	}
 
-	bool CaptureEngine::register_window_class_if_needed(const wchar_t* const class_name)
+	bool RecordEngine::register_window_class_if_needed(const wchar_t* const class_name)
 	{
 		WNDCLASSEX wx = {};
 		wx.cbSize = sizeof(WNDCLASSEX);
-		wx.lpfnWndProc = capture_window_wnd_proc;
+		wx.lpfnWndProc = recording_window_wnd_proc;
 		wx.lpszClassName = class_name;
 
 		return RegisterClassEx(&wx) || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
 	}
 
-	DWORD CaptureEngine::capture_window_main_loop_thread(LPVOID engine_object_void_p)
+	DWORD RecordEngine::recording_window_main_loop_thread(LPVOID engine_object_void_p)
 	{
 		MSG messages;
 		HWND hwnd = nullptr;
-		auto engine_object = static_cast<CaptureEngine*>(engine_object_void_p);
+		auto engine_object = static_cast<RecordEngine*>(engine_object_void_p);
 
 		const auto class_name = L"RECORD_PLAYBACK_DLL_WINDOW_CLASS";
 		if(!register_window_class_if_needed(class_name))
@@ -151,7 +151,7 @@ namespace record_playback {
 		{
 			const auto time_start = std::chrono::steady_clock::now();
 			switch (messages.message) {
-			case WM_STARTCAPTURE:
+			case WM_START_RECORD:
 				engine_object->time_of_start_of_recording_ = std::chrono::high_resolution_clock::now();
 				engine_object->fake_mouse_event_for_initial_pos();
 
@@ -160,7 +160,7 @@ namespace record_playback {
 					//TODO: report error and exit
 				}
 				break;
-			case WM_STOPCAPTURE:
+			case WM_STOP_RECORD:
 				if(!engine_object->unregister_raw_input_stuff())
 				{
 					//TODO: report error and exit
@@ -174,7 +174,7 @@ namespace record_playback {
 		return 1;
 	}
 
-	void CaptureEngine::event_fast_collector_thread_method()
+	void RecordEngine::event_fast_collector_thread_method()
 	{
 		while(true){
 			if(event_fast_collector_thread_should_close_) return;
@@ -187,89 +187,82 @@ namespace record_playback {
 			{
 				auto event = std::move(collected_events_further_processing_queue_->front());
 				collected_events_further_processing_queue_->pop();
-				capture_events_callback_(std::move(event));
+				record_events_callback_(std::move(event));
 			}
 		}
 	}
 
-	void CaptureEngine::handle_keyboard_event_capture(const RAWKEYBOARD data) const
+	void RecordEngine::handle_keyboard_event(const RAWKEYBOARD data) const
 	{
 		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
-		auto captured_kbd_event = std::make_unique<KeyboardEvent>();
-		captured_kbd_event->time_since_start_of_recording = time_since_start_of_recording;
-		captured_kbd_event->virtualKeyCode = data.VKey;
+		auto keyboard_event = std::make_unique<KeyboardEvent>();
+		keyboard_event->time_since_start_of_recording = time_since_start_of_recording;
+		keyboard_event->virtualKeyCode = data.VKey;
 		if (data.Flags & RI_KEY_BREAK) {
-			captured_kbd_event->keyUp = true;
+			keyboard_event->keyUp = true;
 		}
 		else {
-			captured_kbd_event->keyUp = false;
+			keyboard_event->keyUp = false;
 		}
 
-		process_captured_event(std::move(captured_kbd_event));
+		process_recorded_event(std::move(keyboard_event));
 	}
 
-	void CaptureEngine::handle_mouse_event_capture(RAWMOUSE data) const
+	void RecordEngine::handle_mouse_event(RAWMOUSE data) const
 	{
 		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
 
-		auto captured_mouse_event = std::make_unique<MouseEvent>();
-		captured_mouse_event->time_since_start_of_recording = time_since_start_of_recording;
-		captured_mouse_event->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
+		auto mouse_event = std::make_unique<MouseEvent>();
+		mouse_event->time_since_start_of_recording = time_since_start_of_recording;
+		mouse_event->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
 
-		captured_mouse_event->relative_position = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
+		mouse_event->relative_position = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
 
-		captured_mouse_event->x = data.lLastX;
-		captured_mouse_event->y = data.lLastY;
+		mouse_event->x = data.lLastX;
+		mouse_event->y = data.lLastY;
 
-		captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::Move;
-
+		mouse_event->ActionType |= MouseEvent::ActionTypeFlags::Move;
+		//TODO: rewrite to a prettier, more robust mapping. a million if statements is not our way
 		if (data.usButtonFlags & RI_MOUSE_WHEEL) {
-			captured_mouse_event->wheelRotation = data.usButtonData;
+			mouse_event->wheelRotation = data.usButtonData;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
 		}
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XDown;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XDown;
 		}
-
 		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
-			captured_mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XUp;
+			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XUp;
 		}
 
 		//TODO: x2 button
 
-		process_captured_event(std::move(captured_mouse_event));
+		process_recorded_event(std::move(mouse_event));
 	}
 
-	void CaptureEngine::process_captured_event(std::unique_ptr<Event> event) const
+	void RecordEngine::process_recorded_event(std::unique_ptr<Event> event) const
 	{
 		std::lock_guard<std::mutex> lock(*fast_collect_event_queue_mt_);
 		fast_collect_events_queue_->push(std::move(event));
 	}
 
-	void CaptureEngine::fake_mouse_event_for_initial_pos() const
+	void RecordEngine::fake_mouse_event_for_initial_pos() const
 	{
 		POINT initial_mouse_position;
 		GetCursorPos(&initial_mouse_position);
@@ -279,24 +272,24 @@ namespace record_playback {
 		fake_mouse_event->x = initial_mouse_position.x;
 		fake_mouse_event->y = initial_mouse_position.y;
 		fake_mouse_event->ActionType = MouseEvent::ActionTypeFlags::Move;
-		process_captured_event(std::move(fake_mouse_event));
+		process_recorded_event(std::move(fake_mouse_event));
 	}
 
-	CaptureEngine::CaptureEngine(const capture_events_callback_t capture_events_cb, const status_callback_t status_cb) :
-								capture_events_callback_(capture_events_cb), status_callback_(status_cb)
+	RecordEngine::RecordEngine(const record_events_callback_t record_events_cb, const status_callback_t status_cb) :
+								record_events_callback_(record_events_cb), status_callback_(status_cb)
 	{
 		window_thread_id_ = std::make_unique<DWORD>(0);
 		fast_collect_event_queue_mt_ = std::make_unique<std::mutex>();
 		fast_collect_events_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
 		collected_events_further_processing_queue_ = std::make_unique<std::queue<std::unique_ptr<Event>>>();
-		CreateThread(nullptr, NULL, capture_window_main_loop_thread, LPVOID(this), NULL, window_thread_id_.get());
+		CreateThread(nullptr, NULL, recording_window_main_loop_thread, LPVOID(this), NULL, window_thread_id_.get());
 
-		event_fast_collector_thread_ = std::thread{&CaptureEngine::event_fast_collector_thread_method, this};
+		event_fast_collector_thread_ = std::thread{&RecordEngine::event_fast_collector_thread_method, this};
 		
-		//TODO: wait for a notification from the capture window that the init (thread creation, window creation) is finished
+		//TODO: wait for a notification from the record window that the init (thread creation, window creation) is finished
 	}
 
-	CaptureEngine::~CaptureEngine()
+	RecordEngine::~RecordEngine()
 	{
 		if(!window_thread_id_)
 		{
@@ -305,24 +298,24 @@ namespace record_playback {
 		event_fast_collector_thread_should_close_ = true;
 		event_fast_collector_thread_.join();
 
-		PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL); // if calling stop_capture, too many things happen (like status_callback_ being called while managed is dying)
-		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);		// do I even need to call "stopcapture"?
+		PostThreadMessage(*window_thread_id_, WM_STOP_RECORD, NULL, NULL);	// can't call the stop_record method, or too many things happen (like status_callback_ being called while managed is dying)
+		PostThreadMessage(*window_thread_id_, WM_CLOSE, NULL, NULL);		// do I even need to call "stop_record"?
 		//TODO: verify that this indeed closes the bg window
 		//TODO: wait here until the window is really closed?
 		//TODO: unregister window class? (MSDN: No window classes registered by a DLL are unregistered when the DLL is unloaded)
 	}
 
-	void CaptureEngine::start_capture() const
+	void RecordEngine::start_record() const
 	{
-		if(PostThreadMessage(*window_thread_id_, WM_STARTCAPTURE, NULL, NULL) == FALSE)
+		if(PostThreadMessage(*window_thread_id_, WM_START_RECORD, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit
 		}
 	}
 
-	void CaptureEngine::stop_capture() const
+	void RecordEngine::stop_record() const
 	{
-		if(PostThreadMessage(*window_thread_id_, WM_STOPCAPTURE, NULL, NULL) == FALSE)
+		if(PostThreadMessage(*window_thread_id_, WM_STOP_RECORD, NULL, NULL) == FALSE)
 		{
 			//TODO: report error and exit
 		}
