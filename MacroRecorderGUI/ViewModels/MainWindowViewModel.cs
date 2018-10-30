@@ -38,7 +38,7 @@ namespace MacroRecorderGUI.ViewModels
         public int SelectedTabIndex
         {
             get => _selectedTabIndex;
-            set { _selectedTabIndex = value; OnPropertyChanged("SelectedTabIndex");}
+            set { _selectedTabIndex = value; OnPropertyChanged();}
         }
 
         public bool LoopPlayback { get; set; }
@@ -49,13 +49,16 @@ namespace MacroRecorderGUI.ViewModels
             SelectedTabIndex = MacroTabs.Count - 1;
         }
 
+        public Macro ActiveMacro => MacroTabs[SelectedTabIndex].Macro;
+
+
+        #region CaptureEngineStuff
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private InjectAndCaptureDll.CaptureEventCallback _captureEventCallbackDelegate;
+
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private InjectAndCaptureDll.StatusCallback _statusCallbackDelegate;
         private int _selectedTabIndex;
-
-        public Macro ActiveMacro => MacroTabs[SelectedTabIndex].Macro;
 
         private void CaptureEventCb(IntPtr evtBufPtr, int bufSize)
         {
@@ -86,6 +89,6 @@ namespace MacroRecorderGUI.ViewModels
 
             InjectAndCaptureDll.Init(_captureEventCallbackDelegate, _statusCallbackDelegate);
         }
-
     }
+    #endregion
 }

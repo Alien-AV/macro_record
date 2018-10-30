@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using MacroRecorderGUI.Annotations;
 
 namespace MacroRecorderGUI.ViewModels
 {
@@ -6,10 +8,10 @@ namespace MacroRecorderGUI.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnPropertyChanged(string propertyName)
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
