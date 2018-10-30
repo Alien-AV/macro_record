@@ -35,7 +35,7 @@ INJECTANDCAPTUREDLL_API void iac_dll_stop_capture() {
 	capture_engine_singleton->stop_capture();
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], const size_t buf_size) {
+INJECTANDCAPTUREDLL_API void iac_dll_playback_event(const unsigned char serialized_event_buf[], const size_t buf_size) {
 	const std::vector<unsigned char> serialized_event(serialized_event_buf,serialized_event_buf+buf_size); //TODO: is this safe? should -1 in the end?
 	const auto event = iac_dll::deserialize_event(serialized_event);
 	event->inject();
@@ -43,12 +43,12 @@ INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized
 
 bool stop_injection;
 
-INJECTANDCAPTUREDLL_API void iac_dll_inject_events_abort()
+INJECTANDCAPTUREDLL_API void iac_dll_playback_events_abort()
 {
 	stop_injection = true;
 }
 
-INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], const size_t buf_size) {
+INJECTANDCAPTUREDLL_API void iac_dll_playback_events(const unsigned char serialized_event_buf[], const size_t buf_size) {
 	const std::vector<unsigned char> serialized_events(serialized_event_buf,serialized_event_buf+buf_size); //TODO: is this safe? should -1 in the end?
 	auto events_vec = iac_dll::deserialize_events(serialized_events);
 

@@ -8,9 +8,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorderGUI", "MacroRe
 		{E3232931-D6E1-4673-8B1D-4831F9FC736B} = {E3232931-D6E1-4673-8B1D-4831F9FC736B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InjectAndCaptureDll", "InjectAndCaptureDll\InjectAndCaptureDll.vcxproj", "{E3232931-D6E1-4673-8B1D-4831F9FC736B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RecordPlaybackDLL", "RecordPlaybackDLL\RecordPlaybackDLL.vcxproj", "{E3232931-D6E1-4673-8B1D-4831F9FC736B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InjectAndCaptureDllTest", "InjectAndCaptureDllTest\InjectAndCaptureDllTest.vcxproj", "{3CEF2182-29DC-4059-8956-260CA91F372D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RecordPlaybackDLLTest", "RecordPlaybackDLLTest\RecordPlaybackDLLTest.vcxproj", "{3CEF2182-29DC-4059-8956-260CA91F372D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

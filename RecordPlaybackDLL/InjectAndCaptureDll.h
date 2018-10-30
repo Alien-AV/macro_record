@@ -22,7 +22,7 @@ extern "C" {
 	INJECTANDCAPTUREDLL_API void iac_dll_start_capture();
 	INJECTANDCAPTUREDLL_API void iac_dll_stop_capture();
 
-	INJECTANDCAPTUREDLL_API void iac_dll_inject_events_abort();
-	INJECTANDCAPTUREDLL_API void iac_dll_inject_event(const unsigned char serialized_event_buf[], size_t buf_size);
-	INJECTANDCAPTUREDLL_API void iac_dll_inject_events(const unsigned char serialized_event_buf[], size_t buf_size);
+	INJECTANDCAPTUREDLL_API void iac_dll_playback_events_abort();
+	INJECTANDCAPTUREDLL_API void iac_dll_playback_event(const unsigned char serialized_event_buf[], size_t buf_size);
+	INJECTANDCAPTUREDLL_API void iac_dll_playback_events(const unsigned char serialized_event_buf[], size_t buf_size);
 }

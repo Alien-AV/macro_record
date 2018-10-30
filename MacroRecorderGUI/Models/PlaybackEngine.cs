@@ -9,11 +9,11 @@ namespace MacroRecorderGUI.Models
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void StatusCallback(InjectAndCaptureDllEnums.StatusCode statusCode); //TODO: separate status codes for capture and playback
         //TODO: create init function for playback engine
-        [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_events_abort", CallingConvention = CallingConvention.Cdecl)]
+        [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_events_abort", CallingConvention = CallingConvention.Cdecl)]
         public static extern void InjectEventAbort();
-        [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_event", CallingConvention = CallingConvention.Cdecl)]
+        [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_event", CallingConvention = CallingConvention.Cdecl)]
         private static extern void InjectEventCppBuffer(IntPtr cppBuffer, int sizeOfCppBuffer);
-        [System.Runtime.InteropServices.DllImportAttribute("InjectAndCaptureDll.dll", EntryPoint = "iac_dll_inject_events", CallingConvention = CallingConvention.Cdecl)]
+        [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_events", CallingConvention = CallingConvention.Cdecl)]
         private static extern void InjectEventsCppBuffer(IntPtr cppBuffer, int sizeOfCppBuffer);
 
         public PlaybackEngine()

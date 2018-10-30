@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "../InjectAndCaptureDll/InjectAndCaptureDll.h"
-#include "../InjectAndCaptureDll/Common/KeyboardEvent.h"
-#include "../InjectAndCaptureDll/Common/MouseEvent.h"
+#include "../RecordPlaybackDLL/InjectAndCaptureDll.h"
+#include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
+#include "../RecordPlaybackDLL/Common/MouseEvent.h"
 
 // TEST(CaptureMouseEvents, ShouldCaptureRelativeMouseMovement) {
 // 	const iac_dll::capture_events_callback_t cb = [](std::unique_ptr<Event> ev)
