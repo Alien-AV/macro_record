@@ -6,11 +6,12 @@ using System.Windows.Input;
 using Google.Protobuf;
 using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Utils;
+using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
 
 namespace MacroRecorderGUI
 {
-    public class Macro
+    public class Macro : ViewModelBase
     {
         public Macro(string name)
         {
@@ -19,9 +20,15 @@ namespace MacroRecorderGUI
 
         public ObservableCollection<InputEvent> Events { get; } = new ObservableCollection<InputEvent>();
 
-        public string Name { get; set; }
-            
+        public string Name
+        {
+            get => _name;
+            set { if (value == _name) return; _name = value; OnPropertyChanged(); }
+        }
+        private string _name;
+
         private ICommand _closeTabCommand;
+
         public ICommand CloseTabCommand
         {
             get
@@ -84,16 +91,19 @@ namespace MacroRecorderGUI
 
         public void SaveToFile()
         {
-            FileOperations.SaveEventsToFile(Events);
+            var newName = FileOperations.SaveEventsToFile(Events, Name);
+            if (newName != null)
+            {
+                Name = newName;
+            }
         }
 
         public void LoadFromFile()
         {
-            var deserializedEvents = FileOperations.LoadEventsFromFile();
-            if (deserializedEvents != null)
-            {
-                PopulateEventCollectionWithNewEvents(deserializedEvents);
-            }
+            var deserializedEvents = FileOperations.LoadEventsFromFile(out var newName);
+            if (deserializedEvents == null) return;
+            PopulateEventCollectionWithNewEvents(deserializedEvents);
+            Name = newName;
         }
 
         public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
