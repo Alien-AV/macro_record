@@ -126,6 +126,7 @@
     <Compile Include="Models\PlaybackEngine.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
+    <Compile Include="ViewModels\EventTypeDataTemplateSelector.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Page Include="Utils\CrossButton.xaml">
