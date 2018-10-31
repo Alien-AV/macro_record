@@ -82,12 +82,13 @@ namespace MacroRecorderGUI
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro?.SaveToFile(); //TODO: inject "filesaver" or whatever
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.SaveToFile();
         }
 
         private void LoadEvents_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro?.LoadFromFile(); //TODO: inject "fileloader" or whatever
+            (DataContext as MainWindowViewModel)?.AddNewTab();
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.LoadFromFile();
         }
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)
