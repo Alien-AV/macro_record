@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using MacroRecorderGUI.ViewModels;
 using Microsoft.Win32;
 
 namespace MacroRecorderGUI.Utils
@@ -17,7 +18,7 @@ namespace MacroRecorderGUI.Utils
             };
             if (saveFileDialog.ShowDialog() != true) return null;
 
-            var serializedEvents = Macro.SerializeEventsToByteArray(inputEventList);
+            var serializedEvents = MacroViewModel.SerializeEventsToByteArray(inputEventList);
             File.WriteAllBytes(saveFileDialog.FileName, serializedEvents);
             return saveFileDialog.SafeFileName;
         }
@@ -36,7 +37,7 @@ namespace MacroRecorderGUI.Utils
             }
 
             var serializedEvents = File.ReadAllBytes(openFileDialog.FileName);
-            var deserializedEvents = Macro.DeserializeEventsFromByteArray(serializedEvents);
+            var deserializedEvents = MacroViewModel.DeserializeEventsFromByteArray(serializedEvents);
             name = openFileDialog.SafeFileName;
             return deserializedEvents;
         }

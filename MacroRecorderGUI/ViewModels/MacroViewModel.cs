@@ -6,14 +6,13 @@ using System.Windows.Input;
 using Google.Protobuf;
 using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Utils;
-using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
 
-namespace MacroRecorderGUI
+namespace MacroRecorderGUI.ViewModels
 {
-    public class Macro : ViewModelBase
+    public class MacroViewModel : ViewModelBase
     {
-        public Macro(string name)
+        public MacroViewModel(string name)
         {
             Name = name;
         }
@@ -34,7 +33,7 @@ namespace MacroRecorderGUI
             get
             {
                 return _closeTabCommand ?? (_closeTabCommand =
-                           new DelegateCommand<ObservableCollection<Macro>>(macroTabs => macroTabs.Remove(this)));
+                           new DelegateCommand<ObservableCollection<MacroViewModel>>(macroTabs => macroTabs.Remove(this)));
             }
         }
 

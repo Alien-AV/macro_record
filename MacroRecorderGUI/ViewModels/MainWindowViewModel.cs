@@ -13,7 +13,7 @@ namespace MacroRecorderGUI.ViewModels
     {
         public MainWindowViewModel()
         {
-            MacroTabs = new ObservableCollection<Macro> {new Macro("macro0")};
+            MacroTabs = new ObservableCollection<MacroViewModel> {new MacroViewModel("macro0")};
             _recordEngine = new RecordEngine();
             _recordEngine.RecordStatus += _recordEngine_RecordStatus;
             _recordEngine.RecordedEvent += _recordEngine_RecordedEvent;
@@ -39,7 +39,7 @@ namespace MacroRecorderGUI.ViewModels
         }
         #endregion
         
-        public ObservableCollection<Macro> MacroTabs { get; set; }
+        public ObservableCollection<MacroViewModel> MacroTabs { get; set; }
         
         private int _selectedTabIndex;
         public int SelectedTabIndex
@@ -49,11 +49,11 @@ namespace MacroRecorderGUI.ViewModels
         }
 
         public bool LoopPlayback { get; set; }
-        public Macro ActiveMacro => (SelectedTabIndex != -1)? MacroTabs[SelectedTabIndex] : null;
+        public MacroViewModel ActiveMacro => (SelectedTabIndex != -1)? MacroTabs[SelectedTabIndex] : null;
 
         public void AddNewTab()
         {
-            MacroTabs.Add(new Macro($"macro{MacroTabs.Count}"));
+            MacroTabs.Add(new MacroViewModel($"macro{MacroTabs.Count}"));
             SelectedTabIndex = MacroTabs.Count - 1;
         }
     }

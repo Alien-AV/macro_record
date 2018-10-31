@@ -41,11 +41,11 @@ namespace MacroRecorderGUI
             // (not sure about the overhead of such a mass binding)
             foreach (ProtobufGenerated.InputEvent addedItem in e.AddedItems)
             {
-                ((sender as ListBox)?.DataContext as Macro)?.SelectedEvents.Add(addedItem);
+                ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Add(addedItem);
             }
             foreach (ProtobufGenerated.InputEvent removedItem in e.RemovedItems)
             {
-                ((sender as ListBox)?.DataContext as Macro)?.SelectedEvents.Remove(removedItem);
+                ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Remove(removedItem);
             }
         }
 
