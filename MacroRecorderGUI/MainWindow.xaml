@@ -30,6 +30,26 @@
                 </Border>
             </StackPanel>
         </DataTemplate>
+        <DataTemplate x:Key="MouseEventTemplate">
+        <!-- <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=protobufGenerated:InputEvent}"> -->
+            <StackPanel Orientation="Horizontal">
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Mouse Event | Time Offset:"/>
+                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Coords:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.X}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.Y}" Margin="4,0,0,0"/>
+                        <TextBlock Text="ActionType:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.ActionType}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
         <viewModels:EventTypeDataTemplateSelector x:Key="EventTypeDataTemplateSelector"/>
     </Window.Resources>
 

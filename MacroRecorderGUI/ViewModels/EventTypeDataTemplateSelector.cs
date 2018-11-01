@@ -20,7 +20,7 @@ namespace MacroRecorderGUI.ViewModels
                 case InputEvent.EventOneofCase.KeyboardEvent:
                     return frameworkElement.FindResource("KeyEventTemplate") as DataTemplate;
                 case InputEvent.EventOneofCase.MouseEvent:
-                    return base.SelectTemplate(item, container);
+                    return frameworkElement.FindResource("MouseEventTemplate") as DataTemplate;
                 case InputEvent.EventOneofCase.None:
                 default:
                     throw new ArgumentOutOfRangeException();
