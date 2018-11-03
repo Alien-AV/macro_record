@@ -100,5 +100,29 @@ namespace MacroRecorderGUI
         {
             (DataContext as MainWindowViewModel)?.AddNewTab();
         }
+
+        private void TabItem_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!(e.Source is TabItem tabItem)) return;
+
+            if (Mouse.PrimaryDevice.LeftButton == MouseButtonState.Pressed)
+            {
+                DragDrop.DoDragDrop(tabItem, tabItem, DragDropEffects.All);
+            }
+        }
+
+        private void TabItem_Drop(object sender, DragEventArgs e)
+        {
+            if (!(e.Source is TabItem tabItemTarget) || !(tabItemTarget.DataContext is MacroViewModel macroViewModelTarget)) return;
+            if (!(e.Data.GetData(typeof(TabItem)) is TabItem tabItemSource) || !(tabItemSource.DataContext is MacroViewModel macroViewModelSource)) return;
+            if (!(TabControl.DataContext is MainWindowViewModel mainWindowViewModel)) return;
+
+            if (macroViewModelTarget == macroViewModelSource) return;
+
+            var targetIndex = mainWindowViewModel.MacroTabs.IndexOf(macroViewModelTarget);
+            mainWindowViewModel.MacroTabs.Remove(macroViewModelSource);
+            mainWindowViewModel.MacroTabs.Insert(targetIndex, macroViewModelSource);
+            mainWindowViewModel.SelectedTabIndex = targetIndex;
+        }
     }
 }
