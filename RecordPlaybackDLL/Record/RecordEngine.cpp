@@ -10,38 +10,53 @@
 #include "RecordEngine.h"
 
 namespace record_playback {
+	const auto raw_input_usage_page = 0x01;
+	const auto raw_input_usage_mouse = 0x02;
+	const auto raw_input_usage_keyboard = 0x06;
+	const auto raw_input_usage_controller = 0x05;
+	
 	bool RecordEngine::register_raw_input_stuff(HWND hwnd)
 	{
-		RAWINPUTDEVICE rid[2];
+		RAWINPUTDEVICE rid[3];
 
-		rid[0].usUsagePage = 0x01;
-		rid[0].usUsage = 0x02;
+		rid[0].usUsagePage = raw_input_usage_page;
+		rid[0].usUsage = raw_input_usage_mouse;
 		rid[0].dwFlags = RIDEV_INPUTSINK;
 		rid[0].hwndTarget = hwnd;
 
-		rid[1].usUsagePage = 0x01;
-		rid[1].usUsage = 0x06;
+		rid[1].usUsagePage = raw_input_usage_page;
+		rid[1].usUsage = raw_input_usage_keyboard;
 		rid[1].dwFlags = RIDEV_INPUTSINK;
 		rid[1].hwndTarget = hwnd;
 
-		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
+		rid[2].usUsagePage = raw_input_usage_page;
+		rid[2].usUsage = raw_input_usage_controller;
+		rid[2].dwFlags = RIDEV_INPUTSINK;
+		rid[2].hwndTarget = hwnd;
+
+		return RegisterRawInputDevices(rid, sizeof rid/sizeof rid[0], sizeof rid[0]);
 	}
 
 	bool RecordEngine::unregister_raw_input_stuff()
 	{
-		RAWINPUTDEVICE rid[2];
+		RAWINPUTDEVICE rid[3];
 
-		rid[0].usUsagePage = 0x01;
-		rid[0].usUsage = 0x02;
+		rid[0].usUsagePage = raw_input_usage_page;
+		rid[0].usUsage = raw_input_usage_mouse;
 		rid[0].dwFlags = RIDEV_REMOVE;
 		rid[0].hwndTarget = nullptr;
 
-		rid[1].usUsagePage = 0x01;
-		rid[1].usUsage = 0x06;
+		rid[1].usUsagePage = raw_input_usage_page;
+		rid[1].usUsage = raw_input_usage_keyboard;
 		rid[1].dwFlags = RIDEV_REMOVE;
 		rid[1].hwndTarget = nullptr;
 
-		return RegisterRawInputDevices(rid, 2, sizeof rid[0]);
+		rid[2].usUsagePage = raw_input_usage_page;
+		rid[2].usUsage = raw_input_usage_controller;
+		rid[2].dwFlags = RIDEV_REMOVE;
+		rid[2].hwndTarget = nullptr;
+
+		return RegisterRawInputDevices(rid, sizeof rid/sizeof rid[0], sizeof rid[0]);
 	}
 
 	bool RecordEngine::save_engine_ptr_to_window(const HWND &hwnd, const LPARAM &createstruct_l_param)
@@ -107,6 +122,10 @@ namespace record_playback {
 			else if (raw_input->header.dwType == RIM_TYPEMOUSE)
 			{
 				engine_object->handle_mouse_event(raw_input->data.mouse);
+			}
+			else if(raw_input->header.dwType == RIM_TYPEHID)
+			{
+				
 			}
 			break;
 		}
