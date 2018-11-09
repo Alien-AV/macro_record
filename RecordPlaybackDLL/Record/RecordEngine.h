@@ -48,8 +48,9 @@ namespace record_playback
 		std::thread event_fast_collector_thread_;
 		bool event_fast_collector_thread_should_close_ = false;
 
-		void handle_keyboard_event(RAWKEYBOARD data) const;
-		void handle_mouse_event(RAWMOUSE data) const;
+		void handle_keyboard_event(const RAWKEYBOARD& data) const;
+		void handle_mouse_event(const RAWMOUSE& data) const;
+		void handle_controller_event(const RAWHID& hid);
 		void process_recorded_event(std::unique_ptr<Event> event) const;
 		void fake_mouse_event_for_initial_pos() const;
 	};

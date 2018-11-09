@@ -17,7 +17,7 @@ namespace record_playback {
 	
 	bool RecordEngine::register_raw_input_stuff(HWND hwnd)
 	{
-		RAWINPUTDEVICE rid[3];
+		RAWINPUTDEVICE rid[2];
 
 		rid[0].usUsagePage = raw_input_usage_page;
 		rid[0].usUsage = raw_input_usage_mouse;
@@ -29,17 +29,12 @@ namespace record_playback {
 		rid[1].dwFlags = RIDEV_INPUTSINK;
 		rid[1].hwndTarget = hwnd;
 
-		rid[2].usUsagePage = raw_input_usage_page;
-		rid[2].usUsage = raw_input_usage_controller;
-		rid[2].dwFlags = RIDEV_INPUTSINK;
-		rid[2].hwndTarget = hwnd;
-
 		return RegisterRawInputDevices(rid, sizeof rid/sizeof rid[0], sizeof rid[0]);
 	}
 
 	bool RecordEngine::unregister_raw_input_stuff()
 	{
-		RAWINPUTDEVICE rid[3];
+		RAWINPUTDEVICE rid[2];
 
 		rid[0].usUsagePage = raw_input_usage_page;
 		rid[0].usUsage = raw_input_usage_mouse;
@@ -50,11 +45,6 @@ namespace record_playback {
 		rid[1].usUsage = raw_input_usage_keyboard;
 		rid[1].dwFlags = RIDEV_REMOVE;
 		rid[1].hwndTarget = nullptr;
-
-		rid[2].usUsagePage = raw_input_usage_page;
-		rid[2].usUsage = raw_input_usage_controller;
-		rid[2].dwFlags = RIDEV_REMOVE;
-		rid[2].hwndTarget = nullptr;
 
 		return RegisterRawInputDevices(rid, sizeof rid/sizeof rid[0], sizeof rid[0]);
 	}
@@ -122,10 +112,6 @@ namespace record_playback {
 			else if (raw_input->header.dwType == RIM_TYPEMOUSE)
 			{
 				engine_object->handle_mouse_event(raw_input->data.mouse);
-			}
-			else if(raw_input->header.dwType == RIM_TYPEHID)
-			{
-				
 			}
 			break;
 		}
@@ -211,7 +197,7 @@ namespace record_playback {
 		}
 	}
 
-	void RecordEngine::handle_keyboard_event(const RAWKEYBOARD data) const
+	void RecordEngine::handle_keyboard_event(const RAWKEYBOARD& data) const
 	{
 		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
 		auto keyboard_event = std::make_unique<KeyboardEvent>();
@@ -227,7 +213,7 @@ namespace record_playback {
 		process_recorded_event(std::move(keyboard_event));
 	}
 
-	void RecordEngine::handle_mouse_event(RAWMOUSE data) const
+	void RecordEngine::handle_mouse_event(const RAWMOUSE& data) const
 	{
 		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
 
