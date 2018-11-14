@@ -100,5 +100,34 @@ namespace MacroRecorderGUI
         {
             (DataContext as MainWindowViewModel)?.AddNewTab();
         }
+
+        private void CaptureEvent_Click(object sender, RoutedEventArgs e)
+        {
+            this.KeyDown += new KeyEventHandler(Form1_KeyDown);
+            this.KeyUp += new KeyEventHandler(Form1_KeyDown);
+        }
+        static private ulong GetCuurentTimestamp(ObservableCollection<InputEvent> events)
+        {
+            return events.Count > 0 ? events[events.Count - 1].TimeSinceStartOfRecording : 0;
+        }
+        void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            InputEvent capturedKey = new InputEvent
+            {
+                KeyboardEvent = new InputEvent.Types.KeyboardEventType
+                {
+                    KeyUp = e.IsUp,
+                    VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(e.Key))
+                },
+                TimeSinceStartOfRecording = GetCuurentTimestamp((DataContext as MainWindowViewModel)?.ActiveMacro?.Events)
+            };
+            if(e.IsUp == true)
+            {
+                this.KeyUp -= new KeyEventHandler(Form1_KeyDown);
+                this.KeyDown -= new KeyEventHandler(Form1_KeyDown);
+            }
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.AddEvent(capturedKey);       
+        }
+        
     }
 }
