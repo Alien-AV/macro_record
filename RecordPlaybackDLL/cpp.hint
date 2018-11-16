@@ -1,0 +1,1 @@
+#define RECORD_PLAYBACK_DLL_API __declspec(dllexport)

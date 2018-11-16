@@ -20,18 +20,18 @@ namespace MacroRecorderGUI
         private void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
-            InjectAndCaptureDll.StartCapture();
+            RecordPlaybackDll.StartRecord();
         }
 
         private void StopRecord_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDll.StopCapture();
+            RecordPlaybackDll.StopRecord();
             if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 
         private void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro.PlayMacro();
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.PlayMacro();
         }
 
         private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -41,17 +41,17 @@ namespace MacroRecorderGUI
             // (not sure about the overhead of such a mass binding)
             foreach (ProtobufGenerated.InputEvent addedItem in e.AddedItems)
             {
-                ((sender as ListBox)?.DataContext as MainWindowViewModel.MacroTab)?.Macro.SelectedEvents.Add(addedItem);
+                ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Add(addedItem);
             }
             foreach (ProtobufGenerated.InputEvent removedItem in e.RemovedItems)
             {
-                ((sender as ListBox)?.DataContext as MainWindowViewModel.MacroTab)?.Macro.SelectedEvents.Remove(removedItem);
+                ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Remove(removedItem);
             }
         }
 
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro.RemoveSelectedEvents();
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.RemoveSelectedEvents();
         }
 
         private void EventsListBox_OnKeyDown(object sender, KeyEventArgs e)
@@ -64,7 +64,7 @@ namespace MacroRecorderGUI
 
         private void ClearList_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro.Clear();
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.Clear();
         }
 
         private void AllowOnlyNumbersInTextBox(object sender, TextCompositionEventArgs e)
@@ -77,22 +77,23 @@ namespace MacroRecorderGUI
         {
             if (!DelayTextBox.Text.Any()) return;
             var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
-            (DataContext as MainWindowViewModel)?.ActiveMacro.ChangeDelays(timeIncrement);
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelays(timeIncrement);
         }
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro.SaveToFile(); //TODO: inject "filesaver" or whatever
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.SaveToFile();
         }
 
         private void LoadEvents_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as MainWindowViewModel)?.ActiveMacro.LoadFromFile(); //TODO: inject "fileloader" or whatever
+            (DataContext as MainWindowViewModel)?.AddNewTab();
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.LoadFromFile();
         }
 
         private void AbortPlayback_Click(object sender, RoutedEventArgs e)
         {
-            InjectAndCaptureDll.InjectEventAbort();
+            RecordPlaybackDll.PlaybackEventAbort();
         }
 
         private void AddTab_Click(object sender, RoutedEventArgs e)

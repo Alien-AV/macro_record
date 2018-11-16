@@ -3,14 +3,55 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MacroRecorderGUI" 
-        xmlns:models="clr-namespace:MacroRecorderGUI.Models"
         xmlns:viewModels="clr-namespace:MacroRecorderGUI.ViewModels"
+        xmlns:protobufGenerated="clr-namespace:ProtobufGenerated"
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
     <Window.DataContext>
         <viewModels:MainWindowViewModel/>
     </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate x:Key="KeyEventTemplate">
+        <!-- <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=protobufGenerated:InputEvent}"> -->
+            <StackPanel Orientation="Horizontal">
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Keyboard Event | Time Offset:"/>
+                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Virtual Key Code:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding KeyboardEvent.VirtualKeyCode}" Margin="4,0,0,0"/>
+                        <CheckBox Content="KeyUp" IsChecked="{Binding KeyboardEvent.KeyUp}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="MouseEventTemplate">
+        <!-- <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=protobufGenerated:InputEvent}"> -->
+            <StackPanel Orientation="Horizontal">
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Mouse Event | Time Offset:"/>
+                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Coords:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.X}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.Y}" Margin="4,0,0,0"/>
+                        <TextBlock Text="ActionType:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding MouseEvent.ActionType}" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+        <viewModels:EventTypeDataTemplateSelector x:Key="EventTypeDataTemplateSelector"/>
+    </Window.Resources>
 
     <Grid>
         <StackPanel HorizontalAlignment="Left" Width="100" Margin="10,10,0,10">
@@ -43,13 +84,17 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding Name}"/>
-                        <Button Style="{StaticResource CrossButton}"  HorizontalAlignment="Right" Height="14" Margin="2,2,0,0"/>
+                        <Button Style="{StaticResource CrossButton}"  HorizontalAlignment="Right" Height="14" Margin="2,2,0,0" Command="{Binding CloseTabCommand}" CommandParameter="{Binding DataContext.MacroTabs, ElementName=TabControl}" />
+                        <!-- TODO fix this: Cannot find source for binding with reference 'RelativeSource FindAncestor, AncestorType='System.Windows.Controls.TabControl', AncestorLevel='1''. BindingExpression:Path=TabStripPlacement; DataItem=null; target element is 'TabItem' (Name=''); target property is 'NoTarget' (type 'Object')-->
+                        <!-- is there a cleaner way to call CloseTabCommand, not referencing the "collection to be removed from" in here? -->
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
             <TabControl.ContentTemplate>
-                <DataTemplate>
-                    <ListBox ItemsSource="{Binding Macro.Events}" SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown" SelectionChanged="Selector_OnSelectionChanged"/>
+                <DataTemplate DataType="{x:Type viewModels:MacroViewModel}">
+                    <ListBox ItemsSource="{Binding Events}" ItemTemplateSelector="{StaticResource EventTypeDataTemplateSelector}" 
+                             SelectionMode="Extended" KeyDown="EventsListBox_OnKeyDown" SelectionChanged="Selector_OnSelectionChanged"
+                             HorizontalContentAlignment="Stretch"/>
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
