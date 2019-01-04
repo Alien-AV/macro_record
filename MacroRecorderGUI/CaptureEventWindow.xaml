@@ -8,11 +8,11 @@
         Title="CaptureEventWindow" Height="450" Width="592.307">
     <Grid>
         <Button x:Name="CaptureKeyboardEventButton" Content="Capture Keyboard" HorizontalAlignment="Left" Margin="34,37,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
-        <ListBox HorizontalAlignment="Left" Height="203" Margin="34,184,0,0" VerticalAlignment="Top" Width="510"/>
-        <Button x:Name="CaptureMouseEventButton" Content="Capture Mouse" HorizontalAlignment="Left" Margin="34,90,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
-        <TextBox x:Name="Mouse_X" HorizontalAlignment="Left" Height="23" Margin="181,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="X" LostFocus="Mouse_X_LostFocus" GotFocus="Mouse_X_GotFocus"/>
-        <TextBox x:Name="Mouse_Y" HorizontalAlignment="Left" Height="23" Margin="294,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="Y" GotFocus="Mouse_Y_GotFocus" LostFocus="Mouse_Y_LostFocus"/>
-        <ComboBox x:Name="Mouse_ActionType" HorizontalAlignment="Left" Margin="409,95,0,0" VerticalAlignment="Top" Width="120">
+        <ListBox HorizontalAlignment="Left" Height="178" Margin="34,209,0,0" VerticalAlignment="Top" Width="510"/>
+        <Button x:Name="CaptureMouseEventButton" Content="Capture Mouse" HorizontalAlignment="Left" Margin="35,119,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
+        <TextBox x:Name="Mouse_X" HorizontalAlignment="Left" Height="28" Margin="182,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="X" LostFocus="Mouse_X_LostFocus" GotFocus="Mouse_X_GotFocus"/>
+        <TextBox x:Name="Mouse_Y" HorizontalAlignment="Left" Height="28" Margin="295,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="Y" GotFocus="Mouse_Y_GotFocus" LostFocus="Mouse_Y_LostFocus"/>
+        <ComboBox x:Name="Mouse_ActionType" HorizontalAlignment="Left" Margin="410,119,0,0" VerticalAlignment="Top" Width="120" Height="29">
             <ComboBoxItem x:Name="MouseMoveAction" Content="MouseMove" HorizontalAlignment="Left" Width="118" IsSelected="True"/>
             <ComboBoxItem x:Name="LeftDownAction" Content="LeftDown" HorizontalAlignment="Left" Width="118"/>
             <ComboBoxItem x:Name="LeftUpAction" Content="LeftUp" HorizontalAlignment="Left" Width="118"/>
@@ -23,9 +23,11 @@
             <ComboBoxItem x:Name="XDownAction" Content="XDown" HorizontalAlignment="Left" Width="118"/>
             <ComboBoxItem x:Name="XUpAction" Content="XUp" HorizontalAlignment="Left" Width="118"/>
         </ComboBox>
-        <Button x:Name="Button_AddEvent" Content="Add Event" HorizontalAlignment="Left" Margin="117,143,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button x:Name="Button_RemoveEvent" Content="Reset Event" HorizontalAlignment="Left" Margin="326,143,0,0" VerticalAlignment="Top" Width="75"/>
-        <TextBox x:Name="Keyboard_EventTxt" HorizontalAlignment="Left" Height="23" Margin="181,43,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="348" Text="Keyboard Event" GotFocus="Keyboard_EventTxt_GotFocus" LostFocus="Keyboard_EventTxt_LostFocus"/>
+        <Button x:Name="Button_AddEvent" Content="Add Event" HorizontalAlignment="Left" Margin="181,163,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543"/>
+        <Button x:Name="Button_RemoveEvent" Content="Reset Event" HorizontalAlignment="Left" Margin="282,163,0,0" VerticalAlignment="Top" Width="75"/>
+        <TextBox x:Name="Keyboard_EventTxt" HorizontalAlignment="Left" Height="29" Margin="181,37,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="348" Text="Keyboard Event" GotFocus="Keyboard_EventTxt_GotFocus" LostFocus="Keyboard_EventTxt_LostFocus"/>
+        <Button x:Name="Button_AddEvent_Copy" Content="Add Event" HorizontalAlignment="Left" Margin="181,85,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543"/>
+        <Button x:Name="Button_RemoveEvent_Copy" Content="Reset Event" HorizontalAlignment="Left" Margin="282,85,0,0" VerticalAlignment="Top" Width="75"/>
 
     </Grid>
 </Window>
