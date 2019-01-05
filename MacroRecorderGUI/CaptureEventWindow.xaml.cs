@@ -24,12 +24,13 @@ namespace MacroRecorderGUI
         public CaptureEventWindow()
         {
             InitializeComponent();
-  //          Keyboard_EventTxt.Foreground = Brushes.Silver;
+  
             Mouse_X.Foreground = Brushes.Silver;
             Mouse_Y.Foreground = Brushes.Silver;
             KeyboardEvent_Instructions.Foreground = Brushes.Blue;
             KeyboardEvent_Instructions.Visibility = Visibility.Hidden;
-            //Create a timer with interval of 2 secs
+
+            //Create a timer with interval of 2 secs 
             dispatcherTimer = new DispatcherTimer();
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             dispatcherTimer.Interval = new TimeSpan(0, 0, 2);
@@ -88,7 +89,7 @@ namespace MacroRecorderGUI
             KeyboardEvent_Instructions.Visibility = Visibility.Visible;
             dispatcherTimer.Start();
             this.KeyDown += CaptureEventWindow_KeyEvent;
-            this.KeyUp += CaptureEventWindow_KeyUp;
+            this.KeyUp += CaptureEventWindow_KeyEvent;
         }
         private InputEvent GetKeyKeyboardEvent(KeyEventArgs e)
         {
@@ -108,27 +109,56 @@ namespace MacroRecorderGUI
         }
         private void CaptureEventWindow_KeyUp(object sender, KeyEventArgs e)
         {
-            
             KeyboardEvent_Instructions.Visibility = Visibility.Hidden;
             
-            //InputEvent capturedKeyboadEvent = GetKeyKeyboardEvent(e);
             LocalKeyboardEvents.Add(GetKeyKeyboardEvent(e));
-            
-
-            //foreach (InputEvent KeyEvent in LocalKeyboardEvents)
-            //{
-            //    ListBoxItem item = new ListBoxItem();
-            //    item.Content = "Keyboard Event: KeyUp: " + KeyEvent.KeyboardEvent.KeyUp.ToString() + " Key code: " + KeyEvent.KeyboardEvent.VirtualKeyCode.ToString();
-            //    EventListBox.Items.Add(item);
-            //}
-            this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
-            this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            if (e.IsUp == true)
+            {
+                this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+                this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            }           
         }
 
         private void CaptureEventWindow_KeyEvent(object sender, KeyEventArgs e)
         {
+            KeyboardEvent_Instructions.Visibility = Visibility.Hidden;
             LocalKeyboardEvents.Add(GetKeyKeyboardEvent(e));
+
+            if (e.IsUp == true)
+            {
+                this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+                this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            }
         }
         private List<InputEvent> LocalKeyboardEvents = new List<InputEvent>();
+
+        private void Button_CancelEvent_Click(object sender, RoutedEventArgs e)
+        {
+            KeyboardEvent_Instructions.Visibility = Visibility.Hidden;
+            this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+        }
+
+        private void Button_RemoveEvent_Copy_Click(object sender, RoutedEventArgs e)
+        {
+            KeyboardEvent_Instructions.Visibility = Visibility.Hidden;
+            this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            LocalKeyboardEvents.Clear();
+            KeyboardEvent_listbox.Items.Clear();
+        }
+
+        private void Button_AddEvent_Copy_Click(object sender, RoutedEventArgs e)
+        {
+            //TODO: Use data binding
+            foreach (var keyboardItem in KeyboardEvent_listbox.Items)
+            {
+                ListBoxItem item = new ListBoxItem();
+                item.Content = keyboardItem;
+                EventListBox.Items.Add(item);
+            }
+                        
+            KeyboardEvent_listbox.Items.Clear();
+        }
     }
 }

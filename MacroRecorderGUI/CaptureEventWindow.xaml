@@ -30,10 +30,11 @@
         </ComboBox>
         <Button x:Name="Button_AddEvent" Content="Add Event" HorizontalAlignment="Left" Margin="181,229,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543" Height="20"/>
         <Button x:Name="Button_RemoveEvent" Content="Reset Event" HorizontalAlignment="Left" Margin="0,229,0,0" VerticalAlignment="Top" Width="75" Grid.Column="2" Height="20"/>
-        <Button x:Name="Button_AddEvent_Copy" Content="Add Selection" HorizontalAlignment="Left" Margin="181,119,0,0" VerticalAlignment="Top" Width="81" RenderTransformOrigin="0.481,-2.543" Height="20"/>
-        <Button x:Name="Button_RemoveEvent_Copy" Content="Reset" HorizontalAlignment="Left" Margin="283,119,0,0" VerticalAlignment="Top" Width="75" Height="20" Grid.ColumnSpan="3"/>
-        <ListBox x:Name="KeyboardEvent_listbox" Grid.ColumnSpan="3" HorizontalAlignment="Left" Height="77" Margin="181,37,0,0" VerticalAlignment="Top" Width="386"/>
-        <TextBlock x:Name="KeyboardEvent_Instructions" HorizontalAlignment="Left" Margin="159,51,0,0" TextWrapping="Wrap" Text="Hit any key to capture keyboard event" VerticalAlignment="Top" Height="59" Width="323" FontStyle="Italic" FontSize="22" FontFamily="Imprint MT Shadow" FontWeight="Bold" Grid.ColumnSpan="3"/>
+        <Button x:Name="Button_AddEvent_Copy" Content="Add Selection" HorizontalAlignment="Left" Margin="271,132,0,0" VerticalAlignment="Top" Width="81" RenderTransformOrigin="0.481,-2.543" Height="20" Grid.ColumnSpan="3" Click="Button_AddEvent_Copy_Click"/>
+        <Button x:Name="Button_RemoveEvent_Copy" Content="Reset" HorizontalAlignment="Left" Margin="53,132,0,0" VerticalAlignment="Top" Width="75" Height="20" Grid.Column="2" Click="Button_RemoveEvent_Copy_Click"/>
+        <ListBox x:Name="KeyboardEvent_listbox" Grid.ColumnSpan="3" HorizontalAlignment="Left" Height="77" Margin="175,37,0,0" VerticalAlignment="Top" Width="327"/>
+        <TextBlock x:Name="KeyboardEvent_Instructions" HorizontalAlignment="Left" Margin="122,66,0,0" TextWrapping="Wrap" Text="Hit any key to capture keyboard event" VerticalAlignment="Top" Height="59" Width="323" FontStyle="Italic" FontSize="22" FontFamily="Imprint MT Shadow" FontWeight="Bold" Grid.ColumnSpan="3"/>
+        <Button x:Name="Button_CancelEvent" Content="Cancel" HorizontalAlignment="Left" Margin="175,132,0,0" VerticalAlignment="Top" Width="81" RenderTransformOrigin="0.481,-2.543" Height="20" Click="Button_CancelEvent_Click"/>
 
     </Grid>
 </Window>
