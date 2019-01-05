@@ -77,6 +77,7 @@
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
             <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
+            <Button x:Name="CaptureEvent" Content="Capture Event" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="CaptureEvent_Click"/>
         </StackPanel>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
         <TabControl x:Name="TabControl" Margin="120,10,10,31" ItemsSource="{Binding MacroTabs}" SelectedIndex="{Binding SelectedTabIndex}">

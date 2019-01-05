@@ -119,6 +119,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CaptureEventWindow.xaml.cs">
+      <DependentUpon>CaptureEventWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
@@ -129,6 +132,10 @@
     <Compile Include="ViewModels\EventTypeDataTemplateSelector.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Page Include="CaptureEventWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Utils\CrossButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

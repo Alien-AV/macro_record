@@ -100,5 +100,12 @@ namespace MacroRecorderGUI
         {
             (DataContext as MainWindowViewModel)?.AddNewTab();
         }
+
+        private void CaptureEvent_Click(object sender, RoutedEventArgs e)
+        {
+            var captureEventWindow = new CaptureEventWindow();
+            captureEventWindow.Show();
+        }
+
     }
 }
