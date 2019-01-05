@@ -5,14 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MacroRecorderGUI"
         mc:Ignorable="d"
-        Title="CaptureEventWindow" Height="450" Width="592.307">
+        Title="CaptureEventWindow" Height="477.92" Width="610.372">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="316*"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="285*"/>
+        </Grid.ColumnDefinitions>
         <Button x:Name="CaptureKeyboardEventButton" Content="Capture Keyboard" HorizontalAlignment="Left" Margin="34,37,0,0" VerticalAlignment="Top" Width="106" Height="29" Click="CaptureKeyboardEventButton_Click"/>
-        <ListBox x:Name="EventListBox" HorizontalAlignment="Left" Height="178" Margin="34,209,0,0" VerticalAlignment="Top" Width="510"/>
-        <Button x:Name="CaptureMouseEventButton" Content="Capture Mouse" HorizontalAlignment="Left" Margin="35,119,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
-        <TextBox x:Name="Mouse_X" HorizontalAlignment="Left" Height="28" Margin="182,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="X" LostFocus="Mouse_X_LostFocus" GotFocus="Mouse_X_GotFocus"/>
-        <TextBox x:Name="Mouse_Y" HorizontalAlignment="Left" Height="28" Margin="295,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="Y" GotFocus="Mouse_Y_GotFocus" LostFocus="Mouse_Y_LostFocus"/>
-        <ComboBox x:Name="Mouse_ActionType" HorizontalAlignment="Left" Margin="410,119,0,0" VerticalAlignment="Top" Width="120" Height="29">
+        <ListBox x:Name="EventListBox" HorizontalAlignment="Left" Height="114" Margin="34,273,0,0" VerticalAlignment="Top" Width="533" Grid.ColumnSpan="3"/>
+        <Button x:Name="CaptureMouseEventButton" Content="Capture Mouse" HorizontalAlignment="Left" Margin="35,185,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
+        <TextBox x:Name="Mouse_X" HorizontalAlignment="Left" Height="28" Margin="182,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="X" LostFocus="Mouse_X_LostFocus" GotFocus="Mouse_X_GotFocus"/>
+        <TextBox x:Name="Mouse_Y" HorizontalAlignment="Left" Height="28" Margin="1,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="Y" GotFocus="Mouse_Y_GotFocus" LostFocus="Mouse_Y_LostFocus" Grid.Column="2"/>
+        <ComboBox x:Name="Mouse_ActionType" HorizontalAlignment="Left" Margin="102,185,0,0" VerticalAlignment="Top" Width="120" Height="29" Grid.Column="2">
             <ComboBoxItem x:Name="MouseMoveAction" Content="MouseMove" HorizontalAlignment="Left" Width="118" IsSelected="True"/>
             <ComboBoxItem x:Name="LeftDownAction" Content="LeftDown" HorizontalAlignment="Left" Width="118"/>
             <ComboBoxItem x:Name="LeftUpAction" Content="LeftUp" HorizontalAlignment="Left" Width="118"/>
@@ -23,11 +28,12 @@
             <ComboBoxItem x:Name="XDownAction" Content="XDown" HorizontalAlignment="Left" Width="118"/>
             <ComboBoxItem x:Name="XUpAction" Content="XUp" HorizontalAlignment="Left" Width="118"/>
         </ComboBox>
-        <Button x:Name="Button_AddEvent" Content="Add Event" HorizontalAlignment="Left" Margin="181,163,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543"/>
-        <Button x:Name="Button_RemoveEvent" Content="Reset Event" HorizontalAlignment="Left" Margin="282,163,0,0" VerticalAlignment="Top" Width="75"/>
-        <TextBox x:Name="Keyboard_EventTxt" HorizontalAlignment="Left" Height="29" Margin="181,37,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="348" Text="Keyboard Event" GotFocus="Keyboard_EventTxt_GotFocus" LostFocus="Keyboard_EventTxt_LostFocus"/>
-        <Button x:Name="Button_AddEvent_Copy" Content="Add Event" HorizontalAlignment="Left" Margin="181,85,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543"/>
-        <Button x:Name="Button_RemoveEvent_Copy" Content="Reset Event" HorizontalAlignment="Left" Margin="282,85,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button x:Name="Button_AddEvent" Content="Add Event" HorizontalAlignment="Left" Margin="181,229,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.481,-2.543" Height="20"/>
+        <Button x:Name="Button_RemoveEvent" Content="Reset Event" HorizontalAlignment="Left" Margin="0,229,0,0" VerticalAlignment="Top" Width="75" Grid.Column="2" Height="20"/>
+        <Button x:Name="Button_AddEvent_Copy" Content="Add Selection" HorizontalAlignment="Left" Margin="181,119,0,0" VerticalAlignment="Top" Width="81" RenderTransformOrigin="0.481,-2.543" Height="20"/>
+        <Button x:Name="Button_RemoveEvent_Copy" Content="Reset" HorizontalAlignment="Left" Margin="283,119,0,0" VerticalAlignment="Top" Width="75" Height="20" Grid.ColumnSpan="3"/>
+        <ListBox x:Name="KeyboardEvent_listbox" Grid.ColumnSpan="3" HorizontalAlignment="Left" Height="77" Margin="181,37,0,0" VerticalAlignment="Top" Width="386"/>
+        <TextBlock x:Name="KeyboardEvent_Instructions" HorizontalAlignment="Left" Margin="159,51,0,0" TextWrapping="Wrap" Text="Hit any key to capture keyboard event" VerticalAlignment="Top" Height="59" Width="323" FontStyle="Italic" FontSize="22" FontFamily="Imprint MT Shadow" FontWeight="Bold" Grid.ColumnSpan="3"/>
 
     </Grid>
 </Window>
