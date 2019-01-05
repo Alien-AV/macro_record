@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +22,16 @@ namespace MacroRecorderGUI
     /// </summary>
     public partial class CaptureEventWindow : Window
     {
+
+        public Point MousePosition { get; set; }
+        private Thread mousePositionTracker;
+        static private volatile bool trackMoust = false;
+        static public bool TrackMouse { get { return trackMoust; } set { trackMoust = value; } }
+
+        private DispatcherTimer dispatcherTimer;
+        private List<InputEvent> LocalKeyboardEvents = new List<InputEvent>();
+        private List<InputEvent> LocalMouseEvents = new List<InputEvent>();
+        
         public CaptureEventWindow()
         {
             InitializeComponent();
@@ -34,8 +45,9 @@ namespace MacroRecorderGUI
             dispatcherTimer = new DispatcherTimer();
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             dispatcherTimer.Interval = new TimeSpan(0, 0, 2);
+
         }
-        private DispatcherTimer dispatcherTimer;
+        
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
@@ -101,6 +113,7 @@ namespace MacroRecorderGUI
                 },
                 TimeSinceStartOfRecording = 0
             };
+            //TODO: move this to different function
             ListBoxItem item = new ListBoxItem();
             item.Content = "Keyboard Event: KeyUp: " + capturedKeyboadEvent.KeyboardEvent.KeyUp.ToString() + " Key code: " + capturedKeyboadEvent.KeyboardEvent.VirtualKeyCode.ToString();
             KeyboardEvent_listbox.Items.Add(item);
@@ -130,7 +143,7 @@ namespace MacroRecorderGUI
                 this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
             }
         }
-        private List<InputEvent> LocalKeyboardEvents = new List<InputEvent>();
+        
 
         private void Button_CancelEvent_Click(object sender, RoutedEventArgs e)
         {
@@ -159,6 +172,88 @@ namespace MacroRecorderGUI
             }
                         
             KeyboardEvent_listbox.Items.Clear();
+        }
+
+
+        static private uint GetMouseAction(string MouseAction)
+        {
+            switch (MouseAction)
+            {
+                case "MouseMove":
+                    return 0x0001;
+                case "LeftDown":
+                    return 0x0001;
+                case "LeftUp":
+                    return 0x0004;
+                case "RightDown":
+                    return 0x0008;
+                case "RightUp":
+                    return 0x0010;
+                case "MiddleDown":
+                    return 0x0020;
+                case "MiddleUp":
+                    return 0x0040;
+                case "XDown":
+                    return 0x0080;
+                case "XUp":
+                    return 0x0100;
+                default:
+                    return 0;
+            }
+        }
+
+        private void CaptureMouseEventButton_Click(object sender, RoutedEventArgs e)
+        {
+            TrackMouse = true;
+            mousePositionTracker = new Thread(MouseTracker);
+
+            Mouse_X.Foreground = Brushes.Black;
+            Mouse_Y.Foreground = Brushes.Black;
+
+            this.KeyDown += CaptureMouseEvent;
+
+            mousePositionTracker.Start();
+        }
+
+        private void CaptureMouseEvent(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                TrackMouse = false;
+            }
+            InputEvent CurrentMouseEvent = new InputEvent
+            {
+                MouseEvent = new InputEvent.Types.MouseEventType
+                {
+                    X = (int)MousePosition.X,//Convert.ToInt32(Mouse_X.Text),
+                    Y = (int)MousePosition.Y,
+                    ActionType = GetMouseAction(((ComboBoxItem)Mouse_ActionType.SelectedItem).Content.ToString())
+                },
+                TimeSinceStartOfRecording = 0
+            };
+            LocalMouseEvents.Add(CurrentMouseEvent);
+            //TODO: is this the way its done?
+            this.KeyDown -= CaptureMouseEvent;
+            
+        }
+
+        //TODO: try catch for when the window is closed 
+        //TODO: 
+        private void MouseTracker()
+        {
+            while(TrackMouse)
+            {
+                this.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    //Point pt = new Point();
+                    //GetCursorPos(ref pt);
+                    MousePosition = PointToScreen(Mouse.GetPosition(this));
+
+                    Mouse_X.Text = MousePosition.X.ToString();
+                    Mouse_Y.Text = MousePosition.Y.ToString();
+
+                }), DispatcherPriority.ContextIdle, null);
+            }
         }
     }
 }
