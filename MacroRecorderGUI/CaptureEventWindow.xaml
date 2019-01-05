@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         Title="CaptureEventWindow" Height="450" Width="592.307">
     <Grid>
-        <Button x:Name="CaptureKeyboardEventButton" Content="Capture Keyboard" HorizontalAlignment="Left" Margin="34,37,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
-        <ListBox HorizontalAlignment="Left" Height="178" Margin="34,209,0,0" VerticalAlignment="Top" Width="510"/>
+        <Button x:Name="CaptureKeyboardEventButton" Content="Capture Keyboard" HorizontalAlignment="Left" Margin="34,37,0,0" VerticalAlignment="Top" Width="106" Height="29" Click="CaptureKeyboardEventButton_Click"/>
+        <ListBox x:Name="EventListBox" HorizontalAlignment="Left" Height="178" Margin="34,209,0,0" VerticalAlignment="Top" Width="510"/>
         <Button x:Name="CaptureMouseEventButton" Content="Capture Mouse" HorizontalAlignment="Left" Margin="35,119,0,0" VerticalAlignment="Top" Width="106" Height="29"/>
         <TextBox x:Name="Mouse_X" HorizontalAlignment="Left" Height="28" Margin="182,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="X" LostFocus="Mouse_X_LostFocus" GotFocus="Mouse_X_GotFocus"/>
         <TextBox x:Name="Mouse_Y" HorizontalAlignment="Left" Height="28" Margin="295,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="80" Text="Y" GotFocus="Mouse_Y_GotFocus" LostFocus="Mouse_Y_LostFocus"/>

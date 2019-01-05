@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProtobufGenerated;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -82,5 +83,41 @@ namespace MacroRecorderGUI
                 Mouse_Y.Foreground = Brushes.Silver;
             }
         }
+
+        private void CaptureKeyboardEventButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.KeyDown += CaptureEventWindow_KeyEvent;
+            this.KeyUp += CaptureEventWindow_KeyUp;
+        }
+        private static InputEvent GetKeyKeyboardEvent(KeyEventArgs e)
+        {
+            return new InputEvent {
+                KeyboardEvent = new InputEvent.Types.KeyboardEventType
+                {
+                    KeyUp = e.IsUp,
+                    VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(e.Key))
+                },
+                TimeSinceStartOfRecording = 0
+            };
+        }
+        private void CaptureEventWindow_KeyUp(object sender, KeyEventArgs e)
+        {
+            LocalInputEvents.Add(GetKeyKeyboardEvent(e));
+
+            foreach (InputEvent KeyEvent in LocalInputEvents)
+            {
+                ListBoxItem item = new ListBoxItem();
+                item.Content = "Keyboard Event: KeyUp: " + KeyEvent.KeyboardEvent.KeyUp.ToString() + " Key code: " + KeyEvent.KeyboardEvent.VirtualKeyCode.ToString();
+                EventListBox.Items.Add(item);
+            }
+            this.KeyUp -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+            this.KeyDown -= new KeyEventHandler(CaptureEventWindow_KeyEvent);
+        }
+
+        private void CaptureEventWindow_KeyEvent(object sender, KeyEventArgs e)
+        {
+            LocalInputEvents.Add(GetKeyKeyboardEvent(e));
+        }
+        private List<InputEvent> LocalInputEvents = new List<InputEvent>();
     }
 }
