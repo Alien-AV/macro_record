@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 
 namespace MacroRecorderGUI.Utils
@@ -23,12 +24,13 @@ namespace MacroRecorderGUI.Utils
         private HwndSource _source;
         private readonly WindowInteropHelper _windowInteropHelper;
         private readonly MainWindow _window;
+        private int _currentHotkeyId = 9000;
         private const int StartRecordHotkeyId = 9000;
         private const int StopRecordHotkeyId = 9001;
         private const int PlayBackHotkeyId = 9002;
         private const int PlayBackAbortHotkeyId = 9003;
 
-        private delegate void HotkeyHandler();
+        public delegate void HotkeyHandler();
 
         private struct HotkeyKeysAndHandler
         {
@@ -37,7 +39,7 @@ namespace MacroRecorderGUI.Utils
             public HotkeyHandler HotkeyHandler;
         }
 
-        private Dictionary<int, HotkeyKeysAndHandler> hotkeyById;
+        private readonly Dictionary<int, HotkeyKeysAndHandler> _hotkeyById = new Dictionary<int, HotkeyKeysAndHandler>();
 
         public GlobalHotkeys(MainWindow window)
         {
@@ -45,22 +47,6 @@ namespace MacroRecorderGUI.Utils
             _windowInteropHelper = new WindowInteropHelper(_window);
             _source = HwndSource.FromHwnd(_windowInteropHelper.Handle);
             _source.AddHook(HwndHook);
-
-
-            const uint VK_Q = 0x51;
-            const uint VK_W = 0x57;
-            const uint VK_E = 0x45;
-            const uint VK_R = 0x52;
-            const uint MOD_CTRL = 0x0002;
-            hotkeyById = new Dictionary<int, HotkeyKeysAndHandler>()
-            {
-                {StartRecordHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_Q, Mod = MOD_CTRL, HotkeyHandler = OnStartRecordHotkeyPressed}},
-                {StopRecordHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_W, Mod = MOD_CTRL, HotkeyHandler = OnStopRecordHotkeyPressed}},
-                {PlayBackHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_E, Mod = MOD_CTRL, HotkeyHandler = OnPlayBackHotkeyPressed}},
-                {PlayBackAbortHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_R, Mod = MOD_CTRL, HotkeyHandler = OnPlayBackAbortHotkeyPressed}}
-            };
-
-            RegisterHotKeys();
         }
 
         public void Dispose()
@@ -71,29 +57,23 @@ namespace MacroRecorderGUI.Utils
             UnregisterHotKey();
         }
 
-        private void RegisterHotKeys()
+        public void AddHotKey(Key key, ModifierKeys mod, HotkeyHandler handler)
         {
-            const uint VK_Q = 0x51;
-            const uint VK_W = 0x57;
-            const uint VK_E = 0x45;
-            const uint VK_R = 0x52;
-            const uint MOD_CTRL = 0x0002;
-            if(!RegisterHotKey(_windowInteropHelper.Handle, StartRecordHotkeyId, MOD_CTRL, VK_Q))
+            var vKey = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(key));
+            var modUint = Convert.ToUInt32(mod);
+            _hotkeyById.Add(_currentHotkeyId, new HotkeyKeysAndHandler()
+                {
+                    Vk = vKey,
+                    Mod = modUint,
+                    HotkeyHandler = handler
+                });
+
+            if(!RegisterHotKey(_windowInteropHelper.Handle, _currentHotkeyId, modUint, vKey))
             {
                 // handle error
             }
-            if(!RegisterHotKey(_windowInteropHelper.Handle, StopRecordHotkeyId, MOD_CTRL, VK_W))
-            {
-                // handle error
-            }
-            if(!RegisterHotKey(_windowInteropHelper.Handle, PlayBackHotkeyId, MOD_CTRL, VK_E))
-            {
-                // handle error
-            }
-            if(!RegisterHotKey(_windowInteropHelper.Handle, PlayBackAbortHotkeyId, MOD_CTRL, VK_R))
-            {
-                // handle error
-            }
+
+            _currentHotkeyId++;
         }
 
         private void UnregisterHotKey()
@@ -101,51 +81,19 @@ namespace MacroRecorderGUI.Utils
             UnregisterHotKey(_windowInteropHelper.Handle, StartRecordHotkeyId);
         }
 
+        private void RunHotkeyHandlerById(int id)
+        {
+            _hotkeyById[id].HotkeyHandler();
+        }
+
         private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             const int WM_HOTKEY = 0x0312;
-            switch(msg)
-            {
-                case WM_HOTKEY:
-                    switch(wParam.ToInt32())
-                    {
-                        case StartRecordHotkeyId:
-                            OnStartRecordHotkeyPressed();
-                            handled = true;
-                            break;
-                        case StopRecordHotkeyId:
-                            OnStopRecordHotkeyPressed();
-                            handled = true;
-                            break;
-                        case PlayBackHotkeyId:
-                            OnPlayBackHotkeyPressed();
-                            handled = true;
-                            break;
-                        case PlayBackAbortHotkeyId:
-                            OnPlayBackAbortHotkeyPressed();
-                            handled = true;
-                            break;
-                    }
-                    break;
+            if(msg == WM_HOTKEY){
+                    RunHotkeyHandlerById(wParam.ToInt32());
+                    handled = true;
             }
             return IntPtr.Zero;
-        }
-
-        private void OnStartRecordHotkeyPressed()
-        {
-            _window.StartRecord_Click(null, null);      //TODO: change this, and remove from implementation from .xaml.cs
-        }
-        private void OnStopRecordHotkeyPressed()
-        {
-            _window.StopRecord_Click(null, null);
-        }
-        private void OnPlayBackHotkeyPressed()
-        {
-            _window.PlayEvents_Click(null, null);
-        }
-        private void OnPlayBackAbortHotkeyPressed()
-        {
-            _window.AbortPlayback_Click(null, null);
         }
     }
 }

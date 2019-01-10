@@ -18,10 +18,33 @@ namespace MacroRecorderGUI
             InitializeComponent();
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
+        protected override void OnSourceInitialized(EventArgs e) //TODO: unclear why it needs to be here
+                                                                 // (it's because otherwise can't get window handler inside GlobalHotkeys constructor - should fix?)
+                                                                 // how would we know in a different place whether "source initialized" already?
         {
             base.OnSourceInitialized(e);
             _globalHotkeys = new GlobalHotkeys(this);
+            _globalHotkeys.AddHotKey(Key.Q, ModifierKeys.Control, OnStartRecordHotkeyPressed);
+            _globalHotkeys.AddHotKey(Key.W, ModifierKeys.Control, OnStopRecordHotkeyPressed);
+            _globalHotkeys.AddHotKey(Key.E, ModifierKeys.Control, OnPlayBackHotkeyPressed);
+            _globalHotkeys.AddHotKey(Key.R, ModifierKeys.Control, OnPlayBackAbortHotkeyPressed);
+        }
+
+        private void OnStartRecordHotkeyPressed()
+        {
+            StartRecord_Click(null, null);      //TODO: change this, and remove from implementation from .xaml.cs
+        }
+        private void OnStopRecordHotkeyPressed()
+        {
+            StopRecord_Click(null, null);
+        }
+        private void OnPlayBackHotkeyPressed()
+        {
+            PlayEvents_Click(null, null);
+        }
+        private void OnPlayBackAbortHotkeyPressed()
+        {
+            AbortPlayback_Click(null, null);
         }
 
         internal void StartRecord_Click(object sender, RoutedEventArgs e)
