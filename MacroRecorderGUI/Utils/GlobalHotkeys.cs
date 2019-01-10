@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -27,23 +28,50 @@ namespace MacroRecorderGUI.Utils
         private const int PlayBackHotkeyId = 9002;
         private const int PlayBackAbortHotkeyId = 9003;
 
+        private delegate void HotkeyHandler();
+
+        private struct HotkeyKeysAndHandler
+        {
+            public uint Vk;
+            public uint Mod;
+            public HotkeyHandler HotkeyHandler;
+        }
+
+        private Dictionary<int, HotkeyKeysAndHandler> hotkeyById;
+
         public GlobalHotkeys(MainWindow window)
         {
             _window = window;
             _windowInteropHelper = new WindowInteropHelper(_window);
             _source = HwndSource.FromHwnd(_windowInteropHelper.Handle);
             _source.AddHook(HwndHook);
-            RegisterHotKey();
+
+
+            const uint VK_Q = 0x51;
+            const uint VK_W = 0x57;
+            const uint VK_E = 0x45;
+            const uint VK_R = 0x52;
+            const uint MOD_CTRL = 0x0002;
+            hotkeyById = new Dictionary<int, HotkeyKeysAndHandler>()
+            {
+                {StartRecordHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_Q, Mod = MOD_CTRL, HotkeyHandler = OnStartRecordHotkeyPressed}},
+                {StopRecordHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_W, Mod = MOD_CTRL, HotkeyHandler = OnStopRecordHotkeyPressed}},
+                {PlayBackHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_E, Mod = MOD_CTRL, HotkeyHandler = OnPlayBackHotkeyPressed}},
+                {PlayBackAbortHotkeyId, new HotkeyKeysAndHandler(){Vk = VK_R, Mod = MOD_CTRL, HotkeyHandler = OnPlayBackAbortHotkeyPressed}}
+            };
+
+            RegisterHotKeys();
         }
 
         public void Dispose()
         {
             _source.RemoveHook(HwndHook);
             _source = null;
+            
             UnregisterHotKey();
         }
 
-        private void RegisterHotKey()
+        private void RegisterHotKeys()
         {
             const uint VK_Q = 0x51;
             const uint VK_W = 0x57;
