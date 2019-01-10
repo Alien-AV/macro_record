@@ -1,35 +1,42 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MacroRecorderGUI.Utils;
 using MacroRecorderGUI.ViewModels;
-using ProtobufGenerated;
 
 namespace MacroRecorderGUI
 {
     public partial class MainWindow : Window
     {
+        private GlobalHotkeys _globalHotkeys;
+
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        private void StartRecord_Click(object sender, RoutedEventArgs e)
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            _globalHotkeys = new GlobalHotkeys(this);
+        }
+
+        internal void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
             RecordPlaybackDll.StartRecord();
         }
 
-        private void StopRecord_Click(object sender, RoutedEventArgs e)
+        internal void StopRecord_Click(object sender, RoutedEventArgs e)
         {
             RecordPlaybackDll.StopRecord();
             if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 
-        private void PlayEvents_Click(object sender, RoutedEventArgs e)
+        internal void PlayEvents_Click(object sender, RoutedEventArgs e)
         {
             (DataContext as MainWindowViewModel)?.ActiveMacro?.PlayMacro();
         }
@@ -91,7 +98,7 @@ namespace MacroRecorderGUI
             (DataContext as MainWindowViewModel)?.ActiveMacro?.LoadFromFile();
         }
 
-        private void AbortPlayback_Click(object sender, RoutedEventArgs e)
+        internal void AbortPlayback_Click(object sender, RoutedEventArgs e)
         {
             RecordPlaybackDll.PlaybackEventAbort();
         }

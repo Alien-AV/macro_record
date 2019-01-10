@@ -149,7 +149,7 @@
     </Compile>
     <Compile Include="Event\Event.cs" />
     <Compile Include="Utils\FileOperations.cs" />
-    <Compile Include="GlobalHotkeys.cs" />
+    <Compile Include="Utils\GlobalHotkeys.cs" />
     <Compile Include="RecordPlaybackDLL.cs" />
     <Compile Include="ViewModels\MacroViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
