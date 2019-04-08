@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 
@@ -25,10 +24,6 @@ namespace MacroRecorderGUI.Utils
         private readonly WindowInteropHelper _windowInteropHelper;
         private readonly MainWindow _window;
         private int _currentHotkeyId = 9000;
-        private const int StartRecordHotkeyId = 9000;
-        private const int StopRecordHotkeyId = 9001;
-        private const int PlayBackHotkeyId = 9002;
-        private const int PlayBackAbortHotkeyId = 9003;
 
         public delegate void HotkeyHandler();
 
@@ -54,10 +49,10 @@ namespace MacroRecorderGUI.Utils
             _source.RemoveHook(HwndHook);
             _source = null;
             
-            UnregisterHotKey();
+            DeleteAllHotKeys();
         }
 
-        public void AddHotKey(Key key, ModifierKeys mod, HotkeyHandler handler)
+        public int AddHotKey(Key key, ModifierKeys mod, HotkeyHandler handler)
         {
             var vKey = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(key));
             var modUint = Convert.ToUInt32(mod);
@@ -73,12 +68,22 @@ namespace MacroRecorderGUI.Utils
                 // handle error
             }
 
+            var justAddedHotkeyId = _currentHotkeyId;
             _currentHotkeyId++;
+            return justAddedHotkeyId;
         }
 
-        private void UnregisterHotKey()
+        private void DeleteHotKey(int id)
         {
-            UnregisterHotKey(_windowInteropHelper.Handle, StartRecordHotkeyId);
+            UnregisterHotKey(_windowInteropHelper.Handle, id);
+        }
+
+        private void DeleteAllHotKeys()
+        {
+            foreach (var key in _hotkeyById.Keys)
+            {
+                UnregisterHotKey(_windowInteropHelper.Handle, key);
+            }
         }
 
         private void RunHotkeyHandlerById(int id)
