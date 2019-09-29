@@ -1,0 +1,32 @@
+version: 0.2.{build}
+skip_tags: true
+image: Visual Studio 2017
+configuration:
+- Release
+- Debug
+platform:
+- x64
+- x86
+environment:
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+cache:
+- packages -> **\packages.config
+- c:\tools\vcpkg\installed\
+before_build:
+- cmd: '%APPVEYOR_BUILD_FOLDER%\appveyor-before-build-script.cmd'
+build:
+  verbosity: minimal
+after_build:
+- cmd: '%APPVEYOR_BUILD_FOLDER%\appveyor-after-build-script.cmd'
+artifacts:
+- path: $(PLATFORM)\$(CONFIGURATION)\$(APPVEYOR_PROJECT_NAME)-$(APPVEYOR_BUILD_VERSION)-$(PLATFORM)-$(CONFIGURATION).zip
+  name: $(APPVEYOR_PROJECT_NAME)-$(APPVEYOR_BUILD_VERSION)-$(PLATFORM)-$(CONFIGURATION).zip
+- path: $(PLATFORM)\$(CONFIGURATION)\MacroRecorderSetup-$(PLATFORM)-$(APPVEYOR_BUILD_VERSION).exe
+  name: MacroRecorderSetup-$(PLATFORM)-$(APPVEYOR_BUILD_VERSION).exe
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: 8OVLZF7QY0gZRw1JGJcfBuBS+3u6BzeacPnlEWiGIBgKRDxqT/tpxZ+UpctIwKis
+  prerelease: true
+  on:
+    branch: master
