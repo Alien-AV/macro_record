@@ -21,21 +21,21 @@ namespace _pb = ::PROTOBUF_NAMESPACE_ID;
 namespace _pbi = _pb::internal;
 
 namespace protobufGenerated {
-PROTOBUF_CONSTEXPR InputEvent_KeyboardEventType::InputEvent_KeyboardEventType(
+PROTOBUF_CONSTEXPR ProtobufInputEvent_KeyboardEventType::ProtobufInputEvent_KeyboardEventType(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.virtualkeycode_)*/0u
   , /*decltype(_impl_.keyup_)*/false
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct InputEvent_KeyboardEventTypeDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR InputEvent_KeyboardEventTypeDefaultTypeInternal()
+struct ProtobufInputEvent_KeyboardEventTypeDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtobufInputEvent_KeyboardEventTypeDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~InputEvent_KeyboardEventTypeDefaultTypeInternal() {}
+  ~ProtobufInputEvent_KeyboardEventTypeDefaultTypeInternal() {}
   union {
-    InputEvent_KeyboardEventType _instance;
+    ProtobufInputEvent_KeyboardEventType _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InputEvent_KeyboardEventTypeDefaultTypeInternal _InputEvent_KeyboardEventType_default_instance_;
-PROTOBUF_CONSTEXPR InputEvent_MouseEventType::InputEvent_MouseEventType(
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEvent_KeyboardEventTypeDefaultTypeInternal _ProtobufInputEvent_KeyboardEventType_default_instance_;
+PROTOBUF_CONSTEXPR ProtobufInputEvent_MouseEventType::ProtobufInputEvent_MouseEventType(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.x_)*/0
   , /*decltype(_impl_.y_)*/0
@@ -44,43 +44,43 @@ PROTOBUF_CONSTEXPR InputEvent_MouseEventType::InputEvent_MouseEventType(
   , /*decltype(_impl_.relativeposition_)*/false
   , /*decltype(_impl_.mappedtovirtualdesktop_)*/false
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct InputEvent_MouseEventTypeDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR InputEvent_MouseEventTypeDefaultTypeInternal()
+struct ProtobufInputEvent_MouseEventTypeDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtobufInputEvent_MouseEventTypeDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~InputEvent_MouseEventTypeDefaultTypeInternal() {}
+  ~ProtobufInputEvent_MouseEventTypeDefaultTypeInternal() {}
   union {
-    InputEvent_MouseEventType _instance;
+    ProtobufInputEvent_MouseEventType _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InputEvent_MouseEventTypeDefaultTypeInternal _InputEvent_MouseEventType_default_instance_;
-PROTOBUF_CONSTEXPR InputEvent::InputEvent(
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEvent_MouseEventTypeDefaultTypeInternal _ProtobufInputEvent_MouseEventType_default_instance_;
+PROTOBUF_CONSTEXPR ProtobufInputEvent::ProtobufInputEvent(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.timesincestartofrecording_)*/uint64_t{0u}
   , /*decltype(_impl_.Event_)*/{}
   , /*decltype(_impl_._cached_size_)*/{}
   , /*decltype(_impl_._oneof_case_)*/{}} {}
-struct InputEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR InputEventDefaultTypeInternal()
+struct ProtobufInputEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtobufInputEventDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~InputEventDefaultTypeInternal() {}
+  ~ProtobufInputEventDefaultTypeInternal() {}
   union {
-    InputEvent _instance;
+    ProtobufInputEvent _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InputEventDefaultTypeInternal _InputEvent_default_instance_;
-PROTOBUF_CONSTEXPR InputEventList::InputEventList(
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEventDefaultTypeInternal _ProtobufInputEvent_default_instance_;
+PROTOBUF_CONSTEXPR ProtobufInputEventList::ProtobufInputEventList(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.inputevents_)*/{}
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct InputEventListDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR InputEventListDefaultTypeInternal()
+struct ProtobufInputEventListDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtobufInputEventListDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~InputEventListDefaultTypeInternal() {}
+  ~ProtobufInputEventListDefaultTypeInternal() {}
   union {
-    InputEventList _instance;
+    ProtobufInputEventList _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InputEventListDefaultTypeInternal _InputEventList_default_instance_;
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEventListDefaultTypeInternal _ProtobufInputEventList_default_instance_;
 }  // namespace protobufGenerated
 static ::_pb::Metadata file_level_metadata_Events_2eproto[4];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_Events_2eproto = nullptr;
@@ -88,75 +88,76 @@ static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors
 
 const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_KeyboardEventType, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_KeyboardEventType, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_KeyboardEventType, _impl_.virtualkeycode_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_KeyboardEventType, _impl_.keyup_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_KeyboardEventType, _impl_.virtualkeycode_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_KeyboardEventType, _impl_.keyup_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.x_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.y_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.actiontype_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.wheelrotation_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.relativeposition_),
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent_MouseEventType, _impl_.mappedtovirtualdesktop_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.x_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.y_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.actiontype_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.wheelrotation_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.relativeposition_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent_MouseEventType, _impl_.mappedtovirtualdesktop_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _internal_metadata_),
   ~0u,  // no _extensions_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent, _impl_._oneof_case_[0]),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_._oneof_case_[0]),
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent, _impl_.timesincestartofrecording_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.timesincestartofrecording_),
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEvent, _impl_.Event_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.Event_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEventList, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEventList, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::InputEventList, _impl_.inputevents_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEventList, _impl_.inputevents_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, -1, sizeof(::protobufGenerated::InputEvent_KeyboardEventType)},
-  { 8, -1, -1, sizeof(::protobufGenerated::InputEvent_MouseEventType)},
-  { 20, -1, -1, sizeof(::protobufGenerated::InputEvent)},
-  { 30, -1, -1, sizeof(::protobufGenerated::InputEventList)},
+  { 0, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent_KeyboardEventType)},
+  { 8, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent_MouseEventType)},
+  { 20, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent)},
+  { 30, -1, -1, sizeof(::protobufGenerated::ProtobufInputEventList)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
-  &::protobufGenerated::_InputEvent_KeyboardEventType_default_instance_._instance,
-  &::protobufGenerated::_InputEvent_MouseEventType_default_instance_._instance,
-  &::protobufGenerated::_InputEvent_default_instance_._instance,
-  &::protobufGenerated::_InputEventList_default_instance_._instance,
+  &::protobufGenerated::_ProtobufInputEvent_KeyboardEventType_default_instance_._instance,
+  &::protobufGenerated::_ProtobufInputEvent_MouseEventType_default_instance_._instance,
+  &::protobufGenerated::_ProtobufInputEvent_default_instance_._instance,
+  &::protobufGenerated::_ProtobufInputEventList_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_Events_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\014Events.proto\022\021protobufGenerated\"\220\003\n\nIn"
-  "putEvent\022!\n\031timeSinceStartOfRecording\030\001 "
-  "\001(\004\022H\n\rkeyboardEvent\030\002 \001(\0132/.protobufGen"
-  "erated.InputEvent.KeyboardEventTypeH\000\022B\n"
-  "\nmouseEvent\030\003 \001(\0132,.protobufGenerated.In"
-  "putEvent.MouseEventTypeH\000\032:\n\021KeyboardEve"
-  "ntType\022\026\n\016virtualKeyCode\030\001 \001(\r\022\r\n\005keyUp\030"
-  "\002 \001(\010\032\213\001\n\016MouseEventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y"
-  "\030\002 \001(\005\022\022\n\nactionType\030\003 \001(\r\022\025\n\rwheelRotat"
-  "ion\030\004 \001(\r\022\030\n\020relativePosition\030\005 \001(\010\022\036\n\026m"
-  "appedToVirtualDesktop\030\006 \001(\010B\007\n\005Event\"D\n\016"
-  "InputEventList\0222\n\013inputEvents\030\001 \003(\0132\035.pr"
-  "otobufGenerated.InputEventb\006proto3"
+  "\n\014Events.proto\022\021protobufGenerated\"\250\003\n\022Pr"
+  "otobufInputEvent\022!\n\031timeSinceStartOfReco"
+  "rding\030\001 \001(\004\022P\n\rkeyboardEvent\030\002 \001(\01327.pro"
+  "tobufGenerated.ProtobufInputEvent.Keyboa"
+  "rdEventTypeH\000\022J\n\nmouseEvent\030\003 \001(\01324.prot"
+  "obufGenerated.ProtobufInputEvent.MouseEv"
+  "entTypeH\000\032:\n\021KeyboardEventType\022\026\n\016virtua"
+  "lKeyCode\030\001 \001(\r\022\r\n\005keyUp\030\002 \001(\010\032\213\001\n\016MouseE"
+  "ventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\022\022\n\naction"
+  "Type\030\003 \001(\r\022\025\n\rwheelRotation\030\004 \001(\r\022\030\n\020rel"
+  "ativePosition\030\005 \001(\010\022\036\n\026mappedToVirtualDe"
+  "sktop\030\006 \001(\010B\007\n\005Event\"T\n\026ProtobufInputEve"
+  "ntList\022:\n\013inputEvents\030\001 \003(\0132%.protobufGe"
+  "nerated.ProtobufInputEventb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Events_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Events_2eproto = {
-    false, false, 514, descriptor_table_protodef_Events_2eproto,
+    false, false, 554, descriptor_table_protodef_Events_2eproto,
     "Events.proto",
     &descriptor_table_Events_2eproto_once, nullptr, 0, 4,
     schemas, file_default_instances, TableStruct_Events_2eproto::offsets,
@@ -173,19 +174,19 @@ namespace protobufGenerated {
 
 // ===================================================================
 
-class InputEvent_KeyboardEventType::_Internal {
+class ProtobufInputEvent_KeyboardEventType::_Internal {
  public:
 };
 
-InputEvent_KeyboardEventType::InputEvent_KeyboardEventType(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+ProtobufInputEvent_KeyboardEventType::ProtobufInputEvent_KeyboardEventType(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:protobufGenerated.InputEvent.KeyboardEventType)
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
 }
-InputEvent_KeyboardEventType::InputEvent_KeyboardEventType(const InputEvent_KeyboardEventType& from)
+ProtobufInputEvent_KeyboardEventType::ProtobufInputEvent_KeyboardEventType(const ProtobufInputEvent_KeyboardEventType& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  InputEvent_KeyboardEventType* const _this = this; (void)_this;
+  ProtobufInputEvent_KeyboardEventType* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.virtualkeycode_){}
     , decltype(_impl_.keyup_){}
@@ -195,10 +196,10 @@ InputEvent_KeyboardEventType::InputEvent_KeyboardEventType(const InputEvent_Keyb
   ::memcpy(&_impl_.virtualkeycode_, &from._impl_.virtualkeycode_,
     static_cast<size_t>(reinterpret_cast<char*>(&_impl_.keyup_) -
     reinterpret_cast<char*>(&_impl_.virtualkeycode_)) + sizeof(_impl_.keyup_));
-  // @@protoc_insertion_point(copy_constructor:protobufGenerated.InputEvent.KeyboardEventType)
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
 }
 
-inline void InputEvent_KeyboardEventType::SharedCtor(
+inline void ProtobufInputEvent_KeyboardEventType::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -209,8 +210,8 @@ inline void InputEvent_KeyboardEventType::SharedCtor(
   };
 }
 
-InputEvent_KeyboardEventType::~InputEvent_KeyboardEventType() {
-  // @@protoc_insertion_point(destructor:protobufGenerated.InputEvent.KeyboardEventType)
+ProtobufInputEvent_KeyboardEventType::~ProtobufInputEvent_KeyboardEventType() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -218,16 +219,16 @@ InputEvent_KeyboardEventType::~InputEvent_KeyboardEventType() {
   SharedDtor();
 }
 
-inline void InputEvent_KeyboardEventType::SharedDtor() {
+inline void ProtobufInputEvent_KeyboardEventType::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
-void InputEvent_KeyboardEventType::SetCachedSize(int size) const {
+void ProtobufInputEvent_KeyboardEventType::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void InputEvent_KeyboardEventType::Clear() {
-// @@protoc_insertion_point(message_clear_start:protobufGenerated.InputEvent.KeyboardEventType)
+void ProtobufInputEvent_KeyboardEventType::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -238,7 +239,7 @@ void InputEvent_KeyboardEventType::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* InputEvent_KeyboardEventType::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* ProtobufInputEvent_KeyboardEventType::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
@@ -283,9 +284,9 @@ failure:
 #undef CHK_
 }
 
-uint8_t* InputEvent_KeyboardEventType::_InternalSerialize(
+uint8_t* ProtobufInputEvent_KeyboardEventType::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.InputEvent.KeyboardEventType)
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -305,12 +306,12 @@ uint8_t* InputEvent_KeyboardEventType::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.InputEvent.KeyboardEventType)
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   return target;
 }
 
-size_t InputEvent_KeyboardEventType::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.InputEvent.KeyboardEventType)
+size_t ProtobufInputEvent_KeyboardEventType::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
@@ -330,17 +331,17 @@ size_t InputEvent_KeyboardEventType::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData InputEvent_KeyboardEventType::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ProtobufInputEvent_KeyboardEventType::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    InputEvent_KeyboardEventType::MergeImpl
+    ProtobufInputEvent_KeyboardEventType::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*InputEvent_KeyboardEventType::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ProtobufInputEvent_KeyboardEventType::GetClassData() const { return &_class_data_; }
 
 
-void InputEvent_KeyboardEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<InputEvent_KeyboardEventType*>(&to_msg);
-  auto& from = static_cast<const InputEvent_KeyboardEventType&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.InputEvent.KeyboardEventType)
+void ProtobufInputEvent_KeyboardEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ProtobufInputEvent_KeyboardEventType*>(&to_msg);
+  auto& from = static_cast<const ProtobufInputEvent_KeyboardEventType&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -354,29 +355,29 @@ void InputEvent_KeyboardEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& t
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void InputEvent_KeyboardEventType::CopyFrom(const InputEvent_KeyboardEventType& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.InputEvent.KeyboardEventType)
+void ProtobufInputEvent_KeyboardEventType::CopyFrom(const ProtobufInputEvent_KeyboardEventType& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.ProtobufInputEvent.KeyboardEventType)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool InputEvent_KeyboardEventType::IsInitialized() const {
+bool ProtobufInputEvent_KeyboardEventType::IsInitialized() const {
   return true;
 }
 
-void InputEvent_KeyboardEventType::InternalSwap(InputEvent_KeyboardEventType* other) {
+void ProtobufInputEvent_KeyboardEventType::InternalSwap(ProtobufInputEvent_KeyboardEventType* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(InputEvent_KeyboardEventType, _impl_.keyup_)
-      + sizeof(InputEvent_KeyboardEventType::_impl_.keyup_)
-      - PROTOBUF_FIELD_OFFSET(InputEvent_KeyboardEventType, _impl_.virtualkeycode_)>(
+      PROTOBUF_FIELD_OFFSET(ProtobufInputEvent_KeyboardEventType, _impl_.keyup_)
+      + sizeof(ProtobufInputEvent_KeyboardEventType::_impl_.keyup_)
+      - PROTOBUF_FIELD_OFFSET(ProtobufInputEvent_KeyboardEventType, _impl_.virtualkeycode_)>(
           reinterpret_cast<char*>(&_impl_.virtualkeycode_),
           reinterpret_cast<char*>(&other->_impl_.virtualkeycode_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata InputEvent_KeyboardEventType::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ProtobufInputEvent_KeyboardEventType::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
       file_level_metadata_Events_2eproto[0]);
@@ -384,19 +385,19 @@ void InputEvent_KeyboardEventType::InternalSwap(InputEvent_KeyboardEventType* ot
 
 // ===================================================================
 
-class InputEvent_MouseEventType::_Internal {
+class ProtobufInputEvent_MouseEventType::_Internal {
  public:
 };
 
-InputEvent_MouseEventType::InputEvent_MouseEventType(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+ProtobufInputEvent_MouseEventType::ProtobufInputEvent_MouseEventType(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:protobufGenerated.InputEvent.MouseEventType)
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.ProtobufInputEvent.MouseEventType)
 }
-InputEvent_MouseEventType::InputEvent_MouseEventType(const InputEvent_MouseEventType& from)
+ProtobufInputEvent_MouseEventType::ProtobufInputEvent_MouseEventType(const ProtobufInputEvent_MouseEventType& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  InputEvent_MouseEventType* const _this = this; (void)_this;
+  ProtobufInputEvent_MouseEventType* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.x_){}
     , decltype(_impl_.y_){}
@@ -410,10 +411,10 @@ InputEvent_MouseEventType::InputEvent_MouseEventType(const InputEvent_MouseEvent
   ::memcpy(&_impl_.x_, &from._impl_.x_,
     static_cast<size_t>(reinterpret_cast<char*>(&_impl_.mappedtovirtualdesktop_) -
     reinterpret_cast<char*>(&_impl_.x_)) + sizeof(_impl_.mappedtovirtualdesktop_));
-  // @@protoc_insertion_point(copy_constructor:protobufGenerated.InputEvent.MouseEventType)
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.ProtobufInputEvent.MouseEventType)
 }
 
-inline void InputEvent_MouseEventType::SharedCtor(
+inline void ProtobufInputEvent_MouseEventType::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -428,8 +429,8 @@ inline void InputEvent_MouseEventType::SharedCtor(
   };
 }
 
-InputEvent_MouseEventType::~InputEvent_MouseEventType() {
-  // @@protoc_insertion_point(destructor:protobufGenerated.InputEvent.MouseEventType)
+ProtobufInputEvent_MouseEventType::~ProtobufInputEvent_MouseEventType() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.ProtobufInputEvent.MouseEventType)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -437,16 +438,16 @@ InputEvent_MouseEventType::~InputEvent_MouseEventType() {
   SharedDtor();
 }
 
-inline void InputEvent_MouseEventType::SharedDtor() {
+inline void ProtobufInputEvent_MouseEventType::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
-void InputEvent_MouseEventType::SetCachedSize(int size) const {
+void ProtobufInputEvent_MouseEventType::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void InputEvent_MouseEventType::Clear() {
-// @@protoc_insertion_point(message_clear_start:protobufGenerated.InputEvent.MouseEventType)
+void ProtobufInputEvent_MouseEventType::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.ProtobufInputEvent.MouseEventType)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -457,7 +458,7 @@ void InputEvent_MouseEventType::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* InputEvent_MouseEventType::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* ProtobufInputEvent_MouseEventType::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
@@ -534,9 +535,9 @@ failure:
 #undef CHK_
 }
 
-uint8_t* InputEvent_MouseEventType::_InternalSerialize(
+uint8_t* ProtobufInputEvent_MouseEventType::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.InputEvent.MouseEventType)
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.ProtobufInputEvent.MouseEventType)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -580,12 +581,12 @@ uint8_t* InputEvent_MouseEventType::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.InputEvent.MouseEventType)
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.ProtobufInputEvent.MouseEventType)
   return target;
 }
 
-size_t InputEvent_MouseEventType::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.InputEvent.MouseEventType)
+size_t ProtobufInputEvent_MouseEventType::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.ProtobufInputEvent.MouseEventType)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
@@ -625,17 +626,17 @@ size_t InputEvent_MouseEventType::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData InputEvent_MouseEventType::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ProtobufInputEvent_MouseEventType::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    InputEvent_MouseEventType::MergeImpl
+    ProtobufInputEvent_MouseEventType::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*InputEvent_MouseEventType::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ProtobufInputEvent_MouseEventType::GetClassData() const { return &_class_data_; }
 
 
-void InputEvent_MouseEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<InputEvent_MouseEventType*>(&to_msg);
-  auto& from = static_cast<const InputEvent_MouseEventType&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.InputEvent.MouseEventType)
+void ProtobufInputEvent_MouseEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ProtobufInputEvent_MouseEventType*>(&to_msg);
+  auto& from = static_cast<const ProtobufInputEvent_MouseEventType&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.ProtobufInputEvent.MouseEventType)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -661,29 +662,29 @@ void InputEvent_MouseEventType::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_m
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void InputEvent_MouseEventType::CopyFrom(const InputEvent_MouseEventType& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.InputEvent.MouseEventType)
+void ProtobufInputEvent_MouseEventType::CopyFrom(const ProtobufInputEvent_MouseEventType& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.ProtobufInputEvent.MouseEventType)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool InputEvent_MouseEventType::IsInitialized() const {
+bool ProtobufInputEvent_MouseEventType::IsInitialized() const {
   return true;
 }
 
-void InputEvent_MouseEventType::InternalSwap(InputEvent_MouseEventType* other) {
+void ProtobufInputEvent_MouseEventType::InternalSwap(ProtobufInputEvent_MouseEventType* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(InputEvent_MouseEventType, _impl_.mappedtovirtualdesktop_)
-      + sizeof(InputEvent_MouseEventType::_impl_.mappedtovirtualdesktop_)
-      - PROTOBUF_FIELD_OFFSET(InputEvent_MouseEventType, _impl_.x_)>(
+      PROTOBUF_FIELD_OFFSET(ProtobufInputEvent_MouseEventType, _impl_.mappedtovirtualdesktop_)
+      + sizeof(ProtobufInputEvent_MouseEventType::_impl_.mappedtovirtualdesktop_)
+      - PROTOBUF_FIELD_OFFSET(ProtobufInputEvent_MouseEventType, _impl_.x_)>(
           reinterpret_cast<char*>(&_impl_.x_),
           reinterpret_cast<char*>(&other->_impl_.x_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata InputEvent_MouseEventType::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ProtobufInputEvent_MouseEventType::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
       file_level_metadata_Events_2eproto[1]);
@@ -691,21 +692,21 @@ void InputEvent_MouseEventType::InternalSwap(InputEvent_MouseEventType* other) {
 
 // ===================================================================
 
-class InputEvent::_Internal {
+class ProtobufInputEvent::_Internal {
  public:
-  static const ::protobufGenerated::InputEvent_KeyboardEventType& keyboardevent(const InputEvent* msg);
-  static const ::protobufGenerated::InputEvent_MouseEventType& mouseevent(const InputEvent* msg);
+  static const ::protobufGenerated::ProtobufInputEvent_KeyboardEventType& keyboardevent(const ProtobufInputEvent* msg);
+  static const ::protobufGenerated::ProtobufInputEvent_MouseEventType& mouseevent(const ProtobufInputEvent* msg);
 };
 
-const ::protobufGenerated::InputEvent_KeyboardEventType&
-InputEvent::_Internal::keyboardevent(const InputEvent* msg) {
+const ::protobufGenerated::ProtobufInputEvent_KeyboardEventType&
+ProtobufInputEvent::_Internal::keyboardevent(const ProtobufInputEvent* msg) {
   return *msg->_impl_.Event_.keyboardevent_;
 }
-const ::protobufGenerated::InputEvent_MouseEventType&
-InputEvent::_Internal::mouseevent(const InputEvent* msg) {
+const ::protobufGenerated::ProtobufInputEvent_MouseEventType&
+ProtobufInputEvent::_Internal::mouseevent(const ProtobufInputEvent* msg) {
   return *msg->_impl_.Event_.mouseevent_;
 }
-void InputEvent::set_allocated_keyboardevent(::protobufGenerated::InputEvent_KeyboardEventType* keyboardevent) {
+void ProtobufInputEvent::set_allocated_keyboardevent(::protobufGenerated::ProtobufInputEvent_KeyboardEventType* keyboardevent) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   clear_Event();
   if (keyboardevent) {
@@ -718,9 +719,9 @@ void InputEvent::set_allocated_keyboardevent(::protobufGenerated::InputEvent_Key
     set_has_keyboardevent();
     _impl_.Event_.keyboardevent_ = keyboardevent;
   }
-  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.InputEvent.keyboardEvent)
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.ProtobufInputEvent.keyboardEvent)
 }
-void InputEvent::set_allocated_mouseevent(::protobufGenerated::InputEvent_MouseEventType* mouseevent) {
+void ProtobufInputEvent::set_allocated_mouseevent(::protobufGenerated::ProtobufInputEvent_MouseEventType* mouseevent) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   clear_Event();
   if (mouseevent) {
@@ -733,17 +734,17 @@ void InputEvent::set_allocated_mouseevent(::protobufGenerated::InputEvent_MouseE
     set_has_mouseevent();
     _impl_.Event_.mouseevent_ = mouseevent;
   }
-  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.InputEvent.mouseEvent)
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.ProtobufInputEvent.mouseEvent)
 }
-InputEvent::InputEvent(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+ProtobufInputEvent::ProtobufInputEvent(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:protobufGenerated.InputEvent)
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.ProtobufInputEvent)
 }
-InputEvent::InputEvent(const InputEvent& from)
+ProtobufInputEvent::ProtobufInputEvent(const ProtobufInputEvent& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  InputEvent* const _this = this; (void)_this;
+  ProtobufInputEvent* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.timesincestartofrecording_){}
     , decltype(_impl_.Event_){}
@@ -755,12 +756,12 @@ InputEvent::InputEvent(const InputEvent& from)
   clear_has_Event();
   switch (from.Event_case()) {
     case kKeyboardEvent: {
-      _this->_internal_mutable_keyboardevent()->::protobufGenerated::InputEvent_KeyboardEventType::MergeFrom(
+      _this->_internal_mutable_keyboardevent()->::protobufGenerated::ProtobufInputEvent_KeyboardEventType::MergeFrom(
           from._internal_keyboardevent());
       break;
     }
     case kMouseEvent: {
-      _this->_internal_mutable_mouseevent()->::protobufGenerated::InputEvent_MouseEventType::MergeFrom(
+      _this->_internal_mutable_mouseevent()->::protobufGenerated::ProtobufInputEvent_MouseEventType::MergeFrom(
           from._internal_mouseevent());
       break;
     }
@@ -768,10 +769,10 @@ InputEvent::InputEvent(const InputEvent& from)
       break;
     }
   }
-  // @@protoc_insertion_point(copy_constructor:protobufGenerated.InputEvent)
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.ProtobufInputEvent)
 }
 
-inline void InputEvent::SharedCtor(
+inline void ProtobufInputEvent::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -784,8 +785,8 @@ inline void InputEvent::SharedCtor(
   clear_has_Event();
 }
 
-InputEvent::~InputEvent() {
-  // @@protoc_insertion_point(destructor:protobufGenerated.InputEvent)
+ProtobufInputEvent::~ProtobufInputEvent() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.ProtobufInputEvent)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -793,19 +794,19 @@ InputEvent::~InputEvent() {
   SharedDtor();
 }
 
-inline void InputEvent::SharedDtor() {
+inline void ProtobufInputEvent::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (has_Event()) {
     clear_Event();
   }
 }
 
-void InputEvent::SetCachedSize(int size) const {
+void ProtobufInputEvent::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void InputEvent::clear_Event() {
-// @@protoc_insertion_point(one_of_clear_start:protobufGenerated.InputEvent)
+void ProtobufInputEvent::clear_Event() {
+// @@protoc_insertion_point(one_of_clear_start:protobufGenerated.ProtobufInputEvent)
   switch (Event_case()) {
     case kKeyboardEvent: {
       if (GetArenaForAllocation() == nullptr) {
@@ -827,8 +828,8 @@ void InputEvent::clear_Event() {
 }
 
 
-void InputEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:protobufGenerated.InputEvent)
+void ProtobufInputEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.ProtobufInputEvent)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -838,7 +839,7 @@ void InputEvent::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* InputEvent::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* ProtobufInputEvent::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
@@ -852,7 +853,7 @@ const char* InputEvent::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
         } else
           goto handle_unusual;
         continue;
-      // .protobufGenerated.InputEvent.KeyboardEventType keyboardEvent = 2;
+      // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_keyboardevent(), ptr);
@@ -860,7 +861,7 @@ const char* InputEvent::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
         } else
           goto handle_unusual;
         continue;
-      // .protobufGenerated.InputEvent.MouseEventType mouseEvent = 3;
+      // .protobufGenerated.ProtobufInputEvent.MouseEventType mouseEvent = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_mouseevent(), ptr);
@@ -891,9 +892,9 @@ failure:
 #undef CHK_
 }
 
-uint8_t* InputEvent::_InternalSerialize(
+uint8_t* ProtobufInputEvent::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.InputEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.ProtobufInputEvent)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -903,14 +904,14 @@ uint8_t* InputEvent::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_timesincestartofrecording(), target);
   }
 
-  // .protobufGenerated.InputEvent.KeyboardEventType keyboardEvent = 2;
+  // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
   if (_internal_has_keyboardevent()) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(2, _Internal::keyboardevent(this),
         _Internal::keyboardevent(this).GetCachedSize(), target, stream);
   }
 
-  // .protobufGenerated.InputEvent.MouseEventType mouseEvent = 3;
+  // .protobufGenerated.ProtobufInputEvent.MouseEventType mouseEvent = 3;
   if (_internal_has_mouseevent()) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(3, _Internal::mouseevent(this),
@@ -921,12 +922,12 @@ uint8_t* InputEvent::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.InputEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.ProtobufInputEvent)
   return target;
 }
 
-size_t InputEvent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.InputEvent)
+size_t ProtobufInputEvent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.ProtobufInputEvent)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
@@ -939,14 +940,14 @@ size_t InputEvent::ByteSizeLong() const {
   }
 
   switch (Event_case()) {
-    // .protobufGenerated.InputEvent.KeyboardEventType keyboardEvent = 2;
+    // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
     case kKeyboardEvent: {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
           *_impl_.Event_.keyboardevent_);
       break;
     }
-    // .protobufGenerated.InputEvent.MouseEventType mouseEvent = 3;
+    // .protobufGenerated.ProtobufInputEvent.MouseEventType mouseEvent = 3;
     case kMouseEvent: {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
@@ -960,17 +961,17 @@ size_t InputEvent::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData InputEvent::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ProtobufInputEvent::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    InputEvent::MergeImpl
+    ProtobufInputEvent::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*InputEvent::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ProtobufInputEvent::GetClassData() const { return &_class_data_; }
 
 
-void InputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<InputEvent*>(&to_msg);
-  auto& from = static_cast<const InputEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.InputEvent)
+void ProtobufInputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ProtobufInputEvent*>(&to_msg);
+  auto& from = static_cast<const ProtobufInputEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.ProtobufInputEvent)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -980,12 +981,12 @@ void InputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PRO
   }
   switch (from.Event_case()) {
     case kKeyboardEvent: {
-      _this->_internal_mutable_keyboardevent()->::protobufGenerated::InputEvent_KeyboardEventType::MergeFrom(
+      _this->_internal_mutable_keyboardevent()->::protobufGenerated::ProtobufInputEvent_KeyboardEventType::MergeFrom(
           from._internal_keyboardevent());
       break;
     }
     case kMouseEvent: {
-      _this->_internal_mutable_mouseevent()->::protobufGenerated::InputEvent_MouseEventType::MergeFrom(
+      _this->_internal_mutable_mouseevent()->::protobufGenerated::ProtobufInputEvent_MouseEventType::MergeFrom(
           from._internal_mouseevent());
       break;
     }
@@ -996,18 +997,18 @@ void InputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PRO
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void InputEvent::CopyFrom(const InputEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.InputEvent)
+void ProtobufInputEvent::CopyFrom(const ProtobufInputEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.ProtobufInputEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool InputEvent::IsInitialized() const {
+bool ProtobufInputEvent::IsInitialized() const {
   return true;
 }
 
-void InputEvent::InternalSwap(InputEvent* other) {
+void ProtobufInputEvent::InternalSwap(ProtobufInputEvent* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_.timesincestartofrecording_, other->_impl_.timesincestartofrecording_);
@@ -1015,7 +1016,7 @@ void InputEvent::InternalSwap(InputEvent* other) {
   swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata InputEvent::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ProtobufInputEvent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
       file_level_metadata_Events_2eproto[2]);
@@ -1023,28 +1024,28 @@ void InputEvent::InternalSwap(InputEvent* other) {
 
 // ===================================================================
 
-class InputEventList::_Internal {
+class ProtobufInputEventList::_Internal {
  public:
 };
 
-InputEventList::InputEventList(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+ProtobufInputEventList::ProtobufInputEventList(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:protobufGenerated.InputEventList)
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.ProtobufInputEventList)
 }
-InputEventList::InputEventList(const InputEventList& from)
+ProtobufInputEventList::ProtobufInputEventList(const ProtobufInputEventList& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  InputEventList* const _this = this; (void)_this;
+  ProtobufInputEventList* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.inputevents_){from._impl_.inputevents_}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:protobufGenerated.InputEventList)
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.ProtobufInputEventList)
 }
 
-inline void InputEventList::SharedCtor(
+inline void ProtobufInputEventList::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -1054,8 +1055,8 @@ inline void InputEventList::SharedCtor(
   };
 }
 
-InputEventList::~InputEventList() {
-  // @@protoc_insertion_point(destructor:protobufGenerated.InputEventList)
+ProtobufInputEventList::~ProtobufInputEventList() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.ProtobufInputEventList)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -1063,17 +1064,17 @@ InputEventList::~InputEventList() {
   SharedDtor();
 }
 
-inline void InputEventList::SharedDtor() {
+inline void ProtobufInputEventList::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   _impl_.inputevents_.~RepeatedPtrField();
 }
 
-void InputEventList::SetCachedSize(int size) const {
+void ProtobufInputEventList::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void InputEventList::Clear() {
-// @@protoc_insertion_point(message_clear_start:protobufGenerated.InputEventList)
+void ProtobufInputEventList::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.ProtobufInputEventList)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1082,13 +1083,13 @@ void InputEventList::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* InputEventList::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* ProtobufInputEventList::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // repeated .protobufGenerated.InputEvent inputEvents = 1;
+      // repeated .protobufGenerated.ProtobufInputEvent inputEvents = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
           ptr -= 1;
@@ -1124,13 +1125,13 @@ failure:
 #undef CHK_
 }
 
-uint8_t* InputEventList::_InternalSerialize(
+uint8_t* ProtobufInputEventList::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.InputEventList)
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.ProtobufInputEventList)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .protobufGenerated.InputEvent inputEvents = 1;
+  // repeated .protobufGenerated.ProtobufInputEvent inputEvents = 1;
   for (unsigned i = 0,
       n = static_cast<unsigned>(this->_internal_inputevents_size()); i < n; i++) {
     const auto& repfield = this->_internal_inputevents(i);
@@ -1142,19 +1143,19 @@ uint8_t* InputEventList::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.InputEventList)
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.ProtobufInputEventList)
   return target;
 }
 
-size_t InputEventList::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.InputEventList)
+size_t ProtobufInputEventList::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.ProtobufInputEventList)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated .protobufGenerated.InputEvent inputEvents = 1;
+  // repeated .protobufGenerated.ProtobufInputEvent inputEvents = 1;
   total_size += 1UL * this->_internal_inputevents_size();
   for (const auto& msg : this->_impl_.inputevents_) {
     total_size +=
@@ -1164,17 +1165,17 @@ size_t InputEventList::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData InputEventList::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ProtobufInputEventList::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    InputEventList::MergeImpl
+    ProtobufInputEventList::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*InputEventList::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ProtobufInputEventList::GetClassData() const { return &_class_data_; }
 
 
-void InputEventList::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<InputEventList*>(&to_msg);
-  auto& from = static_cast<const InputEventList&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.InputEventList)
+void ProtobufInputEventList::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ProtobufInputEventList*>(&to_msg);
+  auto& from = static_cast<const ProtobufInputEventList&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.ProtobufInputEventList)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1183,24 +1184,24 @@ void InputEventList::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void InputEventList::CopyFrom(const InputEventList& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.InputEventList)
+void ProtobufInputEventList::CopyFrom(const ProtobufInputEventList& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.ProtobufInputEventList)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool InputEventList::IsInitialized() const {
+bool ProtobufInputEventList::IsInitialized() const {
   return true;
 }
 
-void InputEventList::InternalSwap(InputEventList* other) {
+void ProtobufInputEventList::InternalSwap(ProtobufInputEventList* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.inputevents_.InternalSwap(&other->_impl_.inputevents_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata InputEventList::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ProtobufInputEventList::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
       file_level_metadata_Events_2eproto[3]);
@@ -1209,21 +1210,21 @@ void InputEventList::InternalSwap(InputEventList* other) {
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace protobufGenerated
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::protobufGenerated::InputEvent_KeyboardEventType*
-Arena::CreateMaybeMessage< ::protobufGenerated::InputEvent_KeyboardEventType >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::protobufGenerated::InputEvent_KeyboardEventType >(arena);
+template<> PROTOBUF_NOINLINE ::protobufGenerated::ProtobufInputEvent_KeyboardEventType*
+Arena::CreateMaybeMessage< ::protobufGenerated::ProtobufInputEvent_KeyboardEventType >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::ProtobufInputEvent_KeyboardEventType >(arena);
 }
-template<> PROTOBUF_NOINLINE ::protobufGenerated::InputEvent_MouseEventType*
-Arena::CreateMaybeMessage< ::protobufGenerated::InputEvent_MouseEventType >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::protobufGenerated::InputEvent_MouseEventType >(arena);
+template<> PROTOBUF_NOINLINE ::protobufGenerated::ProtobufInputEvent_MouseEventType*
+Arena::CreateMaybeMessage< ::protobufGenerated::ProtobufInputEvent_MouseEventType >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::ProtobufInputEvent_MouseEventType >(arena);
 }
-template<> PROTOBUF_NOINLINE ::protobufGenerated::InputEvent*
-Arena::CreateMaybeMessage< ::protobufGenerated::InputEvent >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::protobufGenerated::InputEvent >(arena);
+template<> PROTOBUF_NOINLINE ::protobufGenerated::ProtobufInputEvent*
+Arena::CreateMaybeMessage< ::protobufGenerated::ProtobufInputEvent >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::ProtobufInputEvent >(arena);
 }
-template<> PROTOBUF_NOINLINE ::protobufGenerated::InputEventList*
-Arena::CreateMaybeMessage< ::protobufGenerated::InputEventList >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::protobufGenerated::InputEventList >(arena);
+template<> PROTOBUF_NOINLINE ::protobufGenerated::ProtobufInputEventList*
+Arena::CreateMaybeMessage< ::protobufGenerated::ProtobufInputEventList >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::ProtobufInputEventList >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

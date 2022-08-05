@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using Google.Protobuf;
 using MacroRecorderGUI.Commands;
+using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
@@ -39,16 +40,16 @@ namespace MacroRecorderGUI.ViewModels
 
         internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
         {
-            var serializedEvents = new InputEventList();
-            serializedEvents.InputEvents.AddRange(inputEventList);
+            var serializedEvents = new ProtobufInputEventList();
+            serializedEvents.InputEvents.AddRange(inputEventList.Select(inputEvent=>inputEvent.OriginalProtobufInputEvent));
             var serializedEventsByteArray = serializedEvents.ToByteArray();
             return serializedEventsByteArray;
         }
 
         internal static IEnumerable<InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
         {
-            var deserializedEvents = InputEventList.Parser.ParseFrom(serializedEvents);
-            return deserializedEvents.InputEvents;
+            var deserializedEvents = ProtobufInputEventList.Parser.ParseFrom(serializedEvents);
+            return deserializedEvents.InputEvents.Select(InputEvent.CreateInputEvent);
         }
 
         public void PlayMacro()

@@ -36,7 +36,7 @@ namespace MacroRecorderGUI.Models
         {
             var evtBuf = new byte[bufSize];
             Marshal.Copy(evtBufPtr, evtBuf, 0, bufSize);
-            var parsedEvent = ProtobufGenerated.InputEvent.Parser.ParseFrom(evtBuf);
+            var parsedEvent = ProtobufGenerated.ProtobufInputEvent.Parser.ParseFrom(evtBuf);
 
             OnRecordedEvent(new RecordEventsEventArgs(parsedEvent));
         }
@@ -49,12 +49,12 @@ namespace MacroRecorderGUI.Models
         #region event handling
         public class RecordEventsEventArgs : EventArgs
         {
-            public RecordEventsEventArgs(InputEvent inputEvent)
+            public RecordEventsEventArgs(ProtobufInputEvent inputEvent)
             {
                 InputEvent = inputEvent;
             }
 
-            public InputEvent InputEvent { get; }
+            public ProtobufInputEvent InputEvent { get; }
         }
         public delegate void RecordEventsEventHandler(object sender, RecordEventsEventArgs e);
         public event RecordEventsEventHandler RecordedEvent;

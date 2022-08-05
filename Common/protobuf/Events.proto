@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protobufGenerated;
 
-message InputEvent {
+message ProtobufInputEvent {
   message KeyboardEventType {
 	uint32 virtualKeyCode = 1;
 	bool keyUp = 2;
@@ -24,6 +24,6 @@ message InputEvent {
   }
 }
 
-message InputEventList {
-	repeated InputEvent inputEvents = 1;
+message ProtobufInputEventList {
+	repeated ProtobufInputEvent inputEvents = 1;
 }

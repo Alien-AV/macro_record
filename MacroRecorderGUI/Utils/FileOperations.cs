@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using MacroRecorderGUI.Event;
 using MacroRecorderGUI.ViewModels;
 using Microsoft.Win32;
 
@@ -9,7 +10,7 @@ namespace MacroRecorderGUI.Utils
     {
         private const string MacroFilesFilter = "Macro Files (*.macro)|*.macro|All Files|*.*";
 
-        internal static string SaveEventsToFile(IEnumerable<ProtobufGenerated.InputEvent> inputEventList, string name)
+        internal static string SaveEventsToFile(IEnumerable<InputEvent> inputEventList, string name)
         {
             var saveFileDialog = new SaveFileDialog
             {
@@ -23,7 +24,7 @@ namespace MacroRecorderGUI.Utils
             return saveFileDialog.SafeFileName;
         }
 
-        internal static IEnumerable<ProtobufGenerated.InputEvent> LoadEventsFromFile(out string name)
+        internal static IEnumerable<InputEvent> LoadEventsFromFile(out string name)
         {
 
             var openFileDialog = new OpenFileDialog()

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using MacroRecorderGUI.Event;
 using ProtobufGenerated;
 
 namespace MacroRecorderGUI.ViewModels
@@ -15,13 +16,12 @@ namespace MacroRecorderGUI.ViewModels
         {
             if(!(item is InputEvent inputEvent) || !(container is FrameworkElement frameworkElement)) return base.SelectTemplate(item, container);
             
-            switch (inputEvent.EventCase)
+            switch (inputEvent.Type)
             {
-                case InputEvent.EventOneofCase.KeyboardEvent:
+                case InputEvent.InputEventType.KeyboardEvent:
                     return frameworkElement.FindResource("KeyEventTemplate") as DataTemplate;
-                case InputEvent.EventOneofCase.MouseEvent:
+                case InputEvent.InputEventType.MouseEvent:
                     return frameworkElement.FindResource("MouseEventTemplate") as DataTemplate;
-                case InputEvent.EventOneofCase.None:
                 default:
                     throw new ArgumentOutOfRangeException();
             }

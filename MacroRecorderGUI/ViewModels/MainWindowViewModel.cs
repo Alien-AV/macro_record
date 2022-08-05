@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using RecordPlaybackDLLEnums;
 using MacroRecorderGUI.Commands;
+using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 
 namespace MacroRecorderGUI.ViewModels
@@ -35,7 +36,7 @@ namespace MacroRecorderGUI.ViewModels
         }
         private void _recordEngine_RecordedEvent(object sender, RecordEngine.RecordEventsEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(()=> ActiveMacro?.AddEvent(e.InputEvent));
+            Application.Current.Dispatcher.Invoke(()=> ActiveMacro?.AddEvent(InputEvent.CreateInputEvent(e.InputEvent)));
         }
         #endregion
         

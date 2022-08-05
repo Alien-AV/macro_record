@@ -24,40 +24,41 @@ namespace ProtobufGenerated {
     static EventsReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkIpADCgpJbnB1dEV2",
-            "ZW50EiEKGXRpbWVTaW5jZVN0YXJ0T2ZSZWNvcmRpbmcYASABKAQSSAoNa2V5",
-            "Ym9hcmRFdmVudBgCIAEoCzIvLnByb3RvYnVmR2VuZXJhdGVkLklucHV0RXZl",
-            "bnQuS2V5Ym9hcmRFdmVudFR5cGVIABJCCgptb3VzZUV2ZW50GAMgASgLMiwu",
-            "cHJvdG9idWZHZW5lcmF0ZWQuSW5wdXRFdmVudC5Nb3VzZUV2ZW50VHlwZUgA",
-            "GjoKEUtleWJvYXJkRXZlbnRUeXBlEhYKDnZpcnR1YWxLZXlDb2RlGAEgASgN",
-            "Eg0KBWtleVVwGAIgASgIGosBCg5Nb3VzZUV2ZW50VHlwZRIJCgF4GAEgASgF",
-            "EgkKAXkYAiABKAUSEgoKYWN0aW9uVHlwZRgDIAEoDRIVCg13aGVlbFJvdGF0",
-            "aW9uGAQgASgNEhgKEHJlbGF0aXZlUG9zaXRpb24YBSABKAgSHgoWbWFwcGVk",
-            "VG9WaXJ0dWFsRGVza3RvcBgGIAEoCEIHCgVFdmVudCJECg5JbnB1dEV2ZW50",
-            "TGlzdBIyCgtpbnB1dEV2ZW50cxgBIAMoCzIdLnByb3RvYnVmR2VuZXJhdGVk",
-            "LklucHV0RXZlbnRiBnByb3RvMw=="));
+            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkIqgDChJQcm90b2J1",
+            "ZklucHV0RXZlbnQSIQoZdGltZVNpbmNlU3RhcnRPZlJlY29yZGluZxgBIAEo",
+            "BBJQCg1rZXlib2FyZEV2ZW50GAIgASgLMjcucHJvdG9idWZHZW5lcmF0ZWQu",
+            "UHJvdG9idWZJbnB1dEV2ZW50LktleWJvYXJkRXZlbnRUeXBlSAASSgoKbW91",
+            "c2VFdmVudBgDIAEoCzI0LnByb3RvYnVmR2VuZXJhdGVkLlByb3RvYnVmSW5w",
+            "dXRFdmVudC5Nb3VzZUV2ZW50VHlwZUgAGjoKEUtleWJvYXJkRXZlbnRUeXBl",
+            "EhYKDnZpcnR1YWxLZXlDb2RlGAEgASgNEg0KBWtleVVwGAIgASgIGosBCg5N",
+            "b3VzZUV2ZW50VHlwZRIJCgF4GAEgASgFEgkKAXkYAiABKAUSEgoKYWN0aW9u",
+            "VHlwZRgDIAEoDRIVCg13aGVlbFJvdGF0aW9uGAQgASgNEhgKEHJlbGF0aXZl",
+            "UG9zaXRpb24YBSABKAgSHgoWbWFwcGVkVG9WaXJ0dWFsRGVza3RvcBgGIAEo",
+            "CEIHCgVFdmVudCJUChZQcm90b2J1ZklucHV0RXZlbnRMaXN0EjoKC2lucHV0",
+            "RXZlbnRzGAEgAygLMiUucHJvdG9idWZHZW5lcmF0ZWQuUHJvdG9idWZJbnB1",
+            "dEV2ZW50YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.InputEvent), global::ProtobufGenerated.InputEvent.Parser, new[]{ "TimeSinceStartOfRecording", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.InputEvent.Types.KeyboardEventType), global::ProtobufGenerated.InputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.InputEvent.Types.MouseEventType), global::ProtobufGenerated.InputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.InputEventList), global::ProtobufGenerated.InputEventList.Parser, new[]{ "InputEvents" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent), global::ProtobufGenerated.ProtobufInputEvent.Parser, new[]{ "TimeSinceStartOfRecording", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEventList), global::ProtobufGenerated.ProtobufInputEventList.Parser, new[]{ "InputEvents" }, null, null, null, null)
           }));
     }
     #endregion
 
   }
   #region Messages
-  public sealed partial class InputEvent : pb::IMessage<InputEvent>
+  public sealed partial class ProtobufInputEvent : pb::IMessage<ProtobufInputEvent>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<InputEvent> _parser = new pb::MessageParser<InputEvent>(() => new InputEvent());
+    private static readonly pb::MessageParser<ProtobufInputEvent> _parser = new pb::MessageParser<ProtobufInputEvent>(() => new ProtobufInputEvent());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<InputEvent> Parser { get { return _parser; } }
+    public static pb::MessageParser<ProtobufInputEvent> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -73,7 +74,7 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEvent() {
+    public ProtobufInputEvent() {
       OnConstruction();
     }
 
@@ -81,7 +82,7 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEvent(InputEvent other) : this() {
+    public ProtobufInputEvent(ProtobufInputEvent other) : this() {
       timeSinceStartOfRecording_ = other.timeSinceStartOfRecording_;
       switch (other.EventCase) {
         case EventOneofCase.KeyboardEvent:
@@ -97,8 +98,8 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEvent Clone() {
-      return new InputEvent(this);
+    public ProtobufInputEvent Clone() {
+      return new ProtobufInputEvent(this);
     }
 
     /// <summary>Field number for the "timeSinceStartOfRecording" field.</summary>
@@ -117,8 +118,8 @@ namespace ProtobufGenerated {
     public const int KeyboardEventFieldNumber = 2;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::ProtobufGenerated.InputEvent.Types.KeyboardEventType KeyboardEvent {
-      get { return eventCase_ == EventOneofCase.KeyboardEvent ? (global::ProtobufGenerated.InputEvent.Types.KeyboardEventType) event_ : null; }
+    public global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType KeyboardEvent {
+      get { return eventCase_ == EventOneofCase.KeyboardEvent ? (global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType) event_ : null; }
       set {
         event_ = value;
         eventCase_ = value == null ? EventOneofCase.None : EventOneofCase.KeyboardEvent;
@@ -129,8 +130,8 @@ namespace ProtobufGenerated {
     public const int MouseEventFieldNumber = 3;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::ProtobufGenerated.InputEvent.Types.MouseEventType MouseEvent {
-      get { return eventCase_ == EventOneofCase.MouseEvent ? (global::ProtobufGenerated.InputEvent.Types.MouseEventType) event_ : null; }
+    public global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType MouseEvent {
+      get { return eventCase_ == EventOneofCase.MouseEvent ? (global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType) event_ : null; }
       set {
         event_ = value;
         eventCase_ = value == null ? EventOneofCase.None : EventOneofCase.MouseEvent;
@@ -161,12 +162,12 @@ namespace ProtobufGenerated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as InputEvent);
+      return Equals(other as ProtobufInputEvent);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(InputEvent other) {
+    public bool Equals(ProtobufInputEvent other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -267,7 +268,7 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(InputEvent other) {
+    public void MergeFrom(ProtobufInputEvent other) {
       if (other == null) {
         return;
       }
@@ -277,13 +278,13 @@ namespace ProtobufGenerated {
       switch (other.EventCase) {
         case EventOneofCase.KeyboardEvent:
           if (KeyboardEvent == null) {
-            KeyboardEvent = new global::ProtobufGenerated.InputEvent.Types.KeyboardEventType();
+            KeyboardEvent = new global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType();
           }
           KeyboardEvent.MergeFrom(other.KeyboardEvent);
           break;
         case EventOneofCase.MouseEvent:
           if (MouseEvent == null) {
-            MouseEvent = new global::ProtobufGenerated.InputEvent.Types.MouseEventType();
+            MouseEvent = new global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType();
           }
           MouseEvent.MergeFrom(other.MouseEvent);
           break;
@@ -309,7 +310,7 @@ namespace ProtobufGenerated {
             break;
           }
           case 18: {
-            global::ProtobufGenerated.InputEvent.Types.KeyboardEventType subBuilder = new global::ProtobufGenerated.InputEvent.Types.KeyboardEventType();
+            global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType subBuilder = new global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType();
             if (eventCase_ == EventOneofCase.KeyboardEvent) {
               subBuilder.MergeFrom(KeyboardEvent);
             }
@@ -318,7 +319,7 @@ namespace ProtobufGenerated {
             break;
           }
           case 26: {
-            global::ProtobufGenerated.InputEvent.Types.MouseEventType subBuilder = new global::ProtobufGenerated.InputEvent.Types.MouseEventType();
+            global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType subBuilder = new global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType();
             if (eventCase_ == EventOneofCase.MouseEvent) {
               subBuilder.MergeFrom(MouseEvent);
             }
@@ -346,7 +347,7 @@ namespace ProtobufGenerated {
             break;
           }
           case 18: {
-            global::ProtobufGenerated.InputEvent.Types.KeyboardEventType subBuilder = new global::ProtobufGenerated.InputEvent.Types.KeyboardEventType();
+            global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType subBuilder = new global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType();
             if (eventCase_ == EventOneofCase.KeyboardEvent) {
               subBuilder.MergeFrom(KeyboardEvent);
             }
@@ -355,7 +356,7 @@ namespace ProtobufGenerated {
             break;
           }
           case 26: {
-            global::ProtobufGenerated.InputEvent.Types.MouseEventType subBuilder = new global::ProtobufGenerated.InputEvent.Types.MouseEventType();
+            global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType subBuilder = new global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType();
             if (eventCase_ == EventOneofCase.MouseEvent) {
               subBuilder.MergeFrom(MouseEvent);
             }
@@ -369,7 +370,7 @@ namespace ProtobufGenerated {
     #endif
 
     #region Nested types
-    /// <summary>Container for nested types declared in the InputEvent message type.</summary>
+    /// <summary>Container for nested types declared in the ProtobufInputEvent message type.</summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static partial class Types {
@@ -387,7 +388,7 @@ namespace ProtobufGenerated {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::ProtobufGenerated.InputEvent.Descriptor.NestedTypes[0]; }
+          get { return global::ProtobufGenerated.ProtobufInputEvent.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -613,7 +614,7 @@ namespace ProtobufGenerated {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::ProtobufGenerated.InputEvent.Descriptor.NestedTypes[1]; }
+          get { return global::ProtobufGenerated.ProtobufInputEvent.Descriptor.NestedTypes[1]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -978,16 +979,16 @@ namespace ProtobufGenerated {
 
   }
 
-  public sealed partial class InputEventList : pb::IMessage<InputEventList>
+  public sealed partial class ProtobufInputEventList : pb::IMessage<ProtobufInputEventList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<InputEventList> _parser = new pb::MessageParser<InputEventList>(() => new InputEventList());
+    private static readonly pb::MessageParser<ProtobufInputEventList> _parser = new pb::MessageParser<ProtobufInputEventList>(() => new ProtobufInputEventList());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<InputEventList> Parser { get { return _parser; } }
+    public static pb::MessageParser<ProtobufInputEventList> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1003,7 +1004,7 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEventList() {
+    public ProtobufInputEventList() {
       OnConstruction();
     }
 
@@ -1011,37 +1012,37 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEventList(InputEventList other) : this() {
+    public ProtobufInputEventList(ProtobufInputEventList other) : this() {
       inputEvents_ = other.inputEvents_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public InputEventList Clone() {
-      return new InputEventList(this);
+    public ProtobufInputEventList Clone() {
+      return new ProtobufInputEventList(this);
     }
 
     /// <summary>Field number for the "inputEvents" field.</summary>
     public const int InputEventsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::ProtobufGenerated.InputEvent> _repeated_inputEvents_codec
-        = pb::FieldCodec.ForMessage(10, global::ProtobufGenerated.InputEvent.Parser);
-    private readonly pbc::RepeatedField<global::ProtobufGenerated.InputEvent> inputEvents_ = new pbc::RepeatedField<global::ProtobufGenerated.InputEvent>();
+    private static readonly pb::FieldCodec<global::ProtobufGenerated.ProtobufInputEvent> _repeated_inputEvents_codec
+        = pb::FieldCodec.ForMessage(10, global::ProtobufGenerated.ProtobufInputEvent.Parser);
+    private readonly pbc::RepeatedField<global::ProtobufGenerated.ProtobufInputEvent> inputEvents_ = new pbc::RepeatedField<global::ProtobufGenerated.ProtobufInputEvent>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::ProtobufGenerated.InputEvent> InputEvents {
+    public pbc::RepeatedField<global::ProtobufGenerated.ProtobufInputEvent> InputEvents {
       get { return inputEvents_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as InputEventList);
+      return Equals(other as ProtobufInputEventList);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(InputEventList other) {
+    public bool Equals(ProtobufInputEventList other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -1106,7 +1107,7 @@ namespace ProtobufGenerated {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(InputEventList other) {
+    public void MergeFrom(ProtobufInputEventList other) {
       if (other == null) {
         return;
       }

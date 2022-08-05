@@ -4,11 +4,11 @@
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
 
-std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenerated::InputEvent& serialized_event)
+std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenerated::ProtobufInputEvent& serialized_event)
 {
 	switch(serialized_event.Event_case())
 	{
-	case protobufGenerated::InputEvent::EventCase::kKeyboardEvent:
+	case protobufGenerated::ProtobufInputEvent::EventCase::kKeyboardEvent:
 		{
 			const auto& serialized_kbdevent = serialized_event.keyboardevent();
 			auto kbdevent = std::make_unique<KeyboardEvent>();
@@ -19,7 +19,7 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 			
 			return std::move(kbdevent);
 		}
-	case protobufGenerated::InputEvent::EventCase::kMouseEvent:
+	case protobufGenerated::ProtobufInputEvent::EventCase::kMouseEvent:
 		{
 			const auto& serialized_mouseevent = serialized_event.mouseevent();
 			auto mouseevent = std::make_unique<MouseEvent>(serialized_mouseevent.x(), serialized_mouseevent.y(), serialized_mouseevent.actiontype(),
@@ -38,7 +38,7 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 
 std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned char> serialized_event_vec) //TODO: validations maybe? error codes?
 {
-	auto serialized_event = std::make_unique<protobufGenerated::InputEvent>();
+	auto serialized_event = std::make_unique<protobufGenerated::ProtobufInputEvent>();
 	serialized_event->ParseFromArray(serialized_event_vec.data(), int(serialized_event_vec.size()));
 
 	return make_event_from_protobuf_input_event(*serialized_event);
@@ -46,7 +46,7 @@ std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned c
 
 std::vector<std::unique_ptr<Event>> record_playback::deserialize_events(std::vector<unsigned char> serialized_events_vec)
 {
-	auto serialized_events = std::make_unique<protobufGenerated::InputEventList>();
+	auto serialized_events = std::make_unique<protobufGenerated::ProtobufInputEventList>();
 	serialized_events->ParseFromArray(serialized_events_vec.data(), static_cast<int>(serialized_events_vec.size()));
 	std::vector<std::unique_ptr<Event>> deserialized_events_vec;
 	deserialized_events_vec.reserve(serialized_events->inputevents_size());

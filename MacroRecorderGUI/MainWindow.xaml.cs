@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Utils;
 using MacroRecorderGUI.ViewModels;
 
@@ -69,11 +70,11 @@ namespace MacroRecorderGUI
             //TODO: the need to handle this manually disgusts me, however there's no native way in wpf to bind to SelectedItems. another possible WA:
             // when Events will be wrapped in a presentable class, it can have a "isSelected" property which is bound per item in the list
             // (not sure about the overhead of such a mass binding)
-            foreach (ProtobufGenerated.InputEvent addedItem in e.AddedItems)
+            foreach (InputEvent addedItem in e.AddedItems)
             {
                 ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Add(addedItem);
             }
-            foreach (ProtobufGenerated.InputEvent removedItem in e.RemovedItems)
+            foreach (InputEvent removedItem in e.RemovedItems)
             {
                 ((sender as ListBox)?.DataContext as MacroViewModel)?.SelectedEvents.Remove(removedItem);
             }

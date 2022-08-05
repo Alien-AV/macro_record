@@ -156,7 +156,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Event\Event.cs" />
+    <Compile Include="Event\InputEvent.cs" />
     <Compile Include="Utils\FileOperations.cs" />
     <Compile Include="Utils\GlobalHotkeys.cs" />
     <Compile Include="RecordPlaybackDLL.cs" />

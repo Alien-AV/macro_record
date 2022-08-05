@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:MacroRecorderGUI.ViewModels"
         xmlns:protobufGenerated="clr-namespace:ProtobufGenerated"
+        xmlns:event="clr-namespace:MacroRecorderGUI.Event"
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
     <Window.DataContext>
@@ -13,7 +14,7 @@
 
     <Window.Resources>
         <DataTemplate x:Key="KeyEventTemplate">
-        <!-- <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=protobufGenerated:InputEvent}"> -->
+        <!-- <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=event:KeyboardEvent}"> -->
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">
                     <StackPanel Orientation="Horizontal">
@@ -24,14 +25,14 @@
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Virtual Key Code:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding KeyboardEvent.VirtualKeyCode}" Margin="4,0,0,0"/>
-                        <CheckBox Content="KeyUp" IsChecked="{Binding KeyboardEvent.KeyUp}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding VirtualKeyCode}" Margin="4,0,0,0"/>
+                        <CheckBox Content="KeyUp" IsChecked="{Binding KeyUp}" Margin="4,0,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
         </DataTemplate>
         <DataTemplate x:Key="MouseEventTemplate">
-        <!-- <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=protobufGenerated:InputEvent}"> -->
+        <!-- <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=event:MouseEvent}"> -->
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">
                     <StackPanel Orientation="Horizontal">
@@ -42,10 +43,10 @@
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Coords:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding MouseEvent.X}" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding MouseEvent.Y}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding X}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding Y}" Margin="4,0,0,0"/>
                         <TextBlock Text="ActionType:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding MouseEvent.ActionType}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding ActionType}" Margin="4,0,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

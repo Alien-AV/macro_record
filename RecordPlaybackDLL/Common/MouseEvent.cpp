@@ -22,7 +22,7 @@ void MouseEvent::playback() const
 
 std::unique_ptr<std::vector<unsigned char>> MouseEvent::serialize() const
 {
-	auto serialized_event = std::make_unique<protobufGenerated::InputEvent>();
+	auto serialized_event = std::make_unique<protobufGenerated::ProtobufInputEvent>();
 	auto serialized_mouse_event = serialized_event->mutable_mouseevent();
 	serialized_mouse_event->set_x(x);
 	serialized_mouse_event->set_y(y);

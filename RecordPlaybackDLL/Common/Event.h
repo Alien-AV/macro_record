@@ -14,6 +14,6 @@ public:
 	virtual void playback() const = 0;
 	std::chrono::microseconds time_since_start_of_recording{};
 protected:
-	static std::unique_ptr<std::vector<unsigned char>> input_event_to_uchar_vector(const std::unique_ptr<protobufGenerated::InputEvent>&);
+	static std::unique_ptr<std::vector<unsigned char>> input_event_to_uchar_vector(const std::unique_ptr<protobufGenerated::ProtobufInputEvent>&);
 };
 
