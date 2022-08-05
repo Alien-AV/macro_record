@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32106.194
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorderGUI", "MacroRecorderGUI\MacroRecorderGUI.csproj", "{0287779D-A166-4A0B-9A48-87630CE299E1}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -47,11 +47,9 @@ Global
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Debug|x64.ActiveCfg = Debug|x64
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Debug|x86.ActiveCfg = Debug|Win32
-		{3CEF2182-29DC-4059-8956-260CA91F372D}.Debug|x86.Build.0 = Debug|Win32
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|Any CPU.ActiveCfg = Release|Win32
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|x64.ActiveCfg = Release|x64
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|x86.ActiveCfg = Release|Win32
-		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
