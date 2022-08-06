@@ -31,6 +31,28 @@ namespace MacroRecorderGUI.Event
             set => OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode = value;
         }
 
+        private static readonly KeyConverter KeyConverter = new KeyConverter();
+        public string KeyName
+        {
+            get => KeyCode.ToString();
+            set
+            {
+                object result = null;
+                try
+                {
+                    result = KeyConverter.ConvertFrom(value);
+                }
+                catch (ArgumentException e)
+                {
+                }
+
+                if (result != null)
+                {
+                    KeyCode = (Key)result;
+                }
+            }
+        }
+
         public Key KeyCode
         {
             get => KeyInterop.KeyFromVirtualKey(Convert.ToInt32(OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode));

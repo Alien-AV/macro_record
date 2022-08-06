@@ -24,8 +24,10 @@
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Virtual Key Code:" Margin="4,0,0,0"/>
+                        <TextBlock Text="VKey Code:" Margin="4,0,0,0"/>
                         <TextBox Text="{Binding VirtualKeyCode}" Margin="4,0,0,0"/>
+                        <TextBlock Text="VKey:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding KeyName}" Margin="4,0,0,0"/>
                         <CheckBox Content="KeyUp" IsChecked="{Binding KeyUp}" Margin="4,0,0,0"/>
                     </StackPanel>
                 </Border>
