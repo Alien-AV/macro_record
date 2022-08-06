@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "../RecordPlaybackDLL/RecordPlaybackDLL.h"
-#include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
-#include "../RecordPlaybackDLL/Common/MouseEvent.h"
+// #include "../RecordPlaybackDLL/Record/RecordEngine.h"
+// #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
+// #include "../RecordPlaybackDLL/Common/MouseEvent.h"
 
 // TEST(RecordMouseEvents, ShouldRecordRelativeMouseMovement) {
-// 	const record_playback::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// 	const record_playback::RecordEngine::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -33,22 +33,24 @@
 // 	RAWMOUSE data{};
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
-// 	
-// 	record_playback::StartRecord(cb);
-// 	record_playback::HandleMouseEventRecord(data);
+//
+// 	const auto record_engine = std::make_unique<record_playback::RecordEngine>(cb, NULL);
+//
+// 	record_engine->start_record();
+// 	record_engine->handle_mouse_event(data); // need to use FRIEND_TEST(RecordMouseEvents, ShouldRecordRelativeMouseMovement); in production code here =\
 // 	data.lLastX = 1;
 // 	data.usFlags = 0;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 0;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 2;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = -1;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // }
 //
 // TEST(RecordMouseEvents, ShouldRecordAbsoluteMouseMovement) {
-// 	const record_playback::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
+// 	const record_playback::RecordEngine::record_events_callback_t cb = [](std::unique_ptr<Event> ev)
 // 	{
 // 		static u_int test_no = 0;
 // 		std::cout << "test_no:" << test_no << std::endl;
@@ -78,14 +80,16 @@
 // 	data.lLastX = 100;
 // 	data.usFlags = MOUSE_MOVE_ABSOLUTE;
 // 	
-// 	record_playback::StartRecord(cb);
-// 	record_playback::HandleMouseEventRecord(data);
+// 	const auto record_engine = std::make_unique<record_playback::RecordEngine>(cb, NULL);
+//
+// 	record_engine->start_record();
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 101;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 101;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 103;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // 	data.lLastX = 102;
-// 	record_playback::HandleMouseEventRecord(data);
+// 	record_engine->handle_mouse_event(data);
 // }
