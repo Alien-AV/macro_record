@@ -22,7 +22,6 @@ namespace MacroRecorderGUI.Event
             if (protobufInputEvent.EventCase != ProtobufInputEvent.EventOneofCase.KeyboardEvent)
                 throw new ArgumentException();
             OriginalProtobufInputEvent = protobufInputEvent;
-            Type = InputEventType.KeyboardEvent;
         }
 
         public uint VirtualKeyCode

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Input;
 using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
@@ -23,7 +22,6 @@ namespace MacroRecorderGUI.Event
         {
             if (protobufInputEvent.EventCase != ProtobufInputEvent.EventOneofCase.MouseEvent)
                 throw new ArgumentException();
-            Type = InputEventType.MouseEvent;
             OriginalProtobufInputEvent = protobufInputEvent;
         }
 

@@ -12,11 +12,12 @@ namespace MacroRecorderGUI.Event
         public ProtobufInputEvent OriginalProtobufInputEvent;
         public enum InputEventType
         {
-            KeyboardEvent,
-            MouseEvent
+            KeyboardEvent = ProtobufInputEvent.EventOneofCase.KeyboardEvent,
+            MouseEvent = ProtobufInputEvent.EventOneofCase.MouseEvent,
+            None = ProtobufInputEvent.EventOneofCase.None
         }
 
-        public InputEventType Type;
+        public InputEventType Type => (InputEventType)OriginalProtobufInputEvent.EventCase;
         public ulong TimeSinceStartOfRecording
         {
             get => OriginalProtobufInputEvent.TimeSinceStartOfRecording;
