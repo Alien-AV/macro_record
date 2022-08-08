@@ -134,6 +134,7 @@
     <Compile Include="Models\RecordEngine.cs" />
     <Compile Include="Models\PlaybackEngine.cs" />
     <Compile Include="Properties\Annotations.cs" />
+    <Compile Include="Utils\MouseActionTypeConverter.cs" />
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
     <Compile Include="ViewModels\EventTypeDataTemplateSelector.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />

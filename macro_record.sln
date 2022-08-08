@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RecordPlaybackDLL", "Record
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RecordPlaybackDLLTest", "RecordPlaybackDLLTest\RecordPlaybackDLLTest.vcxproj", "{3CEF2182-29DC-4059-8956-260CA91F372D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorderGUITests", "MacroRecorderGUITests\MacroRecorderGUITests.csproj", "{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,18 @@ Global
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|Any CPU.ActiveCfg = Release|Win32
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|x64.ActiveCfg = Release|x64
 		{3CEF2182-29DC-4059-8956-260CA91F372D}.Release|x86.ActiveCfg = Release|Win32
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|x64.Build.0 = Release|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF0AA48F-C9AC-4DFB-A78D-E3B24195A40D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

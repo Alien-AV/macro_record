@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Windows.Input;
+using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Event
@@ -41,6 +43,22 @@ namespace MacroRecorderGUI.Event
         {
             get => OriginalProtobufInputEvent.MouseEvent.ActionType;
             set => OriginalProtobufInputEvent.MouseEvent.ActionType = value;
+        }
+
+        public string ActionName
+        {
+            get => MouseActionTypeConverter.ToString(ActionType);
+            set
+            {
+                try
+                {
+                    var result = MouseActionTypeConverter.FromString(value);
+                    ActionType = result;
+                }
+                catch (ArgumentException e)
+                {
+                }
+            }
         }
     }
 }
