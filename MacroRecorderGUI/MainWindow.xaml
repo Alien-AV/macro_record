@@ -6,6 +6,7 @@
         xmlns:viewModels="clr-namespace:MacroRecorderGUI.ViewModels"
         xmlns:protobufGenerated="clr-namespace:ProtobufGenerated"
         xmlns:event="clr-namespace:MacroRecorderGUI.Event"
+        xmlns:designTimeViewModels="clr-namespace:MacroRecorderGUI.ViewModels.DesignTimeViewModels"
         mc:Ignorable="d"
         Title="Macro Recorder" Height="600" Width="800">
     <Window.DataContext>
@@ -84,7 +85,9 @@
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         </StackPanel>
         <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <TabControl x:Name="TabControl" Margin="120,10,10,31" ItemsSource="{Binding MacroTabs}" SelectedIndex="{Binding SelectedTabIndex}">
+        <TabControl x:Name="TabControl" Margin="120,10,10,31" 
+                    d:DataContext="{d:DesignInstance designTimeViewModels:DesignTimeMainWindowViewModel, IsDesignTimeCreatable=True}"
+                    ItemsSource="{Binding MacroTabs}" SelectedIndex="{Binding SelectedTabIndex}">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="AllowDrop" Value="True"/>
