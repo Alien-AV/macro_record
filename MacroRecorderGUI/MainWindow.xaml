@@ -49,6 +49,8 @@
                         <TextBox Text="{Binding Y}" Margin="4,0,0,0"/>
                         <TextBlock Text="ActionType:" Margin="4,0,0,0"/>
                         <TextBox Text="{Binding ActionType}" Margin="4,0,0,0"/>
+                        <TextBlock Text="ActionName:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding ActionName}" Margin="4,0,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
