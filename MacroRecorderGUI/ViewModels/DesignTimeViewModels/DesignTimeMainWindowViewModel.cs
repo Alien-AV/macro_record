@@ -4,7 +4,7 @@ using MacroRecorderGUI.Event;
 
 namespace MacroRecorderGUI.ViewModels.DesignTimeViewModels
 {
-    public class DesignTimeMainWindowViewModel : ViewModelBase
+    public class DesignTimeMainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
         public ObservableCollection<MacroViewModel> MacroTabs { get; set; }
         private int _selectedTabIndex;

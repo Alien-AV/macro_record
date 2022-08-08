@@ -10,7 +10,14 @@ using MacroRecorderGUI.Models;
 
 namespace MacroRecorderGUI.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    public interface IMainWindowViewModel //just here to make sure DesignTimeMainWindowViewModel stays in sync
+    {
+        ObservableCollection<MacroViewModel> MacroTabs { get; set; }
+        int SelectedTabIndex { get; set; }
+        MacroViewModel ActiveMacro { get; }
+    }
+
+    public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
         public MainWindowViewModel()
         {
