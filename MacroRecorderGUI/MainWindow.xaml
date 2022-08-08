@@ -13,8 +13,7 @@
     </Window.DataContext>
 
     <Window.Resources>
-        <DataTemplate x:Key="KeyEventTemplate">
-        <!-- <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=event:KeyboardEvent}"> -->
+        <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=event:KeyboardEvent}">
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">
                     <StackPanel Orientation="Horizontal">
@@ -33,7 +32,6 @@
                 </Border>
             </StackPanel>
         </DataTemplate>
-        <!-- <DataTemplate x:Key="MouseEventTemplate"> -->
         <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=event:MouseEvent}">
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">

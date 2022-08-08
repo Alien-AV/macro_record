@@ -61,7 +61,7 @@ namespace MacroRecorderGUI.Event
                     var result = MouseActionTypeConverter.FromString(value);
                     ActionType = result;
                 }
-                catch (ArgumentException e)
+                catch (ArgumentException)
                 {
                 }
             }

@@ -42,7 +42,7 @@ namespace MacroRecorderGUI.Event
                 {
                     result = KeyConverter.ConvertFrom(value);
                 }
-                catch (ArgumentException e)
+                catch (ArgumentException)
                 {
                 }
 
