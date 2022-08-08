@@ -17,17 +17,18 @@
         <DataTemplate x:Key="KeyEventTemplate" DataType="{x:Type TypeName=event:KeyboardEvent}">
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">
+                    <TextBlock Text="Keyboard Event" TextAlignment="Center" Width="90"/>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Keyboard Event | Time Offset:"/>
-                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0"/>
+                        <TextBlock Text="Time Offset:"/>
+                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0" Width="50"/>
                     </StackPanel>
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="VKey Code:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding VirtualKeyCode}" Margin="4,0,0,0"/>
-                        <TextBlock Text="VKey:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding KeyName}" Margin="4,0,0,0"/>
+                        <TextBlock Text="VirtualKey:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding KeyName}" Margin="4,0,0,0" Width="100"/>
                         <CheckBox Content="KeyUp" IsChecked="{Binding KeyUp}" Margin="4,0,0,0"/>
                     </StackPanel>
                 </Border>
@@ -36,22 +37,23 @@
         <DataTemplate x:Key="MouseEventTemplate" DataType="{x:Type TypeName=event:MouseEvent}">
             <StackPanel Orientation="Horizontal">
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4">
+                    <TextBlock Text="Mouse Event" TextAlignment="Center" Width="90"/>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Mouse Event | Time Offset:"/>
-                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0"/>
+                        <TextBlock Text="Time Offset:"/>
+                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0" Width="50"/>
                     </StackPanel>
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Rel:" Margin="4,0,0,0"/>
-                        <CheckBox IsChecked="{Binding RelativePosition}"/>
+                        <CheckBox IsChecked="{Binding RelativePosition}" Margin="4,0,0,0"/>
                         <TextBlock Text="Coords:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding X}" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding Y}" Margin="4,0,0,0"/>
-                        <TextBlock Text="ActionType:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding ActionType}" Margin="4,0,0,0"/>
-                        <TextBlock Text="ActionName:" Margin="4,0,0,0"/>
-                        <TextBox Text="{Binding ActionName}" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding X}" Margin="4,0,0,0" Width="32"/>
+                        <TextBox Text="{Binding Y}" Margin="4,0,0,0" Width="32"/>
+                        <TextBlock Text="Action:" Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding ActionName}" Margin="4,0,0,0" Width="100"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
