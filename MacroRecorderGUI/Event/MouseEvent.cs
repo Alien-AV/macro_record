@@ -27,6 +27,12 @@ namespace MacroRecorderGUI.Event
             OriginalProtobufInputEvent = protobufInputEvent;
         }
 
+        public bool RelativePosition
+        {
+            get => OriginalProtobufInputEvent.MouseEvent.RelativePosition;
+            set => OriginalProtobufInputEvent.MouseEvent.RelativePosition = value;
+        }
+
         public int X
         {
             get => OriginalProtobufInputEvent.MouseEvent.X;

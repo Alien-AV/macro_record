@@ -44,6 +44,8 @@
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Rel:" Margin="4,0,0,0"/>
+                        <CheckBox IsChecked="{Binding RelativePosition}"/>
                         <TextBlock Text="Coords:" Margin="4,0,0,0"/>
                         <TextBox Text="{Binding X}" Margin="4,0,0,0"/>
                         <TextBox Text="{Binding Y}" Margin="4,0,0,0"/>
