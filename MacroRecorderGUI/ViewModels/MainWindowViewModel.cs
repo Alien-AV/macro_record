@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Runtime.InteropServices;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Input;
 using RecordPlaybackDLLEnums;
-using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 
