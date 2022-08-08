@@ -53,8 +53,7 @@ Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Files]
 Source: "{#Arch}\Release\MacroRecorderGUI.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#Arch}\Release\Google.Protobuf.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#Arch}\Release\RecordPlaybackDLL.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#Arch}\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
