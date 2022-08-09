@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Google.Protobuf;
 using MacroRecorderGUI.Commands;
 using MacroRecorderGUI.Event;
+using MacroRecorderGUI.Models;
 using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
@@ -13,8 +14,11 @@ namespace MacroRecorderGUI.ViewModels
 {
     public class MacroViewModel : ViewModelBase
     {
-        public MacroViewModel(string name)
+        private readonly IPlaybackEngine _playbackEngine;
+
+        public MacroViewModel(string name, IPlaybackEngine playbackEngine)
         {
+            _playbackEngine = playbackEngine;
             Name = name;
         }
 
@@ -38,27 +42,12 @@ namespace MacroRecorderGUI.ViewModels
             }
         }
 
-        internal static byte[] SerializeEventsToByteArray(IEnumerable<InputEvent> inputEventList)
-        {
-            var serializedEvents = new ProtobufInputEventList();
-            serializedEvents.InputEvents.AddRange(inputEventList.Select(inputEvent=>inputEvent.OriginalProtobufInputEvent));
-            var serializedEventsByteArray = serializedEvents.ToByteArray();
-            return serializedEventsByteArray;
-        }
-
-        internal static IEnumerable<InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
-        {
-            var deserializedEvents = ProtobufInputEventList.Parser.ParseFrom(serializedEvents);
-            return deserializedEvents.InputEvents.Select(InputEvent.CreateInputEvent);
-        }
-
         public void PlayMacro()
         {
             if (!Events.Any()) return;
             var eventsWrappedWithReleasingModKeys = ReleaseModifierKeys.ReleaseModKeysEvents
                 .Concat(Events).Concat(ReleaseModifierKeys.ReleaseModKeysEvents);
-            var serializedEventsByteArray = SerializeEventsToByteArray(eventsWrappedWithReleasingModKeys);
-            RecordPlaybackDll.PlaybackEvents(serializedEventsByteArray);
+            _playbackEngine.PlaybackEvents(eventsWrappedWithReleasingModKeys);
         }
 
         public void Clear()

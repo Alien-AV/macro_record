@@ -19,7 +19,7 @@ namespace MacroRecorderGUI.Utils
             };
             if (saveFileDialog.ShowDialog() != true) return null;
 
-            var serializedEvents = MacroViewModel.SerializeEventsToByteArray(inputEventList);
+            var serializedEvents = SerializeEvents.SerializeEventsToByteArray(inputEventList);
             File.WriteAllBytes(saveFileDialog.FileName, serializedEvents);
             return saveFileDialog.SafeFileName;
         }
@@ -38,7 +38,7 @@ namespace MacroRecorderGUI.Utils
             }
 
             var serializedEvents = File.ReadAllBytes(openFileDialog.FileName);
-            var deserializedEvents = MacroViewModel.DeserializeEventsFromByteArray(serializedEvents);
+            var deserializedEvents = SerializeEvents.DeserializeEventsFromByteArray(serializedEvents);
             name = openFileDialog.SafeFileName;
             return deserializedEvents;
         }

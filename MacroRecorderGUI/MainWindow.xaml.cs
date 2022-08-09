@@ -51,12 +51,12 @@ namespace MacroRecorderGUI
         internal void StartRecord_Click(object sender, RoutedEventArgs e)
         {
             if (ClearListOnStartRecord.IsChecked == true) ClearList_Click(sender, e);
-            RecordPlaybackDll.StartRecord();
+            (DataContext as MainWindowViewModel)?.RecordEngine.StartRecord();
         }
 
         internal void StopRecord_Click(object sender, RoutedEventArgs e)
         {
-            RecordPlaybackDll.StopRecord();
+            (DataContext as MainWindowViewModel)?.RecordEngine.StopRecord();
             if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
         }
 
@@ -124,7 +124,7 @@ namespace MacroRecorderGUI
 
         internal void AbortPlayback_Click(object sender, RoutedEventArgs e)
         {
-            RecordPlaybackDll.PlaybackEventAbort();
+            (DataContext as MainWindowViewModel)?.PlaybackEngine.PlaybackEventAbort();
         }
 
         private void AddTab_Click(object sender, RoutedEventArgs e)

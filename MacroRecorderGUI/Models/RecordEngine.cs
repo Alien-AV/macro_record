@@ -5,25 +5,43 @@ using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Models
 {
-    class RecordEngine
+    public interface IRecordEngine
+    {
+        event RecordEngine.RecordEventsEventHandler RecordedEvent;
+        event RecordEngine.RecordStatusEventHandler RecordStatus;
+        void StartRecord();
+        void StopRecord();
+    }
+
+    public class RecordEngine : IRecordEngine
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void RecordEventCallback(IntPtr evtBufPtr, int bufSize);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void StatusCallback(RecordPlaybackDLLEnums.StatusCode statusCode);
+        public delegate void StatusCallback(StatusCode statusCode);
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void Init(RecordEventCallback eventCb, StatusCallback statusCb);
+        public static extern void DllInit(RecordEventCallback eventCb, StatusCallback statusCb);
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void StartRecord();
+        public static extern void DllStartRecord();
         [System.Runtime.InteropServices.DllImportAttribute("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_stop_record", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void StopRecord();
+        public static extern void DllStopRecord();
 
         public RecordEngine()
         {
             _statusCallbackDelegate = StatusCb;
             _recordEventCallbackDelegate = RecordEventCb;
 
-            Init(_recordEventCallbackDelegate, _statusCallbackDelegate);
+            DllInit(_recordEventCallbackDelegate, _statusCallbackDelegate);
+        }
+
+        public void StartRecord()
+        {
+            DllStartRecord();
+        }
+
+        public void StopRecord()
+        {
+            DllStopRecord();
         }
 
         // if turned to a local variable, those delegates will be cleaned up and callbacks from the DLL will fail

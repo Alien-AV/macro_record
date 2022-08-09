@@ -129,6 +129,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Common\MouseActionTypeFlags.cs" />
     <Compile Include="ViewModels\DesignTimeViewModels\DesignTimeMainWindowViewModel.cs" />
     <Compile Include="Event\KeyboardEvent.cs" />
     <Compile Include="Event\MouseEvent.cs" />
@@ -139,6 +140,7 @@
     <Compile Include="Utils\ReleaseModifierKeys.cs" />
     <Compile Include="ViewModels\EventTypeDataTemplateSelector.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="Utils\SerializeEvents.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Page Include="Utils\CrossButton.xaml">
       <SubType>Designer</SubType>
@@ -161,7 +163,6 @@
     <Compile Include="Event\InputEvent.cs" />
     <Compile Include="Utils\FileOperations.cs" />
     <Compile Include="Utils\GlobalHotkeys.cs" />
-    <Compile Include="RecordPlaybackDLL.cs" />
     <Compile Include="ViewModels\MacroViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
