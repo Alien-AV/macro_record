@@ -67,7 +67,8 @@ namespace MacroRecorderGUI.ViewModels
 
         public void ChangeDelays(ulong delay)
         {
-            foreach (var inputEvent in Events)
+            var copyOfInputEvents = SelectedEvents.ToList();
+            foreach (var inputEvent in copyOfInputEvents)
             {
                 inputEvent.TimeSinceLastEvent = delay;
             }
