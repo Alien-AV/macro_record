@@ -107,8 +107,8 @@ namespace MacroRecorderGUI
         private void ChangeDelays_Click(object sender, RoutedEventArgs e)
         {
             if (!DelayTextBox.Text.Any()) return;
-            var timeIncrement = Convert.ToUInt64(DelayTextBox.Text);
-            (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelays(timeIncrement);
+            var delay = Convert.ToUInt64(DelayTextBox.Text);
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelays(delay);
         }
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)

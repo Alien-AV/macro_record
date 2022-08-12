@@ -65,13 +65,11 @@ namespace MacroRecorderGUI.ViewModels
             }
         }
 
-        public void ChangeDelays(ulong timeIncrement)
+        public void ChangeDelays(ulong delay)
         {
-            var currentTimeOffset = 0ul;
             foreach (var inputEvent in Events)
             {
-                inputEvent.TimeSinceLastEvent = currentTimeOffset;
-                currentTimeOffset += timeIncrement;
+                inputEvent.TimeSinceLastEvent = delay;
             }
 
             //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
