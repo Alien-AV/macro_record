@@ -65,16 +65,23 @@
         <StackPanel HorizontalAlignment="Left" Width="100" Margin="10,10,0,10">
             <Button x:Name="AddTab" Content="Add Tab" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AddTab_Click"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
-            <Button x:Name="StartRecordButton" Content="Start Record" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
-            <Button x:Name="StopRecordButton" Content="Stop Record" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
+            <TextBlock Text="Recording" Margin="4,0,0,0" HorizontalAlignment="Center"/>
+            <Button x:Name="StartRecordButton" Content="Start" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
+            <Button x:Name="StopRecordButton" Content="Stop" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
             <CheckBox x:Name="ClearListOnStartRecord" Content="Auto Clear List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Clear list when starting a new recording." IsChecked="True"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
-            <Button x:Name="PlayEvents" Content="Play Events" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
-            <Button x:Name="AbortPlayback" Content="Abort Playback" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
+            <TextBlock Text="Playback" Margin="4,0,0,0" HorizontalAlignment="Center"/>
+            <Button x:Name="PlayEvents" Content="Start" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
+            <Button x:Name="AbortPlayback" Content="Abort" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
             <CheckBox x:Name="LoopIndefinitely"  IsChecked="{Binding LoopPlayback}" Content="Loop" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
-            <Button x:Name="RemoveEvent" Content="Remove Selected" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
-            <Button x:Name="ClearEventsList" Content="Clear Event List" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
+            <TextBlock Text="Create" Margin="4,0,0,0" HorizontalAlignment="Center"/>
+            <Button x:Name="CreateKeyboardEventManually" Content="Keyboard Event" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="CreateKeyboardEventManually_Click"/>
+            <Button x:Name="CreateMouseEventManually" Content="Mouse Event" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="CreateMouseEventManually_Click"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <TextBlock Text="Remove" Margin="4,0,0,0" HorizontalAlignment="Center"/>
+            <Button x:Name="RemoveEvent" Content="Selected Event" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
+            <Button x:Name="ClearEventsList" Content="All Events" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
             <Button x:Name="ChangeDelays" Content="Change Delays" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ChangeDelays_Click"/>
             <StackPanel Orientation="Horizontal">
@@ -83,8 +90,9 @@
             </StackPanel>
             <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
-            <Button x:Name="ConvertMouseEventsToAbsolutePositioning" Content="Rel To Abs Pos" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ConvertMouseEventsToAbsolutePositioning_Click"/>
+            <Button x:Name="ConvertMouseEventsToAbsolutePositioning" Content="To Absolute Pos" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" ToolTip="Convert mouse events from relative to absolute positions" Click="ConvertMouseEventsToAbsolutePositioning_Click"/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <TextBlock Text="File" Margin="4,0,0,0" HorizontalAlignment="Center"/>
             <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         </StackPanel>

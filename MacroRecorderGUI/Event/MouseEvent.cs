@@ -1,4 +1,5 @@
 ﻿using System;
+using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Utils;
 using ProtobufGenerated;
 
@@ -6,13 +7,13 @@ namespace MacroRecorderGUI.Event
 {
     public class MouseEvent : InputEvent
     {
-        public MouseEvent(int x, int y, uint actionType)
+        public MouseEvent(int x, int y, MouseActionTypeFlags actionType)
         {
             OriginalProtobufInputEvent = new ProtobufInputEvent
             {
                 MouseEvent = new ProtobufInputEvent.Types.MouseEventType
                 {
-                    ActionType = actionType, MappedToVirtualDesktop = false, RelativePosition = false,
+                    ActionType = (uint)actionType, MappedToVirtualDesktop = false, RelativePosition = false,
                     WheelRotation = 0, X = x, Y = y
                 }
             };
@@ -43,10 +44,10 @@ namespace MacroRecorderGUI.Event
             set => OriginalProtobufInputEvent.MouseEvent.Y = value;
         }
 
-        public uint ActionType
+        public MouseActionTypeFlags ActionType
         {
-            get => OriginalProtobufInputEvent.MouseEvent.ActionType;
-            set => OriginalProtobufInputEvent.MouseEvent.ActionType = value;
+            get => (MouseActionTypeFlags)OriginalProtobufInputEvent.MouseEvent.ActionType;
+            set => OriginalProtobufInputEvent.MouseEvent.ActionType = (uint)value;
         }
 
         public string ActionName

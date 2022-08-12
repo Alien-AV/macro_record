@@ -80,6 +80,15 @@ namespace MacroRecorderGUI
             }
         }
 
+        private void CreateKeyboardEventManually_Click(object sender, RoutedEventArgs e)
+        {
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.CreateKeyboardEventManually();
+        }
+        private void CreateMouseEventManually_Click(object sender, RoutedEventArgs e)
+        {
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.CreateMouseEventManually();
+        }
+
         private void RemoveEvent_Click(object sender, RoutedEventArgs e)
         {
             (DataContext as MainWindowViewModel)?.ActiveMacro?.RemoveSelectedEvents();

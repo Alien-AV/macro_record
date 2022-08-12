@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
+using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 
 namespace MacroRecorderGUI.ViewModels.DesignTimeViewModels
@@ -20,7 +21,7 @@ namespace MacroRecorderGUI.ViewModels.DesignTimeViewModels
             MacroTabs = new ObservableCollection<MacroViewModel> { new MacroViewModel("DesignTimeDummyMacro", null), new MacroViewModel("DesignTimeDummyMacro2", null) };
             ActiveMacro.Events.Add(new KeyboardEvent(Key.A,false){TimeSinceLastEvent = 100});
             ActiveMacro.Events.Add(new KeyboardEvent(Key.A,true){TimeSinceLastEvent = 200});
-            ActiveMacro.Events.Add(new MouseEvent(1,2,0x1){TimeSinceLastEvent = 300});
+            ActiveMacro.Events.Add(new MouseEvent(1,2,MouseActionTypeFlags.Move){TimeSinceLastEvent = 300});
         }
     }
 }

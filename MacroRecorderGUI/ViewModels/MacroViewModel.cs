@@ -6,6 +6,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using Google.Protobuf;
 using MacroRecorderGUI.Commands;
+using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 using MacroRecorderGUI.Utils;
@@ -126,6 +127,29 @@ namespace MacroRecorderGUI.ViewModels
                 currentY = mouseEvent.Y;
             }
             CollectionViewSource.GetDefaultView(Events).Refresh();
+        }
+
+        public void CreateKeyboardEventManually()
+        {
+            PlaceManuallyCreatedEvent(new KeyboardEvent(Key.Escape, false));
+        }
+
+        public void CreateMouseEventManually()
+        {
+            PlaceManuallyCreatedEvent(new MouseEvent(0,0,MouseActionTypeFlags.Move));
+        }
+
+        private void PlaceManuallyCreatedEvent(InputEvent inputEvent){
+            if (SelectedEvents.Count != 0)
+            {
+                var lastSelectedEvent = SelectedEvents[SelectedEvents.Count - 1];
+                var lastSelectedEventIndex = Events.IndexOf(lastSelectedEvent);
+                Events.Insert(lastSelectedEventIndex + 1, inputEvent);
+            }
+            else
+            {
+                Events.Add(inputEvent);
+            }
         }
     }
 }
