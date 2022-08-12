@@ -73,5 +73,7 @@ namespace MacroRecorderGUI.ViewModels
             MacroTabs.Add(new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine));
             SelectedTabIndex = MacroTabs.Count - 1;
         }
+
+
     }
 }

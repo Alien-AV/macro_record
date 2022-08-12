@@ -10,7 +10,7 @@ using MacroRecorderGUI.ViewModels;
 
 namespace MacroRecorderGUI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         private GlobalHotkeys _globalHotkeys;
 
@@ -57,7 +57,11 @@ namespace MacroRecorderGUI
         internal void StopRecord_Click(object sender, RoutedEventArgs e)
         {
             (DataContext as MainWindowViewModel)?.RecordEngine.StopRecord();
-            if (AutoChangeDelay.IsChecked == true) ChangeDelays_Click(sender, e);
+            if (AutoChangeDelay.IsChecked == true && DelayTextBox.Text.Any())
+            {
+                var delay = Convert.ToUInt64(DelayTextBox.Text);
+                (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelaysOnAll(delay);
+            }
         }
 
         internal void PlayEvents_Click(object sender, RoutedEventArgs e)
@@ -117,7 +121,7 @@ namespace MacroRecorderGUI
         {
             if (!DelayTextBox.Text.Any()) return;
             var delay = Convert.ToUInt64(DelayTextBox.Text);
-            (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelays(delay);
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelaysOnSelected(delay);
         }
 
         private void ConvertMouseEventsToAbsolutePositioning_Click(object sender, RoutedEventArgs e)
@@ -168,6 +172,11 @@ namespace MacroRecorderGUI
             mainWindowViewModel.MacroTabs.Remove(macroViewModelSource);
             mainWindowViewModel.MacroTabs.Insert(targetIndex, macroViewModelSource);
             mainWindowViewModel.SelectedTabIndex = targetIndex;
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }

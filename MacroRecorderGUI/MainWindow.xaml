@@ -1,14 +1,15 @@
-﻿<Window x:Class="MacroRecorderGUI.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:viewModels="clr-namespace:MacroRecorderGUI.ViewModels"
-        xmlns:protobufGenerated="clr-namespace:ProtobufGenerated"
-        xmlns:event="clr-namespace:MacroRecorderGUI.Event"
-        xmlns:designTimeViewModels="clr-namespace:MacroRecorderGUI.ViewModels.DesignTimeViewModels"
-        mc:Ignorable="d"
-        Title="Macro Recorder" Height="750" Width="1000">
+﻿<Fluent:RibbonWindow x:Class="MacroRecorderGUI.MainWindow"
+                        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                        xmlns:Fluent="urn:fluent-ribbon"
+                        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                        xmlns:viewModels="clr-namespace:MacroRecorderGUI.ViewModels"
+                        xmlns:event="clr-namespace:MacroRecorderGUI.Event"
+                        xmlns:designTimeViewModels="clr-namespace:MacroRecorderGUI.ViewModels.DesignTimeViewModels"
+                        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                        mc:Ignorable="d"
+                        Title="Macro Recorder" Height="750" Width="1000">
     <Window.DataContext>
         <viewModels:MainWindowViewModel/>
     </Window.DataContext>
@@ -60,62 +61,63 @@
         </DataTemplate>
         <viewModels:EventTypeDataTemplateSelector x:Key="EventTypeDataTemplateSelector"/>
     </Window.Resources>
-    
     <Grid>
-        <StackPanel HorizontalAlignment="Left" Margin="4">
-            <Button x:Name="AddTab" Content="Add Tab" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="2" Width="100" Click="AddTab_Click"/>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="Recording" Margin="2" HorizontalAlignment="Center"/>
-                    <Button x:Name="StartRecordButton" Content="Start" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="StartRecord_Click"/>
-                    <Button x:Name="StopRecordButton" Content="Stop" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="StopRecord_Click"/>
-                    <CheckBox x:Name="ClearListOnStartRecord" Content="Auto Clear List" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" ToolTip="Clear list when starting a new recording." IsChecked="True"/>
-                </StackPanel>
-            </Border>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="Playback" Margin="2" HorizontalAlignment="Center"/>
-                    <Button x:Name="PlayEvents" Content="Start" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="PlayEvents_Click"/>
-                    <Button x:Name="AbortPlayback" Content="Abort" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="AbortPlayback_Click"/>
-                    <CheckBox x:Name="LoopIndefinitely"  IsChecked="{Binding LoopPlayback}" Content="Loop" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top"/>
-                </StackPanel>
-            </Border>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="Create Event" Margin="2" HorizontalAlignment="Center"/>
-                    <Button x:Name="CreateKeyboardEventManually" Content="Keyboard" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="CreateKeyboardEventManually_Click"/>
-                    <Button x:Name="CreateMouseEventManually" Content="Mouse" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="CreateMouseEventManually_Click"/>
-                </StackPanel>
-            </Border>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="Remove Events" Margin="2" HorizontalAlignment="Center"/>
-                    <Button x:Name="RemoveEvent" Content="Selected" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="RemoveEvent_Click" ToolTip="Or press Delete key on the Event list"/>
-                    <Button x:Name="ClearEventsList" Content="All" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="ClearList_Click"/>
-                </StackPanel>
-            </Border>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="Change Delays" Margin="2" HorizontalAlignment="Center"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBox x:Name="DelayTextBox" PreviewTextInput="AllowOnlyNumbersInTextBox" HorizontalAlignment="Center" Height="23" Margin="2" TextWrapping="Wrap" Text="5000" VerticalAlignment="Top" Width="78"/>
-                        <TextBlock x:Name="MicroSecondsTextBlock" HorizontalAlignment="Center" Margin="4,6,0,0" TextWrapping="Wrap" Text="μs" VerticalAlignment="Top" Width="17" RenderTransformOrigin="-0.118,5.514"/>
-                    </StackPanel>
-                    <Button x:Name="ChangeDelays" Content="Change" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="ChangeDelays_Click"/>
-                    <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
-                </StackPanel>
-            </Border>
-            <Button x:Name="ConvertMouseEventsToAbsolutePositioning" Content="To Absolute Pos" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" ToolTip="Convert mouse events from relative to absolute positions" Click="ConvertMouseEventsToAbsolutePositioning_Click"/>
-            <Border BorderBrush="Black" BorderThickness="0.25" Margin="2" Padding="0,2,0,2">
-                <StackPanel>
-                    <TextBlock Text="File" Margin="2" HorizontalAlignment="Center"/>
-                    <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
-                    <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Center" Margin="2" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-        <TextBlock x:Name="Instructions" HorizontalAlignment="Right" Margin="0,0,10,10" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
-        <TabControl x:Name="TabControl" Margin="120,10,10,31" 
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Fluent:Ribbon Grid.Row="0">
+
+        <Fluent:Ribbon.Menu>
+            <Fluent:Backstage>
+                <Fluent:BackstageTabControl>
+                    <Fluent:Button Header="New Macro" Icon="{iconPacks:RemixIcon Kind=AddBoxLine}" Click="AddTab_Click"/>
+                    <Fluent:Button Header="Save Macro" Icon="{iconPacks:RemixIcon Kind=SaveLine}" Click="SaveEvents_Click"/>
+                    <Fluent:Button Header="Load Macro" Icon="{iconPacks:RemixIcon Kind=FolderOpenLine}" Click="LoadEvents_Click"/>
+                    <Fluent:Button Header="Close" Icon="{iconPacks:RemixIcon Kind=CloseLine}" Click="Close_Click"/>
+                </Fluent:BackstageTabControl>
+            </Fluent:Backstage>
+        </Fluent:Ribbon.Menu>
+
+        <Fluent:RibbonTabItem Header="Home">
+            <Fluent:RibbonGroupBox Header="Recording">
+                <Fluent:Button Header="Record" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=PlayLine}" Click="StartRecord_Click"/>
+                <Fluent:Button Header="Stop" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=StopLine}" Click="StopRecord_Click"/>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Record Options">
+                <Fluent:CheckBox x:Name="ClearListOnStartRecord" IsChecked="True">Clear List On Record</Fluent:CheckBox>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Playback">
+                <Fluent:Button Header="Playback" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=PlayLine}" Click="PlayEvents_Click"/>
+                <Fluent:Button Header="Abort" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=StopLine}" Click="AbortPlayback_Click"/>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Playback Options">
+                <Fluent:CheckBox x:Name="LoopIndefinitely"  IsChecked="{Binding LoopPlayback}">Loop Playback</Fluent:CheckBox>
+            </Fluent:RibbonGroupBox>
+        </Fluent:RibbonTabItem>
+        <Fluent:RibbonTabItem Header="Edit">
+            <Fluent:RibbonGroupBox Header="Create Event">
+                <Fluent:Button Header="Mouse" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=MouseLine}" Click="CreateMouseEventManually_Click"/>
+                <Fluent:Button Header="Keyboard" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=KeyboardBoxLine}" Click="CreateKeyboardEventManually_Click"/>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Remove Event">
+                <Fluent:Button Header="Selected" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=ChatDeleteLine}" Click="RemoveEvent_Click"/>
+                <Fluent:Button Header="Clear All" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=DeleteBin2Line}" Click="ClearList_Click"/>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Change Delays">
+                <Fluent:TextBox x:Name="DelayTextBox" Header="Delay (μs) " PreviewTextInput="AllowOnlyNumbersInTextBox">5000</Fluent:TextBox>
+                <Fluent:Button Header="Change Selected" Size="Middle" Icon="{iconPacks:RemixIcon Kind=ExchangeBoxLine}" Click="ChangeDelays_Click"/>
+                <Fluent:CheckBox x:Name="AutoChangeDelay">Auto Change</Fluent:CheckBox>
+            </Fluent:RibbonGroupBox>
+            <Fluent:RibbonGroupBox Header="Misc">
+                <Fluent:Button Header="Convert Mouse Events To Absolute Positioning" Icon="{iconPacks:RemixIcon Width=32,Height=32,Kind=MapPinLine}"
+                               Click="ConvertMouseEventsToAbsolutePositioning_Click"/>
+            </Fluent:RibbonGroupBox>
+        </Fluent:RibbonTabItem>
+        </Fluent:Ribbon>
+
+        <TabControl Grid.Row="1" x:Name="TabControl" 
                     d:DataContext="{d:DesignInstance designTimeViewModels:DesignTimeMainWindowViewModel, IsDesignTimeCreatable=True}"
                     ItemsSource="{Binding MacroTabs}" SelectedIndex="{Binding SelectedTabIndex}">
             <TabControl.Resources>
@@ -143,6 +145,8 @@
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
+
+        <TextBlock Grid.Row="2" x:Name="Instructions" Margin="2" TextWrapping="Wrap" Text="Global shortcuts: [Ctrl+Q Start Record] [Ctrl+W Stop Record] [Ctrl+E Play Events] [Ctrl+R Abort Playback]" VerticalAlignment="Bottom"/>
     </Grid>
-</Window>
+</Fluent:RibbonWindow>
 

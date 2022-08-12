@@ -4,9 +4,11 @@
              xmlns:local="clr-namespace:MacroRecorderGUI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <ResourceDictionary>
+        <ResourceDictionary >
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Utils/CrossButton.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Fluent;Component/Themes/Generic.xaml" />
+                <!-- <ResourceDictionary Source="pack://application:,,,/Fluent;Component/Themes/themes/dark.blue.xaml" /> -->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
