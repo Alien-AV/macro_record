@@ -154,7 +154,6 @@ namespace record_playback {
 
 		while (GetMessage(&messages, nullptr, 0, 0))
 		{
-			const auto time_start = std::chrono::steady_clock::now();
 			switch (messages.message) {
 			case WM_START_RECORD:
 				engine_object->time_of_last_event_ = std::chrono::high_resolution_clock::now();
