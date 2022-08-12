@@ -31,7 +31,7 @@ namespace MacroRecorderGUITests
             OnRecordedEvent(new RecordEngine.RecordEventsEventArgs(fakeEvent));
         }
 
-        public static ProtobufInputEvent MakeKeyboardEvent(uint virtualKey, bool keyUp, ulong timeSinceStartOfRecording)
+        public static ProtobufInputEvent MakeKeyboardEvent(uint virtualKey, bool keyUp, ulong timeSinceLastEvent)
         {
             return new ProtobufInputEvent
             {
@@ -39,11 +39,11 @@ namespace MacroRecorderGUITests
                 {
                     KeyUp = keyUp, VirtualKeyCode = virtualKey
                 },
-                TimeSinceStartOfRecording = timeSinceStartOfRecording
+                TimeSinceLastEvent = timeSinceLastEvent
             };
         }
 
-        public static ProtobufInputEvent MakeMouseEvent(int x, int y, uint actionType, bool relativePosition, ulong timeSinceStartOfRecording)
+        public static ProtobufInputEvent MakeMouseEvent(int x, int y, uint actionType, bool relativePosition, ulong timeSinceLastEvent)
         {
             return new ProtobufInputEvent
             {
@@ -52,7 +52,7 @@ namespace MacroRecorderGUITests
                     ActionType = actionType, MappedToVirtualDesktop = false, RelativePosition = relativePosition,
                     WheelRotation = 0, X = x, Y = y
                 },
-                TimeSinceStartOfRecording = timeSinceStartOfRecording
+                TimeSinceLastEvent = timeSinceLastEvent
             };
         }
     }
@@ -99,10 +99,10 @@ namespace MacroRecorderGUITests
             var expectedEvents = new List<ProtobufInputEvent>
             {
                 FakeRecordEngine.MakeKeyboardEvent(100, false, 1000),
-                FakeRecordEngine.MakeKeyboardEvent(100, true, 1500),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.Move, false, 2000),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftDown, false, 2500),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftUp, false, 3000)
+                FakeRecordEngine.MakeKeyboardEvent(100, true, 500),
+                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.Move, false, 500),
+                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftDown, false, 500),
+                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftUp, false, 500)
             };
 
             foreach (var inputEvent in expectedEvents)

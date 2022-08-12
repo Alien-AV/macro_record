@@ -15,7 +15,7 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 			
 			kbdevent->virtualKeyCode = serialized_kbdevent.virtualkeycode();
 			kbdevent->keyUp = serialized_kbdevent.keyup();
-			kbdevent->time_since_start_of_recording = std::chrono::microseconds(serialized_event.timesincestartofrecording());
+			kbdevent->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
 			
 			return std::move(kbdevent);
 		}
@@ -25,7 +25,7 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 			auto mouseevent = std::make_unique<MouseEvent>(serialized_mouseevent.x(), serialized_mouseevent.y(), serialized_mouseevent.actiontype(),
 			                                               serialized_mouseevent.wheelrotation(), serialized_mouseevent.mappedtovirtualdesktop(), serialized_mouseevent.relativeposition());
 
-			mouseevent->time_since_start_of_recording = std::chrono::microseconds(serialized_event.timesincestartofrecording());
+			mouseevent->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
 
 			return std::move(mouseevent);
 		}		

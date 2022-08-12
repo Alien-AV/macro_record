@@ -25,7 +25,7 @@ std::unique_ptr<std::vector<unsigned char>> KeyboardEvent::serialize() const
 	serialized_keyboard_event->set_virtualkeycode(virtualKeyCode);
 	serialized_keyboard_event->set_keyup(keyUp);
 
-	serialized_event->set_timesincestartofrecording(time_since_start_of_recording.count());
+	serialized_event->set_timesincelastevent(time_since_last_event.count());
 	
 	return input_event_to_uchar_vector(serialized_event);
 }

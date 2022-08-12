@@ -157,7 +157,7 @@ namespace record_playback {
 			const auto time_start = std::chrono::steady_clock::now();
 			switch (messages.message) {
 			case WM_START_RECORD:
-				engine_object->time_of_start_of_recording_ = std::chrono::high_resolution_clock::now();
+				engine_object->time_of_last_event_ = std::chrono::high_resolution_clock::now();
 				engine_object->fake_mouse_event_for_initial_pos();
 
 				if(!engine_object->register_raw_input_stuff(hwnd))
@@ -197,11 +197,19 @@ namespace record_playback {
 		}
 	}
 
-	void RecordEngine::handle_keyboard_event(const RAWKEYBOARD& data) const
+	std::chrono::microseconds RecordEngine::get_time_since_last_event()
 	{
-		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
+		const std::chrono::time_point<std::chrono::high_resolution_clock> time_now = std::chrono::high_resolution_clock::now();
+		const auto time_since_last_event = std::chrono::duration_cast<std::chrono::microseconds>(time_now - time_of_last_event_);
+		time_of_last_event_ = time_now;
+		return time_since_last_event;
+	}
+
+	void RecordEngine::handle_keyboard_event(const RAWKEYBOARD& data)
+	{
+		const auto time_since_last_event = get_time_since_last_event();
 		auto keyboard_event = std::make_unique<KeyboardEvent>();
-		keyboard_event->time_since_start_of_recording = time_since_start_of_recording;
+		keyboard_event->time_since_last_event = time_since_last_event;
 		keyboard_event->virtualKeyCode = data.VKey;
 		if (data.Flags & RI_KEY_BREAK) {
 			keyboard_event->keyUp = true;
@@ -213,12 +221,12 @@ namespace record_playback {
 		process_recorded_event(std::move(keyboard_event));
 	}
 
-	void RecordEngine::handle_mouse_event(const RAWMOUSE& data) const
+	void RecordEngine::handle_mouse_event(const RAWMOUSE& data)
 	{
-		const auto time_since_start_of_recording = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - time_of_start_of_recording_);
+		const auto time_since_last_event = get_time_since_last_event();
 
 		auto mouse_event = std::make_unique<MouseEvent>();
-		mouse_event->time_since_start_of_recording = time_since_start_of_recording;
+		mouse_event->time_since_last_event = time_since_last_event;
 		mouse_event->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
 
 		mouse_event->relative_position = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
@@ -273,7 +281,7 @@ namespace record_playback {
 		GetCursorPos(&initial_mouse_position);
 
 		auto fake_mouse_event = std::make_unique<MouseEvent>();
-		fake_mouse_event->time_since_start_of_recording = std::chrono::microseconds(0);
+		fake_mouse_event->time_since_last_event = std::chrono::microseconds(0);
 		fake_mouse_event->x = initial_mouse_position.x;
 		fake_mouse_event->y = initial_mouse_position.y;
 		fake_mouse_event->ActionType = MouseEvent::ActionTypeFlags::Move;

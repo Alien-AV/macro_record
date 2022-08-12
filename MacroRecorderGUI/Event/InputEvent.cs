@@ -14,10 +14,10 @@ namespace MacroRecorderGUI.Event
         }
 
         public InputEventType Type => (InputEventType)OriginalProtobufInputEvent.EventCase;
-        public ulong TimeSinceStartOfRecording
+        public ulong TimeSinceLastEvent
         {
-            get => OriginalProtobufInputEvent.TimeSinceStartOfRecording;
-            set => OriginalProtobufInputEvent.TimeSinceStartOfRecording = value;
+            get => OriginalProtobufInputEvent.TimeSinceLastEvent;
+            set => OriginalProtobufInputEvent.TimeSinceLastEvent = value;
         }
 
         public static InputEvent CreateInputEvent(ProtobufInputEvent protobufEvent)

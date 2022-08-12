@@ -7,7 +7,7 @@ Event::~Event() = default;
 
 void Event::print(std::ostream& where) const
 {
-	where << "time_since_start_of_recording(nano):" << time_since_start_of_recording.count();
+	where << "time_since_last_event(nano):" << time_since_last_event.count();
 }
 
 std::unique_ptr<std::vector<unsigned char>> Event::input_event_to_uchar_vector(const std::unique_ptr<protobufGenerated::ProtobufInputEvent>& serialized_event)

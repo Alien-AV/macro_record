@@ -24,23 +24,23 @@ namespace ProtobufGenerated {
     static EventsReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkIqgDChJQcm90b2J1",
-            "ZklucHV0RXZlbnQSIQoZdGltZVNpbmNlU3RhcnRPZlJlY29yZGluZxgBIAEo",
-            "BBJQCg1rZXlib2FyZEV2ZW50GAIgASgLMjcucHJvdG9idWZHZW5lcmF0ZWQu",
-            "UHJvdG9idWZJbnB1dEV2ZW50LktleWJvYXJkRXZlbnRUeXBlSAASSgoKbW91",
-            "c2VFdmVudBgDIAEoCzI0LnByb3RvYnVmR2VuZXJhdGVkLlByb3RvYnVmSW5w",
-            "dXRFdmVudC5Nb3VzZUV2ZW50VHlwZUgAGjoKEUtleWJvYXJkRXZlbnRUeXBl",
-            "EhYKDnZpcnR1YWxLZXlDb2RlGAEgASgNEg0KBWtleVVwGAIgASgIGosBCg5N",
-            "b3VzZUV2ZW50VHlwZRIJCgF4GAEgASgFEgkKAXkYAiABKAUSEgoKYWN0aW9u",
-            "VHlwZRgDIAEoDRIVCg13aGVlbFJvdGF0aW9uGAQgASgNEhgKEHJlbGF0aXZl",
-            "UG9zaXRpb24YBSABKAgSHgoWbWFwcGVkVG9WaXJ0dWFsRGVza3RvcBgGIAEo",
-            "CEIHCgVFdmVudCJUChZQcm90b2J1ZklucHV0RXZlbnRMaXN0EjoKC2lucHV0",
-            "RXZlbnRzGAEgAygLMiUucHJvdG9idWZHZW5lcmF0ZWQuUHJvdG9idWZJbnB1",
-            "dEV2ZW50YgZwcm90bzM="));
+            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkIqEDChJQcm90b2J1",
+            "ZklucHV0RXZlbnQSGgoSdGltZVNpbmNlTGFzdEV2ZW50GAEgASgEElAKDWtl",
+            "eWJvYXJkRXZlbnQYAiABKAsyNy5wcm90b2J1ZkdlbmVyYXRlZC5Qcm90b2J1",
+            "ZklucHV0RXZlbnQuS2V5Ym9hcmRFdmVudFR5cGVIABJKCgptb3VzZUV2ZW50",
+            "GAMgASgLMjQucHJvdG9idWZHZW5lcmF0ZWQuUHJvdG9idWZJbnB1dEV2ZW50",
+            "Lk1vdXNlRXZlbnRUeXBlSAAaOgoRS2V5Ym9hcmRFdmVudFR5cGUSFgoOdmly",
+            "dHVhbEtleUNvZGUYASABKA0SDQoFa2V5VXAYAiABKAgaiwEKDk1vdXNlRXZl",
+            "bnRUeXBlEgkKAXgYASABKAUSCQoBeRgCIAEoBRISCgphY3Rpb25UeXBlGAMg",
+            "ASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0SGAoQcmVsYXRpdmVQb3NpdGlv",
+            "bhgFIAEoCBIeChZtYXBwZWRUb1ZpcnR1YWxEZXNrdG9wGAYgASgIQgcKBUV2",
+            "ZW50IlQKFlByb3RvYnVmSW5wdXRFdmVudExpc3QSOgoLaW5wdXRFdmVudHMY",
+            "ASADKAsyJS5wcm90b2J1ZkdlbmVyYXRlZC5Qcm90b2J1ZklucHV0RXZlbnRi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent), global::ProtobufGenerated.ProtobufInputEvent.Parser, new[]{ "TimeSinceStartOfRecording", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent), global::ProtobufGenerated.ProtobufInputEvent.Parser, new[]{ "TimeSinceLastEvent", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null, null)}),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEventList), global::ProtobufGenerated.ProtobufInputEventList.Parser, new[]{ "InputEvents" }, null, null, null, null)
           }));
@@ -83,7 +83,7 @@ namespace ProtobufGenerated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ProtobufInputEvent(ProtobufInputEvent other) : this() {
-      timeSinceStartOfRecording_ = other.timeSinceStartOfRecording_;
+      timeSinceLastEvent_ = other.timeSinceLastEvent_;
       switch (other.EventCase) {
         case EventOneofCase.KeyboardEvent:
           KeyboardEvent = other.KeyboardEvent.Clone();
@@ -102,15 +102,15 @@ namespace ProtobufGenerated {
       return new ProtobufInputEvent(this);
     }
 
-    /// <summary>Field number for the "timeSinceStartOfRecording" field.</summary>
-    public const int TimeSinceStartOfRecordingFieldNumber = 1;
-    private ulong timeSinceStartOfRecording_;
+    /// <summary>Field number for the "timeSinceLastEvent" field.</summary>
+    public const int TimeSinceLastEventFieldNumber = 1;
+    private ulong timeSinceLastEvent_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong TimeSinceStartOfRecording {
-      get { return timeSinceStartOfRecording_; }
+    public ulong TimeSinceLastEvent {
+      get { return timeSinceLastEvent_; }
       set {
-        timeSinceStartOfRecording_ = value;
+        timeSinceLastEvent_ = value;
       }
     }
 
@@ -174,7 +174,7 @@ namespace ProtobufGenerated {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (TimeSinceStartOfRecording != other.TimeSinceStartOfRecording) return false;
+      if (TimeSinceLastEvent != other.TimeSinceLastEvent) return false;
       if (!object.Equals(KeyboardEvent, other.KeyboardEvent)) return false;
       if (!object.Equals(MouseEvent, other.MouseEvent)) return false;
       if (EventCase != other.EventCase) return false;
@@ -185,7 +185,7 @@ namespace ProtobufGenerated {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (TimeSinceStartOfRecording != 0UL) hash ^= TimeSinceStartOfRecording.GetHashCode();
+      if (TimeSinceLastEvent != 0UL) hash ^= TimeSinceLastEvent.GetHashCode();
       if (eventCase_ == EventOneofCase.KeyboardEvent) hash ^= KeyboardEvent.GetHashCode();
       if (eventCase_ == EventOneofCase.MouseEvent) hash ^= MouseEvent.GetHashCode();
       hash ^= (int) eventCase_;
@@ -207,9 +207,9 @@ namespace ProtobufGenerated {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (TimeSinceStartOfRecording != 0UL) {
+      if (TimeSinceLastEvent != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt64(TimeSinceStartOfRecording);
+        output.WriteUInt64(TimeSinceLastEvent);
       }
       if (eventCase_ == EventOneofCase.KeyboardEvent) {
         output.WriteRawTag(18);
@@ -229,9 +229,9 @@ namespace ProtobufGenerated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (TimeSinceStartOfRecording != 0UL) {
+      if (TimeSinceLastEvent != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt64(TimeSinceStartOfRecording);
+        output.WriteUInt64(TimeSinceLastEvent);
       }
       if (eventCase_ == EventOneofCase.KeyboardEvent) {
         output.WriteRawTag(18);
@@ -251,8 +251,8 @@ namespace ProtobufGenerated {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (TimeSinceStartOfRecording != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TimeSinceStartOfRecording);
+      if (TimeSinceLastEvent != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TimeSinceLastEvent);
       }
       if (eventCase_ == EventOneofCase.KeyboardEvent) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(KeyboardEvent);
@@ -272,8 +272,8 @@ namespace ProtobufGenerated {
       if (other == null) {
         return;
       }
-      if (other.TimeSinceStartOfRecording != 0UL) {
-        TimeSinceStartOfRecording = other.TimeSinceStartOfRecording;
+      if (other.TimeSinceLastEvent != 0UL) {
+        TimeSinceLastEvent = other.TimeSinceLastEvent;
       }
       switch (other.EventCase) {
         case EventOneofCase.KeyboardEvent:
@@ -306,7 +306,7 @@ namespace ProtobufGenerated {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            TimeSinceStartOfRecording = input.ReadUInt64();
+            TimeSinceLastEvent = input.ReadUInt64();
             break;
           }
           case 18: {
@@ -343,7 +343,7 @@ namespace ProtobufGenerated {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            TimeSinceStartOfRecording = input.ReadUInt64();
+            TimeSinceLastEvent = input.ReadUInt64();
             break;
           }
           case 18: {

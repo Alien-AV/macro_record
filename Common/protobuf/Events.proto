@@ -16,7 +16,7 @@ message ProtobufInputEvent {
 	bool mappedToVirtualDesktop = 6;
   }
 
-  uint64 timeSinceStartOfRecording = 1;
+  uint64 timeSinceLastEvent = 1;
 
   oneof Event {
      KeyboardEventType keyboardEvent  = 2;

@@ -70,7 +70,7 @@ namespace MacroRecorderGUI.ViewModels
             var currentTimeOffset = 0ul;
             foreach (var inputEvent in Events)
             {
-                inputEvent.TimeSinceStartOfRecording = currentTimeOffset;
+                inputEvent.TimeSinceLastEvent = currentTimeOffset;
                 currentTimeOffset += timeIncrement;
             }
 

@@ -55,7 +55,7 @@ struct ProtobufInputEvent_MouseEventTypeDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEvent_MouseEventTypeDefaultTypeInternal _ProtobufInputEvent_MouseEventType_default_instance_;
 PROTOBUF_CONSTEXPR ProtobufInputEvent::ProtobufInputEvent(
     ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.timesincestartofrecording_)*/uint64_t{0u}
+    /*decltype(_impl_.timesincelastevent_)*/uint64_t{0u}
   , /*decltype(_impl_.Event_)*/{}
   , /*decltype(_impl_._cached_size_)*/{}
   , /*decltype(_impl_._oneof_case_)*/{}} {}
@@ -113,7 +113,7 @@ const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_._oneof_case_[0]),
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.timesincestartofrecording_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.timesincelastevent_),
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.Event_),
@@ -140,24 +140,24 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 
 const char descriptor_table_protodef_Events_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\014Events.proto\022\021protobufGenerated\"\250\003\n\022Pr"
-  "otobufInputEvent\022!\n\031timeSinceStartOfReco"
-  "rding\030\001 \001(\004\022P\n\rkeyboardEvent\030\002 \001(\01327.pro"
-  "tobufGenerated.ProtobufInputEvent.Keyboa"
-  "rdEventTypeH\000\022J\n\nmouseEvent\030\003 \001(\01324.prot"
-  "obufGenerated.ProtobufInputEvent.MouseEv"
-  "entTypeH\000\032:\n\021KeyboardEventType\022\026\n\016virtua"
-  "lKeyCode\030\001 \001(\r\022\r\n\005keyUp\030\002 \001(\010\032\213\001\n\016MouseE"
-  "ventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\022\022\n\naction"
-  "Type\030\003 \001(\r\022\025\n\rwheelRotation\030\004 \001(\r\022\030\n\020rel"
-  "ativePosition\030\005 \001(\010\022\036\n\026mappedToVirtualDe"
-  "sktop\030\006 \001(\010B\007\n\005Event\"T\n\026ProtobufInputEve"
-  "ntList\022:\n\013inputEvents\030\001 \003(\0132%.protobufGe"
-  "nerated.ProtobufInputEventb\006proto3"
+  "\n\014Events.proto\022\021protobufGenerated\"\241\003\n\022Pr"
+  "otobufInputEvent\022\032\n\022timeSinceLastEvent\030\001"
+  " \001(\004\022P\n\rkeyboardEvent\030\002 \001(\01327.protobufGe"
+  "nerated.ProtobufInputEvent.KeyboardEvent"
+  "TypeH\000\022J\n\nmouseEvent\030\003 \001(\01324.protobufGen"
+  "erated.ProtobufInputEvent.MouseEventType"
+  "H\000\032:\n\021KeyboardEventType\022\026\n\016virtualKeyCod"
+  "e\030\001 \001(\r\022\r\n\005keyUp\030\002 \001(\010\032\213\001\n\016MouseEventTyp"
+  "e\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001(\005\022\022\n\nactionType\030\003 "
+  "\001(\r\022\025\n\rwheelRotation\030\004 \001(\r\022\030\n\020relativePo"
+  "sition\030\005 \001(\010\022\036\n\026mappedToVirtualDesktop\030\006"
+  " \001(\010B\007\n\005Event\"T\n\026ProtobufInputEventList\022"
+  ":\n\013inputEvents\030\001 \003(\0132%.protobufGenerated"
+  ".ProtobufInputEventb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Events_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Events_2eproto = {
-    false, false, 554, descriptor_table_protodef_Events_2eproto,
+    false, false, 547, descriptor_table_protodef_Events_2eproto,
     "Events.proto",
     &descriptor_table_Events_2eproto_once, nullptr, 0, 4,
     schemas, file_default_instances, TableStruct_Events_2eproto::offsets,
@@ -746,13 +746,13 @@ ProtobufInputEvent::ProtobufInputEvent(const ProtobufInputEvent& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   ProtobufInputEvent* const _this = this; (void)_this;
   new (&_impl_) Impl_{
-      decltype(_impl_.timesincestartofrecording_){}
+      decltype(_impl_.timesincelastevent_){}
     , decltype(_impl_.Event_){}
     , /*decltype(_impl_._cached_size_)*/{}
     , /*decltype(_impl_._oneof_case_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _this->_impl_.timesincestartofrecording_ = from._impl_.timesincestartofrecording_;
+  _this->_impl_.timesincelastevent_ = from._impl_.timesincelastevent_;
   clear_has_Event();
   switch (from.Event_case()) {
     case kKeyboardEvent: {
@@ -777,7 +777,7 @@ inline void ProtobufInputEvent::SharedCtor(
   (void)arena;
   (void)is_message_owned;
   new (&_impl_) Impl_{
-      decltype(_impl_.timesincestartofrecording_){uint64_t{0u}}
+      decltype(_impl_.timesincelastevent_){uint64_t{0u}}
     , decltype(_impl_.Event_){}
     , /*decltype(_impl_._cached_size_)*/{}
     , /*decltype(_impl_._oneof_case_)*/{}
@@ -834,7 +834,7 @@ void ProtobufInputEvent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.timesincestartofrecording_ = uint64_t{0u};
+  _impl_.timesincelastevent_ = uint64_t{0u};
   clear_Event();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -845,10 +845,10 @@ const char* ProtobufInputEvent::_InternalParse(const char* ptr, ::_pbi::ParseCon
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // uint64 timeSinceStartOfRecording = 1;
+      // uint64 timeSinceLastEvent = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
-          _impl_.timesincestartofrecording_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          _impl_.timesincelastevent_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -898,10 +898,10 @@ uint8_t* ProtobufInputEvent::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // uint64 timeSinceStartOfRecording = 1;
-  if (this->_internal_timesincestartofrecording() != 0) {
+  // uint64 timeSinceLastEvent = 1;
+  if (this->_internal_timesincelastevent() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_timesincestartofrecording(), target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_timesincelastevent(), target);
   }
 
   // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
@@ -934,9 +934,9 @@ size_t ProtobufInputEvent::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 timeSinceStartOfRecording = 1;
-  if (this->_internal_timesincestartofrecording() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_timesincestartofrecording());
+  // uint64 timeSinceLastEvent = 1;
+  if (this->_internal_timesincelastevent() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_timesincelastevent());
   }
 
   switch (Event_case()) {
@@ -976,8 +976,8 @@ void ProtobufInputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, con
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_timesincestartofrecording() != 0) {
-    _this->_internal_set_timesincestartofrecording(from._internal_timesincestartofrecording());
+  if (from._internal_timesincelastevent() != 0) {
+    _this->_internal_set_timesincelastevent(from._internal_timesincelastevent());
   }
   switch (from.Event_case()) {
     case kKeyboardEvent: {
@@ -1011,7 +1011,7 @@ bool ProtobufInputEvent::IsInitialized() const {
 void ProtobufInputEvent::InternalSwap(ProtobufInputEvent* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_.timesincestartofrecording_, other->_impl_.timesincestartofrecording_);
+  swap(_impl_.timesincelastevent_, other->_impl_.timesincelastevent_);
   swap(_impl_.Event_, other->_impl_.Event_);
   swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
 }

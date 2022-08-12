@@ -29,7 +29,7 @@ namespace record_playback
 		record_events_callback_t record_events_callback_ = nullptr;
 		status_callback_t status_callback_ = nullptr;
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_start_of_recording_{};
+		std::chrono::time_point<std::chrono::high_resolution_clock> time_of_last_event_{};
 
 		std::unique_ptr<DWORD> window_thread_id_ = nullptr;
 
@@ -48,8 +48,9 @@ namespace record_playback
 		std::thread event_fast_collector_thread_;
 		bool event_fast_collector_thread_should_close_ = false;
 
-		void handle_keyboard_event(const RAWKEYBOARD& data) const;
-		void handle_mouse_event(const RAWMOUSE& data) const;
+		std::chrono::microseconds get_time_since_last_event();
+		void handle_keyboard_event(const RAWKEYBOARD& data);
+		void handle_mouse_event(const RAWMOUSE& data);
 		void handle_controller_event(const RAWHID& hid);
 		void process_recorded_event(std::unique_ptr<Event> event) const;
 		void fake_mouse_event_for_initial_pos() const;

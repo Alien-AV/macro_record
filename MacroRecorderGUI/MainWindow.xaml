@@ -22,7 +22,7 @@
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Time Offset:"/>
-                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0" Width="50"/>
+                        <TextBox Text="{Binding TimeSinceLastEvent}" Margin="4,0,0,0" Width="50"/>
                     </StackPanel>
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
@@ -42,7 +42,7 @@
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Time Offset:"/>
-                        <TextBox Text="{Binding TimeSinceStartOfRecording}" Margin="4,0,0,0" Width="50"/>
+                        <TextBox Text="{Binding TimeSinceLastEvent}" Margin="4,0,0,0" Width="50"/>
                     </StackPanel>
                 </Border>
                 <Border BorderBrush="Black" BorderThickness="1" Padding="4" Margin="4,0,0,0">

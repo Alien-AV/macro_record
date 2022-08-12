@@ -3,6 +3,8 @@
 #include "Record/RecordEngine.h"
 #include "Common/DeserializeEvent.h"
 
+using namespace std::chrono_literals;
+
 iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
 iac_dll_record_event_cb_t c_callback_for_record_event_reporting = nullptr;
 std::unique_ptr<record_playback::RecordEngine> record_engine_singleton;
@@ -58,14 +60,16 @@ RECORD_PLAYBACK_DLL_API void iac_dll_playback_events(const unsigned char seriali
 			stop_playback = false;
 
 			const auto start_time = std::chrono::high_resolution_clock::now();
+			std::chrono::microseconds sum_of_all_event_delays_till_now = 0ms;
 			for (auto&& event : events_vec)
 			{
 				if(stop_playback)
 				{
 					return;
 				}
-				std::this_thread::sleep_until(start_time + event->time_since_start_of_recording);
+				std::this_thread::sleep_until(start_time + sum_of_all_event_delays_till_now + event->time_since_last_event);
 				event->playback();
+				sum_of_all_event_delays_till_now += event->time_since_last_event;
 			}
 			c_callback_for_status_reporting(RecordPlaybackDLLEnums::PlaybackFinished); // <- ye this is pretty dumb
 		}

@@ -560,17 +560,17 @@ class ProtobufInputEvent final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kTimeSinceStartOfRecordingFieldNumber = 1,
+    kTimeSinceLastEventFieldNumber = 1,
     kKeyboardEventFieldNumber = 2,
     kMouseEventFieldNumber = 3,
   };
-  // uint64 timeSinceStartOfRecording = 1;
-  void clear_timesincestartofrecording();
-  uint64_t timesincestartofrecording() const;
-  void set_timesincestartofrecording(uint64_t value);
+  // uint64 timeSinceLastEvent = 1;
+  void clear_timesincelastevent();
+  uint64_t timesincelastevent() const;
+  void set_timesincelastevent(uint64_t value);
   private:
-  uint64_t _internal_timesincestartofrecording() const;
-  void _internal_set_timesincestartofrecording(uint64_t value);
+  uint64_t _internal_timesincelastevent() const;
+  void _internal_set_timesincelastevent(uint64_t value);
   public:
 
   // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
@@ -624,7 +624,7 @@ class ProtobufInputEvent final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
-    uint64_t timesincestartofrecording_;
+    uint64_t timesincelastevent_;
     union EventUnion {
       constexpr EventUnion() : _constinit_{} {}
         ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
@@ -974,24 +974,24 @@ inline void ProtobufInputEvent_MouseEventType::set_mappedtovirtualdesktop(bool v
 
 // ProtobufInputEvent
 
-// uint64 timeSinceStartOfRecording = 1;
-inline void ProtobufInputEvent::clear_timesincestartofrecording() {
-  _impl_.timesincestartofrecording_ = uint64_t{0u};
+// uint64 timeSinceLastEvent = 1;
+inline void ProtobufInputEvent::clear_timesincelastevent() {
+  _impl_.timesincelastevent_ = uint64_t{0u};
 }
-inline uint64_t ProtobufInputEvent::_internal_timesincestartofrecording() const {
-  return _impl_.timesincestartofrecording_;
+inline uint64_t ProtobufInputEvent::_internal_timesincelastevent() const {
+  return _impl_.timesincelastevent_;
 }
-inline uint64_t ProtobufInputEvent::timesincestartofrecording() const {
-  // @@protoc_insertion_point(field_get:protobufGenerated.ProtobufInputEvent.timeSinceStartOfRecording)
-  return _internal_timesincestartofrecording();
+inline uint64_t ProtobufInputEvent::timesincelastevent() const {
+  // @@protoc_insertion_point(field_get:protobufGenerated.ProtobufInputEvent.timeSinceLastEvent)
+  return _internal_timesincelastevent();
 }
-inline void ProtobufInputEvent::_internal_set_timesincestartofrecording(uint64_t value) {
+inline void ProtobufInputEvent::_internal_set_timesincelastevent(uint64_t value) {
   
-  _impl_.timesincestartofrecording_ = value;
+  _impl_.timesincelastevent_ = value;
 }
-inline void ProtobufInputEvent::set_timesincestartofrecording(uint64_t value) {
-  _internal_set_timesincestartofrecording(value);
-  // @@protoc_insertion_point(field_set:protobufGenerated.ProtobufInputEvent.timeSinceStartOfRecording)
+inline void ProtobufInputEvent::set_timesincelastevent(uint64_t value) {
+  _internal_set_timesincelastevent(value);
+  // @@protoc_insertion_point(field_set:protobufGenerated.ProtobufInputEvent.timeSinceLastEvent)
 }
 
 // .protobufGenerated.ProtobufInputEvent.KeyboardEventType keyboardEvent = 2;
