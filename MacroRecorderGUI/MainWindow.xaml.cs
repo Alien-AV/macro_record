@@ -110,6 +110,11 @@ namespace MacroRecorderGUI
             var delay = Convert.ToUInt64(DelayTextBox.Text);
             (DataContext as MainWindowViewModel)?.ActiveMacro?.ChangeDelays(delay);
         }
+
+        private void ConvertMouseEventsToAbsolutePositioning_Click(object sender, RoutedEventArgs e)
+        {
+            (DataContext as MainWindowViewModel)?.ActiveMacro?.ConvertMouseEventsToAbsolutePositioning();
+        }
         
         private void SaveEvents_Click(object sender, RoutedEventArgs e)
         {

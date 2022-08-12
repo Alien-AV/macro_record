@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using Google.Protobuf;
@@ -106,6 +107,25 @@ namespace MacroRecorderGUI.ViewModels
         public void AddEvent(InputEvent parsedEvent)
         {
             Events.Add(parsedEvent);
+        }
+
+        public void ConvertMouseEventsToAbsolutePositioning()
+        {
+            int currentX = 0, currentY = 0;
+
+            foreach (var mouseEvent in Events.OfType<MouseEvent>())
+            {
+                if (mouseEvent.RelativePosition)
+                {
+                    mouseEvent.RelativePosition = false;
+                    mouseEvent.X += currentX;
+                    mouseEvent.Y += currentY;
+                }
+                
+                currentX = mouseEvent.X;
+                currentY = mouseEvent.Y;
+            }
+            CollectionViewSource.GetDefaultView(Events).Refresh();
         }
     }
 }

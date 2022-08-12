@@ -83,6 +83,8 @@
             </StackPanel>
             <CheckBox x:Name="AutoChangeDelay" Content="Auto Change" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" ToolTip="Auto change delay when recording done."/>
             <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
+            <Button x:Name="ConvertMouseEventsToAbsolutePositioning" Content="Rel To Abs Pos" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="ConvertMouseEventsToAbsolutePositioning_Click"/>
+            <Separator HorizontalAlignment="Left" Height="1" Margin="0,4,0,0" VerticalAlignment="Top" Width="100"/>
             <Button x:Name="SaveEvents" Content="Save to File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="SaveEvents_Click"/>
             <Button x:Name="LoadEvents" Content="Load from File" HorizontalAlignment="Left" Margin="0,4,0,0" VerticalAlignment="Top" Width="100" Click="LoadEvents_Click"/>
         </StackPanel>
