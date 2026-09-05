@@ -17,6 +17,9 @@
 
         <CommandBar
             Grid.Row="0"
+            Margin="12,0"
+            HorizontalAlignment="Left"
+            Background="Transparent"
             DefaultLabelPosition="Right"
             IsOpen="False">
             <AppBarButton Label="New macro" Click="AddTab_Click">
@@ -67,17 +70,17 @@
 
         <Border
             Grid.Row="1"
-            Margin="12,4,12,8"
+            Margin="12,4,12,10"
             Padding="12"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Enabled">
+            <StackPanel Spacing="10">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <CheckBox
                         x:Name="ClearListOnStartRecord"
-                        Content="Clear events when recording starts"
+                        Content="Clear events before recording"
                         IsChecked="True"
                         VerticalAlignment="Center" />
                     <CheckBox
@@ -89,7 +92,8 @@
                     <Button Content="Add keyboard event" Click="CreateKeyboardEventManually_Click" />
                     <Button Content="Remove selected" Click="RemoveEvent_Click" />
                     <Button Content="Clear all" Click="ClearList_Click" />
-                    <Rectangle Width="1" Height="24" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock Text="Delay (µs)" VerticalAlignment="Center" />
                     <TextBox
                         x:Name="DelayTextBox"
@@ -105,7 +109,7 @@
                         Content="Convert mouse positions to absolute"
                         Click="ConvertMouseEventsToAbsolutePositioning_Click" />
                 </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </Border>
 
         <TabView
@@ -121,19 +125,27 @@
             TabCloseRequested="MacroTabs_TabCloseRequested"
             TabDragCompleted="MacroTabs_TabDragCompleted" />
 
-        <Grid Grid.Row="3" Padding="14,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock
-                x:Name="StatusText"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Ready" />
-            <TextBlock
-                Grid.Column="1"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Ctrl+Q Record · Ctrl+W Stop · Ctrl+E Play · Ctrl+R Abort" />
-        </Grid>
+        <Border
+            Grid.Row="3"
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0">
+            <Grid Padding="14,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    x:Name="StatusText"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Ready" />
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Ctrl+Q Record · Ctrl+W Stop · Ctrl+E Play · Ctrl+R Abort"
+                    TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Border>
     </Grid>
 </Window>

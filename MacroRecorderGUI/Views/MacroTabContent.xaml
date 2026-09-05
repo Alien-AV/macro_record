@@ -104,9 +104,25 @@
     </UserControl.Resources>
 
     <Grid>
+        <StackPanel
+            x:Name="EmptyState"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False"
+            Spacing="6">
+            <TextBlock
+                HorizontalAlignment="Center"
+                Style="{ThemeResource SubtitleTextBlockStyle}"
+                Text="No events in this macro" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Record a macro or add an event to get started." />
+        </StackPanel>
         <ListView
             x:Name="EventsList"
             Padding="4,12"
+            Background="Transparent"
             HorizontalContentAlignment="Stretch"
             ItemsSource="{Binding Events}"
             ItemTemplateSelector="{StaticResource EventTemplateSelector}"
