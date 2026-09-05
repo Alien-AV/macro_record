@@ -1,8 +1,3 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
@@ -10,117 +5,133 @@ using MacroRecorderGUI.Utils;
 using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
 
-namespace MacroRecorderGUITests
+namespace MacroRecorderGUITests;
+
+internal sealed class FakeRecordEngine : IRecordEngine
 {
-    internal class FakeRecordEngine : IRecordEngine
+    public event RecordEngine.RecordEventsEventHandler? RecordedEvent;
+    public event RecordEngine.RecordStatusEventHandler? RecordStatus
     {
-        public event RecordEngine.RecordEventsEventHandler RecordedEvent;
-        public event RecordEngine.RecordStatusEventHandler RecordStatus;
-        public void StartRecord()
-        {
-        }
-
-        public void StopRecord()
-        {
-        }
-
-        protected virtual void OnRecordedEvent(RecordEngine.RecordEventsEventArgs e) => RecordedEvent?.Invoke(this, e);
-        
-        public void PushEvent(ProtobufInputEvent fakeEvent)
-        {
-            OnRecordedEvent(new RecordEngine.RecordEventsEventArgs(fakeEvent));
-        }
-
-        public static ProtobufInputEvent MakeKeyboardEvent(uint virtualKey, bool keyUp, ulong timeSinceLastEvent)
-        {
-            return new ProtobufInputEvent
-            {
-                KeyboardEvent = new ProtobufInputEvent.Types.KeyboardEventType
-                {
-                    KeyUp = keyUp, VirtualKeyCode = virtualKey
-                },
-                TimeSinceLastEvent = timeSinceLastEvent
-            };
-        }
-
-        public static ProtobufInputEvent MakeMouseEvent(int x, int y, uint actionType, bool relativePosition, ulong timeSinceLastEvent)
-        {
-            return new ProtobufInputEvent
-            {
-                MouseEvent = new ProtobufInputEvent.Types.MouseEventType
-                {
-                    ActionType = actionType, MappedToVirtualDesktop = false, RelativePosition = relativePosition,
-                    WheelRotation = 0, X = x, Y = y
-                },
-                TimeSinceLastEvent = timeSinceLastEvent
-            };
-        }
+        add { }
+        remove { }
     }
 
-    internal class FakePlaybackEngine : IPlaybackEngine
+    public void StartRecord()
     {
-        public IEnumerable<InputEvent> PlayedEvents = new List<InputEvent>();
-        public void PlaybackEvents(IEnumerable<InputEvent> events)
-        {
-            PlayedEvents = events;
-        }
-
-        public void PlaybackEventAbort()
-        {
-            throw new NotImplementedException();
-        }
     }
 
-    internal class FakeMainWindowViewModel : MainWindowViewModel
+    public void StopRecord()
     {
-        public FakeMainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine) : base(recordEngine,
-            playbackEngine)
-        {
-        }
-
-        protected override void InvokeDispatcher(Action action)
-        {
-            action.Invoke();
-        }
     }
 
-    [TestClass]
-    public class MainFlowTest
+    public void PushEvent(ProtobufInputEvent fakeEvent)
     {
-        
+        RecordedEvent?.Invoke(this, new RecordEngine.RecordEventsEventArgs(fakeEvent));
+    }
 
-        [TestMethod]
-        public void GetSomeProtobufsPlaySomeProtobufsTest()
+    public static ProtobufInputEvent MakeKeyboardEvent(
+        uint virtualKey,
+        bool keyUp,
+        ulong timeSinceLastEvent)
+    {
+        return new ProtobufInputEvent
         {
-            var recordEngine = new FakeRecordEngine();
-            var playbackEngine = new FakePlaybackEngine();
-            var fakeMainWindowViewModel = new FakeMainWindowViewModel(recordEngine, playbackEngine);
-
-            var expectedEvents = new List<ProtobufInputEvent>
+            KeyboardEvent = new ProtobufInputEvent.Types.KeyboardEventType
             {
-                FakeRecordEngine.MakeKeyboardEvent(100, false, 1000),
-                FakeRecordEngine.MakeKeyboardEvent(100, true, 500),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.Move, false, 500),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftDown, false, 500),
-                FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftUp, false, 500)
-            };
+                KeyUp = keyUp,
+                VirtualKeyCode = virtualKey
+            },
+            TimeSinceLastEvent = timeSinceLastEvent
+        };
+    }
 
-            foreach (var inputEvent in expectedEvents)
+    public static ProtobufInputEvent MakeMouseEvent(
+        int x,
+        int y,
+        uint actionType,
+        bool relativePosition,
+        ulong timeSinceLastEvent)
+    {
+        return new ProtobufInputEvent
+        {
+            MouseEvent = new ProtobufInputEvent.Types.MouseEventType
             {
-                recordEngine.PushEvent(inputEvent);
-            }
+                ActionType = actionType,
+                MappedToVirtualDesktop = false,
+                RelativePosition = relativePosition,
+                WheelRotation = 0,
+                X = x,
+                Y = y
+            },
+            TimeSinceLastEvent = timeSinceLastEvent
+        };
+    }
+}
 
-            fakeMainWindowViewModel.ActiveMacro.PlayMacro();
+internal sealed class FakePlaybackEngine : IPlaybackEngine
+{
+    public IEnumerable<InputEvent> PlayedEvents { get; private set; } = [];
 
-            var releaseModKeyProtoInputEvents = ReleaseModifierKeys.ReleaseModKeysEvents.Select(ev => ev.OriginalProtobufInputEvent);
-            var expectedEventsWrappedWithReleaseModifierKeys = releaseModKeyProtoInputEvents
-                .Concat(expectedEvents)
-                .Concat(releaseModKeyProtoInputEvents);
+    public void PlaybackEvents(IEnumerable<InputEvent> events)
+    {
+        PlayedEvents = events;
+    }
 
-            CollectionAssert.AreEqual(
-                expectedEventsWrappedWithReleaseModifierKeys.ToList(),
-                playbackEngine.PlayedEvents.Select(inputEvent=>inputEvent.OriginalProtobufInputEvent).ToList()
-                );
+    public void PlaybackEventAbort()
+    {
+    }
+}
+
+internal sealed class FakeMainWindowViewModel : MainWindowViewModel
+{
+    public FakeMainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine)
+        : base(recordEngine, playbackEngine)
+    {
+    }
+
+    protected override void InvokeDispatcher(Action action)
+    {
+        action();
+    }
+}
+
+[TestClass]
+public class MainFlowTest
+{
+    [TestMethod]
+    public void RecordedProtobufEventsArePassedToPlaybackWithReleasedModifierKeys()
+    {
+        var recordEngine = new FakeRecordEngine();
+        var playbackEngine = new FakePlaybackEngine();
+        var viewModel = new FakeMainWindowViewModel(recordEngine, playbackEngine);
+
+        var expectedEvents = new List<ProtobufInputEvent>
+        {
+            FakeRecordEngine.MakeKeyboardEvent(100, false, 1000),
+            FakeRecordEngine.MakeKeyboardEvent(100, true, 500),
+            FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.Move, false, 500),
+            FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftDown, false, 500),
+            FakeRecordEngine.MakeMouseEvent(100, 100, (uint)MouseActionTypeFlags.LeftUp, false, 500)
+        };
+
+        foreach (var inputEvent in expectedEvents)
+        {
+            recordEngine.PushEvent(inputEvent);
         }
+
+        viewModel.ActiveMacro!.PlayMacro();
+
+        var releasedModifierEvents = ReleaseModifierKeys.ReleaseModKeysEvents
+            .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)
+            .ToList();
+        var expectedPlaybackEvents = releasedModifierEvents
+            .Concat(expectedEvents)
+            .Concat(releasedModifierEvents)
+            .ToList();
+        var actualPlaybackEvents = playbackEngine.PlayedEvents
+            .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)
+            .ToList();
+
+        CollectionAssert.AreEqual(expectedPlaybackEvents, actualPlaybackEvents);
     }
 }

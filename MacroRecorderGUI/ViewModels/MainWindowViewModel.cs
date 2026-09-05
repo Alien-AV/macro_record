@@ -1,79 +1,156 @@
-﻿using System;
 using System.Collections.ObjectModel;
-using System.Windows;
 using RecordPlaybackDLLEnums;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 
-namespace MacroRecorderGUI.ViewModels
+namespace MacroRecorderGUI.ViewModels;
+
+public interface IMainWindowViewModel
 {
-    public interface IMainWindowViewModel //just here to make sure DesignTimeMainWindowViewModel stays in sync
+    ObservableCollection<MacroViewModel> MacroTabs { get; }
+    int SelectedTabIndex { get; set; }
+    MacroViewModel? ActiveMacro { get; }
+}
+
+public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
+{
+    private readonly SynchronizationContext? _uiContext;
+    private int _selectedTabIndex;
+    private bool _loopPlayback;
+
+    public MainWindowViewModel()
+        : this(new RecordEngine(), new PlaybackEngine())
     {
-        ObservableCollection<MacroViewModel> MacroTabs { get; set; }
-        int SelectedTabIndex { get; set; }
-        MacroViewModel ActiveMacro { get; }
     }
 
-    public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
+    public MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine)
     {
-        public MainWindowViewModel():this(new RecordEngine(), new PlaybackEngine())
+        _uiContext = SynchronizationContext.Current;
+        RecordEngine = recordEngine;
+        PlaybackEngine = playbackEngine;
+        RecordEngine.RecordStatus += RecordEngineOnRecordStatus;
+        RecordEngine.RecordedEvent += RecordEngineOnRecordedEvent;
+        MacroTabs = new ObservableCollection<MacroViewModel>
         {
-        }
+            new("macro0", PlaybackEngine)
+        };
+    }
 
-        public MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine)
+    public IRecordEngine RecordEngine { get; }
+    public IPlaybackEngine PlaybackEngine { get; }
+    public ObservableCollection<MacroViewModel> MacroTabs { get; }
+
+    public event EventHandler<string>? StatusMessageRequested;
+
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set
         {
-            RecordEngine = recordEngine;
-            PlaybackEngine = playbackEngine;
-            RecordEngine.RecordStatus += _recordEngine_RecordStatus;
-            RecordEngine.RecordedEvent += _recordEngine_RecordedEvent;
-            MacroTabs = new ObservableCollection<MacroViewModel> { new MacroViewModel("macro0", PlaybackEngine) };
-        }
-
-        public readonly IRecordEngine RecordEngine;
-        public readonly IPlaybackEngine PlaybackEngine;
-
-        #region record engine event handlers
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private void _recordEngine_RecordStatus(object sender, RecordEngine.RecordStatusEventArgs e)
-        {
-            if (e.StatusCode == StatusCode.PlaybackFinished)
+            if (value == _selectedTabIndex)
             {
-                if (LoopPlayback) ActiveMacro?.PlayMacro();
+                return;
             }
-            else
+
+            _selectedTabIndex = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ActiveMacro));
+        }
+    }
+
+    public bool LoopPlayback
+    {
+        get => _loopPlayback;
+        set
+        {
+            if (value == _loopPlayback)
             {
-                MessageBox.Show("Status reported: \"" + e.StatusCode + "\".");
+                return;
+            }
+
+            _loopPlayback = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public MacroViewModel? ActiveMacro =>
+        SelectedTabIndex >= 0 && SelectedTabIndex < MacroTabs.Count
+            ? MacroTabs[SelectedTabIndex]
+            : null;
+
+    public MacroViewModel AddNewTab()
+    {
+        var macro = new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine);
+        MacroTabs.Add(macro);
+        SelectedTabIndex = MacroTabs.Count - 1;
+        return macro;
+    }
+
+    public void CloseTab(MacroViewModel macro)
+    {
+        var removedIndex = MacroTabs.IndexOf(macro);
+        if (removedIndex < 0)
+        {
+            return;
+        }
+
+        var selectedMacro = ActiveMacro;
+        MacroTabs.RemoveAt(removedIndex);
+        if (MacroTabs.Count == 0)
+        {
+            SelectedTabIndex = -1;
+        }
+        else if (ReferenceEquals(selectedMacro, macro))
+        {
+            SelectedTabIndex = Math.Min(removedIndex, MacroTabs.Count - 1);
+        }
+        else if (selectedMacro is not null)
+        {
+            SelectedTabIndex = MacroTabs.IndexOf(selectedMacro);
+        }
+    }
+
+    public void SynchronizeTabOrder(IReadOnlyList<MacroViewModel> orderedMacros)
+    {
+        for (var targetIndex = 0; targetIndex < orderedMacros.Count; targetIndex++)
+        {
+            var currentIndex = MacroTabs.IndexOf(orderedMacros[targetIndex]);
+            if (currentIndex >= 0 && currentIndex != targetIndex)
+            {
+                MacroTabs.Move(currentIndex, targetIndex);
             }
         }
-        private void _recordEngine_RecordedEvent(object sender, RecordEngine.RecordEventsEventArgs e)
+    }
+
+    private void RecordEngineOnRecordStatus(object? sender, RecordEngine.RecordStatusEventArgs e)
+    {
+        if (e.StatusCode == StatusCode.PlaybackFinished)
         {
-            InvokeDispatcher(()=> ActiveMacro?.AddEvent(InputEvent.CreateInputEvent(e.InputEvent)));
+            if (LoopPlayback)
+            {
+                ActiveMacro?.PlayMacro();
+            }
+
+            return;
         }
 
-        protected virtual void InvokeDispatcher(Action action)
-        {
-            Application.Current.Dispatcher.Invoke(action);
-        }
-        #endregion
-        
-        public ObservableCollection<MacroViewModel> MacroTabs { get; set; }
-        
-        private int _selectedTabIndex;
-        public int SelectedTabIndex
-        {
-            get => _selectedTabIndex;
-            set { _selectedTabIndex = value; OnPropertyChanged();}
-        }
+        InvokeDispatcher(() =>
+            StatusMessageRequested?.Invoke(this, $"Status reported: \"{e.StatusCode}\"."));
+    }
 
-        public bool LoopPlayback { get; set; }
-        public MacroViewModel ActiveMacro => (SelectedTabIndex != -1)? MacroTabs[SelectedTabIndex] : null;
+    private void RecordEngineOnRecordedEvent(object? sender, RecordEngine.RecordEventsEventArgs e)
+    {
+        InvokeDispatcher(() => ActiveMacro?.AddEvent(InputEvent.CreateInputEvent(e.InputEvent)));
+    }
 
-        public void AddNewTab()
+    protected virtual void InvokeDispatcher(Action action)
+    {
+        if (_uiContext is null || SynchronizationContext.Current == _uiContext)
         {
-            MacroTabs.Add(new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine));
-            SelectedTabIndex = MacroTabs.Count - 1;
+            action();
+            return;
         }
 
-
+        _uiContext.Post(_ => action(), null);
     }
 }

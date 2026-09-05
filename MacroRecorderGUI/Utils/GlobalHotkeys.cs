@@ -1,104 +1,120 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Windows.Input;
-using System.Windows.Interop;
+using Windows.System;
 
-namespace MacroRecorderGUI.Utils
+namespace MacroRecorderGUI.Utils;
+
+[Flags]
+internal enum HotKeyModifiers : uint
 {
-    public class GlobalHotkeys: IDisposable
+    None = 0,
+    Alt = 0x0001,
+    Control = 0x0002,
+    Shift = 0x0004,
+    Windows = 0x0008
+}
+
+internal sealed class GlobalHotkeys : IDisposable
+{
+    private const uint WindowMessageHotKey = 0x0312;
+    private static readonly UIntPtr SubclassId = new(0x4D524743);
+
+    private readonly nint _windowHandle;
+    private readonly SubclassProcedure _subclassProcedure;
+    private readonly Dictionary<int, Action> _handlers = [];
+    private int _nextHotKeyId = 9000;
+    private bool _disposed;
+
+    public GlobalHotkeys(nint windowHandle)
     {
-        [DllImport("User32.dll")]
-        private static extern bool RegisterHotKey(
-            [In] IntPtr hWnd,
-            [In] int id,
-            [In] uint fsModifiers,
-            [In] uint vk);
+        _windowHandle = windowHandle;
+        _subclassProcedure = WindowSubclassProcedure;
 
-        [DllImport("User32.dll")]
-        private static extern bool UnregisterHotKey(
-            [In] IntPtr hWnd,
-            [In] int id);
-
-        private HwndSource _source;
-        private readonly WindowInteropHelper _windowInteropHelper;
-        private readonly MainWindow _window;
-        private int _currentHotkeyId = 9000;
-
-        public delegate void HotkeyHandler();
-
-        private struct HotkeyKeysAndHandler
+        if (!SetWindowSubclass(_windowHandle, _subclassProcedure, SubclassId, UIntPtr.Zero))
         {
-            public uint Vk;
-            public uint Mod;
-            public HotkeyHandler HotkeyHandler;
-        }
-
-        private readonly Dictionary<int, HotkeyKeysAndHandler> _hotkeyById = new Dictionary<int, HotkeyKeysAndHandler>();
-
-        public GlobalHotkeys(MainWindow window)
-        {
-            _window = window;
-            _windowInteropHelper = new WindowInteropHelper(_window);
-            _source = HwndSource.FromHwnd(_windowInteropHelper.Handle);
-            _source.AddHook(HwndHook);
-        }
-
-        public void Dispose()
-        {
-            _source.RemoveHook(HwndHook);
-            _source = null;
-            
-            DeleteAllHotKeys();
-        }
-
-        public int AddHotKey(Key key, ModifierKeys mod, HotkeyHandler handler)
-        {
-            var vKey = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(key));
-            var modUint = Convert.ToUInt32(mod);
-            _hotkeyById.Add(_currentHotkeyId, new HotkeyKeysAndHandler()
-                {
-                    Vk = vKey,
-                    Mod = modUint,
-                    HotkeyHandler = handler
-                });
-
-            if(!RegisterHotKey(_windowInteropHelper.Handle, _currentHotkeyId, modUint, vKey))
-            {
-                // handle error
-            }
-
-            var justAddedHotkeyId = _currentHotkeyId;
-            _currentHotkeyId++;
-            return justAddedHotkeyId;
-        }
-
-        private void DeleteHotKey(int id)
-        {
-            UnregisterHotKey(_windowInteropHelper.Handle, id);
-        }
-
-        private void DeleteAllHotKeys()
-        {
-            foreach (var key in _hotkeyById.Keys)
-            {
-                UnregisterHotKey(_windowInteropHelper.Handle, key);
-            }
-        }
-
-        private void RunHotkeyHandlerById(int id)
-        {
-            _hotkeyById[id].HotkeyHandler();
-        }
-
-        private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            const int WM_HOTKEY = 0x0312;
-            if(msg == WM_HOTKEY){
-                    RunHotkeyHandlerById(wParam.ToInt32());
-                    handled = true;
-            }
-            return IntPtr.Zero;
+            throw new InvalidOperationException("The window message hook for global shortcuts could not be installed.");
         }
     }
+
+    public bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action handler)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var id = _nextHotKeyId++;
+        if (!RegisterHotKey(_windowHandle, id, (uint)modifiers, (uint)key))
+        {
+            return false;
+        }
+
+        _handlers.Add(id, handler);
+        return true;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        foreach (var id in _handlers.Keys)
+        {
+            UnregisterHotKey(_windowHandle, id);
+        }
+
+        _handlers.Clear();
+        RemoveWindowSubclass(_windowHandle, _subclassProcedure, SubclassId);
+        _disposed = true;
+    }
+
+    private nint WindowSubclassProcedure(
+        nint windowHandle,
+        uint message,
+        UIntPtr wParam,
+        nint lParam,
+        UIntPtr subclassId,
+        UIntPtr referenceData)
+    {
+        if (message == WindowMessageHotKey
+            && _handlers.TryGetValue(unchecked((int)wParam.ToUInt64()), out var handler))
+        {
+            handler();
+            return nint.Zero;
+        }
+
+        return DefSubclassProc(windowHandle, message, wParam, lParam);
+    }
+
+    private delegate nint SubclassProcedure(
+        nint windowHandle,
+        uint message,
+        UIntPtr wParam,
+        nint lParam,
+        UIntPtr subclassId,
+        UIntPtr referenceData);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RegisterHotKey(nint windowHandle, int id, uint modifiers, uint virtualKey);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnregisterHotKey(nint windowHandle, int id);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowSubclass(
+        nint windowHandle,
+        SubclassProcedure subclassProcedure,
+        UIntPtr subclassId,
+        UIntPtr referenceData);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RemoveWindowSubclass(
+        nint windowHandle,
+        SubclassProcedure subclassProcedure,
+        UIntPtr subclassId);
+
+    [DllImport("comctl32.dll")]
+    private static extern nint DefSubclassProc(nint windowHandle, uint message, UIntPtr wParam, nint lParam);
 }

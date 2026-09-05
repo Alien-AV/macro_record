@@ -1,0 +1,123 @@
+<UserControl
+    x:Class="MacroRecorderGUI.Views.MacroTabContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="using:MacroRecorderGUI.ViewModels"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="KeyboardEventTemplate">
+            <Border
+                Margin="0,0,0,8"
+                Padding="12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Keyboard event" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Virtual-key input" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="Delay (µs)" />
+                        <TextBox
+                            BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
+                            Text="{Binding TimeSinceLastEvent, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+                        <StackPanel Width="220" Spacing="4">
+                            <TextBlock Text="Key" />
+                            <TextBox Text="{Binding KeyName, Mode=TwoWay}" />
+                        </StackPanel>
+                        <CheckBox
+                            Content="Key up"
+                            IsChecked="{Binding KeyUp, Mode=TwoWay}"
+                            VerticalAlignment="Bottom" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MouseEventTemplate">
+            <Border
+                Margin="0,0,0,8"
+                Padding="12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Mouse event" />
+                        <CheckBox
+                            Content="Relative"
+                            IsChecked="{Binding RelativePosition, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="Delay (µs)" />
+                        <TextBox
+                            BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
+                            Text="{Binding TimeSinceLastEvent, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                        <TextBlock Text="X" />
+                        <TextBox
+                            BeforeTextChanging="SignedNumberTextBox_BeforeTextChanging"
+                            Text="{Binding X, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="4">
+                        <TextBlock Text="Y" />
+                        <TextBox
+                            BeforeTextChanging="SignedNumberTextBox_BeforeTextChanging"
+                            Text="{Binding Y, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Spacing="4">
+                        <TextBlock Text="Action flags" />
+                        <TextBox Text="{Binding ActionName, Mode=TwoWay}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <viewModels:EventTypeDataTemplateSelector
+            x:Key="EventTemplateSelector"
+            KeyboardTemplate="{StaticResource KeyboardEventTemplate}"
+            MouseTemplate="{StaticResource MouseEventTemplate}" />
+    </UserControl.Resources>
+
+    <Grid>
+        <ListView
+            x:Name="EventsList"
+            Padding="4,12"
+            HorizontalContentAlignment="Stretch"
+            ItemsSource="{Binding Events}"
+            ItemTemplateSelector="{StaticResource EventTemplateSelector}"
+            KeyDown="EventsList_KeyDown"
+            SelectionChanged="EventsList_SelectionChanged"
+            SelectionMode="Extended">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
+    </Grid>
+</UserControl>

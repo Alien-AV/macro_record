@@ -1,7 +1,11 @@
-7z a %APPVEYOR_BUILD_FOLDER%\%PLATFORM%\%CONFIGURATION%\%APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%-%PLATFORM%-%CONFIGURATION%.zip %APPVEYOR_BUILD_FOLDER%\%PLATFORM%\%CONFIGURATION%\MacroRecorderGUI.exe
+@echo off
+setlocal
+set "PUBLISH_DIR=%APPVEYOR_BUILD_FOLDER%\x64\Release\publish"
 
-7z a %APPVEYOR_BUILD_FOLDER%\%PLATFORM%\%CONFIGURATION%\%APPVEYOR_PROJECT_NAME%-%APPVEYOR_BUILD_VERSION%-%PLATFORM%-%CONFIGURATION%.zip %APPVEYOR_BUILD_FOLDER%\%PLATFORM%\%CONFIGURATION%\*.dll
+dotnet publish "%APPVEYOR_BUILD_FOLDER%\MacroRecorderGUI\MacroRecorderGUI.csproj" -c Release -p:Platform=x64 -r win-x64 --self-contained true -o "%PUBLISH_DIR%"
+if errorlevel 1 exit /b %errorlevel%
 
-IF "%CONFIGURATION%"=="Release" (
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "%APPVEYOR_BUILD_FOLDER%\inno-setup-script.iss" -DMyAppVersion=%APPVEYOR_BUILD_VERSION% -DArch=%PLATFORM% -DMyOutputDir=%APPVEYOR_BUILD_FOLDER%\%PLATFORM%\%CONFIGURATION%\
-)
+7z a "%APPVEYOR_BUILD_FOLDER%\x64\Release\macro_record-%APPVEYOR_BUILD_VERSION%-x64-Release.zip" "%PUBLISH_DIR%\*"
+if errorlevel 1 exit /b %errorlevel%
+
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "%APPVEYOR_BUILD_FOLDER%\inno-setup-script.iss" -DMyAppVersion=%APPVEYOR_BUILD_VERSION% -DArch=x64 -DMyOutputDir="%APPVEYOR_BUILD_FOLDER%\x64\Release" -DMyPublishDir="%PUBLISH_DIR%"

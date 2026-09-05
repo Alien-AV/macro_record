@@ -1,28 +1,24 @@
-version: 0.2.{build}
+version: 0.3.{build}
 skip_tags: true
-image: Visual Studio 2022
-configuration:
-- Release
-- Debug
-platform:
-- x64
-- x86
+image: Visual Studio 2026
+configuration: Release
+platform: x64
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  VCPKG_MAX_CONCURRENCY: 4
 cache:
-- packages -> **\packages.config
-- c:\tools\vcpkg\installed\
-before_build:
-- cmd: '%APPVEYOR_BUILD_FOLDER%\appveyor-before-build-script.cmd'
-build:
-  verbosity: minimal
+- '%USERPROFILE%\.nuget\packages'
+build_script:
+- cmd: msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p:RestorePackagesConfig=true /verbosity:minimal
+test_script:
+- cmd: dotnet test MacroRecorderGUITests\MacroRecorderGUITests.csproj -c Release -p:Platform=x64 --no-build --verbosity minimal
 after_build:
 - cmd: '%APPVEYOR_BUILD_FOLDER%\appveyor-after-build-script.cmd'
 artifacts:
-- path: $(PLATFORM)\$(CONFIGURATION)\$(APPVEYOR_PROJECT_NAME)-$(APPVEYOR_BUILD_VERSION)-$(PLATFORM)-$(CONFIGURATION).zip
-  name: $(APPVEYOR_PROJECT_NAME)-$(APPVEYOR_BUILD_VERSION)-$(PLATFORM)-$(CONFIGURATION).zip
-- path: $(PLATFORM)\$(CONFIGURATION)\MacroRecorderSetup-$(PLATFORM)-$(APPVEYOR_BUILD_VERSION).exe
-  name: MacroRecorderSetup-$(PLATFORM)-$(APPVEYOR_BUILD_VERSION).exe
+- path: x64\Release\macro_record-$(APPVEYOR_BUILD_VERSION)-x64-Release.zip
+  name: macro_record-$(APPVEYOR_BUILD_VERSION)-x64-Release.zip
+- path: x64\Release\MacroRecorderSetup-x64-$(APPVEYOR_BUILD_VERSION).exe
+  name: MacroRecorderSetup-x64-$(APPVEYOR_BUILD_VERSION).exe
 deploy:
 - provider: GitHub
   auth_token:

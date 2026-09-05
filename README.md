@@ -1,27 +1,64 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/dbelbyyagqukwslb?svg=true)](https://ci.appveyor.com/project/Alien-AV/macro-record)
-# Requirements
-Use [vcpkg](https://github.com/Microsoft/vcpkg/) to install protobuf libraries.
-Run commands from "Quick Start" section in vcpkg readme. Then install protobuf like so:
+
+# Macro Recorder
+
+Macro Recorder is an x64 Windows desktop application with a C# WinUI 3 front end and a native C++ recording/playback DLL. The managed/native byte boundary is defined by `Common/protobuf/Events.proto`.
+
+## Requirements
+
+- Windows 10 version 1809 or newer.
+- .NET SDK 10.0.400 or a compatible later 10.0 patch.
+- Visual Studio 2026 with the Windows application development and Desktop development with C++ workloads.
+- The vcpkg client bundled with Visual Studio 2026.
+
+The checked-in `vcpkg.json` manifest pins the native protobuf runtime to a version compatible with the checked-in generated sources. A full solution restore handles both NuGet and vcpkg. To restore the native manifest separately from a Visual Studio developer shell, use the bundled client:
+
+```powershell
+& "${env:VCInstallDir}vcpkg\vcpkg.exe" install --triplet x64-windows-static
 ```
-vcpkg install protobuf:x64-windows-static
-vcpkg install protobuf:x86-windows-static
+
+The WinUI project uses Windows App SDK 2.4.0 and is configured as an unpackaged desktop application. It does not require Microsoft Store packaging or registration.
+
+## Build and test
+
+Restore and verify the managed projects:
+
+```powershell
+dotnet restore MacroRecorderGUI/MacroRecorderGUI.csproj --runtime win-x64
+dotnet build MacroRecorderGUI/MacroRecorderGUI.csproj -c Debug -p:Platform=x64
+dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Debug -p:Platform=x64
 ```
-# Building
-Either open the `macro_record.sln` file in VS2017 and press Build,
-Or, in command-line, cd to the repository, and run (you'll need a [NuGet CLI](https://www.nuget.org/downloads) for this):
+
+Build the complete mixed C#/C++ solution from a Visual Studio developer shell:
+
+```powershell
+msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p:RestorePackagesConfig=true
 ```
-nuget restore
-msbuild
+
+MSBuild restores the same manifest automatically. The native DLL is copied into the GUI output when it is available under `x64/<Configuration>`.
+
+## Unpackaged distribution
+
+Publish a self-contained x64 directory:
+
+```powershell
+dotnet publish MacroRecorderGUI/MacroRecorderGUI.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o x64/Release/publish
 ```
-# Projects
-## InjectAndCaptureDll
-The DLL is the C++ code which does the injecting and capturing of input.
-It exposes an API which is used by the GUI part, they communicate using [protobuf](https://developers.google.com/protocol-buffers/).
-## InjectAndCaptureDllTest
-Unit tests for the DLL.
-## MacroRecorderGUI
-C# WPF project, calls InjectAndCaptureDll for the actual work.
-## macro_record
-C++ console executable that's using the DLL.
-## Common
-The files common to the C++ and C# implementation, such as the protobuf definitions, protobuf-generated code, and the status codes enum.
+
+The publish directory can be copied directly to another machine. To produce the optional Inno Setup installer:
+
+```powershell
+iscc inno-setup-script.iss -DMyPublishDir=x64/Release/publish
+```
+
+## Projects
+
+- `MacroRecorderGUI`: .NET 10 WinUI 3 desktop UI.
+- `MacroRecorderGUITests`: managed behavior tests.
+- `RecordPlaybackDLL`: native recording and playback implementation.
+- `RecordPlaybackDLLTest`: native tests.
+- `Common`: shared protobuf definitions/generated code and status values.
+
+## Protobuf contract
+
+Do not regenerate the checked-in C# and C++ protobuf sources unless `Events.proto` intentionally changes. Regeneration must update both languages from the same schema and must preserve wire compatibility.

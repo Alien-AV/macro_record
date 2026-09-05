@@ -1,46 +1,58 @@
-﻿using System.Collections.Generic;
-using System.IO;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
 using MacroRecorderGUI.Event;
-using MacroRecorderGUI.ViewModels;
-using Microsoft.Win32;
 
-namespace MacroRecorderGUI.Utils
+namespace MacroRecorderGUI.Utils;
+
+internal static class FileOperations
 {
-    internal class FileOperations
+    internal sealed record LoadedMacro(string Name, IReadOnlyList<InputEvent> Events);
+
+    internal static async Task<string?> SaveEventsToFileAsync(
+        IEnumerable<InputEvent> inputEvents,
+        string name,
+        nint windowHandle)
     {
-        private const string MacroFilesFilter = "Macro Files (*.macro)|*.macro|All Files|*.*";
-
-        internal static string SaveEventsToFile(IEnumerable<InputEvent> inputEventList, string name)
+        var savePicker = new FileSavePicker
         {
-            var saveFileDialog = new SaveFileDialog
-            {
-                FileName = name,
-                Filter = MacroFilesFilter,
-            };
-            if (saveFileDialog.ShowDialog() != true) return null;
+            SuggestedFileName = Path.GetFileNameWithoutExtension(name)
+        };
+        savePicker.FileTypeChoices.Add("Macro files", new List<string> { ".macro" });
+        WinRT.Interop.InitializeWithWindow.Initialize(savePicker, windowHandle);
 
-            var serializedEvents = SerializeEvents.SerializeEventsToByteArray(inputEventList);
-            File.WriteAllBytes(saveFileDialog.FileName, serializedEvents);
-            return saveFileDialog.SafeFileName;
+        var file = await savePicker.PickSaveFileAsync();
+        if (file is null)
+        {
+            return null;
         }
 
-        internal static IEnumerable<InputEvent> LoadEventsFromFile(out string name)
+        var serializedEvents = SerializeEvents.SerializeEventsToByteArray(inputEvents);
+        await FileIO.WriteBytesAsync(file, serializedEvents);
+        return file.Name;
+    }
+
+    internal static async Task<LoadedMacro?> LoadEventsFromFileAsync(nint windowHandle)
+    {
+        var openPicker = new FileOpenPicker();
+        openPicker.FileTypeFilter.Add(".macro");
+        openPicker.FileTypeFilter.Add("*");
+        WinRT.Interop.InitializeWithWindow.Initialize(openPicker, windowHandle);
+
+        var file = await openPicker.PickSingleFileAsync();
+        if (file is null)
         {
-
-            var openFileDialog = new OpenFileDialog()
-            {
-                Filter = MacroFilesFilter,
-            };
-            if (openFileDialog.ShowDialog() != true)
-            {
-                name = null;
-                return null;
-            }
-
-            var serializedEvents = File.ReadAllBytes(openFileDialog.FileName);
-            var deserializedEvents = SerializeEvents.DeserializeEventsFromByteArray(serializedEvents);
-            name = openFileDialog.SafeFileName;
-            return deserializedEvents;
+            return null;
         }
+
+        var buffer = await FileIO.ReadBufferAsync(file);
+        var serializedEvents = new byte[buffer.Length];
+        using (var reader = DataReader.FromBuffer(buffer))
+        {
+            reader.ReadBytes(serializedEvents);
+        }
+
+        var events = SerializeEvents.DeserializeEventsFromByteArray(serializedEvents).ToList();
+        return new LoadedMacro(file.Name, events);
     }
 }

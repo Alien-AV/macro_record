@@ -1,22 +1,20 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Input;
+using Windows.System;
 using MacroRecorderGUI.Event;
 
-namespace MacroRecorderGUI.Utils
+namespace MacroRecorderGUI.Utils;
+
+public static class ReleaseModifierKeys
 {
-    public class ReleaseModifierKeys
-    {
-        private static readonly Key[] ModifierKeys =
-        {
-            Key.LeftShift,
-            Key.LeftCtrl,
-            Key.LeftAlt,
-            Key.RightShift,
-            Key.RightCtrl,
-            Key.RightAlt
-        };
-        public static IEnumerable<InputEvent> ReleaseModKeysEvents = 
-            ModifierKeys.Select((key) => new KeyboardEvent(key, true));
-    }
+    private static readonly VirtualKey[] ModifierKeys =
+    [
+        VirtualKey.LeftShift,
+        VirtualKey.LeftControl,
+        VirtualKey.LeftMenu,
+        VirtualKey.RightShift,
+        VirtualKey.RightControl,
+        VirtualKey.RightMenu
+    ];
+
+    public static IEnumerable<InputEvent> ReleaseModKeysEvents =>
+        ModifierKeys.Select(key => new KeyboardEvent(key, true));
 }

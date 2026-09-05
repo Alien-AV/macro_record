@@ -1,67 +1,97 @@
-﻿using System;
-using System.Windows.Input;
+using System.Globalization;
+using Windows.System;
 using ProtobufGenerated;
 
-namespace MacroRecorderGUI.Event
+namespace MacroRecorderGUI.Event;
+
+public sealed class KeyboardEvent : InputEvent
 {
-    public class KeyboardEvent : InputEvent
+    public KeyboardEvent(VirtualKey keyCode, bool keyUp)
     {
-        public KeyboardEvent(Key keyCode, bool keyUp)
+        OriginalProtobufInputEvent = new ProtobufInputEvent
         {
-            OriginalProtobufInputEvent = new ProtobufInputEvent
+            KeyboardEvent = new ProtobufInputEvent.Types.KeyboardEventType
             {
-                KeyboardEvent = new ProtobufInputEvent.Types.KeyboardEventType
-                {
-                    KeyUp = keyUp, VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(keyCode))
-                }
-            };
+                KeyUp = keyUp,
+                VirtualKeyCode = (uint)keyCode
+            }
+        };
+    }
+
+    public KeyboardEvent(ProtobufInputEvent protobufInputEvent)
+    {
+        if (protobufInputEvent.EventCase != ProtobufInputEvent.EventOneofCase.KeyboardEvent)
+        {
+            throw new ArgumentException("A keyboard event payload is required.", nameof(protobufInputEvent));
         }
 
-        public KeyboardEvent(ProtobufInputEvent protobufInputEvent)
-        {
-            if (protobufInputEvent.EventCase != ProtobufInputEvent.EventOneofCase.KeyboardEvent)
-                throw new ArgumentException();
-            OriginalProtobufInputEvent = protobufInputEvent;
-        }
+        OriginalProtobufInputEvent = protobufInputEvent;
+    }
 
-        public uint VirtualKeyCode
+    public uint VirtualKeyCode
+    {
+        get => OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode;
+        set
         {
-            get => OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode;
-            set => OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode = value;
-        }
-
-        private static readonly KeyConverter KeyConverter = new KeyConverter();
-        public string KeyName
-        {
-            get => KeyCode.ToString();
-            set
+            if (value == OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode)
             {
-                object result = null;
-                try
-                {
-                    result = KeyConverter.ConvertFrom(value);
-                }
-                catch (ArgumentException)
-                {
-                }
+                return;
+            }
 
-                if (result != null)
-                {
-                    KeyCode = (Key)result;
-                }
+            OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(KeyCode));
+            OnPropertyChanged(nameof(KeyName));
+        }
+    }
+
+    public string KeyName
+    {
+        get
+        {
+            var keyCode = KeyCode;
+            return Enum.IsDefined(keyCode)
+                ? keyCode.ToString()
+                : $"0x{VirtualKeyCode:X2}";
+        }
+        set
+        {
+            if (Enum.TryParse<VirtualKey>(value, true, out var keyCode))
+            {
+                KeyCode = keyCode;
+                return;
+            }
+
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                && uint.TryParse(value.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var hexadecimalCode))
+            {
+                VirtualKeyCode = hexadecimalCode;
+            }
+            else if (uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numericCode))
+            {
+                VirtualKeyCode = numericCode;
             }
         }
+    }
 
-        public Key KeyCode
-        {
-            get => KeyInterop.KeyFromVirtualKey(Convert.ToInt32(OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode));
-            set => OriginalProtobufInputEvent.KeyboardEvent.VirtualKeyCode = Convert.ToUInt32(KeyInterop.VirtualKeyFromKey(value));
-        }
+    public VirtualKey KeyCode
+    {
+        get => (VirtualKey)VirtualKeyCode;
+        set => VirtualKeyCode = (uint)value;
+    }
 
-        public bool KeyUp
+    public bool KeyUp
+    {
+        get => OriginalProtobufInputEvent.KeyboardEvent.KeyUp;
+        set
         {
-            get => OriginalProtobufInputEvent.KeyboardEvent.KeyUp;
-            set => OriginalProtobufInputEvent.KeyboardEvent.KeyUp = value;
+            if (value == OriginalProtobufInputEvent.KeyboardEvent.KeyUp)
+            {
+                return;
+            }
+
+            OriginalProtobufInputEvent.KeyboardEvent.KeyUp = value;
+            OnPropertyChanged();
         }
     }
 }

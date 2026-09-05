@@ -1,26 +1,31 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using MacroRecorderGUI.Event;
 
-namespace MacroRecorderGUI.ViewModels
+namespace MacroRecorderGUI.ViewModels;
+
+public sealed class EventTypeDataTemplateSelector : DataTemplateSelector
 {
-    public class EventTypeDataTemplateSelector : DataTemplateSelector
+    public DataTemplate? KeyboardTemplate { get; set; }
+    public DataTemplate? MouseTemplate { get; set; }
+
+    protected override DataTemplate? SelectTemplateCore(object item)
     {
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        return SelectEventTemplate(item);
+    }
+
+    protected override DataTemplate? SelectTemplateCore(object item, DependencyObject container)
+    {
+        return SelectEventTemplate(item);
+    }
+
+    private DataTemplate? SelectEventTemplate(object item)
+    {
+        return item switch
         {
-            if(!(item is InputEvent inputEvent) || !(container is FrameworkElement frameworkElement)) return base.SelectTemplate(item, container);
-            
-            switch (inputEvent.Type)
-            {
-                case InputEvent.InputEventType.KeyboardEvent:
-                    return frameworkElement.FindResource("KeyEventTemplate") as DataTemplate;
-                case InputEvent.InputEventType.MouseEvent:
-                    return frameworkElement.FindResource("MouseEventTemplate") as DataTemplate;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-            
-        }
+            KeyboardEvent => KeyboardTemplate,
+            MouseEvent => MouseTemplate,
+            _ => null
+        };
     }
 }

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "macro-record",
+  "version-string": "0.3.0",
+  "builtin-baseline": "f0c8848cde589649bca3ab3649668540403786ce",
+  "dependencies": [
+    "gtest",
+    "protobuf"
+  ],
+  "overrides": [
+    {
+      "name": "protobuf",
+      "version": "3.21.12"
+    }
+  ]
+}

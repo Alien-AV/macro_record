@@ -1,165 +1,149 @@
-﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Input;
-using Google.Protobuf;
-using MacroRecorderGUI.Commands;
+using Windows.System;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 using MacroRecorderGUI.Utils;
-using ProtobufGenerated;
 
-namespace MacroRecorderGUI.ViewModels
+namespace MacroRecorderGUI.ViewModels;
+
+public sealed class MacroViewModel : ViewModelBase
 {
-    public class MacroViewModel : ViewModelBase
+    private readonly IPlaybackEngine _playbackEngine;
+    private string _name;
+
+    public MacroViewModel(string name, IPlaybackEngine playbackEngine)
     {
-        private readonly IPlaybackEngine _playbackEngine;
+        _playbackEngine = playbackEngine;
+        _name = name;
+    }
 
-        public MacroViewModel(string name, IPlaybackEngine playbackEngine)
+    public ObservableCollection<InputEvent> Events { get; } = [];
+    public List<InputEvent> SelectedEvents { get; } = [];
+
+    public string Name
+    {
+        get => _name;
+        set
         {
-            _playbackEngine = playbackEngine;
-            Name = name;
-        }
-
-        public ObservableCollection<InputEvent> Events { get; } = new ObservableCollection<InputEvent>();
-
-        public string Name
-        {
-            get => _name;
-            set { if (value == _name) return; _name = value; OnPropertyChanged(); }
-        }
-        private string _name;
-
-        private ICommand _closeTabCommand;
-
-        public ICommand CloseTabCommand
-        {
-            get
+            if (value == _name)
             {
-                return _closeTabCommand ?? (_closeTabCommand =
-                           new DelegateCommand<ObservableCollection<MacroViewModel>>(macroTabs => macroTabs.Remove(this)));
-            }
-        }
-
-        public void PlayMacro()
-        {
-            if (!Events.Any()) return;
-            var eventsWrappedWithReleasingModKeys = ReleaseModifierKeys.ReleaseModKeysEvents
-                .Concat(Events).Concat(ReleaseModifierKeys.ReleaseModKeysEvents);
-            _playbackEngine.PlaybackEvents(eventsWrappedWithReleasingModKeys);
-        }
-
-        public void Clear()
-        {
-            Events.Clear();
-        }
-
-        public List<InputEvent> SelectedEvents { get; set; } = new List<InputEvent>();
-        public void RemoveSelectedEvents()
-        {
-            var copyOfInputEvents = SelectedEvents.ToList();
-            foreach (var eventToRemove in copyOfInputEvents)
-            {
-                Events.Remove(eventToRemove);
-            }
-        }
-
-        public void ChangeDelaysOnSelected(ulong delay)
-        {
-            var copyOfInputEvents = SelectedEvents.ToList();
-            ChangeDelaysOnList(delay, copyOfInputEvents);
-        }
-
-        public void ChangeDelaysOnAll(ulong delay)
-        {
-            ChangeDelaysOnList(delay, Events);
-        }
-
-        private void ChangeDelaysOnList(ulong delay, IEnumerable<InputEvent> events)
-        {
-            foreach (var inputEvent in events)
-            {
-                inputEvent.TimeSinceLastEvent = delay;
+                return;
             }
 
-            //TODO: implement the events as wrapper class around protobuf class, and implement PropertyChanged event listeners on them
-            CollectionViewSource.GetDefaultView(Events).Refresh();
+            _name = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public void PlayMacro()
+    {
+        if (Events.Count == 0)
+        {
+            return;
         }
 
-        public void SaveToFile()
+        var eventsWrappedWithReleasingModKeys = ReleaseModifierKeys.ReleaseModKeysEvents
+            .Concat(Events)
+            .Concat(ReleaseModifierKeys.ReleaseModKeysEvents);
+        _playbackEngine.PlaybackEvents(eventsWrappedWithReleasingModKeys);
+    }
+
+    public void Clear()
+    {
+        Events.Clear();
+        SelectedEvents.Clear();
+    }
+
+    public void ReplaceSelection(IEnumerable<InputEvent> selectedEvents)
+    {
+        SelectedEvents.Clear();
+        SelectedEvents.AddRange(selectedEvents);
+    }
+
+    public void RemoveSelectedEvents()
+    {
+        foreach (var eventToRemove in SelectedEvents.ToList())
         {
-            var newName = FileOperations.SaveEventsToFile(Events, Name);
-            if (newName != null)
+            Events.Remove(eventToRemove);
+        }
+
+        SelectedEvents.Clear();
+    }
+
+    public void ChangeDelaysOnSelected(ulong delay)
+    {
+        ChangeDelaysOnList(delay, SelectedEvents.ToList());
+    }
+
+    public void ChangeDelaysOnAll(ulong delay)
+    {
+        ChangeDelaysOnList(delay, Events);
+    }
+
+    public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
+    {
+        Events.Clear();
+        SelectedEvents.Clear();
+
+        foreach (var deserializedEvent in deserializedEvents)
+        {
+            Events.Add(deserializedEvent);
+        }
+    }
+
+    public void AddEvent(InputEvent parsedEvent)
+    {
+        Events.Add(parsedEvent);
+    }
+
+    public void ConvertMouseEventsToAbsolutePositioning()
+    {
+        var currentX = 0;
+        var currentY = 0;
+
+        foreach (var mouseEvent in Events.OfType<MouseEvent>())
+        {
+            if (mouseEvent.RelativePosition)
             {
-                Name = newName;
+                mouseEvent.RelativePosition = false;
+                mouseEvent.X += currentX;
+                mouseEvent.Y += currentY;
             }
-        }
 
-        public void LoadFromFile()
+            currentX = mouseEvent.X;
+            currentY = mouseEvent.Y;
+        }
+    }
+
+    public void CreateKeyboardEventManually()
+    {
+        PlaceManuallyCreatedEvent(new KeyboardEvent(VirtualKey.Escape, false));
+    }
+
+    public void CreateMouseEventManually()
+    {
+        PlaceManuallyCreatedEvent(new MouseEvent(0, 0, MouseActionTypeFlags.Move));
+    }
+
+    private static void ChangeDelaysOnList(ulong delay, IEnumerable<InputEvent> events)
+    {
+        foreach (var inputEvent in events)
         {
-            var deserializedEvents = FileOperations.LoadEventsFromFile(out var newName);
-            if (deserializedEvents == null) return;
-            PopulateEventCollectionWithNewEvents(deserializedEvents);
-            Name = newName;
+            inputEvent.TimeSinceLastEvent = delay;
         }
+    }
 
-        public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
+    private void PlaceManuallyCreatedEvent(InputEvent inputEvent)
+    {
+        if (SelectedEvents.Count > 0)
         {
-            Events.Clear();
-            foreach (var deserializedEvent in deserializedEvents)
-            {
-                Events.Add(deserializedEvent);
-            }
+            var lastSelectedEventIndex = Events.IndexOf(SelectedEvents[^1]);
+            Events.Insert(lastSelectedEventIndex + 1, inputEvent);
         }
-
-        public void AddEvent(InputEvent parsedEvent)
+        else
         {
-            Events.Add(parsedEvent);
-        }
-
-        public void ConvertMouseEventsToAbsolutePositioning()
-        {
-            int currentX = 0, currentY = 0;
-
-            foreach (var mouseEvent in Events.OfType<MouseEvent>())
-            {
-                if (mouseEvent.RelativePosition)
-                {
-                    mouseEvent.RelativePosition = false;
-                    mouseEvent.X += currentX;
-                    mouseEvent.Y += currentY;
-                }
-                
-                currentX = mouseEvent.X;
-                currentY = mouseEvent.Y;
-            }
-            CollectionViewSource.GetDefaultView(Events).Refresh();
-        }
-
-        public void CreateKeyboardEventManually()
-        {
-            PlaceManuallyCreatedEvent(new KeyboardEvent(Key.Escape, false));
-        }
-
-        public void CreateMouseEventManually()
-        {
-            PlaceManuallyCreatedEvent(new MouseEvent(0,0,MouseActionTypeFlags.Move));
-        }
-
-        private void PlaceManuallyCreatedEvent(InputEvent inputEvent){
-            if (SelectedEvents.Count != 0)
-            {
-                var lastSelectedEvent = SelectedEvents[SelectedEvents.Count - 1];
-                var lastSelectedEventIndex = Events.IndexOf(lastSelectedEvent);
-                Events.Insert(lastSelectedEventIndex + 1, inputEvent);
-            }
-            else
-            {
-                Events.Add(inputEvent);
-            }
+            Events.Add(inputEvent);
         }
     }
 }
