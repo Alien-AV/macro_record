@@ -1,0 +1,170 @@
+using MacroRecorderGUI.Event;
+using MacroRecorderGUI.Models;
+using MacroRecorderGUI.ViewModels;
+using ProtobufGenerated;
+using RecordPlaybackDLLEnums;
+using Windows.System;
+
+namespace MacroRecorderGUITests;
+
+[TestClass]
+public class PlaybackLifecycleTests
+{
+    private sealed class FakeNative : IPlaybackNativeApi
+    {
+        public PlaybackResult Result = PlaybackResult.Running;
+        public PlaybackResult StartResult = PlaybackResult.Running;
+        public int Starts;
+        public int Aborts;
+        public byte[] Bytes = [];
+        public bool Loop;
+        public PlaybackResult Start(byte[] events, bool loop, out ulong sessionId)
+        {
+            sessionId = (ulong)++Starts;
+            Bytes = events.ToArray();
+            Loop = loop;
+            return StartResult;
+        }
+        public PlaybackResult Poll(ulong sessionId) => Result;
+        public PlaybackResult Abort(ulong sessionId) { Aborts++; return PlaybackResult.Cancelled; }
+        public PlaybackResult SetLoop(ulong sessionId, bool loop) { Loop = loop; return Result; }
+    }
+
+    private static KeyboardEvent Key() => new(VirtualKey.A, false);
+
+    [TestMethod]
+    public async Task EngineSerializesSnapshotAndRejectsOverlapUntilAbort()
+    {
+        var native = new FakeNative();
+        using var engine = new PlaybackEngine(native);
+        var key = Key();
+        var first = engine.PlaybackEventsAsync([key], true);
+        key.TimeSinceLastEvent = 12345;
+        Assert.AreEqual(0ul, ProtobufInputEventList.Parser.ParseFrom(native.Bytes).InputEvents[0].TimeSinceLastEvent);
+        Assert.IsTrue(native.Loop);
+        engine.SetLoopPlayback(false);
+        Assert.IsFalse(native.Loop);
+        Assert.ThrowsExactly<InvalidOperationException>(() => engine.PlaybackEventsAsync([Key()]));
+        Assert.AreEqual(1, native.Starts);
+        engine.PlaybackEventAbort();
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await first);
+        var second = engine.PlaybackEventsAsync([Key()]);
+        native.Result = PlaybackResult.Finished;
+        await second.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual(2, native.Starts);
+        Assert.AreEqual(1, native.Aborts);
+    }
+
+    [TestMethod]
+    public async Task EngineDisposeCancelsOwnedSessionAndCannotRestart()
+    {
+        var native = new FakeNative();
+        var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()], true);
+        engine.Dispose();
+        engine.Dispose();
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
+        Assert.AreEqual(1, native.Aborts);
+        Assert.ThrowsExactly<ObjectDisposedException>(() => engine.PlaybackEventsAsync([Key()]));
+    }
+
+    [TestMethod]
+    public async Task NativeInjectionFailureBecomesObservedTaskError()
+    {
+        var native = new FakeNative { Result = PlaybackResult.InjectionFailed };
+        using var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task.WaitAsync(TimeSpan.FromSeconds(2)));
+        StringAssert.Contains(error.Message, "inject or release");
+    }
+
+    [TestMethod]
+    public async Task AbortAndStaleCompletionCannotRestartOrClearAnotherMacro()
+    {
+        var record = new FakeRecordEngine();
+        var firstDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var engine = new FakePlaybackEngine { Pending = firstDone };
+        using var vm = new FakeMainWindowViewModel(record, engine) { LoopPlayback = true };
+        var firstMacro = vm.ActiveMacro!;
+        firstMacro.AddEvent(Key());
+        var first = vm.PlayActiveMacro();
+        var secondMacro = vm.AddNewTab();
+        secondMacro.AddEvent(Key());
+        Assert.AreSame(firstMacro, vm.PlayingMacro);
+        await vm.PlayActiveMacro();
+        Assert.AreEqual(1, engine.Starts);
+        vm.AbortPlayback();
+        var secondDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Pending = secondDone;
+        var second = vm.PlayActiveMacro();
+        firstDone.SetResult();
+        await first;
+        record.PushStatus(StatusCode.PlaybackFinished);
+        Assert.AreEqual(2, engine.Starts);
+        Assert.AreSame(secondMacro, vm.PlayingMacro);
+        secondDone.SetResult();
+        await second;
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.AreEqual(2, engine.Starts);
+    }
+
+    [TestMethod]
+    public async Task LoopKeepsOriginAcrossTabSwitchAndClosingOwnerAborts()
+    {
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var engine = new FakePlaybackEngine { Pending = pending };
+        using var vm = new FakeMainWindowViewModel(new FakeRecordEngine(), engine) { LoopPlayback = true };
+        var owner = vm.ActiveMacro!;
+        owner.AddEvent(Key());
+        var task = vm.PlayActiveMacro();
+        var other = vm.AddNewTab();
+        Assert.AreSame(owner, vm.PlayingMacro);
+        Assert.IsTrue(engine.Loop);
+        vm.LoopPlayback = false;
+        Assert.IsFalse(engine.Loop);
+        vm.CloseTab(other);
+        Assert.AreEqual(0, engine.Aborts);
+        vm.CloseTab(owner);
+        Assert.AreEqual(1, engine.Aborts);
+        pending.SetResult();
+        await task;
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.AreEqual(1, engine.Starts);
+    }
+
+    [TestMethod]
+    public async Task EmptyMacroDoesNotStartAndErrorsAreSurfaced()
+    {
+        var native = new FakeNative { StartResult = PlaybackResult.InvalidInput };
+        using var vm = new FakeMainWindowViewModel(new FakeRecordEngine(), new PlaybackEngine(native));
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        await vm.PlayActiveMacro();
+        Assert.AreEqual(0, native.Starts);
+        vm.ActiveMacro!.AddEvent(Key());
+        await vm.PlayActiveMacro();
+        Assert.AreEqual(1, messages.Count);
+        StringAssert.Contains(messages[0], "Could not play macro");
+        Assert.IsNull(vm.PlayingMacro);
+    }
+
+    [TestMethod]
+    public async Task DisposalIgnoresLateCompletionAndRecorderPlaybackStatus()
+    {
+        var record = new FakeRecordEngine();
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var engine = new FakePlaybackEngine { Pending = pending };
+        var vm = new FakeMainWindowViewModel(record, engine) { LoopPlayback = true };
+        vm.ActiveMacro!.AddEvent(Key());
+        var task = vm.PlayActiveMacro();
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        vm.Dispose();
+        pending.SetResult();
+        await task;
+        record.PushStatus(StatusCode.PlaybackFinished);
+        Assert.IsTrue(engine.Disposed);
+        Assert.AreEqual(1, engine.Starts);
+        Assert.AreEqual(0, messages.Count);
+    }
+}

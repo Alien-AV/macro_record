@@ -3,18 +3,19 @@ using Windows.System;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
-using MacroRecorderGUI.Utils;
 
 namespace MacroRecorderGUI.ViewModels;
 
 public sealed class MacroViewModel : ViewModelBase
 {
     private readonly IPlaybackEngine _playbackEngine;
+    private readonly Func<MacroViewModel, Task>? _playMacro;
     private string _name;
 
-    public MacroViewModel(string name, IPlaybackEngine playbackEngine)
+    public MacroViewModel(string name, IPlaybackEngine playbackEngine, Func<MacroViewModel, Task>? playMacro = null)
     {
         _playbackEngine = playbackEngine;
+        _playMacro = playMacro;
         _name = name;
     }
 
@@ -36,17 +37,10 @@ public sealed class MacroViewModel : ViewModelBase
         }
     }
 
-    public void PlayMacro()
+    public Task PlayMacro()
     {
-        if (Events.Count == 0)
-        {
-            return;
-        }
-
-        var eventsWrappedWithReleasingModKeys = ReleaseModifierKeys.ReleaseModKeysEvents
-            .Concat(Events)
-            .Concat(ReleaseModifierKeys.ReleaseModKeysEvents);
-        _playbackEngine.PlaybackEvents(eventsWrappedWithReleasingModKeys);
+        if (_playMacro is not null) return _playMacro(this);
+        return Events.Count == 0 ? Task.CompletedTask : _playbackEngine.PlaybackEventsAsync(Events.ToArray());
     }
 
     public void Clear()

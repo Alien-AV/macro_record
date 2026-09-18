@@ -41,6 +41,17 @@ msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p
 
 MSBuild restores the same manifest automatically. The native DLL is copied into the GUI output when it is available under `x64/<Configuration>`.
 
+Run both test suites after the Release build (also run by CI):
+
+```powershell
+& ./x64/Release/RecordPlaybackDLLTest.exe
+dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Release -p:Platform=x64 --no-build
+```
+
+These tests are noninteractive: native playback tests use fake injection sinks and constructed input, and managed lifecycle tests use fake engines. They do not launch the app or inject keyboard/mouse input. Native ABI rejection tests only submit invalid schedules.
+
+Playback owns one cancellable session. Short looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility; completion/abort releases keys and buttons held by that session. Looping uses the event snapshot captured when playback starts, even if the selected tab or macro is edited. Unchecking Loop finishes the current pass; Abort interrupts it immediately. Physical modifier interference during playback remains a separate limitation.
+
 ## Unpackaged distribution
 
 Publish a self-contained x64 directory:

@@ -3,21 +3,27 @@
 #include "Event.h"
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
+#include <limits>
+#include <stdexcept>
 
 std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenerated::ProtobufInputEvent& serialized_event)
 {
+	if (serialized_event.timesincelastevent() > static_cast<uint64_t>((std::numeric_limits<std::chrono::microseconds::rep>::max)()))
+		throw std::invalid_argument("Event delay is too large");
 	switch(serialized_event.Event_case())
 	{
 	case protobufGenerated::ProtobufInputEvent::EventCase::kKeyboardEvent:
 		{
 			const auto& serialized_kbdevent = serialized_event.keyboardevent();
+			if (serialized_kbdevent.virtualkeycode() == 0 || serialized_kbdevent.virtualkeycode() > 255)
+				throw std::invalid_argument("Invalid virtual key");
 			auto kbdevent = std::make_unique<KeyboardEvent>();
 			
 			kbdevent->virtualKeyCode = serialized_kbdevent.virtualkeycode();
 			kbdevent->keyUp = serialized_kbdevent.keyup();
 			kbdevent->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
 			
-			return std::move(kbdevent);
+			return kbdevent;
 		}
 	case protobufGenerated::ProtobufInputEvent::EventCase::kMouseEvent:
 		{
@@ -27,19 +33,19 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 
 			mouseevent->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
 
-			return std::move(mouseevent);
+			return mouseevent;
 		}		
 	default:
-		//TODO: handle error here?
-		break;
+		throw std::invalid_argument("Missing input event payload");
 	}
-	return nullptr;
 }
 
-std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned char> serialized_event_vec) //TODO: validations maybe? error codes?
+std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned char> serialized_event_vec)
 {
 	auto serialized_event = std::make_unique<protobufGenerated::ProtobufInputEvent>();
-	serialized_event->ParseFromArray(serialized_event_vec.data(), int(serialized_event_vec.size()));
+	if (serialized_event_vec.size() > static_cast<size_t>((std::numeric_limits<int>::max)()) ||
+		!serialized_event->ParseFromArray(serialized_event_vec.data(), static_cast<int>(serialized_event_vec.size())))
+		throw std::invalid_argument("Malformed input event");
 
 	return make_event_from_protobuf_input_event(*serialized_event);
 }
@@ -47,7 +53,10 @@ std::unique_ptr<Event> record_playback::deserialize_event(std::vector<unsigned c
 std::vector<std::unique_ptr<Event>> record_playback::deserialize_events(std::vector<unsigned char> serialized_events_vec)
 {
 	auto serialized_events = std::make_unique<protobufGenerated::ProtobufInputEventList>();
-	serialized_events->ParseFromArray(serialized_events_vec.data(), static_cast<int>(serialized_events_vec.size()));
+	if (serialized_events_vec.size() > static_cast<size_t>((std::numeric_limits<int>::max)()) ||
+		!serialized_events->ParseFromArray(serialized_events_vec.data(), static_cast<int>(serialized_events_vec.size())) ||
+		serialized_events->inputevents_size() == 0)
+		throw std::invalid_argument("Malformed or empty input event list");
 	std::vector<std::unique_ptr<Event>> deserialized_events_vec;
 	deserialized_events_vec.reserve(serialized_events->inputevents_size());
 	

@@ -35,7 +35,7 @@
   <PropertyGroup>
     <VcpkgRoot Condition="Exists('$(VCInstallDir)vcpkg\vcpkg.exe')">$(VCInstallDir)vcpkg\</VcpkgRoot>
     <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\</VcpkgInstalledDir>
-    <VcpkgAutoLink>false</VcpkgAutoLink>
+    <VcpkgAutoLink>true</VcpkgAutoLink>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
@@ -57,7 +57,10 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test.cpp" />
+    <ClCompile Include="*.cpp" Exclude="pch.cpp" />
+    <ClCompile Include="..\Common\protobuf\cpp\Events.pb.cc">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

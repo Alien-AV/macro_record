@@ -12,11 +12,14 @@ public interface IMainWindowViewModel
     MacroViewModel? ActiveMacro { get; }
 }
 
-public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
+public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposable
 {
     private readonly SynchronizationContext? _uiContext;
     private int _selectedTabIndex;
     private bool _loopPlayback;
+    private bool _disposed;
+    private long _playbackVersion;
+    private MacroViewModel? _playingMacro;
 
     public MainWindowViewModel()
         : this(new RecordEngine(), new PlaybackEngine())
@@ -32,7 +35,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
         RecordEngine.RecordedEvent += RecordEngineOnRecordedEvent;
         MacroTabs = new ObservableCollection<MacroViewModel>
         {
-            new("macro0", PlaybackEngine)
+            new("macro0", PlaybackEngine, PlayMacroAsync)
         };
     }
 
@@ -41,6 +44,83 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     public ObservableCollection<MacroViewModel> MacroTabs { get; }
 
     public event EventHandler<string>? StatusMessageRequested;
+
+    public MacroViewModel? PlayingMacro => _playingMacro;
+
+    public Task PlayActiveMacro() => ActiveMacro is { } macro ? PlayMacroAsync(macro) : Task.CompletedTask;
+
+    private async Task PlayMacroAsync(MacroViewModel macro)
+    {
+        if (_disposed) return;
+        if (_playingMacro is not null)
+        {
+            StatusMessageRequested?.Invoke(this, "Playback is already running. Abort it before starting another macro.");
+            return;
+        }
+        if (macro.Events.Count == 0 || !MacroTabs.Contains(macro)) return;
+        var version = ++_playbackVersion;
+        _playingMacro = macro;
+        OnPropertyChanged(nameof(PlayingMacro));
+        try
+        {
+            var completion = PlaybackEngine.PlaybackEventsAsync(macro.Events.ToArray(), LoopPlayback);
+            StatusMessageRequested?.Invoke(this, $"Playing {macro.Name}");
+            await completion;
+            InvokeDispatcher(() =>
+            {
+                if (!_disposed && version == _playbackVersion)
+                    StatusMessageRequested?.Invoke(this, $"Playback finished: {macro.Name}");
+            });
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error)
+        {
+            InvokeDispatcher(() =>
+            {
+                if (!_disposed && version == _playbackVersion)
+                    StatusMessageRequested?.Invoke(this, $"Could not play macro: {error.Message}");
+            });
+        }
+        finally
+        {
+            InvokeDispatcher(() =>
+            {
+                if (version == _playbackVersion)
+                {
+                    _playingMacro = null;
+                    OnPropertyChanged(nameof(PlayingMacro));
+                }
+            });
+        }
+    }
+
+    public void AbortPlayback()
+    {
+        if (_disposed) return;
+        try
+        {
+            PlaybackEngine.PlaybackEventAbort();
+            ++_playbackVersion;
+            _playingMacro = null;
+            OnPropertyChanged(nameof(PlayingMacro));
+            StatusMessageRequested?.Invoke(this, "Playback aborted");
+        }
+        catch (Exception error)
+        {
+            StatusMessageRequested?.Invoke(this, $"Could not abort playback: {error.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        ++_playbackVersion;
+        RecordEngine.RecordStatus -= RecordEngineOnRecordStatus;
+        RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
+        PlaybackEngine.Dispose();
+        _playingMacro = null;
+    }
 
     public int SelectedTabIndex
     {
@@ -69,6 +149,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
             }
 
             _loopPlayback = value;
+            try { PlaybackEngine.SetLoopPlayback(value); }
+            catch (Exception error)
+            {
+                StatusMessageRequested?.Invoke(this, $"Could not change playback loop: {error.Message}");
+            }
             OnPropertyChanged();
         }
     }
@@ -80,7 +165,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
 
     public MacroViewModel AddNewTab()
     {
-        var macro = new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine);
+        var macro = new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine, PlayMacroAsync);
         MacroTabs.Add(macro);
         SelectedTabIndex = MacroTabs.Count - 1;
         return macro;
@@ -95,6 +180,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
         }
 
         var selectedMacro = ActiveMacro;
+        if (ReferenceEquals(_playingMacro, macro)) AbortPlayback();
         MacroTabs.RemoveAt(removedIndex);
         if (MacroTabs.Count == 0)
         {
@@ -138,11 +224,6 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
         if (e.StatusCode == StatusCode.PlaybackFinished)
         {
-            if (LoopPlayback)
-            {
-                ActiveMacro?.PlayMacro();
-            }
-
             return;
         }
 

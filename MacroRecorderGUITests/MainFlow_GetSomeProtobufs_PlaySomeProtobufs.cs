@@ -1,7 +1,6 @@
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
-using MacroRecorderGUI.Utils;
 using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
 
@@ -10,11 +9,10 @@ namespace MacroRecorderGUITests;
 internal sealed class FakeRecordEngine : IRecordEngine
 {
     public event RecordEngine.RecordEventsEventHandler? RecordedEvent;
-    public event RecordEngine.RecordStatusEventHandler? RecordStatus
-    {
-        add { }
-        remove { }
-    }
+    public event RecordEngine.RecordStatusEventHandler? RecordStatus;
+
+    public void PushStatus(RecordPlaybackDLLEnums.StatusCode status) =>
+        RecordStatus?.Invoke(this, new RecordEngine.RecordStatusEventArgs(status));
 
     public void StartRecord()
     {
@@ -72,14 +70,27 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 {
     public IEnumerable<InputEvent> PlayedEvents { get; private set; } = [];
 
-    public void PlaybackEvents(IEnumerable<InputEvent> events)
+    public bool Loop { get; private set; }
+    public int Starts { get; private set; }
+    public int Aborts { get; private set; }
+    public bool Disposed { get; private set; }
+    public TaskCompletionSource? Pending { get; set; }
+
+    public Task PlaybackEventsAsync(IEnumerable<InputEvent> events, bool loop = false)
     {
-        PlayedEvents = events;
+        PlayedEvents = events.ToArray();
+        Loop = loop;
+        Starts++;
+        return Pending?.Task ?? Task.CompletedTask;
     }
 
     public void PlaybackEventAbort()
     {
+        Aborts++;
     }
+
+    public void Dispose() => Disposed = true;
+    public void SetLoopPlayback(bool loop) => Loop = loop;
 }
 
 internal sealed class FakeMainWindowViewModel : MainWindowViewModel
@@ -99,7 +110,7 @@ internal sealed class FakeMainWindowViewModel : MainWindowViewModel
 public class MainFlowTest
 {
     [TestMethod]
-    public void RecordedProtobufEventsArePassedToPlaybackWithReleasedModifierKeys()
+    public async Task RecordedProtobufEventsArePassedToPlaybackWithoutSyntheticModifierReleases()
     {
         var recordEngine = new FakeRecordEngine();
         var playbackEngine = new FakePlaybackEngine();
@@ -119,19 +130,11 @@ public class MainFlowTest
             recordEngine.PushEvent(inputEvent);
         }
 
-        viewModel.ActiveMacro!.PlayMacro();
-
-        var releasedModifierEvents = ReleaseModifierKeys.ReleaseModKeysEvents
-            .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)
-            .ToList();
-        var expectedPlaybackEvents = releasedModifierEvents
-            .Concat(expectedEvents)
-            .Concat(releasedModifierEvents)
-            .ToList();
+        await viewModel.ActiveMacro!.PlayMacro();
         var actualPlaybackEvents = playbackEngine.PlayedEvents
             .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)
             .ToList();
 
-        CollectionAssert.AreEqual(expectedPlaybackEvents, actualPlaybackEvents);
+        CollectionAssert.AreEqual(expectedEvents, actualPlaybackEvents);
     }
 }

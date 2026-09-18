@@ -11,6 +11,7 @@ cache:
 build_script:
 - cmd: msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p:RestorePackagesConfig=true /verbosity:minimal
 test_script:
+- cmd: x64\Release\RecordPlaybackDLLTest.exe
 - cmd: dotnet test MacroRecorderGUITests\MacroRecorderGUITests.csproj -c Release -p:Platform=x64 --no-build --verbosity minimal
 after_build:
 - cmd: '%APPVEYOR_BUILD_FOLDER%\appveyor-after-build-script.cmd'
