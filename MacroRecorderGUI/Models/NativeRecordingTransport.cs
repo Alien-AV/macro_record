@@ -10,7 +10,7 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void InputCallback(nint buffer, int bufferSize, ulong sessionId);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys);
+    private delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void StatusCallback(StatusCode status);
 
@@ -22,14 +22,14 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     public NativeRecordingTransport()
     {
         _inputCallback = OnInput;
-        _boundaryCallback = (id, boundary, heldKeys) => Boundary?.Invoke(id, boundary, heldKeys);
+        _boundaryCallback = (id, boundary, heldKeys, idleReleasedKeys) => Boundary?.Invoke(id, boundary, heldKeys, idleReleasedKeys);
         _statusCallback = status => Status?.Invoke(status);
         if (!DllInit(_inputCallback, _statusCallback, _boundaryCallback))
             throw new InvalidOperationException("The native capture thread could not initialize.");
     }
 
     public event Action<ulong, ProtobufInputEvent>? Input;
-    public event Action<ulong, RecordingBoundary, RecordingStartKeys>? Boundary;
+    public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys>? Boundary;
     public event Action<StatusCode>? Status;
 
     public void Start(ulong sessionId)

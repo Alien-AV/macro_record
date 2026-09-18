@@ -172,7 +172,7 @@ public class RecordingBoundaryTests
 internal sealed class FakeRecordingTransport : IRecordingTransport
 {
     public event Action<ulong, ProtobufInputEvent>? Input;
-    public event Action<ulong, RecordingBoundary, RecordingStartKeys>? Boundary;
+    public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys>? Boundary;
     public event Action<StatusCode>? Status;
     public void PushStatus(StatusCode status) => Status?.Invoke(status);
     public void Dispose() { Disposed = true; OnDispose?.Invoke(); }
@@ -184,13 +184,13 @@ internal sealed class FakeRecordingTransport : IRecordingTransport
     public List<ulong> Stops { get; } = [];
     public void Start(ulong sessionId) { if (StartError is not null) throw StartError; Starts.Add(sessionId); }
     public void Stop(ulong sessionId) { if (StopError is not null) throw StopError; Stops.Add(sessionId); }
-    public void Begin(RecordingSession session, RecordingStartKeys keys = RecordingStartKeys.None) =>
-        Boundary?.Invoke(session.Id, RecordingBoundary.Started, keys);
-    public void End(RecordingSession session) => Boundary?.Invoke(session.Id, RecordingBoundary.Stopped, RecordingStartKeys.None);
-    public void Fail(RecordingSession session) => Boundary?.Invoke(session.Id, RecordingBoundary.Failed, RecordingStartKeys.None);
+    public void Begin(RecordingSession session, RecordingStartKeys keys = RecordingStartKeys.None, RecordingStartKeys idleReleasedKeys = RecordingStartKeys.None) =>
+        Begin(session.Id, keys, idleReleasedKeys);
+    public void End(RecordingSession session) => End(session.Id);
+    public void Fail(RecordingSession session) => Fail(session.Id);
     public void Push(RecordingSession session, ProtobufInputEvent input) => Input?.Invoke(session.Id, input);
-    public void Begin(ulong id, RecordingStartKeys keys = RecordingStartKeys.None) => Boundary?.Invoke(id, RecordingBoundary.Started, keys);
-    public void End(ulong id) => Boundary?.Invoke(id, RecordingBoundary.Stopped, RecordingStartKeys.None);
-    public void Fail(ulong id) => Boundary?.Invoke(id, RecordingBoundary.Failed, RecordingStartKeys.None);
+    public void Begin(ulong id, RecordingStartKeys keys = RecordingStartKeys.None, RecordingStartKeys idleReleasedKeys = RecordingStartKeys.None) => Boundary?.Invoke(id, RecordingBoundary.Started, keys, idleReleasedKeys);
+    public void End(ulong id) => Boundary?.Invoke(id, RecordingBoundary.Stopped, RecordingStartKeys.None, RecordingStartKeys.None);
+    public void Fail(ulong id) => Boundary?.Invoke(id, RecordingBoundary.Failed, RecordingStartKeys.None, RecordingStartKeys.None);
     public void Push(ulong id, ProtobufInputEvent input) => Input?.Invoke(id, input);
 }

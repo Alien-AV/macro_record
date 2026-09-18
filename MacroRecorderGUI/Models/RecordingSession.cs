@@ -24,9 +24,12 @@ public sealed class RecordingSession
     // Share only the small drain state, without retaining a chain of old sessions.
     public RecordingSession Continue(object? context = null) => new(context, _start);
 
-    internal RecordingStartChord Begin(RecordingStartKeys heldKeys)
+    internal RecordingStartChord Begin(RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys)
     {
-        _start.Filter ??= new RecordingStartChord(FromHotkey ? heldKeys : RecordingStartKeys.None, FromHotkey);
+        if (_start.Filter is null)
+            _start.Filter = new RecordingStartChord(FromHotkey ? heldKeys : RecordingStartKeys.None, FromHotkey);
+        else
+            _start.Filter.ContinueAtBoundary(heldKeys, idleReleasedKeys);
         _start.Filter.ResetTiming();
         return _start.Filter;
     }

@@ -22,6 +22,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
     private Task? _playbackCompletion;
     private RecordingSession? _recordingSession;
     private ulong _latestRecordingId;
+    private readonly Dictionary<ulong, RecordingTarget> _pendingRecordingDelays = [];
 
     public MainWindowViewModel()
         : this(new RecordEngine(), new PlaybackEngine())
@@ -148,6 +149,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         RecordEngine.RecordingEnded -= RecordEngineOnRecordingEnded;
         RecordEngine.Dispose();
         foreach (var macro in MacroTabs) macro.ContentReplaced -= MacroContentReplaced;
+        _pendingRecordingDelays.Clear();
         PlaybackEngine.Dispose();
         _playingMacro = null;
         _playbackCompletion = null;
@@ -267,7 +269,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
             if (e.Session.Context is not RecordingTarget target || !IsCurrentTarget(target)) return;
             var input = InputEvent.CreateInputEvent(e.InputEvent);
             target.Macro.AddEvent(input);
-            if (target.Delay is not null) target.DelayEvents.Add(input);
+            foreach (var (throughSession, adjustment) in _pendingRecordingDelays)
+            {
+                if (e.Session.Id <= throughSession && ReferenceEquals(adjustment.Macro, target.Macro)
+                    && adjustment.Revision == target.Revision) adjustment.DelayEvents.Add(input);
+            }
         });
     }
 
@@ -307,7 +313,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         if (_disposed || _recordingSession is not { } session) return;
         var target = (RecordingTarget)session.Context!;
         target.Delay = autoDelay;
-        if (autoDelay is not null && IsCurrentTarget(target)) target.DelayEvents.UnionWith(target.Macro.Events);
+        if (autoDelay is not null && IsCurrentTarget(target))
+        {
+            target.DelayEvents.UnionWith(target.Macro.Events);
+            _pendingRecordingDelays.Add(session.Id, target);
+        }
         try
         {
             RecordEngine.StopRecord();
@@ -317,6 +327,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         {
             target.Delay = null;
             target.DelayEvents.Clear();
+            _pendingRecordingDelays.Remove(session.Id);
             StatusMessageRequested?.Invoke(this, $"Could not stop recording: {error.Message}");
         }
     }
@@ -338,6 +349,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         InvokeDispatcher(() =>
         {
             if (_disposed) return;
+            _pendingRecordingDelays.Remove(session.Id);
             if (session.Context is RecordingTarget target && IsCurrentTarget(target) && target.Delay is { } delay)
             {
                 foreach (var input in target.Macro.Events.Where(target.DelayEvents.Contains)) input.TimeSinceLastEvent = delay;

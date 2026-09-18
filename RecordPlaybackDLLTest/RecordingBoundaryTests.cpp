@@ -125,3 +125,42 @@ TEST(RecordingBoundary, IdleInputIsNotRetainedAndOrdinaryZeroDelayEventIsNotABou
     EXPECT_NE(nullptr, received[1].event);
     EXPECT_EQ(Boundary{}, received[1].boundary);
 }
+
+TEST(RecordingBoundary, IdleReleasesSurviveRepressBeforeRolloverAndAreScopedToThatGap) {
+    std::vector<Packet> received;
+    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    stream.key('Q', false);
+    stream.key(VK_LCONTROL, false);
+    stream.key(VK_RCONTROL, false);
+    stream.start(1);
+    stream.stop(1);
+    stream.key('Q', true);
+    stream.key(VK_LCONTROL, true);
+    stream.key('Q', false);
+    stream.key(VK_LCONTROL, false);
+    stream.start(2);
+    ASSERT_EQ(3u, received.size());
+    EXPECT_EQ(Q | LeftControl | RightControl, received[2].held_keys);
+    EXPECT_EQ(Q | LeftControl, received[2].idle_released_keys);
+    // There was no idle RightControl release, despite the other two keys cycling.
+    stream.stop(2);
+    stream.start(3);
+    ASSERT_EQ(5u, received.size());
+    EXPECT_EQ(0u, received[4].idle_released_keys);
+    EXPECT_EQ(Q | LeftControl | RightControl, received[4].held_keys);
+}
+
+TEST(RecordingBoundary, IdleReleaseWithoutRepressIsReportedAlongsideEmptyHeldState) {
+    std::vector<Packet> received;
+    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    stream.key('Q', false);
+    stream.key(VK_RCONTROL, false);
+    stream.start(1);
+    stream.stop(1);
+    stream.key('Q', true);
+    stream.key(VK_RCONTROL, true);
+    stream.start(2);
+    ASSERT_EQ(3u, received.size());
+    EXPECT_EQ(0u, received[2].held_keys);
+    EXPECT_EQ(Q | RightControl, received[2].idle_released_keys);
+}

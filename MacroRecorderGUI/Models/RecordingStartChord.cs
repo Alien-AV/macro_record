@@ -22,6 +22,22 @@ public sealed class RecordingStartChord(RecordingStartKeys heldKeys, bool suppre
     private ulong _suppressedDelay;
     internal void ResetTiming() => _suppressedDelay = 0;
 
+    internal void ContinueAtBoundary(RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys)
+    {
+        // A release followed by a new press in the idle gap still drains the old
+        // command. The held snapshot alone cannot distinguish those two presses.
+        var heldAliases = ControlAliases(heldKeys);
+        var releasedAliases = ControlAliases(idleReleasedKeys);
+        _pendingKeys &= heldAliases & ~releasedAliases;
+        _unseenKeys &= ~releasedAliases;
+    }
+
+    private static RecordingStartKeys ControlAliases(RecordingStartKeys keys)
+    {
+        if ((keys & RecordingStartKeys.Control) != 0) return keys | Controls;
+        return (keys & Controls) != 0 ? keys | RecordingStartKeys.Control : keys;
+    }
+
     public ProtobufInputEvent? Accept(ProtobufInputEvent inputEvent)
     {
         var keyboard = inputEvent.KeyboardEvent;

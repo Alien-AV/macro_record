@@ -18,9 +18,10 @@ struct Packet {
     std::unique_ptr<Event> event;
     Boundary boundary{};
     uint32_t held_keys = 0;
+    uint32_t idle_released_keys = 0;
 };
 
-// Capture-thread state only. Idle input updates three key bits; no idle event is retained.
+// Capture-thread state only. Idle input updates chord state/release bits, not an event log.
 class Stream {
 public:
     using Sink = std::function<void(Packet)>;
@@ -30,7 +31,10 @@ public:
     void key(WORD key, bool up) {
         const uint32_t bit = key == 'Q' ? Q : key == VK_LCONTROL ? LeftControl
             : key == VK_RCONTROL ? RightControl : key == VK_CONTROL ? Control : 0;
-        if (up) held_ &= ~bit;
+        if (up) {
+            held_ &= ~bit;
+            if (!session_) idle_released_ |= bit;
+        }
         else held_ |= bit;
     }
     bool start(uint64_t session) {
@@ -39,7 +43,8 @@ public:
             return false;
         }
         session_ = session;
-        sink_({session_, nullptr, Boundary::Started, held_});
+        sink_({session_, nullptr, Boundary::Started, held_, idle_released_});
+        idle_released_ = 0;
         return true;
     }
     void input(std::unique_ptr<Event> event) {
@@ -49,12 +54,14 @@ public:
         if (!session) return;
         if (session_ != session) return;
         session_ = 0;
+        idle_released_ = 0;
         sink_({session, nullptr, Boundary::Stopped});
     }
 private:
     Sink sink_;
     uint64_t session_ = 0;
     uint32_t held_ = 0;
+    uint32_t idle_released_ = 0;
 };
 
 // DWORD message times wrap. Commands live far less than half the 49-day tick range.

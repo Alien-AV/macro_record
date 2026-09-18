@@ -13,7 +13,7 @@ class RecordEngine {
 public:
     using status_callback_t = void(*)(RecordPlaybackDLLEnums::StatusCode);
     using record_events_callback_t = void(*)(std::unique_ptr<Event>, uint64_t);
-    using boundary_callback_t = void(*)(uint64_t, capture::Boundary, uint32_t);
+    using boundary_callback_t = void(*)(uint64_t, capture::Boundary, uint32_t, uint32_t);
 
     RecordEngine(record_events_callback_t, status_callback_t, boundary_callback_t);
     ~RecordEngine();

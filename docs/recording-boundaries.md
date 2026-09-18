@@ -11,7 +11,7 @@ from repeatedly issuing UI commands, and duplicate starts cannot clear a live ma
 ## Native ordering
 
 The native recorder registers Raw Input once at initialization and unregisters on
-shutdown. While idle it retains only the Q/left-Ctrl/right-Ctrl held bits, not
+shutdown. While idle it retains only Q/left-Ctrl/right-Ctrl held and release bits, not
 events or typed text. Mouse input is discarded while idle. This background input
 registration is the cost of keeping key state consistent with the raw queue.
 Ctrl's raw extended flag identifies its side before tracking and serialization.
@@ -25,7 +25,11 @@ handler and reaches `DefWindowProc` for cleanup, including idle input and errors
 No `GetAsyncKeyState` sample is treated as an atomic queue snapshot, and there is
 no timed grace period or sleep in the capture pipeline.
 
-The held mask at start comes from consumed raw transitions. Started, input, and
+The held mask at start comes from consumed raw transitions. Started also carries
+the chord-key releases observed during the preceding idle gap, including releases
+followed by new presses. This compact history lets a rollover drain the original
+press without suppressing a newly held press that has the same virtual key.
+Started, input, and
 stopped packets use one FIFO and carry a session ID. Started precedes the initial
 cursor-position event; stopped follows the captured tail. The collector wakes
 on a condition variable and drains that FIFO. Stop requests do not discard
@@ -39,12 +43,15 @@ Every recorded event carries its original session and macro/revision destination
 The ordered end notification posts a UI action behind that session's input
 actions. Native `RecordingSession.Completion` alone does **not** imply that the UI
 queue has run. Stop's optional delay adjustment runs in the end UI action and
-includes the original macro's buffered tail, without changing a newer recording
-or newly selected macro.
+includes the original macro's buffered tail and earlier sessions' pending input
+for the same content revision. Pending delay adjustments have a stopping-session
+ID cutoff, so a newer recording or another macro cannot join that adjustment.
 
 Clear and replace increment a macro revision. During active capture they roll
 the recording into a new native session with the same shortcut-drain state and a
-fresh timing origin. Old native callbacks and already queued UI additions fail
+fresh timing origin. The new boundary reconciles pending keys with the held mask
+and idle-release history; it never rearms keys that have already drained.
+Old native callbacks and already queued UI additions fail
 the old revision check. Fresh input continues into the new content. Clearing
 after Stop does not restart capture. Closing the capture target stops recording;
 its remaining events cannot migrate to another tab.

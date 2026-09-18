@@ -99,7 +99,7 @@ public sealed class RecordingCapture : IDisposable
         }
     }
 
-    private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys)
+    private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys)
     {
         lock (_gate)
         {
@@ -110,7 +110,7 @@ public sealed class RecordingCapture : IDisposable
 
             if (boundary == RecordingBoundary.Started)
             {
-                state.Filter ??= state.Session.Begin(heldKeys);
+                state.Filter ??= state.Session.Begin(heldKeys, idleReleasedKeys);
                 return;
             }
 

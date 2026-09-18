@@ -136,7 +136,7 @@ void RecordEngine::collect() {
             queue_.pop();
         }
         if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
-        else boundary_callback_(packet.session, packet.boundary, packet.held_keys);
+        else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys);
     }
 }
 

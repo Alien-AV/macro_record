@@ -9,6 +9,135 @@ namespace MacroRecorderGUITests;
 public class RecordingRoutingTests
 {
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void RolloverReleasesDoNotEatLaterChordKeyPresses(bool replace)
+    {
+        var transport = new FakeRecordingTransport();
+        using var vm = new DeferredRecordingViewModel(transport);
+        vm.StartRecording(fromHotkey: true);
+        var old = transport.Starts.Single();
+        transport.Begin(old, RecordingStartKeys.Q | RecordingStartKeys.LeftControl);
+        if (replace) vm.ActiveMacro!.PopulateEventCollectionWithNewEvents([]);
+        else vm.ActiveMacro!.Clear();
+        var current = transport.Starts.Last();
+        transport.End(old);
+        // Both command releases were consumed natively while capture was idle.
+        transport.Begin(current, RecordingStartKeys.None);
+        var later = new[] { Key(0x51, false), Key(0x51, true), Key(0xA2, false), Key(0xA2, true), Key(0x41, false) };
+        foreach (var input in later) transport.Push(current, input);
+        vm.Deliver();
+        CollectionAssert.AreEqual(later, vm.ActiveMacro!.Events.Select(input => input.OriginalProtobufInputEvent).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(0x11u, RecordingStartKeys.Control)]
+    [DataRow(0xA2u, RecordingStartKeys.LeftControl)]
+    [DataRow(0xA3u, RecordingStartKeys.RightControl)]
+    public void IdleReleaseThenRepressIsNotMistakenForTheOriginalHeldChord(uint control, RecordingStartKeys heldControl)
+    {
+        var transport = new FakeRecordingTransport();
+        using var vm = new DeferredRecordingViewModel(transport);
+        vm.StartRecording(fromHotkey: true);
+        var old = transport.Starts.Single();
+        var chord = RecordingStartKeys.Q | heldControl;
+        transport.Begin(old, chord);
+        vm.ActiveMacro!.Clear();
+        var current = transport.Starts.Last();
+        transport.End(old);
+        // The held snapshot is identical, but these are new presses after idle releases.
+        transport.Begin(current, chord, idleReleasedKeys: chord);
+        var later = new[] { Key(0x51, true, 10), Key(control, true, 20), Key(0x51, false, 30), Key(0x51, true, 40), Key(control, false, 50), Key(control, true, 60), Key(0x41, false, 70) };
+        foreach (var input in later) transport.Push(current, input);
+        vm.Deliver();
+        CollectionAssert.AreEqual(later, vm.ActiveMacro.Events.Select(input => input.OriginalProtobufInputEvent).ToArray());
+    }
+
+    [TestMethod]
+    public void IdleReleaseReconcilesOnlyReleasedKeysAndKeepsOtherCommandKeysDraining()
+    {
+        var transport = new FakeRecordingTransport();
+        using var vm = new DeferredRecordingViewModel(transport);
+        vm.StartRecording(fromHotkey: true);
+        var old = transport.Starts.Single();
+        var chord = RecordingStartKeys.Q | RecordingStartKeys.LeftControl | RecordingStartKeys.RightControl;
+        transport.Begin(old, chord);
+        vm.ActiveMacro!.Clear();
+        var current = transport.Starts.Last();
+        transport.End(old);
+        transport.Begin(current, chord, RecordingStartKeys.Q | RecordingStartKeys.LeftControl);
+        transport.Push(current, Key(0x51, true, 10));
+        transport.Push(current, Key(0xA2, true, 20));
+        transport.Push(current, Key(0xA3, false, 30));
+        transport.Push(current, Key(0xA3, true, 40));
+        transport.Push(current, Key(0x41, false, 50));
+        vm.Deliver();
+        CollectionAssert.AreEqual(new uint[] { 0x51, 0xA2, 0x41 }, vm.ActiveMacro.Events.OfType<KeyboardEvent>().Select(input => input.VirtualKeyCode).ToArray());
+        CollectionAssert.AreEqual(new ulong[] { 10, 20, 120 }, vm.ActiveMacro.Events.Select(input => input.TimeSinceLastEvent).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void AutoDelayIncludesEarlierDeferredSessionsButExcludesLaterSessions(bool earlierAutoDelay)
+    {
+        var transport = new FakeRecordingTransport();
+        using var vm = new DeferredRecordingViewModel(transport);
+        vm.StartRecording();
+        var first = transport.Starts.Last();
+        vm.StopRecording(earlierAutoDelay ? 123ul : null);
+        vm.StartRecording();
+        var second = transport.Starts.Last();
+        vm.StopRecording(777);
+        vm.StartRecording();
+        var third = transport.Starts.Last();
+        transport.Begin(first);
+        transport.Push(first, Key(0x41, false, 10));
+        transport.Push(first, Key(0x41, true, 20));
+        transport.End(first);
+        transport.Begin(second);
+        transport.Push(second, Key(0x42, false, 30));
+        transport.Push(second, Key(0x42, true, 40));
+        transport.End(second);
+        transport.Begin(third);
+        transport.Push(third, Key(0x43, false, 50));
+        vm.Deliver();
+        CollectionAssert.AreEqual(new ulong[] { 777, 777, 777, 777, 50 }, vm.ActiveMacro!.Events.Select(input => input.TimeSinceLastEvent).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void AutoDelayOnRestartDoesNotCollectOtherTargetsOrReplacedContent(bool replace)
+    {
+        var transport = new FakeRecordingTransport();
+        using var vm = new DeferredRecordingViewModel(transport);
+        var firstMacro = vm.ActiveMacro!;
+        vm.StartRecording();
+        var first = transport.Starts.Last();
+        vm.StopRecording();
+        if (replace) firstMacro.PopulateEventCollectionWithNewEvents([InputEvent.CreateInputEvent(Key(0x43, false, 50))]);
+        else vm.AddNewTab();
+        vm.StartRecording();
+        var second = transport.Starts.Last();
+        vm.StopRecording(777);
+        transport.Begin(first);
+        transport.Push(first, Key(0x41, false, 10));
+        transport.Push(first, Key(0x41, true, 20));
+        transport.End(first);
+        transport.Begin(second);
+        transport.Push(second, Key(0x42, false, 30));
+        transport.Push(second, Key(0x42, true, 40));
+        transport.End(second);
+        vm.Deliver();
+        Assert.IsTrue(vm.ActiveMacro!.Events.All(input => input.TimeSinceLastEvent == 777));
+        if (replace)
+            Assert.IsFalse(firstMacro.Events.OfType<KeyboardEvent>().Any(input => input.VirtualKeyCode == 0x41));
+        else
+            CollectionAssert.AreEqual(new ulong[] { 10, 20 }, firstMacro.Events.Select(input => input.TimeSinceLastEvent).ToArray());
+    }
+
+    [TestMethod]
     public void StopAdjustsOriginalTargetAfterItsDeferredTailAndBeforeNewSessionInput()
     {
         var transport = new FakeRecordingTransport();
