@@ -3,7 +3,7 @@
 namespace MacroRecorderGUI.Common
 {
     [Flags]
-    public enum MouseActionTypeFlags // todo: also relevant in other places? should be used instead of the uint currently in use?
+    public enum MouseActionTypeFlags
     {
         Move = 0x1,
         LeftDown = 0x2,
@@ -13,6 +13,8 @@ namespace MacroRecorderGUI.Common
         MiddleDown = 0x20,
         MiddleUp = 0x40,
         XDown = 0x80,
-        XUp = 0x100
+        XUp = 0x100,
+        Wheel = 0x800,
+        HorizontalWheel = 0x1000
     }
 }

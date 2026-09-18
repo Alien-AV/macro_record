@@ -18,13 +18,13 @@ public:
 		static const DWORD MiddleUp = MOUSEEVENTF_MIDDLEUP;
 		static const DWORD XDown = MOUSEEVENTF_XDOWN;
 		static const DWORD XUp = MOUSEEVENTF_XUP;
+		static const DWORD Wheel = MOUSEEVENTF_WHEEL;
+		static const DWORD HorizontalWheel = MOUSEEVENTF_HWHEEL;
 	};
-	// more flags here:
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646273(v=vs.85).aspx
-
-
-	LONG x = 0, y = 0; //TODO: change to signed int?
+	// Absolute positions are physical desktop pixels; relative positions are raw deltas.
+	LONG x = 0, y = 0;
 	DWORD ActionType = 0;
+	// Wire field #4: signed wheel delta bits for wheel actions, XBUTTON mask for X actions.
 	DWORD wheelRotation = 0;
 	bool mappedToVirtualDesktop = false;
 	bool relative_position = false;

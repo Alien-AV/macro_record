@@ -13,7 +13,7 @@ public sealed class MouseEvent : InputEvent
             MouseEvent = new ProtobufInputEvent.Types.MouseEventType
             {
                 ActionType = (uint)actionType,
-                MappedToVirtualDesktop = false,
+                MappedToVirtualDesktop = true,
                 RelativePosition = false,
                 WheelRotation = 0,
                 X = x,
@@ -44,6 +44,63 @@ public sealed class MouseEvent : InputEvent
 
             OriginalProtobufInputEvent.MouseEvent.RelativePosition = value;
             OnPropertyChanged();
+        }
+    }
+
+    public bool MappedToVirtualDesktop
+    {
+        get => OriginalProtobufInputEvent.MouseEvent.MappedToVirtualDesktop;
+        set
+        {
+            if (value == MappedToVirtualDesktop) return;
+            OriginalProtobufInputEvent.MouseEvent.MappedToVirtualDesktop = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Field #4 is the SendInput mouseData payload. Keep its unsigned wire type:
+    // wheel deltas use signed 32-bit bits, X buttons use the XBUTTON1/2 mask.
+    public uint MouseData
+    {
+        get => OriginalProtobufInputEvent.MouseEvent.WheelRotation;
+        set
+        {
+            if (value == MouseData) return;
+            OriginalProtobufInputEvent.MouseEvent.WheelRotation = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// Estimates physical absolute positions by accumulating raw relative counts.
+    /// Pointer acceleration/speed are not recorded, so this cannot reconstruct an
+    /// exact cursor path. Events before the first absolute move stay relative.
+    /// </summary>
+    public static void ConvertToAbsolutePositioning(IEnumerable<MouseEvent> events)
+    {
+        var hasAnchor = false;
+        var currentX = 0;
+        var currentY = 0;
+        foreach (var mouseEvent in events)
+        {
+            if ((mouseEvent.ActionType & MouseActionTypeFlags.Move) == 0) continue;
+            if (mouseEvent.RelativePosition)
+            {
+                if (!hasAnchor) continue;
+                currentX = (int)Math.Clamp((long)currentX + mouseEvent.X, int.MinValue, int.MaxValue);
+                currentY = (int)Math.Clamp((long)currentY + mouseEvent.Y, int.MinValue, int.MaxValue);
+                mouseEvent.X = currentX;
+                mouseEvent.Y = currentY;
+                mouseEvent.RelativePosition = false;
+                // Relative movement can cross monitors, even from a primary-only anchor.
+                mouseEvent.MappedToVirtualDesktop = true;
+            }
+            else
+            {
+                currentX = mouseEvent.X;
+                currentY = mouseEvent.Y;
+                hasAnchor = true;
+            }
         }
     }
 

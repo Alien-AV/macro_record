@@ -17,7 +17,7 @@ void MouseEvent::print(std::ostream & where) const
 
 void MouseEvent::playback() const
 {
-	WindowsInjectionAPI::playback_mouse_event(x, y, wheelRotation, relative_position, ActionType);
+	WindowsInjectionAPI::playback_mouse_event(x, y, wheelRotation, relative_position, ActionType, mappedToVirtualDesktop);
 }
 
 std::unique_ptr<std::vector<unsigned char>> MouseEvent::serialize() const

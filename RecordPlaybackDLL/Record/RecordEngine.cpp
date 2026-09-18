@@ -7,6 +7,7 @@
 #include "../Common/Event.h"
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
+#include "../Common/MouseTranslation.h"
 #include "RecordEngine.h"
 
 namespace record_playback {
@@ -222,50 +223,17 @@ namespace record_playback {
 
 	void RecordEngine::handle_mouse_event(const RAWMOUSE& data)
 	{
-		const auto time_since_last_event = get_time_since_last_event();
-
-		auto mouse_event = std::make_unique<MouseEvent>();
-		mouse_event->time_since_last_event = time_since_last_event;
-		mouse_event->mappedToVirtualDesktop = (data.usFlags & MOUSE_VIRTUAL_DESKTOP);
-
-		mouse_event->relative_position = !(data.usFlags & MOUSE_MOVE_ABSOLUTE);
-
-		mouse_event->x = data.lLastX;
-		mouse_event->y = data.lLastY;
-
-		mouse_event->ActionType |= MouseEvent::ActionTypeFlags::Move;
-		//TODO: rewrite to a prettier, more robust mapping. a million if statements is not our way
-		if (data.usButtonFlags & RI_MOUSE_WHEEL) {
-			mouse_event->wheelRotation = data.usButtonData;
+		const auto bounds = (data.usFlags & MOUSE_MOVE_ABSOLUTE)
+			? mouse::physical_desktop_bounds((data.usFlags & MOUSE_VIRTUAL_DESKTOP) != 0) : mouse::DesktopBounds{};
+		auto actions = mouse::translate_raw_mouse(data, bounds, std::chrono::microseconds(0));
+		if (actions.empty()) return;
+		actions.front().delay = get_time_since_last_event();
+		for (const auto& action : actions) {
+			auto mouse_event = std::make_unique<MouseEvent>(action.x, action.y, action.flags,
+				action.data, action.virtual_desktop, action.relative);
+			mouse_event->time_since_last_event = action.delay;
+			process_recorded_event(std::move(mouse_event));
 		}
-		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftDown;
-		}
-		if (data.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::LeftUp;
-		}
-		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleDown;
-		}
-		if (data.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::MiddleUp;
-		}
-		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightDown;
-		}
-		if (data.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::RightUp;
-		}
-		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XDown;
-		}
-		if (data.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
-			mouse_event->ActionType |= MouseEvent::ActionTypeFlags::XUp;
-		}
-
-		//TODO: x2 button
-
-		process_recorded_event(std::move(mouse_event));
 	}
 
 	void RecordEngine::process_recorded_event(std::unique_ptr<Event> event) const
@@ -276,14 +244,15 @@ namespace record_playback {
 
 	void RecordEngine::fake_mouse_event_for_initial_pos() const
 	{
-		POINT initial_mouse_position;
-		GetCursorPos(&initial_mouse_position);
+		POINT initial_mouse_position{};
+		if (!GetPhysicalCursorPos(&initial_mouse_position)) return;
 
 		auto fake_mouse_event = std::make_unique<MouseEvent>();
 		fake_mouse_event->time_since_last_event = std::chrono::microseconds(0);
 		fake_mouse_event->x = initial_mouse_position.x;
 		fake_mouse_event->y = initial_mouse_position.y;
 		fake_mouse_event->ActionType = MouseEvent::ActionTypeFlags::Move;
+		fake_mouse_event->mappedToVirtualDesktop = true;
 		process_recorded_event(std::move(fake_mouse_event));
 	}
 
