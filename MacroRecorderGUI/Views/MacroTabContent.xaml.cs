@@ -23,7 +23,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly Stopwatch _previewWatch = new();
     private bool _loaded, _sync, _disposed, _dragging;
-    private BigInteger _previewTime, _previewStart;
+    private readonly PreviewPosition _previewPosition = new();
+    private BigInteger _previewStart;
     private InputEvent? _rawEvent;
     private readonly RawEventRows _rawRows = [];
     private readonly HashSet<TextBox> _drafts = [];
@@ -106,7 +107,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         SummaryText.Text = _macro.Events.Count == 0 ? "Record a macro or add an event to get started."
             : $"{_editor.Projection.Actions.Count:N0} actions · {_macro.Events.Count:N0} original events · {TimeText.Human(_editor.Projection.TotalTime)}";
         UndoButton.IsEnabled = _editor.CanUndo;
-        _previewTime = BigInteger.Min(_previewTime, _editor.Projection.TotalTime);
+        _previewPosition.RefreshDuration(_editor.Projection.TotalTime);
         UpdateInspector(resetDrafts); UpdateSelectionText(); PreparePath();
     }
     private void Actions_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -124,7 +125,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         }
         StopPreview(); CancelDrag();
         _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
-        if (Selected is { } a) _previewTime = a.StartTime + a.Wait;
+        if (Selected is { } a) _previewPosition.SeekTime(a.StartTime + a.Wait, _editor.Projection.TotalTime);
         UpdateInspector(resetDrafts: true); UpdateSelectionText(); PreparePath();
     }
     private void UpdateSelectionText()
@@ -378,36 +379,36 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void UpdateCursor()
     {
         if (_editor is null) return;
-        var p = _editor.Projection.SampleAt(_previewTime)?.Position;
+        var p = _editor.Projection.SampleAt(_previewPosition.Time)?.Position;
         if (_cursor is not null)
         {
             _cursor.Visibility = p?.Space == _space ? Visibility.Visible : Visibility.Collapsed;
             if (p?.Space == _space) Place(_cursor, Map(p.Value));
         }
-        PreviewClock.Text = $"{TimeText.Human(_previewTime)} / {TimeText.Human(_editor.Projection.TotalTime)}";
+        PreviewClock.Text = $"{TimeText.Human(_previewPosition.Time)} / {TimeText.Human(_editor.Projection.TotalTime)}";
         _sync = true;
-        Scrubber.Value = _editor.Projection.TotalTime == 0 ? 0 : (double)(_previewTime * 1000 / _editor.Projection.TotalTime);
+        Scrubber.Value = _previewPosition.Value;
         _sync = false;
     }
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
         if (_editor is null || _editor.Projection.TotalTime == 0) return;
-        if (_previewTime >= _editor.Projection.TotalTime) _previewTime = 0;
-        _previewStart = _previewTime; _previewWatch.Restart(); _previewTimer.Start(); PreviewButton.Content = "Pause visual preview";
+        if (_previewPosition.Time >= _editor.Projection.TotalTime) _previewPosition.SeekTime(0, _editor.Projection.TotalTime);
+        _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start(); PreviewButton.Content = "Pause visual preview";
     }
     private void Preview_Tick(object? sender, object e)
     {
         if (_editor is null) { StopPreview(); return; }
-        _previewTime = BigInteger.Min(_editor.Projection.TotalTime, _previewStart + (BigInteger)_previewWatch.ElapsedTicks * 1_000_000 / Stopwatch.Frequency);
+        _previewPosition.SeekTime(_previewStart + (BigInteger)_previewWatch.ElapsedTicks * 1_000_000 / Stopwatch.Frequency, _editor.Projection.TotalTime);
         UpdateCursor();
-        if (_previewTime >= _editor.Projection.TotalTime) StopPreview();
+        if (_previewPosition.Time >= _editor.Projection.TotalTime) StopPreview();
     }
     private void StopPreview() { _previewTimer.Stop(); _previewWatch.Stop(); if (PreviewButton is not null) PreviewButton.Content = "Preview · visual only"; }
     private void Scrub_Changed(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (_sync || _editor is null) return;
-        StopPreview(); _previewTime = _editor.Projection.TotalTime * (int)e.NewValue / 1000; UpdateCursor();
+        StopPreview(); _previewPosition.Scrub(e.NewValue, _editor.Projection.TotalTime); UpdateCursor();
     }
     private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
