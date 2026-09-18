@@ -50,6 +50,8 @@ dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Release -p:Pla
 
 These tests are noninteractive: native playback tests use fake injection sinks and constructed input, and managed lifecycle tests use fake engines. They do not launch the app or inject keyboard/mouse input. Native ABI rejection tests only submit invalid schedules.
 
+The native test project compiles the production C++ model/playback sources into its executable, so owning C++ objects stay within one static CRT. Its DLL reference is build-only: ABI tests load that DLL explicitly and pass only borrowed byte buffers and scalar values. Debug selects Debug vcpkg libraries and `/MTd`; Release selects Release libraries and `/MT`. To verify Debug compilation without executing a Debug test process, build the solution with `/p:Configuration=Debug /p:Platform=x64`.
+
 Playback owns one cancellable session. Short looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility; completion/abort releases keys and buttons held by that session. Looping uses the event snapshot captured when playback starts, even if the selected tab or macro is edited. Unchecking Loop finishes the current pass; Abort interrupts it immediately. Physical modifier interference during playback remains a separate limitation.
 
 ## Unpackaged distribution

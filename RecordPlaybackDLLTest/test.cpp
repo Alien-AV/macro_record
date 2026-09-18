@@ -37,6 +37,41 @@ std::vector<unsigned char> bytes(const protobufGenerated::ProtobufInputEventList
 	const auto data = list.SerializeAsString();
 	return {data.begin(), data.end()};
 }
+
+// Owning C++ objects stay inside this test executable's static CRT. Exercise the
+// built DLL only through its non-owning byte-buffer/scalar C ABI.
+class PlaybackAbi : public ::testing::Test {
+protected:
+	HMODULE module_ = nullptr;
+	decltype(&iac_dll_playback_start) start_ = nullptr;
+	decltype(&iac_dll_playback_poll) poll_ = nullptr;
+	decltype(&iac_dll_playback_abort) abort_ = nullptr;
+
+	void SetUp() override {
+		std::wstring path(32768, L'\0');
+		const auto length = GetModuleFileNameW(nullptr, &path[0], static_cast<DWORD>(path.size()));
+		ASSERT_GT(length, 0u);
+		ASSERT_LT(length, path.size());
+		path.resize(length);
+		const auto separator = path.find_last_of(L"\\/");
+		ASSERT_NE(std::wstring::npos, separator);
+		path.resize(separator + 1);
+		path += L"RecordPlaybackDLL.dll";
+		module_ = LoadLibraryExW(path.c_str(), nullptr,
+			LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		ASSERT_NE(nullptr, module_) << "LoadLibraryExW error: " << GetLastError();
+		start_ = reinterpret_cast<decltype(start_)>(GetProcAddress(module_, "iac_dll_playback_start"));
+		poll_ = reinterpret_cast<decltype(poll_)>(GetProcAddress(module_, "iac_dll_playback_poll"));
+		abort_ = reinterpret_cast<decltype(abort_)>(GetProcAddress(module_, "iac_dll_playback_abort"));
+		ASSERT_NE(nullptr, start_);
+		ASSERT_NE(nullptr, poll_);
+		ASSERT_NE(nullptr, abort_);
+	}
+
+	void TearDown() override {
+		if (module_) FreeLibrary(module_);
+	}
+};
 }
 
 TEST(Playback, LongDelayAbortWakesAndDoesNotInjectDelayedEvent) {
@@ -198,23 +233,23 @@ TEST(Playback, RejectsEmptyNullNegativeAndCumulativeOverflowBeforeInjection) {
 	EXPECT_EQ(0, calls);
 }
 
-TEST(PlaybackAbi, RejectsMalformedMissingPayloadEmptyAndOversizedBuffers) {
+TEST_F(PlaybackAbi, RejectsMalformedMissingPayloadEmptyAndOversizedBuffers) {
 	uint64_t id = 9;
 	const unsigned char malformed[] = {0x0a, 0xff};
-	EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(malformed, sizeof malformed, 0, &id));
+	EXPECT_EQ(PlaybackResult::InvalidInput, start_(malformed, sizeof malformed, 0, &id));
 	EXPECT_EQ(0u, id);
-	EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(nullptr, 0, 1, &id));
-	EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(malformed, (std::numeric_limits<size_t>::max)(), 0, &id));
-	EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(malformed, sizeof malformed, 0, nullptr));
+	EXPECT_EQ(PlaybackResult::InvalidInput, start_(nullptr, 0, 1, &id));
+	EXPECT_EQ(PlaybackResult::InvalidInput, start_(malformed, (std::numeric_limits<size_t>::max)(), 0, &id));
+	EXPECT_EQ(PlaybackResult::InvalidInput, start_(malformed, sizeof malformed, 0, nullptr));
 	protobufGenerated::ProtobufInputEventList list;
 	list.add_inputevents();
 	const auto data = bytes(list);
-	EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(data.data(), data.size(), 0, &id));
-	EXPECT_EQ(PlaybackResult::StaleSession, iac_dll_playback_poll(0));
-	EXPECT_EQ(PlaybackResult::StaleSession, iac_dll_playback_abort(0));
+	EXPECT_EQ(PlaybackResult::InvalidInput, start_(data.data(), data.size(), 0, &id));
+	EXPECT_EQ(PlaybackResult::StaleSession, poll_(0));
+	EXPECT_EQ(PlaybackResult::StaleSession, abort_(0));
 }
 
-TEST(PlaybackAbi, RejectsUint64AndChronoOverflowWithoutInjecting) {
+TEST_F(PlaybackAbi, RejectsUint64AndChronoOverflowWithoutInjecting) {
 	for (uint64_t delay : { (std::numeric_limits<uint64_t>::max)(), static_cast<uint64_t>((std::numeric_limits<int64_t>::max)()) }) {
 		protobufGenerated::ProtobufInputEventList list;
 		auto* event = list.add_inputevents();
@@ -222,7 +257,7 @@ TEST(PlaybackAbi, RejectsUint64AndChronoOverflowWithoutInjecting) {
 		event->set_timesincelastevent(delay);
 		const auto data = bytes(list);
 		uint64_t id;
-		EXPECT_EQ(PlaybackResult::InvalidInput, iac_dll_playback_start(data.data(), data.size(), 0, &id));
+		EXPECT_EQ(PlaybackResult::InvalidInput, start_(data.data(), data.size(), 0, &id));
 		EXPECT_EQ(0u, id);
 	}
 }
