@@ -8,8 +8,18 @@ in a temporary per-monitor DPI awareness context and the previous context is
 restored. Initial cursor anchors use `GetPhysicalCursorPos` and virtual mapping.
 Replay selects the same desktop, subtracts its origin, clamps out-of-bounds
 coordinates, and uses 64-bit arithmetic to normalize them. Interior positions
-target the centre of a pixel's normalized interval; endpoints use 0 and 65535.
+select an integer inside the pixel's normalized interval; endpoints use 0 and
+65535. For pixel offset `p` and dimension `s`, the inclusive integer interval is
+`ceil(p * 65536 / s)` through `ceil((p + 1) * 65536 / s) - 1`, capped at 65534
+because 65535 is reserved for the last pixel. Selecting the middle integer in this
+interval preserves every pixel for dimensions up to 65536, including widths such
+as 38400 where truncating the continuous centre can select the preceding pixel.
+
 Desktops wider/taller than 65536 pixels cannot represent every pixel exactly.
+Representable pixels still round-trip exactly. If a pixel's interval is empty,
+replay selects the nearest representable pixel, with ties choosing the lower
+normalized coordinate. This quantization is unavoidable; bounds and endpoints
+remain clamped without overflowing even at the limits of the stored coordinates.
 
 `mappedToVirtualDesktop` controls absolute replay bounds and
 `MOUSEEVENTF_VIRTUALDESK`; it has no effect on relative moves or button-only events.

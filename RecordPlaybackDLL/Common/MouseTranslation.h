@@ -62,8 +62,20 @@ inline LONG pixel_to_normalized(LONG value, LONG origin, LONG extent)
         static_cast<std::int64_t>(extent) - 1);
     if (offset == 0) return 0;
     if (offset == extent - 1) return 65535;
-    // Aim at the pixel centre to avoid rounding down into the preceding pixel.
-    return static_cast<LONG>(clamp((offset * 65536 + 32768) / extent, 0, 65535));
+    // Invert floor(n * extent / 65536) with integer interval bounds. Truncating
+    // the continuous centre can fall below the first valid n on wide desktops.
+    // 65535 is reserved for the last pixel by normalized_to_pixel.
+    const auto first = (offset * 65536 + extent - 1) / extent;
+    const auto last = clamp(((offset + 1) * 65536 + extent - 1) / extent - 1, 0, 65534);
+    if (first <= last) return static_cast<LONG>(first + (last - first) / 2);
+
+    // Above 65536 pixels some intervals contain no integer. Choose the nearer
+    // representable pixel, including the special last endpoint; ties go lower.
+    const auto lower = static_cast<LONG>(clamp(first - 1, 0, 65534));
+    const auto upper = static_cast<LONG>(clamp(first, 0, 65535));
+    const auto lower_distance = offset - normalized_to_pixel(lower, 0, extent);
+    const auto upper_distance = normalized_to_pixel(upper, 0, extent) - offset;
+    return lower_distance <= upper_distance ? lower : upper;
 }
 
 struct RecordedAction {

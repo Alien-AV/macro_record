@@ -214,7 +214,8 @@ TEST(MouseTranslation, AbsoluteReplayUsesVirtualOriginAndPhysicalExtent)
 
 TEST(MouseTranslation, EveryPixelRoundTripsAcrossCommonDesktopWidths)
 {
-    for (const LONG extent : { 1, 2, 1920, 3840, 5760, 16384, 65536 }) {
+    for (const LONG extent : { 1, 2, 1920, 3840, 5760, 16384, 32769, 38400, 40001, 49151, 50000, 65521, 65535, 65536 }) {
+        SCOPED_TRACE(extent);
         for (LONG offset = 0; offset < extent; ++offset) {
             const LONG pixel = -4000 + offset;
             const auto normalized = pixel_to_normalized(pixel, -4000, extent);
@@ -222,6 +223,84 @@ TEST(MouseTranslation, EveryPixelRoundTripsAcrossCommonDesktopWidths)
             ASSERT_LE(normalized, 65535);
             ASSERT_EQ(pixel, normalized_to_pixel(normalized, -4000, extent));
         }
+    }
+}
+
+TEST(MouseTranslation, WideDesktopRawCaptureAndReplayKeepRepresentablePixels)
+{
+    const DesktopBounds bounds{ -19200, -19200, 38400, 38400 };
+    RAWMOUSE raw{};
+    raw.usFlags = MOUSE_MOVE_ABSOLUTE | MOUSE_VIRTUAL_DESKTOP;
+    raw.lLastX = raw.lLastY = 6;
+    const auto actions = translate_raw_mouse(raw, bounds, microseconds(1));
+    ASSERT_EQ(1u, actions.size());
+    EXPECT_EQ(-19197, actions[0].x);
+    EXPECT_EQ(-19197, actions[0].y);
+    std::vector<INPUT> inputs;
+    ASSERT_TRUE(build_inputs(actions[0].x, actions[0].y, actions[0].data,
+        actions[0].relative, actions[0].flags, actions[0].virtual_desktop, bounds, inputs));
+    ASSERT_EQ(1u, inputs.size());
+    EXPECT_EQ(6, inputs[0].mi.dx);
+    EXPECT_EQ(6, inputs[0].mi.dy);
+    EXPECT_EQ(-19197, normalized_to_pixel(inputs[0].mi.dx, bounds.left, bounds.width));
+    EXPECT_EQ(-19197, normalized_to_pixel(inputs[0].mi.dy, bounds.top, bounds.height));
+}
+
+TEST(MouseTranslation, EveryRepresentablePixelRoundTripsOnOversizedDesktops)
+{
+    const LONG widths[] = { 65537, 76800, 131071, 131072, 1000000, (std::numeric_limits<LONG>::max)() };
+    for (const auto extent : widths) {
+        SCOPED_TRACE(extent);
+        const LONG origin = -extent / 2;
+        for (LONG normalized = 0; normalized <= 65535; ++normalized) {
+            const auto pixel = normalized_to_pixel(normalized, origin, extent);
+            ASSERT_EQ(normalized, pixel_to_normalized(pixel, origin, extent));
+        }
+    }
+}
+
+TEST(MouseTranslation, UnreachablePixelsUseTheNearestRepresentablePosition)
+{
+    const auto distance = [](LONG left, LONG right) {
+        const auto difference = static_cast<std::int64_t>(left) - right;
+        return difference < 0 ? -difference : difference;
+    };
+    const auto check_nearest = [&distance](LONG pixel, LONG origin, LONG extent) {
+        const auto normalized = pixel_to_normalized(pixel, origin, extent);
+        EXPECT_GE(normalized, 0);
+        EXPECT_LE(normalized, 65535);
+        const auto decoded = normalized_to_pixel(normalized, origin, extent);
+        const auto error = distance(decoded, pixel);
+        if (normalized > 0) {
+            // Strict on the lower neighbour: ties should choose that neighbour.
+            EXPECT_LT(error, distance(normalized_to_pixel(normalized - 1, origin, extent), pixel));
+        }
+        if (normalized < 65535) {
+            EXPECT_LE(error, distance(normalized_to_pixel(normalized + 1, origin, extent), pixel));
+        }
+        return normalized;
+    };
+    for (const LONG extent : { 65537, 76800, 131071, 131072 }) {
+        SCOPED_TRACE(extent);
+        const LONG origin = -extent / 2;
+        LONG previous = 0;
+        int unreachable = 0;
+        for (LONG offset = 0; offset < extent; ++offset) {
+            const auto pixel = origin + offset;
+            const auto normalized = check_nearest(pixel, origin, extent);
+            ASSERT_GE(normalized, previous);
+            previous = normalized;
+            if (normalized_to_pixel(normalized, origin, extent) != pixel) ++unreachable;
+        }
+        EXPECT_GT(unreachable, 0);
+        EXPECT_EQ(0, pixel_to_normalized(origin, origin, extent));
+        EXPECT_EQ(65535, pixel_to_normalized(origin + extent - 1, origin, extent));
+    }
+    const auto extent = (std::numeric_limits<LONG>::max)();
+    const LONG origin = -extent / 2;
+    const LONG offsets[] = { 0, 1, 2, 32766, 32767, 32768, 1234567, extent / 2, extent - 2, extent - 1 };
+    for (const auto offset : offsets) {
+        check_nearest(origin + offset, origin, extent);
     }
 }
 
