@@ -56,6 +56,13 @@ public sealed class KeyboardEvent : InputEvent
         }
         set
         {
+            value = value.Trim();
+            if (value.Length == 1 && value[0] is >= '0' and <= '9')
+            {
+                VirtualKeyCode = value[0];
+                return;
+            }
+
             if (Enum.TryParse<VirtualKey>(value, true, out var keyCode))
             {
                 KeyCode = keyCode;

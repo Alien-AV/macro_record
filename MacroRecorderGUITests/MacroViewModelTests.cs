@@ -52,8 +52,7 @@ public class MacroViewModelTests
         var secondMacro = viewModel.AddNewTab();
         var thirdMacro = viewModel.AddNewTab();
 
-        viewModel.SynchronizeTabOrder([thirdMacro, firstMacro, secondMacro]);
-        viewModel.SelectedTabIndex = 1;
+        viewModel.SynchronizeTabs([thirdMacro, firstMacro, secondMacro], firstMacro);
         viewModel.CloseTab(thirdMacro);
 
         CollectionAssert.AreEqual(
@@ -61,5 +60,59 @@ public class MacroViewModelTests
             viewModel.MacroTabs.ToArray());
         Assert.AreSame(firstMacro, viewModel.ActiveMacro);
         Assert.AreEqual(0, viewModel.SelectedTabIndex);
+    }
+
+    [TestMethod]
+    public void CommandsAndRecordingFollowTheSelectedTabAfterReorder()
+    {
+        var recordEngine = new FakeRecordEngine();
+        var playbackEngine = new FakePlaybackEngine();
+        var viewModel = new FakeMainWindowViewModel(recordEngine, playbackEngine);
+        var firstMacro = viewModel.ActiveMacro!;
+        var secondMacro = viewModel.AddNewTab();
+        var thirdMacro = viewModel.AddNewTab();
+        var firstEvent = new MouseInputEvent(1, 2, MouseActionTypeFlags.Move);
+        firstMacro.AddEvent(firstEvent);
+
+        viewModel.SynchronizeTabs([thirdMacro, firstMacro, secondMacro], firstMacro);
+        viewModel.ActiveMacro!.PlayMacro();
+
+        CollectionAssert.AreEqual(new[] { thirdMacro, firstMacro, secondMacro }, viewModel.MacroTabs.ToArray());
+        Assert.AreSame(firstMacro, viewModel.ActiveMacro);
+        Assert.IsTrue(playbackEngine.PlayedEvents.Contains(firstEvent));
+
+        var recordedEvent = FakeRecordEngine.MakeKeyboardEvent(65, false, 123);
+        recordEngine.PushEvent(recordedEvent);
+        Assert.AreSame(recordedEvent, firstMacro.Events[1].OriginalProtobufInputEvent);
+        Assert.HasCount(0, secondMacro.Events);
+        Assert.HasCount(0, thirdMacro.Events);
+
+        viewModel.ActiveMacro.Clear();
+        Assert.HasCount(0, firstMacro.Events);
+        viewModel.CloseTab(thirdMacro);
+        Assert.AreSame(firstMacro, viewModel.ActiveMacro);
+        Assert.AreEqual(0, viewModel.SelectedTabIndex);
+    }
+
+    [TestMethod]
+    public void ReorderIgnoresTransientRemovalAndPreservesSelectionUntilTheViewSelectsATab()
+    {
+        var viewModel = new MainWindowViewModel(new FakeRecordEngine(), new FakePlaybackEngine());
+        var firstMacro = viewModel.ActiveMacro!;
+        var secondMacro = viewModel.AddNewTab();
+        var thirdMacro = viewModel.AddNewTab();
+        viewModel.SelectedTabIndex = 0;
+
+        viewModel.SynchronizeTabs([secondMacro, thirdMacro], secondMacro);
+        Assert.AreSame(firstMacro, viewModel.ActiveMacro);
+        CollectionAssert.AreEqual(new[] { firstMacro, secondMacro, thirdMacro }, viewModel.MacroTabs.ToArray());
+
+        viewModel.SynchronizeTabs([secondMacro, thirdMacro, firstMacro], null);
+        Assert.AreSame(firstMacro, viewModel.ActiveMacro);
+        Assert.AreEqual(2, viewModel.SelectedTabIndex);
+
+        viewModel.SynchronizeTabs([secondMacro, thirdMacro, firstMacro], thirdMacro);
+        Assert.AreSame(thirdMacro, viewModel.ActiveMacro);
+        Assert.AreEqual(1, viewModel.SelectedTabIndex);
     }
 }

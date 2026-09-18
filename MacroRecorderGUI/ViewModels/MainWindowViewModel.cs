@@ -110,8 +110,17 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
         }
     }
 
-    public void SynchronizeTabOrder(IReadOnlyList<MacroViewModel> orderedMacros)
+    public void SynchronizeTabs(IReadOnlyList<MacroViewModel> orderedMacros, MacroViewModel? selectedMacro)
     {
+        // A reorder can report removal before reinsertion. Wait for the complete tab set.
+        if (orderedMacros.Count != MacroTabs.Count
+            || orderedMacros.Distinct().Count() != MacroTabs.Count
+            || orderedMacros.Any(macro => !MacroTabs.Contains(macro)))
+        {
+            return;
+        }
+
+        var selection = selectedMacro ?? ActiveMacro;
         for (var targetIndex = 0; targetIndex < orderedMacros.Count; targetIndex++)
         {
             var currentIndex = MacroTabs.IndexOf(orderedMacros[targetIndex]);
@@ -120,6 +129,9 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
                 MacroTabs.Move(currentIndex, targetIndex);
             }
         }
+
+        SelectedTabIndex = selection is null ? -1 : MacroTabs.IndexOf(selection);
+        OnPropertyChanged(nameof(ActiveMacro));
     }
 
     private void RecordEngineOnRecordStatus(object? sender, RecordEngine.RecordStatusEventArgs e)

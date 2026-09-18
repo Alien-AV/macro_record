@@ -1,6 +1,5 @@
-using Windows.Storage;
-using Windows.Storage.Pickers;
-using Windows.Storage.Streams;
+using Microsoft.UI;
+using Microsoft.Windows.Storage.Pickers;
 using MacroRecorderGUI.Event;
 
 namespace MacroRecorderGUI.Utils;
@@ -12,14 +11,13 @@ internal static class FileOperations
     internal static async Task<string?> SaveEventsToFileAsync(
         IEnumerable<InputEvent> inputEvents,
         string name,
-        nint windowHandle)
+        WindowId windowId)
     {
-        var savePicker = new FileSavePicker
+        var savePicker = new FileSavePicker(windowId)
         {
             SuggestedFileName = Path.GetFileNameWithoutExtension(name)
         };
         savePicker.FileTypeChoices.Add("Macro files", new List<string> { ".macro" });
-        WinRT.Interop.InitializeWithWindow.Initialize(savePicker, windowHandle);
 
         var file = await savePicker.PickSaveFileAsync();
         if (file is null)
@@ -28,16 +26,15 @@ internal static class FileOperations
         }
 
         var serializedEvents = SerializeEvents.SerializeEventsToByteArray(inputEvents);
-        await FileIO.WriteBytesAsync(file, serializedEvents);
-        return file.Name;
+        await File.WriteAllBytesAsync(file.Path, serializedEvents);
+        return Path.GetFileName(file.Path);
     }
 
-    internal static async Task<LoadedMacro?> LoadEventsFromFileAsync(nint windowHandle)
+    internal static async Task<LoadedMacro?> LoadEventsFromFileAsync(WindowId windowId)
     {
-        var openPicker = new FileOpenPicker();
+        var openPicker = new FileOpenPicker(windowId);
         openPicker.FileTypeFilter.Add(".macro");
         openPicker.FileTypeFilter.Add("*");
-        WinRT.Interop.InitializeWithWindow.Initialize(openPicker, windowHandle);
 
         var file = await openPicker.PickSingleFileAsync();
         if (file is null)
@@ -45,14 +42,8 @@ internal static class FileOperations
             return null;
         }
 
-        var buffer = await FileIO.ReadBufferAsync(file);
-        var serializedEvents = new byte[buffer.Length];
-        using (var reader = DataReader.FromBuffer(buffer))
-        {
-            reader.ReadBytes(serializedEvents);
-        }
-
+        var serializedEvents = await File.ReadAllBytesAsync(file.Path);
         var events = SerializeEvents.DeserializeEventsFromByteArray(serializedEvents).ToList();
-        return new LoadedMacro(file.Name, events);
+        return new LoadedMacro(Path.GetFileName(file.Path), events);
     }
 }

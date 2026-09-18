@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
+using Windows.Foundation.Collections;
 using Windows.Graphics;
 using Windows.System;
 using MacroRecorderGUI.Utils;
@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
 {
     private GlobalHotkeys? _globalHotkeys;
     private bool _synchronizingTabs;
+    private bool _fileOperationInProgress;
 
     public MainWindow()
     {
@@ -171,34 +172,61 @@ public sealed partial class MainWindow : Window
     private async void SaveEvents_Click(object sender, RoutedEventArgs e)
     {
         var macro = ViewModel.ActiveMacro;
-        if (macro is null)
+        if (macro is null || _fileOperationInProgress)
         {
             return;
         }
 
-        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var newName = await FileOperations.SaveEventsToFileAsync(macro.Events, macro.Name, windowHandle);
-        if (newName is not null)
+        _fileOperationInProgress = true;
+        try
         {
-            macro.Name = newName;
-            StatusText.Text = $"Saved {newName}";
+            var newName = await FileOperations.SaveEventsToFileAsync(macro.Events, macro.Name, AppWindow.Id);
+            if (newName is not null)
+            {
+                macro.Name = newName;
+                StatusText.Text = $"Saved {newName}";
+            }
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"Could not save macro: {exception.Message}";
+        }
+        finally
+        {
+            _fileOperationInProgress = false;
         }
     }
 
     private async void LoadEvents_Click(object sender, RoutedEventArgs e)
     {
-        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        var loadedMacro = await FileOperations.LoadEventsFromFileAsync(windowHandle);
-        if (loadedMacro is null)
+        if (_fileOperationInProgress)
         {
             return;
         }
 
-        var macro = ViewModel.AddNewTab();
-        macro.PopulateEventCollectionWithNewEvents(loadedMacro.Events);
-        macro.Name = loadedMacro.Name;
-        AddTab(macro, select: true);
-        StatusText.Text = $"Loaded {loadedMacro.Name}";
+        _fileOperationInProgress = true;
+        try
+        {
+            var loadedMacro = await FileOperations.LoadEventsFromFileAsync(AppWindow.Id);
+            if (loadedMacro is null)
+            {
+                return;
+            }
+
+            var macro = ViewModel.AddNewTab();
+            macro.PopulateEventCollectionWithNewEvents(loadedMacro.Events);
+            macro.Name = loadedMacro.Name;
+            AddTab(macro, select: true);
+            StatusText.Text = $"Loaded {loadedMacro.Name}";
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"Could not load macro: {exception.Message}";
+        }
+        finally
+        {
+            _fileOperationInProgress = false;
+        }
     }
 
     private void AddTab_Click(object sender, RoutedEventArgs e)
@@ -228,12 +256,21 @@ public sealed partial class MainWindow : Window
         };
 
         macro.PropertyChanged += Macro_PropertyChanged;
-        MacroTabs.TabItems.Add(tab);
-
-        if (select)
+        _synchronizingTabs = true;
+        try
         {
-            MacroTabs.SelectedItem = tab;
+            MacroTabs.TabItems.Add(tab);
+            if (select)
+            {
+                MacroTabs.SelectedItem = tab;
+            }
         }
+        finally
+        {
+            _synchronizingTabs = false;
+        }
+
+        SynchronizeTabsFromView();
     }
 
     private void MacroTabs_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
@@ -255,26 +292,35 @@ public sealed partial class MainWindow : Window
         {
             _synchronizingTabs = false;
         }
+
+        SynchronizeTabsFromView();
     }
 
     private void MacroTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!_synchronizingTabs)
-        {
-            ViewModel.SelectedTabIndex = MacroTabs.SelectedIndex;
-        }
+        SynchronizeTabsFromView();
     }
 
-    private void MacroTabs_TabDragCompleted(TabView sender, TabViewTabDragCompletedEventArgs args)
+    private void MacroTabs_TabItemsChanged(TabView sender, IVectorChangedEventArgs args)
     {
-        var orderedMacros = sender.TabItems
+        SynchronizeTabsFromView();
+    }
+
+    private void SynchronizeTabsFromView()
+    {
+        if (_synchronizingTabs)
+        {
+            return;
+        }
+
+        var orderedMacros = MacroTabs.TabItems
             .OfType<TabViewItem>()
             .Select(tab => tab.Tag)
             .OfType<MacroViewModel>()
             .ToList();
 
-        ViewModel.SynchronizeTabOrder(orderedMacros);
-        ViewModel.SelectedTabIndex = sender.SelectedIndex;
+        var selectedMacro = (MacroTabs.SelectedItem as TabViewItem)?.Tag as MacroViewModel;
+        ViewModel.SynchronizeTabs(orderedMacros, selectedMacro);
     }
 
     private void Macro_PropertyChanged(object? sender, PropertyChangedEventArgs e)

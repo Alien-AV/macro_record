@@ -76,46 +76,53 @@
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8">
-            <StackPanel Spacing="10">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <CheckBox
-                        x:Name="ClearListOnStartRecord"
-                        Content="Clear events before recording"
-                        IsChecked="True"
-                        VerticalAlignment="Center" />
-                    <CheckBox
-                        Content="Loop playback"
-                        IsChecked="{Binding LoopPlayback, Mode=TwoWay}"
-                        VerticalAlignment="Center" />
-                    <Rectangle Width="1" Height="24" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                    <Button Content="Add mouse event" Click="CreateMouseEventManually_Click" />
-                    <Button Content="Add keyboard event" Click="CreateKeyboardEventManually_Click" />
-                    <Button Content="Remove selected" Click="RemoveEvent_Click" />
-                    <Button Content="Clear all" Click="ClearList_Click" />
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Auto"
+                HorizontalScrollMode="Enabled"
+                VerticalScrollBarVisibility="Disabled"
+                VerticalScrollMode="Disabled">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <CheckBox
+                            x:Name="ClearListOnStartRecord"
+                            Content="Clear events before recording"
+                            IsChecked="True"
+                            VerticalAlignment="Center" />
+                        <CheckBox
+                            Content="Loop playback"
+                            IsChecked="{Binding LoopPlayback, Mode=TwoWay}"
+                            VerticalAlignment="Center" />
+                        <Rectangle Width="1" Height="24" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                        <Button Content="Add mouse event" Click="CreateMouseEventManually_Click" />
+                        <Button Content="Add keyboard event" Click="CreateKeyboardEventManually_Click" />
+                        <Button Content="Remove selected" Click="RemoveEvent_Click" />
+                        <Button Content="Clear all" Click="ClearList_Click" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Delay (µs)" VerticalAlignment="Center" />
+                        <TextBox
+                            x:Name="DelayTextBox"
+                            Width="100"
+                            BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
+                            Text="5000" />
+                        <Button Content="Apply to selected" Click="ChangeDelays_Click" />
+                        <CheckBox
+                            x:Name="AutoChangeDelay"
+                            Content="Apply after recording"
+                            VerticalAlignment="Center" />
+                        <Button
+                            Content="Convert mouse positions to absolute"
+                            Click="ConvertMouseEventsToAbsolutePositioning_Click" />
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock Text="Delay (µs)" VerticalAlignment="Center" />
-                    <TextBox
-                        x:Name="DelayTextBox"
-                        Width="100"
-                        BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
-                        Text="5000" />
-                    <Button Content="Apply to selected" Click="ChangeDelays_Click" />
-                    <CheckBox
-                        x:Name="AutoChangeDelay"
-                        Content="Apply after recording"
-                        VerticalAlignment="Center" />
-                    <Button
-                        Content="Convert mouse positions to absolute"
-                        Click="ConvertMouseEventsToAbsolutePositioning_Click" />
-                </StackPanel>
-            </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <TabView
             x:Name="MacroTabs"
             Grid.Row="2"
             Margin="12,0,12,0"
+            CanDragTabs="True"
             CanReorderTabs="True"
             CloseButtonOverlayMode="OnPointerOver"
             IsAddTabButtonVisible="True"
@@ -123,7 +130,7 @@
             AddTabButtonClick="MacroTabs_AddTabButtonClick"
             SelectionChanged="MacroTabs_SelectionChanged"
             TabCloseRequested="MacroTabs_TabCloseRequested"
-            TabDragCompleted="MacroTabs_TabDragCompleted" />
+            TabItemsChanged="MacroTabs_TabItemsChanged" />
 
         <Border
             Grid.Row="3"
