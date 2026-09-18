@@ -93,21 +93,7 @@ public sealed class MacroViewModel : ViewModelBase
 
     public void ConvertMouseEventsToAbsolutePositioning()
     {
-        var currentX = 0;
-        var currentY = 0;
-
-        foreach (var mouseEvent in Events.OfType<MouseEvent>())
-        {
-            if (mouseEvent.RelativePosition)
-            {
-                mouseEvent.RelativePosition = false;
-                mouseEvent.X += currentX;
-                mouseEvent.Y += currentY;
-            }
-
-            currentX = mouseEvent.X;
-            currentY = mouseEvent.Y;
-        }
+        MouseEvent.ConvertToAbsolutePositioning(Events.OfType<MouseEvent>());
     }
 
     public void CreateKeyboardEventManually()

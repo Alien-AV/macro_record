@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using RecordPlaybackDLLEnums;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 
@@ -222,11 +221,6 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
     private void RecordEngineOnRecordStatus(object? sender, RecordEngine.RecordStatusEventArgs e)
     {
-        if (e.StatusCode == StatusCode.PlaybackFinished)
-        {
-            return;
-        }
-
         InvokeDispatcher(() =>
             StatusMessageRequested?.Invoke(this, $"Status reported: \"{e.StatusCode}\"."));
     }

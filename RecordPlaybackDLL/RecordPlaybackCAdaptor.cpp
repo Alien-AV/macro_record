@@ -42,7 +42,7 @@ record_playback::PlaybackSession playback_session([](const Event& event) {
 	if (const auto keyboard = dynamic_cast<const KeyboardEvent*>(&event))
 		return WindowsInjectionAPI::playback_keyboard_event(keyboard->virtualKeyCode, keyboard->keyUp);
 	if (const auto mouse = dynamic_cast<const MouseEvent*>(&event))
-		return WindowsInjectionAPI::playback_mouse_event(mouse->x, mouse->y, mouse->wheelRotation, mouse->relative_position, mouse->ActionType);
+		return WindowsInjectionAPI::playback_mouse_event(mouse->x, mouse->y, mouse->wheelRotation, mouse->relative_position, mouse->ActionType, mouse->mappedToVirtualDesktop);
 	return false;
 }, true);
 }

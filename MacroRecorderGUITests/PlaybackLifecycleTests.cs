@@ -99,7 +99,7 @@ public class PlaybackLifecycleTests
         var second = vm.PlayActiveMacro();
         firstDone.SetResult();
         await first;
-        record.PushStatus(StatusCode.PlaybackFinished);
+        record.PushStatus(StatusCode.ErrorCouldNotProcessInputData);
         Assert.AreEqual(2, engine.Starts);
         Assert.AreSame(secondMacro, vm.PlayingMacro);
         secondDone.SetResult();
@@ -149,7 +149,7 @@ public class PlaybackLifecycleTests
     }
 
     [TestMethod]
-    public async Task DisposalIgnoresLateCompletionAndRecorderPlaybackStatus()
+    public async Task DisposalIgnoresLateCompletionAndRecorderStatus()
     {
         var record = new FakeRecordEngine();
         var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -162,7 +162,7 @@ public class PlaybackLifecycleTests
         vm.Dispose();
         pending.SetResult();
         await task;
-        record.PushStatus(StatusCode.PlaybackFinished);
+        record.PushStatus(StatusCode.ErrorCouldNotProcessInputData);
         Assert.IsTrue(engine.Disposed);
         Assert.AreEqual(1, engine.Starts);
         Assert.AreEqual(0, messages.Count);

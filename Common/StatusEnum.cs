@@ -7,8 +7,7 @@ namespace RecordPlaybackDLLEnums
 {
     public enum StatusCode
     {
-        PlaybackFinished,
-        ErrorCouldNotProcessInputData,
+        ErrorCouldNotProcessInputData = 1,
     };
 }
 
