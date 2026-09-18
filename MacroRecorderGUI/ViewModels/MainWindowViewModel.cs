@@ -72,6 +72,9 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
             });
         }
         catch (OperationCanceledException) { }
+        // AbortPlayback reports this failure synchronously, before another macro
+        // can start. Do not duplicate it from a delayed task continuation.
+        catch (PlaybackStoppedException) { }
         catch (Exception error)
         {
             InvokeDispatcher(() =>
@@ -99,15 +102,25 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         try
         {
             PlaybackEngine.PlaybackEventAbort();
-            ++_playbackVersion;
-            _playingMacro = null;
-            OnPropertyChanged(nameof(PlayingMacro));
+            ClearPlaybackOwnership();
             StatusMessageRequested?.Invoke(this, "Playback aborted");
+        }
+        catch (PlaybackStoppedException error)
+        {
+            ClearPlaybackOwnership();
+            StatusMessageRequested?.Invoke(this, $"Playback stopped with an error: {error.Message}");
         }
         catch (Exception error)
         {
             StatusMessageRequested?.Invoke(this, $"Could not abort playback: {error.Message}");
         }
+    }
+
+    private void ClearPlaybackOwnership()
+    {
+        ++_playbackVersion;
+        _playingMacro = null;
+        OnPropertyChanged(nameof(PlayingMacro));
     }
 
     public void Dispose()

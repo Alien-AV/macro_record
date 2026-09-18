@@ -27,6 +27,10 @@ internal interface IPlaybackNativeApi
     PlaybackResult SetLoop(ulong sessionId, bool loop);
 }
 
+// Abort joined this session, but cleanup failed. The abort caller reports the
+// error synchronously; the session task carries the same failure for awaiters.
+internal sealed class PlaybackStoppedException(string message) : InvalidOperationException(message);
+
 internal sealed class PlaybackEngine : IPlaybackEngine
 {
     private sealed record Session(ulong Id, TaskCompletionSource Completion);
@@ -91,7 +95,11 @@ internal sealed class PlaybackEngine : IPlaybackEngine
 
     public void PlaybackEventAbort()
     {
-        lock (_gate) AbortActive();
+        lock (_gate)
+        {
+            var failure = AbortActive();
+            if (failure is not null) throw failure;
+        }
     }
 
     public void SetLoopPlayback(bool loop)
@@ -105,14 +113,22 @@ internal sealed class PlaybackEngine : IPlaybackEngine
         }
     }
 
-    private void AbortActive()
+    private PlaybackStoppedException? AbortActive()
     {
-        if (_active is not { } session) return;
+        if (_active is not { } session) return null;
         // Native Abort does not return until injection and cleanup have stopped.
         // Keep ownership if interop itself fails, so another start cannot overlap.
         var result = _native.Abort(session.Id);
         _active = null;
-        Complete(session, result == PlaybackResult.Finished ? PlaybackResult.Cancelled : result);
+        if (result is PlaybackResult.Finished or PlaybackResult.Cancelled)
+        {
+            session.Completion.TrySetCanceled();
+            return null;
+        }
+
+        var failure = new PlaybackStoppedException(PlaybackError(result).Message);
+        session.Completion.TrySetException(failure);
+        return failure;
     }
 
     public void Dispose()
@@ -121,7 +137,9 @@ internal sealed class PlaybackEngine : IPlaybackEngine
         {
             if (_disposed) return;
             _disposed = true;
-            AbortActive();
+            // The session task preserves cleanup errors. A terminal failure must
+            // not escape through the window's synchronous shutdown callback.
+            _ = AbortActive();
         }
     }
 

@@ -14,6 +14,8 @@ public class PlaybackLifecycleTests
     {
         public PlaybackResult Result = PlaybackResult.Running;
         public PlaybackResult StartResult = PlaybackResult.Running;
+        public PlaybackResult AbortResult = PlaybackResult.Cancelled;
+        public Exception? AbortError;
         public int Starts;
         public int Aborts;
         public byte[] Bytes = [];
@@ -26,11 +28,111 @@ public class PlaybackLifecycleTests
             return StartResult;
         }
         public PlaybackResult Poll(ulong sessionId) => Result;
-        public PlaybackResult Abort(ulong sessionId) { Aborts++; return PlaybackResult.Cancelled; }
+        public PlaybackResult Abort(ulong sessionId)
+        {
+            Aborts++;
+            if (AbortError is not null) throw AbortError;
+            return AbortResult;
+        }
         public PlaybackResult SetLoop(ulong sessionId, bool loop) { Loop = loop; return Result; }
     }
 
     private static KeyboardEvent Key() => new(VirtualKey.A, false);
+
+    private sealed class QueuedViewModel(IPlaybackEngine engine)
+        : MainWindowViewModel(new FakeRecordEngine(), engine)
+    {
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _callbacks = new();
+        protected override void InvokeDispatcher(Action action) => _callbacks.Enqueue(action);
+        public void DrainCallbacks()
+        {
+            while (_callbacks.TryDequeue(out var action)) action();
+        }
+    }
+
+    [TestMethod]
+    public async Task AbortCleanupFailureIsReportedOnceAndLateCompletionCannotClearRestart()
+    {
+        var native = new FakeNative { AbortResult = PlaybackResult.InjectionFailed };
+        using var vm = new QueuedViewModel(new PlaybackEngine(native));
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        vm.ActiveMacro!.AddEvent(Key());
+        var first = vm.PlayActiveMacro();
+
+        vm.AbortPlayback();
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.IsFalse(messages.Contains("Playback aborted"));
+        Assert.AreEqual(1, messages.Count(message => message.Contains("inject or release")));
+
+        var secondMacro = vm.AddNewTab();
+        secondMacro.AddEvent(Key());
+        var second = vm.PlayActiveMacro();
+        await first.WaitAsync(TimeSpan.FromSeconds(2));
+        vm.DrainCallbacks();
+        Assert.AreEqual(2, native.Starts);
+        Assert.AreSame(secondMacro, vm.PlayingMacro);
+        Assert.AreEqual(1, messages.Count(message => message.Contains("inject or release")));
+
+        native.AbortResult = PlaybackResult.Cancelled;
+        vm.AbortPlayback();
+        await second.WaitAsync(TimeSpan.FromSeconds(2));
+        vm.DrainCallbacks();
+    }
+
+    [TestMethod]
+    public async Task EngineAbortReportsCleanupFailureSynchronouslyAndThroughSessionTask()
+    {
+        var native = new FakeNative { AbortResult = PlaybackResult.InjectionFailed };
+        using var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        var error = Assert.Throws<InvalidOperationException>(engine.PlaybackEventAbort);
+        StringAssert.Contains(error.Message, "inject or release");
+        var taskError = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
+        StringAssert.Contains(taskError.Message, "inject or release");
+        Assert.AreEqual(1, native.Aborts);
+    }
+
+    [TestMethod]
+    public async Task CleanupFailureDuringDisposeDoesNotEscapeWindowShutdown()
+    {
+        var native = new FakeNative { AbortResult = PlaybackResult.InjectionFailed };
+        var engine = new PlaybackEngine(native);
+        var vm = new QueuedViewModel(engine);
+        vm.ActiveMacro!.AddEvent(Key());
+        var task = vm.PlayActiveMacro();
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+
+        vm.Dispose();
+        vm.Dispose();
+        await task.WaitAsync(TimeSpan.FromSeconds(2));
+        vm.DrainCallbacks();
+        Assert.AreEqual(1, native.Aborts);
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.AreEqual(0, messages.Count);
+        Assert.ThrowsExactly<ObjectDisposedException>(() => engine.PlaybackEventsAsync([Key()]));
+    }
+
+    [TestMethod]
+    public async Task AbortInteropFailureKeepsOwnershipUntilSuccessfulRetry()
+    {
+        var native = new FakeNative { AbortError = new InvalidOperationException("fake interop failure") };
+        using var vm = new QueuedViewModel(new PlaybackEngine(native));
+        vm.ActiveMacro!.AddEvent(Key());
+        var owner = vm.ActiveMacro;
+        var task = vm.PlayActiveMacro();
+        vm.AbortPlayback();
+        Assert.AreSame(owner, vm.PlayingMacro);
+        await vm.PlayActiveMacro();
+        Assert.AreEqual(1, native.Starts);
+
+        native.AbortError = null;
+        vm.AbortPlayback();
+        await task.WaitAsync(TimeSpan.FromSeconds(2));
+        vm.DrainCallbacks();
+        Assert.IsNull(vm.PlayingMacro);
+    }
 
     [TestMethod]
     public async Task EngineSerializesSnapshotAndRejectsOverlapUntilAbort()
