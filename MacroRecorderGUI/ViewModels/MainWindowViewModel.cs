@@ -19,6 +19,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
     private bool _disposed;
     private long _playbackVersion;
     private MacroViewModel? _playingMacro;
+    private Task? _playbackCompletion;
 
     public MainWindowViewModel()
         : this(new RecordEngine(), new PlaybackEngine())
@@ -60,16 +61,14 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         var version = ++_playbackVersion;
         _playingMacro = macro;
         OnPropertyChanged(nameof(PlayingMacro));
+        string? completionMessage = null;
         try
         {
             var completion = PlaybackEngine.PlaybackEventsAsync(macro.Events.ToArray(), LoopPlayback);
+            _playbackCompletion = completion;
             StatusMessageRequested?.Invoke(this, $"Playing {macro.Name}");
             await completion;
-            InvokeDispatcher(() =>
-            {
-                if (!_disposed && version == _playbackVersion)
-                    StatusMessageRequested?.Invoke(this, $"Playback finished: {macro.Name}");
-            });
+            completionMessage = $"Playback finished: {macro.Name}";
         }
         catch (OperationCanceledException) { }
         // AbortPlayback reports this failure synchronously, before another macro
@@ -77,11 +76,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         catch (PlaybackStoppedException) { }
         catch (Exception error)
         {
-            InvokeDispatcher(() =>
-            {
-                if (!_disposed && version == _playbackVersion)
-                    StatusMessageRequested?.Invoke(this, $"Could not play macro: {error.Message}");
-            });
+            completionMessage = $"Could not play macro: {error.Message}";
         }
         finally
         {
@@ -89,8 +84,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
             {
                 if (version == _playbackVersion)
                 {
-                    _playingMacro = null;
-                    OnPropertyChanged(nameof(PlayingMacro));
+                    // Consume the completion and its status in one UI callback.
+                    // Abort can inspect the task until this callback runs.
+                    ClearPlaybackOwnership();
+                    if (!_disposed && completionMessage is not null)
+                        StatusMessageRequested?.Invoke(this, completionMessage);
                 }
             });
         }
@@ -98,17 +96,21 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
     public void AbortPlayback()
     {
-        if (_disposed) return;
+        if (_disposed || _playingMacro is null) return;
         try
         {
             PlaybackEngine.PlaybackEventAbort();
-            ClearPlaybackOwnership();
-            StatusMessageRequested?.Invoke(this, "Playback aborted");
+            // Poll may have already collected a native failure and released its
+            // worker while the UI continuation is still queued. Consume that
+            // failure before invalidating the old completion's version.
+            var failure = _playbackCompletion is { IsFaulted: true } completion
+                ? completion.Exception!.GetBaseException()
+                : null;
+            CompleteAbort(failure);
         }
         catch (PlaybackStoppedException error)
         {
-            ClearPlaybackOwnership();
-            StatusMessageRequested?.Invoke(this, $"Playback stopped with an error: {error.Message}");
+            CompleteAbort(error);
         }
         catch (Exception error)
         {
@@ -116,10 +118,19 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         }
     }
 
+    private void CompleteAbort(Exception? error)
+    {
+        ClearPlaybackOwnership();
+        StatusMessageRequested?.Invoke(this, error is null
+            ? "Playback aborted"
+            : $"Playback stopped with an error: {error.Message}");
+    }
+
     private void ClearPlaybackOwnership()
     {
         ++_playbackVersion;
         _playingMacro = null;
+        _playbackCompletion = null;
         OnPropertyChanged(nameof(PlayingMacro));
     }
 
@@ -132,6 +143,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
         PlaybackEngine.Dispose();
         _playingMacro = null;
+        _playbackCompletion = null;
     }
 
     public int SelectedTabIndex

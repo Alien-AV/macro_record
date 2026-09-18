@@ -50,6 +50,87 @@ public class PlaybackLifecycleTests
         }
     }
 
+    private sealed class ControlledUiContext : SynchronizationContext, IDisposable
+    {
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _callbacks = new();
+        private readonly SemaphoreSlim _posted = new(0);
+
+        public override void Post(SendOrPostCallback callback, object? state)
+        {
+            _callbacks.Enqueue(() => callback(state));
+            _posted.Release();
+        }
+
+        public T Run<T>(Func<T> action)
+        {
+            var previous = Current;
+            SetSynchronizationContext(this);
+            try { return action(); }
+            finally { SetSynchronizationContext(previous); }
+        }
+
+        public void Run(Action action) => Run(() => { action(); return true; });
+        public Task<bool> WaitForCallbackAsync() => _posted.WaitAsync(TimeSpan.FromSeconds(2));
+
+        public void RunNextCallback()
+        {
+            Assert.IsTrue(_callbacks.TryDequeue(out var callback));
+            Run(callback);
+        }
+
+        public void Dispose() => _posted.Dispose();
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task PolledFailureSurvivesAbortAndCannotReportAfterNewPlayback(bool dispatchFailureBeforeAbort)
+    {
+        using var ui = new ControlledUiContext();
+        var native = new FakeNative { Result = PlaybackResult.InjectionFailed };
+        using var vm = ui.Run(() => new MainWindowViewModel(new FakeRecordEngine(), new PlaybackEngine(native)));
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        var first = ui.Run(() =>
+        {
+            vm.ActiveMacro!.AddEvent(Key());
+            return vm.PlayActiveMacro();
+        });
+
+        // Poll has faulted the engine task and posted the real await continuation.
+        // The UI queue is held explicitly; no timing sleep controls this ordering.
+        Assert.IsTrue(await ui.WaitForCallbackAsync());
+        Assert.IsFalse(first.IsCompleted);
+        if (dispatchFailureBeforeAbort) ui.RunNextCallback();
+
+        ui.Run(vm.AbortPlayback);
+        Assert.AreEqual(0, native.Aborts);
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.IsFalse(messages.Contains("Playback aborted"));
+        Assert.AreEqual(1, messages.Count(message => message.Contains("inject or release")));
+
+        native.Result = PlaybackResult.Running;
+        var secondMacro = ui.Run(vm.AddNewTab);
+        var second = ui.Run(() =>
+        {
+            secondMacro.AddEvent(Key());
+            return vm.PlayActiveMacro();
+        });
+        var messagesBeforeOldContinuation = messages.ToArray();
+        if (!dispatchFailureBeforeAbort) ui.RunNextCallback();
+        await first.WaitAsync(TimeSpan.FromSeconds(2));
+        CollectionAssert.AreEqual(messagesBeforeOldContinuation, messages);
+        Assert.AreEqual(2, native.Starts);
+        Assert.AreSame(secondMacro, vm.PlayingMacro);
+        Assert.IsFalse(second.IsCompleted);
+
+        ui.Run(vm.AbortPlayback);
+        Assert.IsTrue(await ui.WaitForCallbackAsync());
+        ui.RunNextCallback();
+        await second.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.IsNull(vm.PlayingMacro);
+    }
+
     [TestMethod]
     public async Task AbortCleanupFailureIsReportedOnceAndLateCompletionCannotClearRestart()
     {
