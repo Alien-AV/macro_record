@@ -14,8 +14,11 @@ Macro Recorder is an x64 Windows desktop application with a C# WinUI 3 front end
 The checked-in `vcpkg.json` manifest pins the native protobuf runtime to a version compatible with the checked-in generated sources. A full solution restore handles both NuGet and vcpkg. To restore the native manifest separately from a Visual Studio developer shell, use the bundled client:
 
 ```powershell
+$env:VCPKG_MAX_CONCURRENCY = '4'
 & "${env:VCInstallDir}vcpkg\vcpkg.exe" install --triplet x64-windows-static
 ```
+
+Setting `VCPKG_MAX_CONCURRENCY` to `4` matches CI and limits the first dependency build to four parallel compiler jobs.
 
 The WinUI project uses Windows App SDK 2.4.0 and is configured as an unpackaged desktop application. It does not require Microsoft Store packaging or registration.
 
@@ -32,6 +35,7 @@ dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Debug -p:Platf
 Build the complete mixed C#/C++ solution from a Visual Studio developer shell:
 
 ```powershell
+$env:VCPKG_MAX_CONCURRENCY = '4'
 msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p:RestorePackagesConfig=true
 ```
 
