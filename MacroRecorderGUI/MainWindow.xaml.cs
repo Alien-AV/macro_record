@@ -79,6 +79,8 @@ public sealed partial class MainWindow : Window
         _globalHotkeys?.Dispose();
         _globalHotkeys = null;
         ViewModel.StatusMessageRequested -= ViewModel_StatusMessageRequested;
+        foreach (var tab in MacroTabs.TabItems.OfType<TabViewItem>())
+            (tab.Content as MacroTabContent)?.Dispose();
         ViewModel.Dispose();
     }
 
@@ -140,20 +142,7 @@ public sealed partial class MainWindow : Window
 
     private void ClearList_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.ActiveMacro?.Clear();
-    }
-
-    private void ChangeDelays_Click(object sender, RoutedEventArgs e)
-    {
-        if (TryGetDelay(out var delay))
-        {
-            ViewModel.ActiveMacro?.ChangeDelaysOnSelected(delay);
-        }
-    }
-
-    private void ConvertMouseEventsToAbsolutePositioning_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ActiveMacro?.ConvertMouseEventsToAbsolutePositioning();
+        if (ViewModel.ActiveMacro is { } macro) macro.Editor.Execute("Clear all", macro.Clear);
     }
 
     private async void SaveEvents_Click(object sender, RoutedEventArgs e)
@@ -271,6 +260,7 @@ public sealed partial class MainWindow : Window
         try
         {
             macro.PropertyChanged -= Macro_PropertyChanged;
+            (args.Tab.Content as MacroTabContent)?.Dispose();
             ViewModel.CloseTab(macro);
             sender.TabItems.Remove(args.Tab);
             sender.SelectedIndex = ViewModel.SelectedTabIndex;

@@ -49,7 +49,7 @@
                 </AppBarButton.Icon>
             </AppBarButton>
             <AppBarSeparator />
-            <AppBarButton Label="Playback" Click="PlayEvents_Click">
+            <AppBarButton Label="Playback · real input" Click="PlayEvents_Click">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="Play" />
                 </AppBarButton.Icon>
@@ -99,20 +99,16 @@
                         <Button Content="Clear all" Click="ClearList_Click" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="Delay (µs)" VerticalAlignment="Center" />
+                        <TextBlock Text="After recording: delay for EACH raw event (µs)" VerticalAlignment="Center" />
                         <TextBox
                             x:Name="DelayTextBox"
                             Width="100"
                             BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
                             Text="5000" />
-                        <Button Content="Apply to selected" Click="ChangeDelays_Click" />
                         <CheckBox
                             x:Name="AutoChangeDelay"
-                            Content="Apply after recording"
+                            Content="Override every raw event delay after recording"
                             VerticalAlignment="Center" />
-                        <Button
-                            Content="Convert mouse positions to absolute"
-                            Click="ConvertMouseEventsToAbsolutePositioning_Click" />
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

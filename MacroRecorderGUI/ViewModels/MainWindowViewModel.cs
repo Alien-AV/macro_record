@@ -148,7 +148,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
         RecordEngine.RecordingEnded -= RecordEngineOnRecordingEnded;
         RecordEngine.Dispose();
-        foreach (var macro in MacroTabs) macro.ContentReplaced -= MacroContentReplaced;
+        foreach (var macro in MacroTabs) { macro.ContentReplaced -= MacroContentReplaced; macro.Dispose(); }
         _pendingRecordingDelays.Clear();
         PlaybackEngine.Dispose();
         _playingMacro = null;
@@ -217,6 +217,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         if (ReferenceEquals(_playingMacro, macro)) AbortPlayback();
         if (_recordingSession?.Context is RecordingTarget target && ReferenceEquals(target.Macro, macro)) StopRecording();
         macro.ContentReplaced -= MacroContentReplaced;
+        macro.Dispose();
         MacroTabs.RemoveAt(removedIndex);
         if (MacroTabs.Count == 0)
         {

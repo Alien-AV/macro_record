@@ -20,7 +20,7 @@ public class MacroViewModelTests
 
         macro.AddEvent(firstEvent);
         macro.AddEvent(secondEvent);
-        macro.ConvertMouseEventsToAbsolutePositioning();
+        macro.Editor.ConvertAnchoredEstimate();
 
         Assert.IsFalse(secondEvent.RelativePosition);
         Assert.AreEqual(105, secondEvent.X);

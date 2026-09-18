@@ -2,6 +2,7 @@ using Google.Protobuf;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Utils;
+using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
 
 namespace MacroRecorderGUITests;
@@ -9,6 +10,12 @@ namespace MacroRecorderGUITests;
 [TestClass]
 public class MouseEventTests
 {
+    private static void Convert(params MouseEvent[] events)
+    {
+        using var macro = new MacroViewModel("conversion", new FakePlaybackEngine());
+        foreach (var input in events) macro.AddEvent(input);
+        macro.Editor.ConvertAnchoredEstimate();
+    }
     [TestMethod]
     public void NewAbsoluteEventsUsePhysicalVirtualDesktopCoordinates()
     {
@@ -80,7 +87,7 @@ public class MouseEventTests
     {
         var anchor = new MouseEvent(10, 20, MouseActionTypeFlags.Move) { MappedToVirtualDesktop = false };
         var relative = new MouseEvent(-30, -50, MouseActionTypeFlags.Move) { RelativePosition = true, TimeSinceLastEvent = 77 };
-        MouseEvent.ConvertToAbsolutePositioning([anchor, relative]);
+        Convert(anchor, relative);
         Assert.IsFalse(anchor.MappedToVirtualDesktop);
         Assert.IsTrue(relative.MappedToVirtualDesktop);
         Assert.IsFalse(relative.RelativePosition);
@@ -98,7 +105,7 @@ public class MouseEventTests
         var relative = new MouseEvent(-5, 7, MouseActionTypeFlags.Move) { RelativePosition = true };
         var wheelBefore = wheel.OriginalProtobufInputEvent.ToByteArray();
         var buttonBefore = button.OriginalProtobufInputEvent.ToByteArray();
-        MouseEvent.ConvertToAbsolutePositioning([anchor, wheel, button, relative]);
+        Convert(anchor, wheel, button, relative);
         Assert.AreEqual(-1005, relative.X);
         Assert.AreEqual(507, relative.Y);
         CollectionAssert.AreEqual(wheelBefore, wheel.OriginalProtobufInputEvent.ToByteArray());
@@ -111,25 +118,27 @@ public class MouseEventTests
         var relative = new MouseEvent(5, -5, MouseActionTypeFlags.Move) { RelativePosition = true };
         var button = new MouseEvent(100, 100, MouseActionTypeFlags.LeftDown);
         var before = relative.OriginalProtobufInputEvent.ToByteArray();
-        MouseEvent.ConvertToAbsolutePositioning([button, relative]);
+        Assert.ThrowsExactly<ArgumentException>(() => Convert(button, relative));
         CollectionAssert.AreEqual(before, relative.OriginalProtobufInputEvent.ToByteArray());
     }
 
     [TestMethod]
-    public void ConversionSaturatesOverflowAndCanMoveBackFromTheEdge()
+    public void ConversionRejectsOverflowWithoutClampingOrPartialChanges()
     {
         var anchor = new MouseEvent(int.MaxValue - 2, int.MinValue + 2, MouseActionTypeFlags.Move);
         var overflow = new MouseEvent(100, -100, MouseActionTypeFlags.Move) { RelativePosition = true };
         var back = new MouseEvent(-5, 7, MouseActionTypeFlags.Move) { RelativePosition = true };
-        MouseEvent.ConvertToAbsolutePositioning([anchor, overflow, back]);
-        Assert.AreEqual(int.MaxValue, overflow.X);
-        Assert.AreEqual(int.MinValue, overflow.Y);
-        Assert.AreEqual(int.MaxValue - 5, back.X);
-        Assert.AreEqual(int.MinValue + 7, back.Y);
+        Assert.ThrowsExactly<ArgumentException>(() => Convert(anchor, overflow, back));
+        Assert.AreEqual(100, overflow.X);
+        Assert.AreEqual(-100, overflow.Y);
+        Assert.AreEqual(-5, back.X);
+        Assert.AreEqual(7, back.Y);
+        Assert.IsTrue(overflow.RelativePosition);
+        Assert.IsTrue(back.RelativePosition);
     }
 
     [TestMethod]
-    public void ConversionResetsAtAbsoluteMovesAndIsIdempotent()
+    public void ConversionResetsAtAbsoluteMovesAndRepeatedAttemptDoesNotChangeInput()
     {
         MouseEvent[] events = [
             new(10, 20, MouseActionTypeFlags.Move),
@@ -137,14 +146,14 @@ public class MouseEventTests
             new(-300, -400, MouseActionTypeFlags.Move),
             new(3, 4, MouseActionTypeFlags.Move) { RelativePosition = true }
         ];
-        MouseEvent.ConvertToAbsolutePositioning(events);
+        Convert(events);
         Assert.AreEqual(11, events[1].X);
         Assert.AreEqual(22, events[1].Y);
         Assert.AreEqual(-297, events[3].X);
         Assert.AreEqual(-396, events[3].Y);
         Assert.AreEqual(MouseActionTypeFlags.Move | MouseActionTypeFlags.LeftDown, events[1].ActionType);
         var before = events.Select(mouse => mouse.OriginalProtobufInputEvent.ToByteArray()).ToArray();
-        MouseEvent.ConvertToAbsolutePositioning(events);
+        Assert.ThrowsExactly<ArgumentException>(() => Convert(events));
         for (var index = 0; index < events.Length; ++index)
             CollectionAssert.AreEqual(before[index], events[index].OriginalProtobufInputEvent.ToByteArray());
     }

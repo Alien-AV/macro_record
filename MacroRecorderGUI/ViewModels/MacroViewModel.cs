@@ -3,14 +3,18 @@ using Windows.System;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
+using MacroRecorderGUI.Editor;
 
 namespace MacroRecorderGUI.ViewModels;
 
-public sealed class MacroViewModel : ViewModelBase
+public sealed class MacroViewModel : ViewModelBase, IDisposable
 {
     private readonly IPlaybackEngine _playbackEngine;
     private readonly Func<MacroViewModel, Task>? _playMacro;
     private string _name;
+    private ActionEditor? _editor;
+    public ActionEditor Editor => _editor ??= new ActionEditor(this);
+    public void Dispose() => _editor?.Dispose();
 
     public MacroViewModel(string name, IPlaybackEngine playbackEngine, Func<MacroViewModel, Task>? playMacro = null)
     {
@@ -61,22 +65,18 @@ public sealed class MacroViewModel : ViewModelBase
 
     public void RemoveSelectedEvents()
     {
-        foreach (var eventToRemove in SelectedEvents.ToList())
+        Editor.Execute("Remove selected input", () =>
         {
-            Events.Remove(eventToRemove);
-        }
-
-        SelectedEvents.Clear();
+            var selected = SelectedEvents.ToHashSet();
+            SelectedEvents.Clear();
+            for (var index = Events.Count - 1; index >= 0; index--)
+                if (selected.Contains(Events[index])) Events.RemoveAt(index);
+        });
     }
 
     public void ChangeDelaysOnSelected(ulong delay)
     {
-        ChangeDelaysOnList(delay, SelectedEvents.ToList());
-    }
-
-    public void ChangeDelaysOnAll(ulong delay)
-    {
-        ChangeDelaysOnList(delay, Events);
+        Editor.Execute("Set each selected raw delay", () => ChangeDelaysOnList(delay, SelectedEvents.ToList()));
     }
 
     public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
@@ -94,19 +94,14 @@ public sealed class MacroViewModel : ViewModelBase
         Events.Add(parsedEvent);
     }
 
-    public void ConvertMouseEventsToAbsolutePositioning()
-    {
-        MouseEvent.ConvertToAbsolutePositioning(Events.OfType<MouseEvent>());
-    }
-
     public void CreateKeyboardEventManually()
     {
-        PlaceManuallyCreatedEvent(new KeyboardEvent(VirtualKey.Escape, false));
+        Editor.Execute("Add keyboard event", () => PlaceManuallyCreatedEvent(new KeyboardEvent(VirtualKey.Escape, false)));
     }
 
     public void CreateMouseEventManually()
     {
-        PlaceManuallyCreatedEvent(new MouseEvent(0, 0, MouseActionTypeFlags.Move));
+        Editor.Execute("Add mouse event", () => PlaceManuallyCreatedEvent(new MouseEvent(0, 0, MouseActionTypeFlags.Move)));
     }
 
     private static void ChangeDelaysOnList(ulong delay, IEnumerable<InputEvent> events)

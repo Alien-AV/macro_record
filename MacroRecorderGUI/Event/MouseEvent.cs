@@ -71,39 +71,6 @@ public sealed class MouseEvent : InputEvent
         }
     }
 
-    /// <summary>
-    /// Estimates physical absolute positions by accumulating raw relative counts.
-    /// Pointer acceleration/speed are not recorded, so this cannot reconstruct an
-    /// exact cursor path. Events before the first absolute move stay relative.
-    /// </summary>
-    public static void ConvertToAbsolutePositioning(IEnumerable<MouseEvent> events)
-    {
-        var hasAnchor = false;
-        var currentX = 0;
-        var currentY = 0;
-        foreach (var mouseEvent in events)
-        {
-            if ((mouseEvent.ActionType & MouseActionTypeFlags.Move) == 0) continue;
-            if (mouseEvent.RelativePosition)
-            {
-                if (!hasAnchor) continue;
-                currentX = (int)Math.Clamp((long)currentX + mouseEvent.X, int.MinValue, int.MaxValue);
-                currentY = (int)Math.Clamp((long)currentY + mouseEvent.Y, int.MinValue, int.MaxValue);
-                mouseEvent.X = currentX;
-                mouseEvent.Y = currentY;
-                mouseEvent.RelativePosition = false;
-                // Relative movement can cross monitors, even from a primary-only anchor.
-                mouseEvent.MappedToVirtualDesktop = true;
-            }
-            else
-            {
-                currentX = mouseEvent.X;
-                currentY = mouseEvent.Y;
-                hasAnchor = true;
-            }
-        }
-    }
-
     public int X
     {
         get => OriginalProtobufInputEvent.MouseEvent.X;
