@@ -16,6 +16,7 @@ internal enum HotKeyModifiers : uint
 internal sealed class GlobalHotkeys : IDisposable
 {
     private const uint WindowMessageHotKey = 0x0312;
+    private const uint NoRepeat = 0x4000;
     private static readonly UIntPtr SubclassId = new(0x4D524743);
 
     private readonly nint _windowHandle;
@@ -40,7 +41,7 @@ internal sealed class GlobalHotkeys : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var id = _nextHotKeyId++;
-        if (!RegisterHotKey(_windowHandle, id, (uint)modifiers, (uint)key))
+        if (!RegisterHotKey(_windowHandle, id, (uint)modifiers | NoRepeat, (uint)key))
         {
             return false;
         }

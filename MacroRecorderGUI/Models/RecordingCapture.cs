@@ -3,12 +3,13 @@ using ProtobufGenerated;
 namespace MacroRecorderGUI.Models;
 
 /// <summary>Keeps each capture's filter alive until its ordered native stop boundary.</summary>
-public sealed class RecordingCapture
+public sealed class RecordingCapture : IDisposable
 {
     private readonly IRecordingTransport _transport;
     private readonly object _gate = new();
     private readonly Dictionary<ulong, SessionState> _sessions = [];
     private RecordingSession? _requestedSession;
+    private bool _disposed;
 
     public RecordingCapture(IRecordingTransport transport)
     {
@@ -18,6 +19,7 @@ public sealed class RecordingCapture
     }
 
     public event Action<RecordingSession, ProtobufInputEvent>? Input;
+    public event Action<RecordingSession, Exception?>? Ended;
 
     public bool IsRecording
     {
@@ -34,6 +36,7 @@ public sealed class RecordingCapture
     {
         lock (_gate)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             if (_requestedSession is not null)
             {
                 return false;
@@ -107,7 +110,7 @@ public sealed class RecordingCapture
 
             if (boundary == RecordingBoundary.Started)
             {
-                state.Filter ??= new RecordingStartChord(state.Session.FromHotkey ? heldKeys : RecordingStartKeys.None);
+                state.Filter ??= state.Session.Begin(heldKeys);
                 return;
             }
 
@@ -119,12 +122,34 @@ public sealed class RecordingCapture
 
             if (boundary == RecordingBoundary.Failed)
             {
-                state.Session.Fail(new InvalidOperationException("The native recorder could not change capture registration."));
+                var error = new InvalidOperationException("The native recorder could not begin capture.");
+                Ended?.Invoke(state.Session, error);
+                state.Session.Fail(error);
             }
             else
             {
+                Ended?.Invoke(state.Session, null);
                 state.Session.Complete();
             }
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+        }
+        // Do not hold the state lock while the native collector joins and finishes callbacks.
+        _transport.Dispose();
+        _transport.Input -= OnInput;
+        _transport.Boundary -= OnBoundary;
+        lock (_gate)
+        {
+            foreach (var state in _sessions.Values) state.Session.Cancel();
+            _sessions.Clear();
+            _requestedSession = null;
         }
     }
 

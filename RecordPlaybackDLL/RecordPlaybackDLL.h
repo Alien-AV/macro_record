@@ -18,11 +18,13 @@ enum class PlaybackResult : int {
 extern "C" {
 	using iac_dll_status_cb_t = void(*)(RecordPlaybackDLLEnums::StatusCode status_code);
 	// Borrowed buffer, valid only until the callback returns. Consumers must copy.
-	using iac_dll_record_event_cb_t = void(*)(const unsigned char buffer[], int buf_size);
-	RECORD_PLAYBACK_DLL_API void iac_dll_init(const iac_dll_record_event_cb_t record_event_cb, const iac_dll_status_cb_t status_cb);
+	using iac_dll_record_event_cb_t = void(*)(const unsigned char buffer[], int buf_size, uint64_t session_id);
+	using iac_dll_record_boundary_cb_t = void(*)(uint64_t session_id, uint32_t boundary, uint32_t held_keys);
+	RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t, iac_dll_status_cb_t, iac_dll_record_boundary_cb_t) noexcept;
 	
-	RECORD_PLAYBACK_DLL_API void iac_dll_start_record();
-	RECORD_PLAYBACK_DLL_API void iac_dll_stop_record();
+	RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id) noexcept;
+	RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id) noexcept;
+	RECORD_PLAYBACK_DLL_API void iac_dll_record_shutdown() noexcept;
 
 	// Input is copied before returning. Empty/malformed lists are rejected without injection.
 	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_start(const unsigned char buffer[], size_t size, int loop, uint64_t* session_id) noexcept;

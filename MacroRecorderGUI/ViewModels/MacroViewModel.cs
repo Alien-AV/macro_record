@@ -21,6 +21,8 @@ public sealed class MacroViewModel : ViewModelBase
 
     public ObservableCollection<InputEvent> Events { get; } = [];
     public List<InputEvent> SelectedEvents { get; } = [];
+    public long ContentRevision { get; private set; }
+    public event EventHandler? ContentReplaced;
 
     public string Name
     {
@@ -45,8 +47,10 @@ public sealed class MacroViewModel : ViewModelBase
 
     public void Clear()
     {
+        ContentRevision++;
         Events.Clear();
         SelectedEvents.Clear();
+        ContentReplaced?.Invoke(this, EventArgs.Empty);
     }
 
     public void ReplaceSelection(IEnumerable<InputEvent> selectedEvents)
@@ -77,8 +81,7 @@ public sealed class MacroViewModel : ViewModelBase
 
     public void PopulateEventCollectionWithNewEvents(IEnumerable<InputEvent> deserializedEvents)
     {
-        Events.Clear();
-        SelectedEvents.Clear();
+        Clear();
 
         foreach (var deserializedEvent in deserializedEvents)
         {

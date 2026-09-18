@@ -8,23 +8,33 @@ namespace MacroRecorderGUITests;
 
 internal sealed class FakeRecordEngine : IRecordEngine
 {
-    public event RecordEngine.RecordEventsEventHandler? RecordedEvent;
-    public event RecordEngine.RecordStatusEventHandler? RecordStatus;
-
-    public void PushStatus(RecordPlaybackDLLEnums.StatusCode status) =>
-        RecordStatus?.Invoke(this, new RecordEngine.RecordStatusEventArgs(status));
-
-    public void StartRecord()
+    private readonly FakeRecordingTransport _transport = new();
+    private readonly RecordEngine _engine;
+    private RecordingSession? _session;
+    public FakeRecordEngine() => _engine = new RecordEngine(_transport);
+    public event RecordEngine.RecordEventsEventHandler? RecordedEvent { add => _engine.RecordedEvent += value; remove => _engine.RecordedEvent -= value; }
+    public event RecordEngine.RecordStatusEventHandler? RecordStatus { add => _engine.RecordStatus += value; remove => _engine.RecordStatus -= value; }
+    public event Action<RecordingSession, Exception?>? RecordingEnded { add => _engine.RecordingEnded += value; remove => _engine.RecordingEnded -= value; }
+    public void PushStatus(RecordPlaybackDLLEnums.StatusCode status) => _transport.PushStatus(status);
+    public bool StartRecord(RecordingSession session)
     {
+        if (!_engine.StartRecord(session)) return false;
+        _session = session;
+        _transport.Begin(session);
+        return true;
     }
 
     public void StopRecord()
     {
+        _engine.StopRecord();
+        if (_session is { } session) _transport.End(session);
+        _session = null;
     }
+    public void Dispose() => _engine.Dispose();
 
     public void PushEvent(ProtobufInputEvent fakeEvent)
     {
-        RecordedEvent?.Invoke(this, new RecordEngine.RecordEventsEventArgs(fakeEvent));
+        _transport.Push(_session ?? throw new InvalidOperationException("Start a recording session before supplying input."), fakeEvent);
     }
 
     public static ProtobufInputEvent MakeKeyboardEvent(
@@ -115,6 +125,7 @@ public class MainFlowTest
         var recordEngine = new FakeRecordEngine();
         var playbackEngine = new FakePlaybackEngine();
         var viewModel = new FakeMainWindowViewModel(recordEngine, playbackEngine);
+        viewModel.StartRecording();
 
         var expectedEvents = new List<ProtobufInputEvent>
         {

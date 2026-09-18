@@ -10,13 +10,14 @@
 
 iac_dll_status_cb_t c_callback_for_status_reporting = nullptr;
 iac_dll_record_event_cb_t c_callback_for_record_event_reporting = nullptr;
+iac_dll_record_boundary_cb_t c_callback_for_record_boundary = nullptr;
 std::unique_ptr<record_playback::RecordEngine> record_engine_singleton;
 
 void convert_cpp_status_to_c_status_and_call_callback(const RecordPlaybackDLLEnums::StatusCode status_code) {
 	if (c_callback_for_status_reporting) c_callback_for_status_reporting(status_code);
 }
 
-void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event) {
+void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event, uint64_t session_id) {
 	if (!event || !c_callback_for_record_event_reporting) return;
 	const auto bytes = event->serialize();
 	if (!bytes || bytes->size() > static_cast<size_t>((std::numeric_limits<int>::max)())) {
@@ -25,17 +26,34 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	}
 	// The callback borrows this vector only for the duration of the call; managed
 	// RecordEngine copies it synchronously. No unmanaged byte allocation escapes.
-	c_callback_for_record_event_reporting(bytes->data(), static_cast<int>(bytes->size()));
+	c_callback_for_record_event_reporting(bytes->data(), static_cast<int>(bytes->size()), session_id);
 }
 
-RECORD_PLAYBACK_DLL_API void iac_dll_init(iac_dll_record_event_cb_t event_record_cb, iac_dll_status_cb_t status_cb) {
+void convert_record_boundary(uint64_t session, record_playback::capture::Boundary boundary, uint32_t keys) {
+	if (c_callback_for_record_boundary) c_callback_for_record_boundary(session, static_cast<uint32_t>(boundary), keys);
+}
+
+RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t event_record_cb, iac_dll_status_cb_t status_cb, iac_dll_record_boundary_cb_t boundary_cb) noexcept {
+	if (record_engine_singleton || !event_record_cb || !boundary_cb) return false;
 	c_callback_for_record_event_reporting = event_record_cb;
 	c_callback_for_status_reporting = status_cb;
-	record_engine_singleton = std::make_unique<record_playback::RecordEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback);
+	c_callback_for_record_boundary = boundary_cb;
+	try {
+		record_engine_singleton = std::make_unique<record_playback::RecordEngine>(convert_cpp_event_to_c_and_call_callback, convert_cpp_status_to_c_status_and_call_callback, convert_record_boundary);
+		if (record_engine_singleton->ready()) return true;
+	} catch (...) { }
+	iac_dll_record_shutdown();
+	return false;
 }
 
-RECORD_PLAYBACK_DLL_API void iac_dll_start_record() { record_engine_singleton->start_record(); }
-RECORD_PLAYBACK_DLL_API void iac_dll_stop_record() { record_engine_singleton->stop_record(); }
+RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id) noexcept { return record_engine_singleton && record_engine_singleton->start_record(session_id); }
+RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id) noexcept { return record_engine_singleton && record_engine_singleton->stop_record(session_id); }
+RECORD_PLAYBACK_DLL_API void iac_dll_record_shutdown() noexcept {
+	record_engine_singleton.reset();
+	c_callback_for_record_event_reporting = nullptr;
+	c_callback_for_status_reporting = nullptr;
+	c_callback_for_record_boundary = nullptr;
+}
 
 namespace {
 record_playback::PlaybackSession playback_session([](const Event& event) {

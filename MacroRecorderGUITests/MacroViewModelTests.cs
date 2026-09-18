@@ -82,6 +82,7 @@ public class MacroViewModelTests
         Assert.IsTrue(playbackEngine.PlayedEvents.Contains(firstEvent));
 
         var recordedEvent = FakeRecordEngine.MakeKeyboardEvent(65, false, 123);
+        viewModel.StartRecording();
         recordEngine.PushEvent(recordedEvent);
         Assert.AreSame(recordedEvent, firstMacro.Events[1].OriginalProtobufInputEvent);
         Assert.HasCount(0, secondMacro.Events);

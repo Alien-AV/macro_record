@@ -58,7 +58,7 @@ public sealed partial class MainWindow : Window
             _globalHotkeys = new GlobalHotkeys(windowHandle);
 
             var shortcutsRegistered =
-                _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control, StartRecording)
+                _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control, () => StartRecording(fromHotkey: true))
                 & _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control, StopRecording)
                 & _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, PlayEvents)
                 & _globalHotkeys.AddHotKey(VirtualKey.R, HotKeyModifiers.Control, AbortPlayback);
@@ -79,6 +79,7 @@ public sealed partial class MainWindow : Window
         _globalHotkeys?.Dispose();
         _globalHotkeys = null;
         ViewModel.StatusMessageRequested -= ViewModel_StatusMessageRequested;
+        ViewModel.Dispose();
     }
 
     private void StartRecord_Click(object sender, RoutedEventArgs e)
@@ -101,39 +102,25 @@ public sealed partial class MainWindow : Window
         AbortPlayback();
     }
 
-    private void StartRecording()
+    private void StartRecording(bool fromHotkey = false)
     {
-        if (ClearListOnStartRecord.IsChecked == true)
-        {
-            ViewModel.ActiveMacro?.Clear();
-        }
-
-        ViewModel.RecordEngine.StartRecord();
-        StatusText.Text = "Recording";
+        ViewModel.StartRecording(fromHotkey, ClearListOnStartRecord.IsChecked == true);
     }
 
     private void StopRecording()
     {
-        ViewModel.RecordEngine.StopRecord();
-
-        if (AutoChangeDelay.IsChecked == true && TryGetDelay(out var delay))
-        {
-            ViewModel.ActiveMacro?.ChangeDelaysOnAll(delay);
-        }
-
-        StatusText.Text = "Recording stopped";
+        ulong? autoDelay = AutoChangeDelay.IsChecked == true && TryGetDelay(out var delay) ? delay : null;
+        ViewModel.StopRecording(autoDelay);
     }
 
-    private void PlayEvents()
+    private async void PlayEvents()
     {
-        ViewModel.ActiveMacro?.PlayMacro();
-        StatusText.Text = "Playback started";
+        await ViewModel.PlayActiveMacro();
     }
 
     private void AbortPlayback()
     {
-        ViewModel.PlaybackEngine.PlaybackEventAbort();
-        StatusText.Text = "Playback aborted";
+        ViewModel.AbortPlayback();
     }
 
     private void CreateKeyboardEventManually_Click(object sender, RoutedEventArgs e)
@@ -355,17 +342,9 @@ public sealed partial class MainWindow : Window
         args.Cancel = args.NewText.Any(character => !char.IsDigit(character));
     }
 
-    private async void ViewModel_StatusMessageRequested(object? sender, string message)
+    private void ViewModel_StatusMessageRequested(object? sender, string message)
     {
         StatusText.Text = message;
-        var dialog = new ContentDialog
-        {
-            Title = "Macro Recorder",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = RootGrid.XamlRoot
-        };
-        await dialog.ShowAsync();
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)

@@ -11,7 +11,7 @@ public enum RecordingBoundary : uint
 }
 
 /// <summary>Delivers capture boundaries and input in their original FIFO order.</summary>
-public interface IRecordingTransport
+public interface IRecordingTransport : IDisposable
 {
     event Action<ulong, ProtobufInputEvent>? Input;
     event Action<ulong, RecordingBoundary, RecordingStartKeys>? Boundary;

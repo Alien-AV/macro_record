@@ -13,12 +13,14 @@ public enum RecordingStartKeys : uint
 }
 
 /// <summary>Drains only keys still held from the recording shortcut at capture readiness.</summary>
-public sealed class RecordingStartChord(RecordingStartKeys heldKeys)
+public sealed class RecordingStartChord(RecordingStartKeys heldKeys, bool suppressOrphanReleases = false)
 {
     private const RecordingStartKeys Controls = RecordingStartKeys.Control
         | RecordingStartKeys.LeftControl | RecordingStartKeys.RightControl;
     private RecordingStartKeys _pendingKeys = heldKeys;
+    private RecordingStartKeys _unseenKeys = suppressOrphanReleases ? Controls | RecordingStartKeys.Q : RecordingStartKeys.None;
     private ulong _suppressedDelay;
+    internal void ResetTiming() => _suppressedDelay = 0;
 
     public ProtobufInputEvent? Accept(ProtobufInputEvent inputEvent)
     {
@@ -32,7 +34,9 @@ public sealed class RecordingStartChord(RecordingStartKeys heldKeys)
             _ => RecordingStartKeys.None
         };
 
-        if ((_pendingKeys & key) != 0)
+        var orphanRelease = keyboard?.KeyUp == true && (_unseenKeys & key) != 0;
+        if (keyboard?.KeyUp == false) _unseenKeys &= ~key;
+        if ((_pendingKeys & key) != 0 || orphanRelease)
         {
             _suppressedDelay = AddDelay(_suppressedDelay, inputEvent.TimeSinceLastEvent);
             if (keyboard!.KeyUp)

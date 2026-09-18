@@ -20,6 +20,8 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
     private long _playbackVersion;
     private MacroViewModel? _playingMacro;
     private Task? _playbackCompletion;
+    private RecordingSession? _recordingSession;
+    private ulong _latestRecordingId;
 
     public MainWindowViewModel()
         : this(new RecordEngine(), new PlaybackEngine())
@@ -33,10 +35,12 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         PlaybackEngine = playbackEngine;
         RecordEngine.RecordStatus += RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent += RecordEngineOnRecordedEvent;
+        RecordEngine.RecordingEnded += RecordEngineOnRecordingEnded;
         MacroTabs = new ObservableCollection<MacroViewModel>
         {
             new("macro0", PlaybackEngine, PlayMacroAsync)
         };
+        MacroTabs[0].ContentReplaced += MacroContentReplaced;
     }
 
     public IRecordEngine RecordEngine { get; }
@@ -141,6 +145,9 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         ++_playbackVersion;
         RecordEngine.RecordStatus -= RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
+        RecordEngine.RecordingEnded -= RecordEngineOnRecordingEnded;
+        RecordEngine.Dispose();
+        foreach (var macro in MacroTabs) macro.ContentReplaced -= MacroContentReplaced;
         PlaybackEngine.Dispose();
         _playingMacro = null;
         _playbackCompletion = null;
@@ -190,6 +197,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
     public MacroViewModel AddNewTab()
     {
         var macro = new MacroViewModel($"macro{MacroTabs.Count}", PlaybackEngine, PlayMacroAsync);
+        macro.ContentReplaced += MacroContentReplaced;
         MacroTabs.Add(macro);
         SelectedTabIndex = MacroTabs.Count - 1;
         return macro;
@@ -205,6 +213,8 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
         var selectedMacro = ActiveMacro;
         if (ReferenceEquals(_playingMacro, macro)) AbortPlayback();
+        if (_recordingSession?.Context is RecordingTarget target && ReferenceEquals(target.Macro, macro)) StopRecording();
+        macro.ContentReplaced -= MacroContentReplaced;
         MacroTabs.RemoveAt(removedIndex);
         if (MacroTabs.Count == 0)
         {
@@ -252,7 +262,98 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
     private void RecordEngineOnRecordedEvent(object? sender, RecordEngine.RecordEventsEventArgs e)
     {
-        InvokeDispatcher(() => ActiveMacro?.AddEvent(InputEvent.CreateInputEvent(e.InputEvent)));
+        InvokeDispatcher(() =>
+        {
+            if (e.Session.Context is not RecordingTarget target || !IsCurrentTarget(target)) return;
+            var input = InputEvent.CreateInputEvent(e.InputEvent);
+            target.Macro.AddEvent(input);
+            if (target.Delay is not null) target.DelayEvents.Add(input);
+        });
+    }
+
+    public bool StartRecording(bool fromHotkey = false, bool clear = false)
+    {
+        if (_disposed || _recordingSession is not null || ActiveMacro is not { } macro) return false;
+        if (clear) macro.Clear();
+        var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision));
+        return StartRecordingSession(session);
+    }
+
+    private bool StartRecordingSession(RecordingSession session)
+    {
+        var macro = ((RecordingTarget)session.Context!).Macro;
+        _recordingSession = session;
+        _latestRecordingId = session.Id;
+        try
+        {
+            if (!RecordEngine.StartRecord(session))
+            {
+                _recordingSession = null;
+                return false;
+            }
+            StatusMessageRequested?.Invoke(this, $"Recording {macro.Name}");
+            return true;
+        }
+        catch (Exception error)
+        {
+            _recordingSession = null;
+            StatusMessageRequested?.Invoke(this, $"Could not start recording: {error.Message}");
+            return false;
+        }
+    }
+
+    public void StopRecording(ulong? autoDelay = null)
+    {
+        if (_disposed || _recordingSession is not { } session) return;
+        var target = (RecordingTarget)session.Context!;
+        target.Delay = autoDelay;
+        if (autoDelay is not null && IsCurrentTarget(target)) target.DelayEvents.UnionWith(target.Macro.Events);
+        try
+        {
+            RecordEngine.StopRecord();
+            _recordingSession = null;
+        }
+        catch (Exception error)
+        {
+            target.Delay = null;
+            target.DelayEvents.Clear();
+            StatusMessageRequested?.Invoke(this, $"Could not stop recording: {error.Message}");
+        }
+    }
+
+    private void MacroContentReplaced(object? sender, EventArgs args)
+    {
+        if (_disposed || _recordingSession is not { } previous || previous.Context is not RecordingTarget target
+            || !ReferenceEquals(target.Macro, sender)) return;
+        StopRecording();
+        if (_recordingSession is null)
+            StartRecordingSession(previous.Continue(new RecordingTarget(target.Macro, target.Macro.ContentRevision)));
+    }
+
+    private bool IsCurrentTarget(RecordingTarget target) => !_disposed
+        && MacroTabs.Contains(target.Macro) && target.Macro.ContentRevision == target.Revision;
+
+    private void RecordEngineOnRecordingEnded(RecordingSession session, Exception? error)
+    {
+        InvokeDispatcher(() =>
+        {
+            if (_disposed) return;
+            if (session.Context is RecordingTarget target && IsCurrentTarget(target) && target.Delay is { } delay)
+            {
+                foreach (var input in target.Macro.Events.Where(target.DelayEvents.Contains)) input.TimeSinceLastEvent = delay;
+            }
+            if (ReferenceEquals(_recordingSession, session)) _recordingSession = null;
+            if (_latestRecordingId == session.Id)
+                StatusMessageRequested?.Invoke(this, error is null ? "Recording stopped" : $"Could not record: {error.Message}");
+        });
+    }
+
+    private sealed class RecordingTarget(MacroViewModel macro, long revision)
+    {
+        public MacroViewModel Macro { get; } = macro;
+        public long Revision { get; } = revision;
+        public ulong? Delay { get; set; }
+        public HashSet<InputEvent> DelayEvents { get; } = [];
     }
 
     protected virtual void InvokeDispatcher(Action action)
