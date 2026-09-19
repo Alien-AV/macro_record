@@ -114,6 +114,15 @@ refresh the palette. Entering high contrast resets every override to Windows'
 defaults; leaving it reapplies the current theme. System event handlers are
 removed at shutdown.
 
+Desktop high-contrast monitoring uses
+[ThemeSettings.CreateForWindowId and Changed](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.system.themesettings?view=windows-app-sdk-1.7)
+with the window's own `AppWindow.Id`; system colors use
+`UISettings.ColorValuesChanged`. `AccessibilitySettings.HighContrastChanged`
+can fail during subscription in an unpackaged desktop process (observed HRESULT
+`0x80070490`) even when reading `HighContrast` succeeds. Theme monitoring starts
+after XAML initialization. Early XAML theme callbacks wait for that monitor;
+callbacks queued before closing check the closed state before touching the title bar.
+
 On Windows 10 the native title bar retains system colors, which can still look
 light over dark app content. This is an explicit compatibility limitation:
 [Microsoft documents that AppWindow title-bar colors are ignored on Windows 10](https://learn.microsoft.com/en-us/windows/apps/develop/title-bar#colors),
@@ -200,6 +209,14 @@ scroll intent, centered viewport mapping/inversion, direction-cue bounds and
 frame gaps, responsive panel sizes, native caption palette reset/restoration,
 and surviving action/raw drafts after manual insertion rebuilds the projection.
 The native test suite uses fake sinks; no native changes are required here.
+
+`DesktopThemeMonitorTests` also exercises the production settings API bindings:
+on an STA thread it creates an invisible native top-level window, subscribes to
+both real settings events, checks the high-contrast value, and unsubscribes
+repeatedly. The window is never shown or activated and is destroyed afterward.
+This test does not construct a XAML window, start the application, register
+hotkeys, capture/inject input, or change system theme settings. Actual change
+delivery and visual colors still require the user smoke checks above.
 
 UI-only verification commands (from the worktree):
 

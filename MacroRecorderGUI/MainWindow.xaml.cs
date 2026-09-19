@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.UI.ViewManagement;
 using Windows.Foundation.Collections;
 using Windows.Graphics;
 using Windows.System;
@@ -17,9 +16,8 @@ public sealed partial class MainWindow : Window
     private GlobalHotkeys? _globalHotkeys;
     private bool _synchronizingTabs;
     private bool _fileOperationInProgress;
-    private bool _closed;
-    private readonly AccessibilitySettings _accessibility = new();
-    private readonly UISettings _uiSettings = new();
+    private volatile bool _closed;
+    private DesktopThemeMonitor? _themeMonitor;
     // Construct these eagerly: recording shortcuts work before the flyout is first opened.
     private readonly CheckBox _clearBeforeRecording = new() { Content = "Clear macro before recording", IsChecked = true };
     private readonly CheckBox _overrideDelay = new() { Content = "Override each raw event delay", IsChecked = false };
@@ -31,8 +29,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         RootGrid.DataContext = ViewModel;
         CreateOptionsFlyout();
-        _accessibility.HighContrastChanged += Accessibility_Changed;
-        _uiSettings.ColorValuesChanged += SystemColors_Changed;
+        _themeMonitor = new DesktopThemeMonitor(AppWindow.Id, QueueTitleBarUpdate);
         UpdateTitleBar();
 
         ViewModel.StatusMessageRequested += ViewModel_StatusMessageRequested;
@@ -86,16 +83,19 @@ public sealed partial class MainWindow : Window
 
     private void Root_Loaded(object sender, RoutedEventArgs e) => UpdateTitleBar();
     private void Root_ThemeChanged(FrameworkElement sender, object args) => UpdateTitleBar();
-    private void Accessibility_Changed(AccessibilitySettings sender, object args) => QueueTitleBarUpdate();
-    private void SystemColors_Changed(UISettings sender, object args) => QueueTitleBarUpdate();
-    private void QueueTitleBarUpdate() => DispatcherQueue.TryEnqueue(() => { if (!_closed) UpdateTitleBar(); });
+    private void QueueTitleBarUpdate()
+    {
+        if (_closed) return;
+        DispatcherQueue.TryEnqueue(() => { if (!_closed) UpdateTitleBar(); });
+    }
 
     private void UpdateTitleBar()
     {
-        if (_closed || RootGrid is null || !AppWindowTitleBar.IsCustomizationSupported()) return;
+        // XAML can raise ActualThemeChanged before InitializeComponent has returned.
+        if (_closed || _themeMonitor is null || RootGrid is null || !AppWindowTitleBar.IsCustomizationSupported()) return;
         // AppWindow color properties are ignored on Windows 10, even when customization is supported.
         var colors = TitleBarPalette.ForTheme(RootGrid.ActualTheme == ElementTheme.Dark,
-            _accessibility.HighContrast, OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000));
+            _themeMonitor.HighContrast, OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000));
         var bar = AppWindow.TitleBar;
         bar.BackgroundColor = colors.Background;
         bar.ForegroundColor = colors.Foreground;
@@ -150,8 +150,8 @@ public sealed partial class MainWindow : Window
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _closed = true;
-        _accessibility.HighContrastChanged -= Accessibility_Changed;
-        _uiSettings.ColorValuesChanged -= SystemColors_Changed;
+        _themeMonitor?.Dispose();
+        _themeMonitor = null;
         _globalHotkeys?.Dispose();
         _globalHotkeys = null;
         ViewModel.StatusMessageRequested -= ViewModel_StatusMessageRequested;
