@@ -27,8 +27,10 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   action duration. Native Playback is explicitly labeled real input.
 - Undo includes timing, geometry, conversion, raw edits, add/remove, and editor
   Clear all. It retains later capture appends. External replacement, deletion,
-  reordering, or property changes (including recording auto-delay) invalidate
-  history. Undo never rolls back the macro content revision. History is bounded
+  reordering, or property changes invalidate history. Applicable recording
+  auto-delay also invalidates history when the assigned values already match;
+  unrelated tabs and stale recording revisions are unaffected.
+  Undo never rolls back the macro content revision. History is bounded
   to 30 edits and a raw-reference budget, retaining at least the latest edit.
 
 ## Coordinate and grouping limits
@@ -45,8 +47,11 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
 - Geometry editing requires a complete move/drag and consistent absolute
   movement throughout the macro, with no incomplete input sequences. Moving
   the endpoint bends all original samples toward the new target and tapers the
-  next path's correction back to its existing destination. It never removes
-  samples. Coordinates outside signed 32-bit bounds are rejected atomically.
+  next approach's correction back to its existing endpoint before a button/key
+  transition or movement pause. This preserves a downstream drag's original
+  button-down anchor and drag samples even inside a modifier-assisted sequence.
+  It never removes samples. Coordinates outside signed 32-bit bounds are rejected
+  atomically.
 - An explicit, acknowledged conversion assumes **one count equals one pixel**
   after an existing absolute anchor. This changes replay coordinates and is
   undoable; it cannot reconstruct the recorded cursor path. Earlier unanchored
@@ -60,15 +65,24 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   incomplete/raw. Key names describe VK codes, never inferred typed text.
 - Display sampling is bounded (1,200 overview points, 512 selected points,
   256 overview landmarks plus the selected landmark). Original events are
-  always retained. Clicks use circles, drag starts use squares, and drag paths
-  use dashes. The action list and coordinate fields provide keyboard alternatives.
+  always retained. Bounds include the complete stream in each coordinate frame,
+  including extrema omitted from display samples. Clicks use circles, drag starts
+  use squares, and drag paths use dashes. The action list and coordinate fields
+  provide keyboard alternatives.
 - Preview and scrubbing are visual only. The dot holds at recorded positions
   between events; it does not invent movement during waits. The dot is hidden
   before the first known position or when the current event uses another frame.
-  View timers and subscriptions stop on unload/disposal. Capture projection
-  appends incrementally and visual refreshes are batched to 100 ms. Closed raw
+  The requested slider position is retained independently of integer-microsecond
+  rounding, so arrow-key scrubbing advances even for very short recordings.
+  View timers and subscriptions stop on unload/disposal. Capture projection and
+  action selection append incrementally; eligibility and frame bounds are cached.
+  Visual refreshes are batched to 100 ms. A redraw before a pending refresh defers
+  until current selection references are restored under the refresh guard. Closed raw
   drilldowns retain no rows; open ones reuse rows during capture. Typed inspector
   drafts survive capture refreshes until applied or a different action is chosen.
+  Draft tracking uses synchronous
+  [WinUI TextChanging](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.textbox.textchanging?view=windows-app-sdk-1.8),
+  so programmatic field population cannot become an asynchronous false draft.
 
 Window-relative targets are intentionally reserved for a later pass.
 
@@ -84,14 +98,16 @@ verification. The user will perform these smoke checks after integration:
 3. Select moves, clicks, drags, scroll groups, a Ctrl+S chord, and an incomplete
    sequence. Check path highlights, circle/square landmarks, dashed drags, and
    exact raw drilldown. A long Shift/Ctrl-assisted mouse gesture should stay compact.
-4. Use Preview and scrub through waits, zero-time events, relative segments,
+4. Use Preview and scrub with both pointer and arrow keys through waits, zero-time events, relative segments,
    clicks, and drags. Only the preview dot should move. Switch tabs/close a tab
    during preview and confirm it stops. Do not use real Playback for this check.
 5. Change wait and duration independently, including zero duration and six
    decimal places. Verify exact raw totals and unchanged event count/order; Undo.
 6. For a complete, consistently absolute macro, enter destination coordinates
    and drag the outlined handle. Verify the inherited click position, connected
-   following path, and unchanged following destination. Undo both changes.
+   following path, and unchanged following destination. Repeat before a
+   Ctrl-assisted approach/drag: its button-down anchor and drag must stay fixed.
+   Undo both changes.
 7. Open an unanchored/relative/mixed-frame recording. Confirm truthful labels,
    disabled geometry with a reason, and no automatic conversion. If testing the
    explicit estimate, acknowledge its assumptions, inspect changed raw values,
@@ -117,14 +133,34 @@ verification. The user will perform these smoke checks after integration:
 Managed tests cover conservation (including randomized streams), stateful
 grouping, relative/absolute/frame correctness, integer timing/overflow, explicit
 conversion, geometry connection, undo versus capture and external changes,
-selection scopes, reusable raw rows, visual sampling/landmarks, and 100,000-event
-incremental capture. Existing capture/session/playback tests remain in place.
+selection scopes, synchronous draft tracking, reset-before-redraw ordering,
+full-stream viewport bounds, visual sampling/landmarks, and normalized scrubbing
+from zero/short durations through arbitrarily large totals. Repeated append
+batches exercise the full presentation refresh at 100,000 and 1,000,000 events,
+with bounded display allocation and append-only selection work. Existing
+capture/session/playback tests remain in place.
 The native test suite uses fake sinks; no native changes are required here.
 
 Build/test commands: the existing x64 managed `dotnet test` command and VS2026
 MSBuild solution builds in Release and Debug. The known native SDK warning
 MSB3851 is unrelated to this editor.
 
-Implementation verification: 157 managed tests and 48 native tests passed in
-each of Debug and Release; both full solution builds succeeded. UI appearance,
+Review-fix verification: 191 managed tests passed in each of Debug and Release;
+both full solution builds succeeded. The unchanged native baseline remains
+48 passing tests in each configuration. UI appearance,
 interaction, and actual replay remain for the user's smoke checks after integration.
+
+## Review follow-up file scope
+
+The review fixes change these files (relative to the repository root):
+
+- `MacroRecorderGUI/Editor/`: `ActionEditor.cs`, `ActionProjection.cs`,
+  `EditorPresentation.cs`, `InspectorDrafts.cs`, `PathBounds.cs`, `PreviewPosition.cs`.
+- `MacroRecorderGUI/ViewModels/`: `MacroViewModel.cs`, `MainWindowViewModel.cs`.
+- `MacroRecorderGUI/Views/MacroTabContent.xaml.cs`.
+- `MacroRecorderGUITests/`: `ActionEditorTests.cs`, `EditorPresentationTests.cs`,
+  `PreviewPositionTests.cs`.
+- `docs/action-editor.md`.
+
+Native sources, serialization, and the native ABI are unchanged. Integration,
+independent re-review, and eventual worktree cleanup remain with the coordinator.

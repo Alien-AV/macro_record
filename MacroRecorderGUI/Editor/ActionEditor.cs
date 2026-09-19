@@ -13,6 +13,8 @@ public sealed class ActionEditor : IDisposable
     private readonly MacroViewModel _macro;
     private readonly HashSet<InputEvent> _observed = [];
     private readonly List<Edit> _undo = [];
+    private readonly Dictionary<RecordedAction, int> _selectedActionCounts = [];
+    private long _selectionRevision = -1;
     private bool _mutating, _reset = true, _disposed;
     public ActionProjection Projection { get; } = new();
     public bool IsDirty { get; private set; } = true;
@@ -28,14 +30,16 @@ public sealed class ActionEditor : IDisposable
         foreach (var input in macro.Events) Observe(input);
     }
 
-    public void Refresh()
+    public int Refresh()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!IsDirty) return;
+        if (!IsDirty) return 0;
         if (_reset) Projection.Reset();
+        var previousCount = Projection.ProcessedCount;
         for (var i = Projection.ProcessedCount; i < _macro.Events.Count; i++) Projection.Append(_macro.Events[i]);
         Projection.FlushNotifications();
         IsDirty = false; _reset = false;
+        return Projection.ProcessedCount - previousCount;
     }
 
     public IReadOnlyList<InputEvent> EventsFor(RecordedAction action)
@@ -48,22 +52,43 @@ public sealed class ActionEditor : IDisposable
     {
         Refresh();
         RawSelection = false;
-        var selected = actions.Where(a => ReferenceEquals(Projection.ActionAt(a.Start), a)).OrderBy(a => a.Start)
+        var current = actions.Where(Projection.IsCurrent).Distinct().OrderBy(a => a.Start).ToArray();
+        var selected = current
             .SelectMany(a => _macro.Events.Skip(a.Start).Take(a.Count)).Distinct();
         _macro.ReplaceSelection(selected);
+        _selectedActionCounts.Clear();
+        foreach (var action in current) _selectedActionCounts.Add(action, action.Count);
+        _selectionRevision = _macro.SelectionRevision;
     }
 
     public void SelectRawEvents(IEnumerable<InputEvent> events)
     {
         RawSelection = true;
+        _selectedActionCounts.Clear();
         var selected = events.ToHashSet();
         _macro.ReplaceSelection(_macro.Events.Where(selected.Contains));
     }
 
-    public void RefreshSelection(IEnumerable<RecordedAction> visibleSelection)
+    public int RefreshSelection(IEnumerable<RecordedAction> visibleSelection)
     {
         // A projection refresh must never broaden an explicitly selected raw subset.
-        if (!RawSelection) SelectActions(visibleSelection);
+        if (RawSelection) return 0;
+        var actions = visibleSelection.ToArray();
+        if (_selectionRevision != _macro.SelectionRevision || actions.Length != _selectedActionCounts.Count
+            || actions.Any(a => !_selectedActionCounts.ContainsKey(a)))
+        {
+            SelectActions(actions);
+            return _macro.SelectedEvents.Count;
+        }
+        var added = 0;
+        foreach (var action in actions)
+        {
+            // Only the stream's final action can grow during append-only capture.
+            for (var offset = _selectedActionCounts[action]; offset < action.Count; offset++)
+            { _macro.SelectedEvents.Add(_macro.Events[action.Start + offset]); added++; }
+            _selectedActionCounts[action] = action.Count;
+        }
+        return added;
     }
 
     public IReadOnlyList<RecordedAction> SelectedActions()
@@ -108,19 +133,20 @@ public sealed class ActionEditor : IDisposable
 
     public string? GeometryBlockReason(RecordedAction action)
     {
-        RequireCurrent(action);
+        // Passive presentation queries never refresh or throw on a stale selection.
+        if (IsDirty || !Projection.IsCurrent(action)) return "The recording changed. Refresh the selection before editing geometry.";
         if (action.Kind is not (ActionKind.Move or ActionKind.Drag)) return "Select a complete move or drag. Stationary actions inherit the preceding position.";
         if (action.Kind == ActionKind.Drag && Projection.Samples[action.Start].Position is null)
             return "The drag starts at an unknown position. An absolute movement anchor is required before the button press.";
-        if (Projection.Actions.Any(a => !a.Complete)) return "Incomplete or mixed input sequences prevent safe geometric edits. Inspect the raw input first.";
-        var moves = _macro.Events.OfType<MouseEvent>().Where(ActionProjection.HasMove).ToArray();
-        if (moves.Any(m => m.RelativePosition)) return "Relative movement records device counts, not pixels. Explicitly convert an anchored estimate before editing geometry.";
-        if (moves.Select(ActionProjection.Space).Distinct().Count() != 1) return "Mixed primary-screen and virtual-desktop coordinate frames cannot be edited as one connected path.";
+        if (Projection.IncompleteActionCount > 0) return "Incomplete or anomalous input sequences prevent safe geometric edits. Inspect the raw input first.";
+        if (Projection.HasRelativeMovement) return "Relative movement records device counts, not pixels. Explicitly convert an anchored estimate before editing geometry.";
+        if (Projection.MovementSpaceCount != 1) return "Mixed primary-screen and virtual-desktop coordinate frames cannot be edited as one connected path.";
         return null;
     }
 
     public void SetDestination(RecordedAction action, int x, int y)
     {
+        RequireCurrent(action);
         var reason = GeometryBlockReason(action);
         if (reason is not null) throw new ArgumentException(reason);
         var moves = _macro.Events.Skip(action.Start).Take(action.Count).OfType<MouseEvent>().Where(ActionProjection.HasMove).ToArray();
@@ -132,13 +158,18 @@ public sealed class ActionEditor : IDisposable
             var weight = moves.Length == 1 ? 1d : anchored ? (i + 1d) / moves.Length : (double)i / (moves.Length - 1);
             Plan(moves[i], weight);
         }
-        // The next path starts at the edited endpoint. Taper its correction to keep its destination fixed.
-        var next = Projection.Actions.FirstOrDefault(a => a.Start >= action.End && _macro.Events.Skip(a.Start).Take(a.Count).OfType<MouseEvent>().Any(ActionProjection.HasMove));
-        if (next is not null)
+        // Display groups may contain multiple mouse gestures under a held modifier. Preserve the first
+        // downstream approach's own endpoint, before a button/key transition or a new movement pause.
+        var following = new List<MouseEvent>();
+        for (var index = action.End; index < _macro.Events.Count; index++)
         {
-            var following = _macro.Events.Skip(next.Start).Take(next.Count).OfType<MouseEvent>().Where(ActionProjection.HasMove).ToArray();
-            for (var i = 0; i < following.Length; i++) Plan(following[i], 1d - (i + 1d) / following.Length);
+            var input = _macro.Events[index];
+            if (following.Count > 0 && (input is KeyboardEvent || input.TimeSinceLastEvent >= ActionProjection.MovementPause)) break;
+            if (input is not MouseEvent mouse) continue;
+            if (ActionProjection.HasMove(mouse)) following.Add(mouse);
+            if (following.Count > 0 && mouse.ActionType != Common.MouseActionTypeFlags.Move) break;
         }
+        for (var i = 0; i < following.Count; i++) Plan(following[i], 1d - (i + 1d) / following.Count);
         Execute("Move destination", () => { foreach (var c in changes) { c.Event.X = c.X; c.Event.Y = c.Y; } });
         void Plan(MouseEvent input, double weight)
         {
@@ -239,7 +270,13 @@ public sealed class ActionEditor : IDisposable
     private void RequireCurrent(RecordedAction action)
     {
         Refresh();
-        if (!Projection.Actions.Contains(action)) throw new ArgumentException("The recording changed. Select the action again.");
+        if (!Projection.IsCurrent(action)) throw new ArgumentException("The recording changed. Select the action again.");
+    }
+    public void InvalidateUndo()
+    {
+        if (_undo.Count == 0) return;
+        _undo.Clear();
+        Invalidated?.Invoke(this, EventArgs.Empty);
     }
     private void Observe(InputEvent input) { if (_observed.Add(input)) input.PropertyChanged += EventChanged; }
     private void Unobserve(InputEvent input) { if (_observed.Remove(input)) input.PropertyChanged -= EventChanged; }

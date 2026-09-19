@@ -353,7 +353,12 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
             _pendingRecordingDelays.Remove(session.Id);
             if (session.Context is RecordingTarget target && IsCurrentTarget(target) && target.Delay is { } delay)
             {
-                foreach (var input in target.Macro.Events.Where(target.DelayEvents.Contains)) input.TimeSinceLastEvent = delay;
+                var invalidatedUndo = false;
+                foreach (var input in target.Macro.Events.Where(target.DelayEvents.Contains))
+                {
+                    if (!invalidatedUndo) { target.Macro.InvalidateEditorUndo(); invalidatedUndo = true; }
+                    input.TimeSinceLastEvent = delay;
+                }
             }
             if (ReferenceEquals(_recordingSession, session)) _recordingSession = null;
             if (_latestRecordingId == session.Id)

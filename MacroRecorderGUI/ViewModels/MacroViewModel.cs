@@ -15,6 +15,7 @@ public sealed class MacroViewModel : ViewModelBase, IDisposable
     private ActionEditor? _editor;
     public ActionEditor Editor => _editor ??= new ActionEditor(this);
     public void Dispose() => _editor?.Dispose();
+    internal void InvalidateEditorUndo() => _editor?.InvalidateUndo();
 
     public MacroViewModel(string name, IPlaybackEngine playbackEngine, Func<MacroViewModel, Task>? playMacro = null)
     {
@@ -25,6 +26,7 @@ public sealed class MacroViewModel : ViewModelBase, IDisposable
 
     public ObservableCollection<InputEvent> Events { get; } = [];
     public List<InputEvent> SelectedEvents { get; } = [];
+    public long SelectionRevision { get; private set; }
     public long ContentRevision { get; private set; }
     public event EventHandler? ContentReplaced;
 
@@ -59,6 +61,7 @@ public sealed class MacroViewModel : ViewModelBase, IDisposable
 
     public void ReplaceSelection(IEnumerable<InputEvent> selectedEvents)
     {
+        SelectionRevision++;
         SelectedEvents.Clear();
         SelectedEvents.AddRange(selectedEvents);
     }

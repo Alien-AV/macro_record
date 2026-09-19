@@ -17,6 +17,12 @@ public sealed class ActionProjection
     public List<RecordedAction> MouseLandmarks { get; } = [];
     public BigInteger TotalTime { get; private set; }
     public int ProcessedCount => Samples.Count;
+    public int IncompleteActionCount { get; private set; }
+    public bool HasRelativeMovement { get; private set; }
+    public int MovementSpaceCount => _bounds.Count;
+    private readonly Dictionary<CoordinateSpace, PathBounds> _bounds = [];
+    public PathBounds? BoundsFor(CoordinateSpace space) => _bounds.TryGetValue(space, out var bounds) ? bounds : null;
+    public bool IsCurrent(RecordedAction action) => ReferenceEquals(ActionAt(action.Start), action);
     private readonly HashSet<uint> _keys = [];
     private int _buttons;
     private RecordedAction? _active;
@@ -28,11 +34,13 @@ public sealed class ActionProjection
     private readonly HashSet<uint> _chord = [];
     private BigInteger _wheelTotal;
     private int _segment;
+    private bool _anomalous;
 
     public void Reset()
     {
         Actions.Clear(); Samples.Clear(); MouseLandmarks.Clear(); _keys.Clear(); _chord.Clear();
         TotalTime = 0; _buttons = 0; _active = null; _position = null; _previousMouse = null; _segment = 0;
+        _bounds.Clear(); IncompleteActionCount = 0; HasRelativeMovement = false; _anomalous = false;
     }
 
     public void Append(InputEvent input)
@@ -52,6 +60,10 @@ public sealed class ActionProjection
                 _position = new(previous.X + mouse.X, previous.Y + mouse.Y, space);
             }
             else _position = new(mouse.X, mouse.Y, space);
+            HasRelativeMovement |= mouse.RelativePosition;
+            var position = _position.Value;
+            _bounds[space] = _bounds.TryGetValue(space, out var bounds) ? bounds.Include(position)
+                : new(position.X, position.Y, position.X, position.Y);
         }
         Samples.Add(new(index, TotalTime, _position, startsSegment, _segment));
 
@@ -62,7 +74,7 @@ public sealed class ActionProjection
             _active?.Notify();
             _active = new(index, input, timeBefore);
             _candidate = ActionKind.Raw;
-            _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0;
+            _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = false;
             if (neutral)
             {
                 if (input is KeyboardEvent { KeyUp: false }) _candidate = ActionKind.Keys;
@@ -77,25 +89,29 @@ public sealed class ActionProjection
             Actions.Add(_active);
         }
         var action = _active!;
+        if (action.Count > 0 && !action.Complete) IncompleteActionCount--;
         if (action.Count > 0) action.Duration += input.TimeSinceLastEvent;
         action.Count++;
 
         if (input is KeyboardEvent key)
         {
-            if (key.KeyUp) _keys.Remove(key.VirtualKeyCode);
+            if (key.KeyUp) _anomalous |= !_keys.Remove(key.VirtualKeyCode);
             else { _keys.Add(key.VirtualKeyCode); _chord.Add(key.VirtualKeyCode); }
         }
         else if (input is MouseEvent m)
         {
-            _buttons |= DownButton(m);
-            _buttons &= ~UpButton(m);
+            var down = DownButton(m); var up = UpButton(m);
+            _anomalous |= (down & _buttons) != 0 || (up & ~(_buttons | down)) != 0;
+            _buttons |= down;
+            _buttons &= ~up;
             _moved |= HasMove(m);
             _previousMouse = m;
             if (IsWheel(m)) _wheelTotal += unchecked((int)m.MouseData);
         }
 
-        action.Complete = _candidate is ActionKind.Move or ActionKind.Scroll
-            || (_candidate is ActionKind.Click or ActionKind.Keys or ActionKind.Sequence && _buttons == 0 && _keys.Count == 0);
+        action.Complete = !_anomalous && (_candidate is ActionKind.Move or ActionKind.Scroll
+            || (_candidate is ActionKind.Click or ActionKind.Keys or ActionKind.Sequence && _buttons == 0 && _keys.Count == 0));
+        if (!action.Complete) IncompleteActionCount++;
         action.Kind = _candidate == ActionKind.Sequence ? ActionKind.Sequence
             : action.Complete ? (_candidate == ActionKind.Click && _moved ? ActionKind.Drag : _candidate) : ActionKind.Raw;
         action.Detail = action.Kind switch

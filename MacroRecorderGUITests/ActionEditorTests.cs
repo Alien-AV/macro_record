@@ -120,7 +120,7 @@ public class ActionEditorTests
         using var macro = Macro(Button(MouseActionTypeFlags.XDown, data: 1), Button(MouseActionTypeFlags.XUp, data: 2), Move(10));
         Assert.AreEqual(ActionKind.Sequence, A(macro).Kind); Assert.IsFalse(A(macro).Complete);
         macro.AddEvent(Button(MouseActionTypeFlags.XUp, data: 1));
-        Assert.IsTrue(A(macro).Complete);
+        Assert.IsFalse(A(macro).Complete, "Releasing the tracked button cannot erase an earlier unmatched release.");
     }
 
     [TestMethod]
@@ -436,7 +436,7 @@ public class ActionEditorTests
         var macro = Macro(Move(1)); var editor = macro.Editor; var called = false;
         editor.Invalidated += (_, _) => called = true;
         macro.Dispose(); macro.AddEvent(Move(2)); macro.Events[0].TimeSinceLastEvent = 123;
-        Assert.IsFalse(called); Assert.ThrowsExactly<ObjectDisposedException>(editor.Refresh);
+        Assert.IsFalse(called); Assert.ThrowsExactly<ObjectDisposedException>(() => editor.Refresh());
     }
 
     [TestMethod]
@@ -559,6 +559,80 @@ public class ActionEditorTests
         Assert.IsTrue(macro.Editor.Undo());
         CollectionAssert.AreEqual(originals.Concat([captured]).ToArray(), macro.Events.ToArray());
         CollectionAssert.AreEqual(originals, macro.SelectedEvents.ToArray());
+    }
+
+    [TestMethod]
+    public void NoOpAutoDelayInvalidatesOnlyItsOriginalMacroAfterDeferredCompletion()
+    {
+        var transport = new FakeRecordingTransport(); using var vm = new DeferredVm(transport);
+        var owner = vm.ActiveMacro!; owner.AddEvent(Move(0, delay: 10)); owner.Editor.SetWait(A(owner), 777);
+        vm.StartRecording(); var session = transport.Starts.Single(); transport.Begin(session);
+        vm.StopRecording(777);
+        var other = vm.AddNewTab(); other.AddEvent(Move(1, delay: 10)); other.Editor.SetWait(A(other), 888);
+        transport.End(session);
+        Assert.IsTrue(owner.Editor.CanUndo, "Native completion must not bypass the UI delivery queue.");
+        vm.Deliver();
+        Assert.IsFalse(owner.Editor.CanUndo); Assert.IsFalse(owner.Editor.Undo());
+        Assert.AreEqual(777ul, owner.Events[0].TimeSinceLastEvent);
+        Assert.IsTrue(other.Editor.Undo()); Assert.AreEqual(10ul, other.Events[0].TimeSinceLastEvent);
+    }
+
+    [TestMethod]
+    public void StaleRevisionAutoDelayCannotInvalidateNewContentHistory()
+    {
+        var transport = new FakeRecordingTransport(); using var vm = new DeferredVm(transport);
+        var macro = vm.ActiveMacro!; macro.AddEvent(Move(0, delay: 10)); macro.Editor.SetWait(A(macro), 777);
+        vm.StartRecording(); var session = transport.Starts.Single(); transport.Begin(session); vm.StopRecording(777);
+        macro.Clear(); macro.AddEvent(Move(5, delay: 10)); macro.Editor.SetWait(A(macro), 888);
+        transport.End(session); vm.Deliver();
+        Assert.IsTrue(macro.Editor.Undo()); Assert.AreEqual(10ul, macro.Events[0].TimeSinceLastEvent);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void UnmatchedReleaseCannotBeForgottenWhenTrackedStateReturnsToNeutral(bool keyboard)
+    {
+        InputEvent[] sequence = keyboard
+            ? [Move(100), K(VirtualKey.Control), K(VirtualKey.S, true), K(VirtualKey.Control, true), Move(200)]
+            : [Move(100), Button(MouseActionTypeFlags.LeftDown), Button(MouseActionTypeFlags.RightUp), Button(MouseActionTypeFlags.LeftUp), Move(200)];
+        using var macro = Macro(sequence); var bytes = Bytes(macro);
+        Assert.AreEqual(ActionKind.Sequence, A(macro, 1).Kind); Assert.IsFalse(A(macro, 1).Complete);
+        Assert.AreEqual(1, macro.Editor.Projection.IncompleteActionCount);
+        StringAssert.Contains(macro.Editor.GeometryBlockReason(A(macro))!, "anomalous");
+        SameBytes(bytes, macro);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void DownstreamDragAnchorIsPreservedRegardlessOfModifierDisplayGrouping(bool modifier)
+    {
+        var first = Move(100); var approach1 = Move(150, delay: modifier ? 10ul : ActionProjection.MovementPause); var approachEnd = Move(200);
+        var drag1 = Move(250); var dragEnd = Move(300); var down = Button(MouseActionTypeFlags.LeftDown);
+        var inputs = new List<InputEvent> { first };
+        if (modifier) inputs.Add(K(VirtualKey.Control));
+        inputs.AddRange([approach1, approachEnd, down, drag1, dragEnd, Button(MouseActionTypeFlags.LeftUp)]);
+        if (modifier) inputs.Add(K(VirtualKey.Control, true));
+        using var macro = Macro(inputs.ToArray()); var before = Bytes(macro); var order = macro.Events.ToArray();
+        if (modifier) Assert.AreEqual(ActionKind.Sequence, A(macro, 1).Kind);
+        macro.Editor.SetDestination(A(macro), 200, 0); macro.Editor.Refresh();
+        Assert.AreEqual(200, first.X); Assert.AreEqual(200, approach1.X); Assert.AreEqual(200, approachEnd.X);
+        Assert.AreEqual(200d, macro.Editor.Projection.Samples[macro.Events.IndexOf(down)].Position!.Value.X);
+        Assert.AreEqual(250, drag1.X); Assert.AreEqual(300, dragEnd.X);
+        CollectionAssert.AreEqual(order, macro.Events.ToArray());
+        Assert.IsTrue(macro.Editor.Undo()); SameBytes(before, macro);
+    }
+
+    [TestMethod]
+    public void EmptyAutoDelayWithNoApplicableEventsDoesNotInvalidateLaterEdits()
+    {
+        var transport = new FakeRecordingTransport(); using var vm = new DeferredVm(transport);
+        var macro = vm.ActiveMacro!;
+        vm.StartRecording(); var session = transport.Starts.Single(); transport.Begin(session); vm.StopRecording(777);
+        macro.AddEvent(Move(5, delay: 10)); macro.Editor.SetWait(A(macro), 888);
+        transport.End(session); vm.Deliver();
+        Assert.IsTrue(macro.Editor.Undo()); Assert.AreEqual(10ul, macro.Events[0].TimeSinceLastEvent);
     }
 
     private sealed class DeferredVm(FakeRecordingTransport transport) : MainWindowViewModel(new RecordEngine(transport), new FakePlaybackEngine())
