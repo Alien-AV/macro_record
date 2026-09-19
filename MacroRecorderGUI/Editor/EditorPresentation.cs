@@ -48,9 +48,14 @@ public sealed class EditorPresentation(ActionEditor editor)
     }
 }
 
-public readonly record struct PathViewport(double MinX, double MinY, double Scale)
+public readonly record struct PathViewport(double MinX, double MinY, double Scale, double OffsetX, double OffsetY)
 {
-    public static PathViewport Fit(PathBounds bounds, double width, double height) => new(bounds.MinX, bounds.MinY,
-        Math.Min(Math.Max(1, width - 36) / Math.Max(1, bounds.MaxX - bounds.MinX), Math.Max(1, height - 36) / Math.Max(1, bounds.MaxY - bounds.MinY)));
-    public (double X, double Y) Map(PathPosition position) => (18 + (position.X - MinX) * Scale, 18 + (position.Y - MinY) * Scale);
+    public static PathViewport Fit(PathBounds bounds, double width, double height)
+    {
+        var spanX = bounds.MaxX - bounds.MinX; var spanY = bounds.MaxY - bounds.MinY;
+        var scale = Math.Min(Math.Max(1, width - 48) / Math.Max(1, spanX), Math.Max(1, height - 48) / Math.Max(1, spanY));
+        return new(bounds.MinX, bounds.MinY, scale, (width - spanX * scale) / 2, (height - spanY * scale) / 2);
+    }
+    public (double X, double Y) Map(PathPosition position) => (OffsetX + (position.X - MinX) * Scale, OffsetY + (position.Y - MinY) * Scale);
+    public (double X, double Y) Unmap(double x, double y) => ((x - OffsetX) / Scale + MinX, (y - OffsetY) / Scale + MinY);
 }

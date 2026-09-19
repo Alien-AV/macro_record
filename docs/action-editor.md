@@ -7,10 +7,12 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
 ## Selection and editing
 
 - The action list supports Ctrl/Shift multi-selection. The inspector changes
-  the primary selected action; Remove selected removes the selected input.
+  the primary selected action. Add and Delete live above the action list;
+  its context menu also offers these commands and Clear all. Clear all is
+  also available from Add. Delete removes the selected input.
 - Expanding Advanced enters raw selection and selects its first row. Raw rows
   cover all selected actions. Ctrl/Shift selects an exact raw subset. The
-  selection summary explicitly identifies the scope used by Remove selected.
+  label above the list and Delete's accessible name identify the current scope.
   Capture/refresh never broadens that subset. Collapsing Advanced returns to
   the highlighted action selection. Undo can reopen a restored raw selection.
 - Wait-before changes only the first event's delay. Duration scales the other
@@ -18,13 +20,23 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   total, count, and order. A zero-duration action distributes a new duration
   evenly across its internal intervals. A single event has no internal duration.
   Overflowing per-event results are rejected before any mutation.
-- Ordinary timing uses milliseconds/seconds. Inspector seconds accept up to six
+- Action rows are numbered by group, with intent names, icons and concise
+  incomplete warnings. Raw event counts, coordinate representation and original
+  indices are available in row tooltips and Advanced. The macro heading shows
+  its name, action count and total time.
+- Display timing is rounded (for example, 279ms or 2.44s); nonzero sub-millisecond
+  values use µs. Inspector seconds accept up to six
   decimal places, giving exact microsecond precision. Advanced raw delays expose
   the original unsigned microsecond values. Bulk raw delay editing explicitly
   sets **each** selected delay and therefore changes internal duration too.
-- The recording toolbar's optional override retains its existing session-bound
+- The toolbar has Record, Stop, Play and Abort; Play visibly says Real input.
+  Compact widths retain the command labels and real-input cue. File holds
+  New/Load/Save; the gear opens recording and playback options (clear before
+  capture, loop, and raw delay override). Defaults exist before the flyout opens:
+  clear before capture on, loop and delay override off, override delay 5000µs.
+  The optional override retains its existing session-bound
   auto-delay behavior. It applies a per-event delay after recording, not a total
-  action duration. Native Playback is explicitly labeled real input.
+  action duration.
 - Undo includes timing, geometry, conversion, raw edits, add/remove, and editor
   Clear all. It retains later capture appends. External replacement, deletion,
   reordering, or property changes invalidate history. Applicable recording
@@ -66,9 +78,13 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
 - Display sampling is bounded (1,200 overview points, 512 selected points,
   256 overview landmarks plus the selected landmark). Original events are
   always retained. Bounds include the complete stream in each coordinate frame,
-  including extrema omitted from display samples. Clicks use circles, drag starts
-  use squares, and drag paths use dashes. The action list and coordinate fields
-  provide keyboard alternatives.
+  including extrema omitted from display samples. The selected path uses accent
+  color and a heavier stroke; other paths are subdued. Clicks use circles, drag
+  starts use squares, and drag paths use dashes. Selected segments have open
+  start circles and end diamonds; up to eight direction cues follow only known,
+  continuous displayed segments. The viewport centers the complete frame with
+  margins and has no pixel grid over device counts. The action list and
+  coordinate fields provide keyboard alternatives.
 - Preview and scrubbing are visual only. The dot holds at recorded positions
   between events; it does not invent movement during waits. The dot is hidden
   before the first known position or when the current event uses another frame.
@@ -79,24 +95,59 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   Visual refreshes are batched to 100 ms. A redraw before a pending refresh defers
   until current selection references are restored under the refresh guard. Closed raw
   drilldowns retain no rows; open ones reuse rows during capture. Typed inspector
-  drafts survive capture refreshes until applied or a different action is chosen.
+  drafts survive capture refreshes and Add mouse/key commands while the same
+  first input remains selected. Applied edits reset drafts; choosing a different
+  action resets them too. Raw drafts survive when their event remains selected.
   Draft tracking uses synchronous
   [WinUI TextChanging](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.textbox.textchanging?view=windows-app-sdk-1.8),
   so programmatic field population cannot become an asynchronous false draft.
 
 Window-relative targets are intentionally reserved for a later pass.
 
+## Window chrome and layout
+
+The app retains the native title bar, system menu, drag/resize behavior and
+minimize/maximize/close buttons. On Windows 11, all twelve title/caption color
+properties are assigned together from the actual light/dark theme, including
+inactive, hover and pressed states. Actual theme and system color changes
+refresh the palette. Entering high contrast resets every override to Windows'
+defaults; leaving it reapplies the current theme. System event handlers are
+removed at shutdown.
+
+On Windows 10 the native title bar retains system colors, which can still look
+light over dark app content. This is an explicit compatibility limitation:
+[Microsoft documents that AppWindow title-bar colors are ignored on Windows 10](https://learn.microsoft.com/en-us/windows/apps/develop/title-bar#colors),
+even when customization support reports true. No custom chrome or undocumented
+Windows 10 API is used.
+
+The workspace uses the actual scroll viewport height. At wide sizes the action
+list, flexible preview canvas and inspector are alongside one another. At medium
+widths the inspector moves below; at narrow widths all three stack. Short windows
+scroll the complete panels. The preview's slider, button and clock have automatic
+rows below a flexible canvas. Inspector position fields appear only when edits
+are safe; otherwise a reason is shown. Delay and Duration keep separate Apply
+buttons and exact values; technical conversion and raw details live in Advanced.
+
 ## User smoke checks after integration
 
 No application launch or real keyboard/mouse injection was used for development
 verification. The user will perform these smoke checks after integration:
 
-1. Open in both light and dark themes; resize through wide, medium, and narrow
-   layouts. Reach every field/button using Tab and scroll the action/raw lists.
-2. Load a known macro. Confirm action counts, raw counts/order, readable times,
-   and exact raw values. Save without editing and compare the decoded events.
+1. On Windows 11, open in light/dark themes and switch themes with the window
+   open. Check active/inactive title text and caption-button normal/hover/pressed
+   states. Enable high contrast, switch its palette, then exit into each app
+   theme. Check native drag, resize, system menu, close, minimize and maximize.
+   On Windows 10, expect the documented system-color title-bar limitation.
+2. Resize through wide, medium and narrow layouts, including short windows and
+   increased text/display scaling. Reach every field/button using Tab, including
+   Stop and Abort, and scroll the action/raw lists. Confirm Play's Real input
+   cue is always visible. Reach the preview transport by scrolling short windows.
+   Load a known macro via File; check the macro heading, sequential group
+   numbers, short times and exact values/counts in Advanced. Save without editing
+   and compare the decoded events.
 3. Select moves, clicks, drags, scroll groups, a Ctrl+S chord, and an incomplete
-   sequence. Check path highlights, circle/square landmarks, dashed drags, and
+   sequence. Check warning explanations, path highlights, open start circles,
+   end diamonds, direction cues, circle/square landmarks, dashed drags, and
    exact raw drilldown. A long Shift/Ctrl-assisted mouse gesture should stay compact.
 4. Use Preview and scrub with both pointer and arrow keys through waits, zero-time events, relative segments,
    clicks, and drags. Only the preview dot should move. Switch tabs/close a tab
@@ -109,23 +160,28 @@ verification. The user will perform these smoke checks after integration:
    Ctrl-assisted approach/drag: its button-down anchor and drag must stay fixed.
    Undo both changes.
 7. Open an unanchored/relative/mixed-frame recording. Confirm truthful labels,
-   disabled geometry with a reason, and no automatic conversion. If testing the
-   explicit estimate, acknowledge its assumptions, inspect changed raw values,
+   hidden position fields with a reason, and no automatic conversion. If testing
+   Convert path estimate inside Advanced, acknowledge its assumptions, inspect changed raw values,
    and Undo before saving. Incomplete input must remain conservative.
 8. Ctrl/Shift-select actions, expand Advanced, select a raw subset (including
    across selected actions), and remove it. Exactly the visible selected raw
    rows should disappear; Undo restores them. Collapse Advanced and confirm the
-   selection summary returns to actions. Press Delete inside a numeric text
+   label above the list and Delete tooltip return to actions. Press Delete inside a numeric text
    field: only text should be deleted.
 9. Record a dense stream while typing an unapplied timing/raw draft and while
    selecting raw rows. The draft and raw subset must survive appends. Collapse
    Advanced and verify capture remains responsive. Then stop recording.
+   With an unapplied Delay or raw-field draft, use Add mouse and Add keyboard
+   while the same first input remains selected; verify drafts still survive.
 10. Edit, append a recording, and Undo: later capture input must remain. Edit,
     then load/replace/clear externally or apply recording auto-delay: stale undo
     must be unavailable. Confirm clear-before-recording session rollover still
     delivers new-session events to the correct macro.
-11. Exercise macro tabs, reorder, add mouse/key event, multi-select remove,
-    Clear all/Undo, load, save, and optional after-recording per-event override.
+11. Before ever opening Options, verify clear-before-capture defaults still
+    apply. Then use the gear flyout to exercise clear-before-capture, loop and
+    optional after-recording per-event override. Exercise macro tabs, reorder,
+    Add mouse/key event from the list, multi-select Delete, Clear all/Undo, and
+    File's New/Load/Save commands.
     Close the window during preview/capture and check normal shutdown.
 
 ## Deterministic verification
@@ -138,29 +194,19 @@ full-stream viewport bounds, visual sampling/landmarks, and normalized scrubbing
 from zero/short durations through arbitrarily large totals. Repeated append
 batches exercise the full presentation refresh at 100,000 and 1,000,000 events,
 with bounded display allocation and append-only selection work. Existing
-capture/session/playback tests remain in place.
+capture/session/playback tests remain in place. Presentation tests also cover
+compact versus exact timing, sequential group numbering, warning completion,
+scroll intent, centered viewport mapping/inversion, direction-cue bounds and
+frame gaps, responsive panel sizes, native caption palette reset/restoration,
+and surviving action/raw drafts after manual insertion rebuilds the projection.
 The native test suite uses fake sinks; no native changes are required here.
 
-Build/test commands: the existing x64 managed `dotnet test` command and VS2026
-MSBuild solution builds in Release and Debug. The known native SDK warning
-MSB3851 is unrelated to this editor.
+UI-only verification commands (from the worktree):
 
-Review-fix verification: 191 managed tests passed in each of Debug and Release;
-both full solution builds succeeded. The unchanged native baseline remains
-48 passing tests in each configuration. UI appearance,
-interaction, and actual replay remain for the user's smoke checks after integration.
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\18\Professional\MSBuild\Current\Bin\MSBuild.exe' MacroRecorderGUI/MacroRecorderGUI.csproj /restore /m /p:Configuration=Release /p:Platform=x64 /verbosity:minimal /nologo
+dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Release -p:Platform=x64 --verbosity minimal
+```
 
-## Review follow-up file scope
-
-The review fixes change these files (relative to the repository root):
-
-- `MacroRecorderGUI/Editor/`: `ActionEditor.cs`, `ActionProjection.cs`,
-  `EditorPresentation.cs`, `InspectorDrafts.cs`, `PathBounds.cs`, `PreviewPosition.cs`.
-- `MacroRecorderGUI/ViewModels/`: `MacroViewModel.cs`, `MainWindowViewModel.cs`.
-- `MacroRecorderGUI/Views/MacroTabContent.xaml.cs`.
-- `MacroRecorderGUITests/`: `ActionEditorTests.cs`, `EditorPresentationTests.cs`,
-  `PreviewPositionTests.cs`.
-- `docs/action-editor.md`.
-
-Native sources, serialization, and the native ABI are unchanged. Integration,
-independent re-review, and eventual worktree cleanup remain with the coordinator.
+Visual appearance and native window interaction require the user smoke checks;
+the automated suite does not launch the app or inject real input.

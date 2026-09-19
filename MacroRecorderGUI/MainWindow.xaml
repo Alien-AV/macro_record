@@ -2,152 +2,79 @@
     x:Class="MacroRecorderGUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
     Title="Macro Recorder">
-
-    <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          SizeChanged="Root_SizeChanged" ActualThemeChanged="Root_ThemeChanged" Loaded="Root_Loaded">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <CommandBar
-            Grid.Row="0"
-            Margin="12,0"
-            HorizontalAlignment="Left"
-            Background="Transparent"
-            DefaultLabelPosition="Right"
-            IsOpen="False">
-            <AppBarButton Label="New macro" Click="AddTab_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Add" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton Label="Load" Click="LoadEvents_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="OpenFile" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton Label="Save" Click="SaveEvents_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Save" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarSeparator />
-            <AppBarButton Label="Record" Click="StartRecord_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Play" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton Label="Stop recording" Click="StopRecord_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Stop" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarSeparator />
-            <AppBarButton Label="Playback · real input" Click="PlayEvents_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Play" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton Label="Abort playback" Click="AbortPlayback_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Stop" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <CommandBar.SecondaryCommands>
-                <AppBarButton Label="Close application" Click="Close_Click">
-                    <AppBarButton.Icon>
-                        <SymbolIcon Symbol="Cancel" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-            </CommandBar.SecondaryCommands>
-        </CommandBar>
-
-        <Border
-            Grid.Row="1"
-            Margin="12,4,12,10"
-            Padding="12"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="1"
-            CornerRadius="8">
-            <ScrollViewer
-                HorizontalScrollBarVisibility="Auto"
-                HorizontalScrollMode="Enabled"
-                VerticalScrollBarVisibility="Disabled"
-                VerticalScrollMode="Disabled">
-                <StackPanel Spacing="10">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <CheckBox
-                            x:Name="ClearListOnStartRecord"
-                            Content="Clear events before recording"
-                            IsChecked="True"
-                            VerticalAlignment="Center" />
-                        <CheckBox
-                            Content="Loop playback"
-                            IsChecked="{Binding LoopPlayback, Mode=TwoWay}"
-                            VerticalAlignment="Center" />
-                        <Rectangle Width="1" Height="24" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                        <Button Content="Add mouse event" Click="CreateMouseEventManually_Click" />
-                        <Button Content="Add keyboard event" Click="CreateKeyboardEventManually_Click" />
-                        <Button Content="Remove selected" Click="RemoveEvent_Click" />
-                        <Button Content="Clear all" Click="ClearList_Click" />
+        <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="PrimaryToolbar" Margin="12,8" Orientation="Horizontal" Spacing="6">
+                <Button Click="StartRecord_Click" Padding="10,8" Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Record (Ctrl+Q)" AutomationProperties.Name="Record">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="RecordIcon" Glyph="&#xE7C8;" FontSize="16"/>
+                        <TextBlock Text="Record" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="After recording: delay for EACH raw event (µs)" VerticalAlignment="Center" />
-                        <TextBox
-                            x:Name="DelayTextBox"
-                            Width="100"
-                            BeforeTextChanging="UnsignedNumberTextBox_BeforeTextChanging"
-                            Text="5000" />
-                        <CheckBox
-                            x:Name="AutoChangeDelay"
-                            Content="Override every raw event delay after recording"
-                            VerticalAlignment="Center" />
+                </Button>
+                <Button Click="StopRecord_Click" Padding="10,8"
+                        ToolTipService.ToolTip="Stop recording (Ctrl+W)" AutomationProperties.Name="Stop recording">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="StopIcon" Glyph="&#xE71A;" FontSize="16"/>
+                        <TextBlock Text="Stop" VerticalAlignment="Center"/>
                     </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
-        <TabView
-            x:Name="MacroTabs"
-            Grid.Row="2"
-            Margin="12,0,12,0"
-            CanDragTabs="True"
-            CanReorderTabs="True"
-            CloseButtonOverlayMode="OnPointerOver"
-            IsAddTabButtonVisible="True"
-            TabWidthMode="SizeToContent"
-            AddTabButtonClick="MacroTabs_AddTabButtonClick"
-            SelectionChanged="MacroTabs_SelectionChanged"
-            TabCloseRequested="MacroTabs_TabCloseRequested"
-            TabItemsChanged="MacroTabs_TabItemsChanged" />
-
-        <Border
-            Grid.Row="3"
-            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-            BorderThickness="0,1,0,0">
-            <Grid Padding="14,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock
-                    x:Name="StatusText"
-                    VerticalAlignment="Center"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Ready" />
-                <TextBlock
-                    Grid.Column="1"
-                    VerticalAlignment="Center"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Ctrl+Q Record · Ctrl+W Stop · Ctrl+E Play · Ctrl+R Abort"
-                    TextTrimming="CharacterEllipsis" />
+                </Button>
+                <Button Click="PlayEvents_Click" Padding="10,8"
+                        ToolTipService.ToolTip="Play macro — sends real input (Ctrl+E)" AutomationProperties.Name="Play macro, sends real input">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="PlayIcon" Glyph="&#xE768;" FontSize="16"/>
+                        <StackPanel x:Name="PlayLabels" Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Play" VerticalAlignment="Center"/>
+                            <TextBlock Text="Real input" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+                <Button Click="AbortPlayback_Click" Padding="10,8"
+                        ToolTipService.ToolTip="Abort playback (Ctrl+R)" AutomationProperties.Name="Abort playback">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="AbortIcon" Glyph="&#xE711;" FontSize="16"/>
+                        <TextBlock Text="Abort" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="OptionsButton" Padding="10,8" ToolTipService.ToolTip="Recording and playback options"
+                        AutomationProperties.Name="Recording and playback options">
+                    <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                </Button>
+                <Button Content="File" Padding="10,8" AutomationProperties.Name="Macro file commands">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="New macro" Icon="Add" Click="AddTab_Click"/>
+                            <MenuFlyoutItem Text="Load macro…" Icon="OpenFile" Click="LoadEvents_Click"/>
+                            <MenuFlyoutItem Text="Save macro…" Icon="Save" Click="SaveEvents_Click"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Close application" Click="Close_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </ScrollViewer>
+        <TabView x:Name="MacroTabs" Grid.Row="1" Margin="12,0"
+                 CanDragTabs="True" CanReorderTabs="True" CloseButtonOverlayMode="OnPointerOver"
+                 IsAddTabButtonVisible="True" TabWidthMode="SizeToContent"
+                 AddTabButtonClick="MacroTabs_AddTabButtonClick" SelectionChanged="MacroTabs_SelectionChanged"
+                 TabCloseRequested="MacroTabs_TabCloseRequested" TabItemsChanged="MacroTabs_TabItemsChanged"/>
+        <Border Grid.Row="2" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+            <Grid Padding="14,8" ColumnSpacing="16">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Text="Ready"
+                           TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           AutomationProperties.LiveSetting="Polite"/>
+                <TextBlock x:Name="ShortcutHint" Grid.Column="1" VerticalAlignment="Center" FontSize="12"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Ctrl+Q Record · Ctrl+W Stop · Ctrl+E Play · Ctrl+R Abort"/>
             </Grid>
         </Border>
     </Grid>

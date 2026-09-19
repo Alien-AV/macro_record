@@ -5,8 +5,14 @@ namespace MacroRecorderGUI.Editor;
 
 public static class TimeText
 {
-    public static string Human(BigInteger microseconds) => microseconds < 1_000_000
-        ? $"{DecimalUnits(microseconds, 3)} ms" : $"{Seconds(microseconds)} s";
+    public static string Human(BigInteger microseconds)
+    {
+        if (microseconds == 0) return "0ms";
+        if (microseconds < 1_000) return $"{microseconds.ToString(CultureInfo.InvariantCulture)}µs";
+        var milliseconds = (microseconds + 500) / 1_000;
+        return milliseconds < 1_000 ? $"{milliseconds.ToString(CultureInfo.InvariantCulture)}ms"
+            : $"{DecimalUnits((microseconds + 5_000) / 10_000, 2)}s";
+    }
     public static string Seconds(BigInteger microseconds) => DecimalUnits(microseconds, 6);
     private static string DecimalUnits(BigInteger value, int places)
     {

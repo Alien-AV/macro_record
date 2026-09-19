@@ -442,7 +442,7 @@ public class ActionEditorTests
     [TestMethod]
     public void HumanTimesRetainExactMicrosecondsWithoutLargeRawCounts()
     {
-        Assert.AreEqual("125 ms", TimeText.Human(125000)); Assert.AreEqual("1.234567 s", TimeText.Human(1234567));
+        Assert.AreEqual("125ms", TimeText.Human(125000)); Assert.AreEqual("1.23s", TimeText.Human(1234567));
         Assert.AreEqual(new BigInteger(1234567), TimeText.ParseSeconds("1.234567"));
         Assert.AreEqual((BigInteger)ulong.MaxValue * 20, TimeText.ParseSeconds(TimeText.Seconds((BigInteger)ulong.MaxValue * 20)));
         Assert.ThrowsExactly<ArgumentException>(() => TimeText.ParseSeconds("1.0000001"));

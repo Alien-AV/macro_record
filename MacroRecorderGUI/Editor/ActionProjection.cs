@@ -72,7 +72,7 @@ public sealed class ActionProjection
         if (!continuation)
         {
             _active?.Notify();
-            _active = new(index, input, timeBefore);
+            _active = new(index, input, timeBefore) { Number = Actions.Count + 1 };
             _candidate = ActionKind.Raw;
             _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = false;
             if (neutral)
@@ -123,6 +123,19 @@ public sealed class ActionProjection
             ActionKind.Keys => "Keys · " + string.Join(" + ", _chord.OrderBy(code => IsModifier(code) ? 0 : 1).ThenBy(code => code).Select(KeyName)),
             ActionKind.Sequence => "Input sequence · mixed keys/buttons" + (action.Complete ? "" : " · incomplete"),
             _ => "Raw input · incomplete or mixed sequence"
+        };
+        action.Name = action.Kind switch
+        {
+            ActionKind.Move => "Move pointer",
+            ActionKind.Click => $"{ButtonName(_button)} click",
+            ActionKind.Drag => $"{ButtonName(_button)} drag",
+            ActionKind.Scroll => _wheelTotal == 0 ? "Scroll"
+                : ((MouseEvent)input).ActionType == MouseActionTypeFlags.HorizontalWheel
+                    ? (_wheelTotal > 0 ? "Scroll right" : "Scroll left")
+                    : (_wheelTotal > 0 ? "Scroll up" : "Scroll down"),
+            ActionKind.Keys => action.Detail,
+            ActionKind.Sequence => "Mixed input sequence",
+            _ => "Raw input"
         };
         if (action.Kind is ActionKind.Click or ActionKind.Drag) MouseLandmarks.Add(action);
     }

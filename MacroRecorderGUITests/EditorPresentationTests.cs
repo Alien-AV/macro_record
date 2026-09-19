@@ -186,6 +186,61 @@ public class EditorPresentationTests
     }
 
     [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    public void ManualInsertionPreservesSurvivingActionAndRawDrafts(bool keyboard, bool rawSelection)
+    {
+        using var macro = Macro(Move(10), Move(20),
+            new KeyboardEvent(Windows.System.VirtualKey.Control, false),
+            new KeyboardEvent(Windows.System.VirtualKey.Control, true));
+        var presentation = new EditorPresentation(macro.Editor);
+        var refresh = presentation.Refresh(null, []);
+        var originalAction = refresh.Selection[0]; var originalInput = originalAction.First;
+        var drafts = new InspectorDrafts<string>();
+        drafts.Select(originalInput);
+        var delay = "0.123456"; var rawDelay = "777";
+        drafts.Changing("delay");
+        if (rawSelection)
+        {
+            macro.Editor.SelectRawEvents([originalInput]);
+            drafts.Changing("rawDelay");
+        }
+        if (keyboard) macro.CreateKeyboardEventManually(); else macro.CreateMouseEventManually();
+        refresh = presentation.Refresh(originalAction, refresh.Selection);
+        var selected = refresh.Selection[0];
+        Assert.AreNotSame(originalAction, selected, "An insertion rebuilds grouping.");
+        Assert.AreSame(originalInput, selected.First, "The inspector still owns the same input.");
+        drafts.Select(selected.First);
+        drafts.Populate("delay", () => delay = TimeText.Seconds(selected.Wait));
+        Assert.AreEqual("0.123456", delay);
+        Assert.AreEqual(1UL, originalInput.TimeSinceLastEvent, "An unapplied draft never changes the event.");
+        if (rawSelection)
+        {
+            CollectionAssert.AreEqual(new[] { originalInput }, macro.SelectedEvents.ToArray());
+            drafts.Populate("rawDelay", () => rawDelay = originalInput.TimeSinceLastEvent.ToString());
+            Assert.AreEqual("777", rawDelay);
+        }
+        Assert.IsTrue(macro.Editor.CanUndo);
+        Assert.IsTrue(macro.Editor.Undo());
+        Assert.AreEqual(4, macro.Events.Count);
+    }
+
+    [TestMethod]
+    public void AppliedEditsAndChangingActionResetDraftsButSameActionRefreshDoesNot()
+    {
+        var drafts = new InspectorDrafts<string>(); var first = new object(); var second = new object();
+        drafts.Select(first); drafts.Changing("delay");
+        drafts.Select(first);
+        Assert.IsFalse(drafts.Populate("delay", () => Assert.Fail("Surviving draft must not be overwritten.")));
+        drafts.Select(first, reset: true);
+        Assert.IsTrue(drafts.Populate("delay", () => { }));
+        drafts.Changing("delay"); drafts.Select(second);
+        Assert.IsTrue(drafts.Populate("delay", () => { }));
+    }
+
+    [TestMethod]
     public void SynchronousModelPopulationDoesNotBecomeADraftButUserChangesDo()
     {
         var drafts = new InspectorDrafts<string>(); var text = "";

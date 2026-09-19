@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Windows.UI.ViewManagement;
 using Windows.Foundation.Collections;
 using Windows.Graphics;
 using Windows.System;
@@ -16,12 +17,23 @@ public sealed partial class MainWindow : Window
     private GlobalHotkeys? _globalHotkeys;
     private bool _synchronizingTabs;
     private bool _fileOperationInProgress;
+    private bool _closed;
+    private readonly AccessibilitySettings _accessibility = new();
+    private readonly UISettings _uiSettings = new();
+    // Construct these eagerly: recording shortcuts work before the flyout is first opened.
+    private readonly CheckBox _clearBeforeRecording = new() { Content = "Clear macro before recording", IsChecked = true };
+    private readonly CheckBox _overrideDelay = new() { Content = "Override each raw event delay", IsChecked = false };
+    private readonly TextBox _recordingDelay = new() { Header = "Delay per raw event (µs)", Text = "5000" };
 
     public MainWindow()
     {
         ViewModel = new MainWindowViewModel();
         InitializeComponent();
         RootGrid.DataContext = ViewModel;
+        CreateOptionsFlyout();
+        _accessibility.HighContrastChanged += Accessibility_Changed;
+        _uiSettings.ColorValuesChanged += SystemColors_Changed;
+        UpdateTitleBar();
 
         ViewModel.StatusMessageRequested += ViewModel_StatusMessageRequested;
         Activated += MainWindow_Activated;
@@ -37,6 +49,67 @@ public sealed partial class MainWindow : Window
     }
 
     public MainWindowViewModel ViewModel { get; }
+
+    private void CreateOptionsFlyout()
+    {
+        var loop = new CheckBox { Content = "Loop playback", IsChecked = ViewModel.LoopPlayback };
+        loop.Checked += (_, _) => ViewModel.LoopPlayback = true;
+        loop.Unchecked += (_, _) => ViewModel.LoopPlayback = false;
+        _recordingDelay.BeforeTextChanging += UnsignedNumberTextBox_BeforeTextChanging;
+        var content = new StackPanel { Spacing = 8, Width = 280 };
+        content.Children.Add(new TextBlock { Text = "Recording and playback", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        content.Children.Add(_clearBeforeRecording);
+        content.Children.Add(loop);
+        content.Children.Add(new TextBlock { Text = "After recording", Margin = new Thickness(0, 12, 0, 0) });
+        content.Children.Add(_overrideDelay);
+        content.Children.Add(_recordingDelay);
+        content.Children.Add(new TextBlock { Text = "Applies to every raw event after capture, including delays within an action.",
+            TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+        OptionsButton.Flyout = new Flyout
+        {
+            Content = new ScrollViewer { Content = content, MaxHeight = 420,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }
+        };
+    }
+
+    private void Root_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (ShortcutHint is null) return;
+        var compact = e.NewSize.Width < 640;
+        // Text and the real-input cue remain visible at narrow widths.
+        foreach (var icon in new[] { RecordIcon, StopIcon, PlayIcon, AbortIcon })
+            icon.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        PlayLabels.Orientation = compact ? Orientation.Vertical : Orientation.Horizontal;
+        PlayLabels.Spacing = compact ? 0 : 6;
+        ShortcutHint.Visibility = e.NewSize.Width < 920 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void Root_Loaded(object sender, RoutedEventArgs e) => UpdateTitleBar();
+    private void Root_ThemeChanged(FrameworkElement sender, object args) => UpdateTitleBar();
+    private void Accessibility_Changed(AccessibilitySettings sender, object args) => QueueTitleBarUpdate();
+    private void SystemColors_Changed(UISettings sender, object args) => QueueTitleBarUpdate();
+    private void QueueTitleBarUpdate() => DispatcherQueue.TryEnqueue(() => { if (!_closed) UpdateTitleBar(); });
+
+    private void UpdateTitleBar()
+    {
+        if (_closed || RootGrid is null || !AppWindowTitleBar.IsCustomizationSupported()) return;
+        // AppWindow color properties are ignored on Windows 10, even when customization is supported.
+        var colors = TitleBarPalette.ForTheme(RootGrid.ActualTheme == ElementTheme.Dark,
+            _accessibility.HighContrast, OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000));
+        var bar = AppWindow.TitleBar;
+        bar.BackgroundColor = colors.Background;
+        bar.ForegroundColor = colors.Foreground;
+        bar.InactiveBackgroundColor = colors.Background;
+        bar.InactiveForegroundColor = colors.InactiveForeground;
+        bar.ButtonBackgroundColor = colors.Background;
+        bar.ButtonForegroundColor = colors.Foreground;
+        bar.ButtonInactiveBackgroundColor = colors.Background;
+        bar.ButtonInactiveForegroundColor = colors.InactiveForeground;
+        bar.ButtonHoverBackgroundColor = colors.HoverBackground;
+        bar.ButtonHoverForegroundColor = colors.Foreground;
+        bar.ButtonPressedBackgroundColor = colors.PressedBackground;
+        bar.ButtonPressedForegroundColor = colors.Foreground;
+    }
 
     private void ResizeWindow()
     {
@@ -76,6 +149,9 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        _closed = true;
+        _accessibility.HighContrastChanged -= Accessibility_Changed;
+        _uiSettings.ColorValuesChanged -= SystemColors_Changed;
         _globalHotkeys?.Dispose();
         _globalHotkeys = null;
         ViewModel.StatusMessageRequested -= ViewModel_StatusMessageRequested;
@@ -106,12 +182,12 @@ public sealed partial class MainWindow : Window
 
     private void StartRecording(bool fromHotkey = false)
     {
-        ViewModel.StartRecording(fromHotkey, ClearListOnStartRecord.IsChecked == true);
+        ViewModel.StartRecording(fromHotkey, _clearBeforeRecording.IsChecked == true);
     }
 
     private void StopRecording()
     {
-        ulong? autoDelay = AutoChangeDelay.IsChecked == true && TryGetDelay(out var delay) ? delay : null;
+        ulong? autoDelay = _overrideDelay.IsChecked == true && TryGetDelay(out var delay) ? delay : null;
         ViewModel.StopRecording(autoDelay);
     }
 
@@ -123,26 +199,6 @@ public sealed partial class MainWindow : Window
     private void AbortPlayback()
     {
         ViewModel.AbortPlayback();
-    }
-
-    private void CreateKeyboardEventManually_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ActiveMacro?.CreateKeyboardEventManually();
-    }
-
-    private void CreateMouseEventManually_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ActiveMacro?.CreateMouseEventManually();
-    }
-
-    private void RemoveEvent_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ActiveMacro?.RemoveSelectedEvents();
-    }
-
-    private void ClearList_Click(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel.ActiveMacro is { } macro) macro.Editor.Execute("Clear all", macro.Clear);
     }
 
     private async void SaveEvents_Click(object sender, RoutedEventArgs e)
@@ -318,7 +374,7 @@ public sealed partial class MainWindow : Window
 
     private bool TryGetDelay(out ulong delay)
     {
-        if (ulong.TryParse(DelayTextBox.Text, out delay))
+        if (ulong.TryParse(_recordingDelay.Text, out delay))
         {
             return true;
         }

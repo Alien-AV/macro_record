@@ -29,12 +29,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private InputEvent? _rawEvent;
     private readonly RawEventRows _rawRows = [];
     private readonly InspectorDrafts<Control> _drafts = new();
-    private InputEvent? _inspectorEvent;
     private RecordedAction? Selected => ActionsList.SelectedItem as RecordedAction;
     private IReadOnlyList<PathSample> _display = [];
     private IReadOnlyList<PathSample> _selectedDisplay = [];
     private CoordinateSpace _space;
-    private double _minX, _minY, _scale = 1;
+    private PathViewport _viewport;
     private Ellipse? _cursor, _handle;
 
     public MacroTabContent()
@@ -68,7 +67,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is not null) _editor.Invalidated -= Editor_Invalidated;
         _sync = true;
         ActionsList.ItemsSource = null; RawList.ItemsSource = null;
-        _rawRows.Close(); _inspectorEvent = null; _drafts.Clear();
+        _rawRows.Close(); _drafts.Clear();
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
         _display = []; _selectedDisplay = []; PathCanvas.Children.Clear();
@@ -104,10 +103,10 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         finally { _sync = false; }
         if (_editor.RawSelection && !_rawOpen) RawExpander.IsExpanded = true;
         SummaryText.Text = _macro.Events.Count == 0 ? "Record a macro or add an event to get started."
-            : $"{_editor.Projection.Actions.Count:N0} actions · {_macro.Events.Count:N0} original events · {TimeText.Human(_editor.Projection.TotalTime)}";
+            : $"{_editor.Projection.Actions.Count:N0} {(_editor.Projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(_editor.Projection.TotalTime)}";
         UndoButton.IsEnabled = _editor.CanUndo;
         _previewPosition.RefreshDuration(_editor.Projection.TotalTime);
-        UpdateInspector(resetDrafts); UpdateSelectionText(); DrawPath();
+        UpdateInspector(resetDrafts); UpdateSelectionScope(); DrawPath();
     }
     private void Actions_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -125,13 +124,19 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         StopPreview(); CancelDrag();
         _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
         if (Selected is { } a) _previewPosition.SeekTime(a.StartTime + a.Wait, _editor.Projection.TotalTime);
-        UpdateInspector(resetDrafts: true); UpdateSelectionText(); DrawPath();
+        UpdateInspector(resetDrafts: true); UpdateSelectionScope(); DrawPath();
     }
-    private void UpdateSelectionText()
+    private void UpdateSelectionScope()
     {
         if (_editor is not null && _macro is not null)
-            SelectionText.Text = _editor.RawSelection ? $"Selection: {_macro.SelectedEvents.Count:N0} raw events · Remove selected uses this exact subset"
-                : $"Selection: {ActionsList.SelectedItems.Count:N0} actions / {_macro.SelectedEvents.Count:N0} underlying events";
+        {
+            SelectionScope.Text = _editor.RawSelection ? $"{_macro.SelectedEvents.Count:N0} raw events selected"
+                : ActionsList.SelectedItems.Count > 1 ? $"{ActionsList.SelectedItems.Count:N0} actions selected" : "Ctrl/Shift to select several";
+            DeleteButton.IsEnabled = _macro.SelectedEvents.Count > 0;
+            var deleteScope = _editor.RawSelection ? "Delete selected raw events" : "Delete selected actions";
+            ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(DeleteButton, deleteScope);
+        }
     }
     // WinUI TextChanging is synchronous; TextChanged is asynchronous and cannot use population suppression.
     private void Draft_Changing(TextBox sender, TextBoxTextChangingEventArgs e) => _drafts.Changing(sender);
@@ -141,25 +146,34 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void UpdateInspector(bool resetDrafts = false)
     {
         var a = Selected;
-        if (resetDrafts || !ReferenceEquals(_inspectorEvent, a?.First)) _drafts.Clear();
-        _inspectorEvent = a?.First;
+        _drafts.Select(a?.First, resetDrafts);
         ActionFields.IsEnabled = a is not null;
-        SelectedTitle.Text = a is null ? "Select an action to inspect" : a.Detail + (ActionsList.SelectedItems.Count > 1 ? " · inspector edits this action only" : "");
+        ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
+        SelectedTitle.Text = a?.Title ?? "Select an action";
+        InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
+        InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact delay: {TimeText.Seconds(a.Wait)}s · duration: {TimeText.Seconds(a.Duration)}s";
+        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · inspect Advanced before replay." : "";
+        ActionWarning.Visibility = a is { Complete: false } ? Visibility.Visible : Visibility.Collapsed;
+        ToolTipService.SetToolTip(ActionWarning, a?.WarningExplanation);
         if (a is null || _editor is null) { _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
         Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
         DurationButton.IsEnabled = a.Count > 1;
+        DurationInput.IsEnabled = a.Count > 1;
         var reason = _editor.GeometryBlockReason(a);
-        GeometryNote.Text = reason ?? "Absolute pixels · drag the outlined endpoint or enter coordinates. The following path remains connected.";
+        GeometryNote.Text = reason ?? "Destination · absolute pixels";
+        ToolTipService.SetToolTip(GeometryNote, reason ?? "Drag the outlined endpoint or apply coordinates. The following path remains connected.");
         DestinationFields.IsEnabled = reason is null;
+        DestinationFields.Visibility = reason is null ? Visibility.Visible : Visibility.Collapsed;
         var end = _editor.Projection.Samples[a.End - 1].Position;
         Field(DestinationX, end?.X.ToString("0", CultureInfo.InvariantCulture) ?? "");
         Field(DestinationY, end?.Y.ToString("0", CultureInfo.InvariantCulture) ?? "");
         if (_rawOpen) PopulateRaw();
     }
 
-    private void RunEdit(Action operation, string message)
+    private void RunEdit(Action operation, string message, bool resetDrafts = true)
     {
-        try { StopPreview(); operation(); RefreshEditor(resetDrafts: true); EditorStatus.Text = message; }
+        try { StopPreview(); operation(); RefreshEditor(resetDrafts); EditorStatus.Text = message; }
         catch (Exception error) when (error is ArgumentException or OverflowException or FormatException)
         { EditorStatus.Text = error.Message; RefreshEditor(); }
     }
@@ -186,6 +200,22 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is null) return;
         StopPreview(); var undone = _editor.Undo(); RefreshEditor(resetDrafts: true);
         EditorStatus.Text = undone ? "Edit undone; later captured events retained." : "Nothing safe to undo.";
+    }
+    private void AddMouse_Click(object sender, RoutedEventArgs e)
+    {
+        if (_macro is not null) RunEdit(_macro.CreateMouseEventManually, "Mouse event added. Edit it in Advanced.", resetDrafts: false);
+    }
+    private void AddKeyboard_Click(object sender, RoutedEventArgs e)
+    {
+        if (_macro is not null) RunEdit(_macro.CreateKeyboardEventManually, "Keyboard event added. Edit it in Advanced.", resetDrafts: false);
+    }
+    private void Delete_Click(object sender, RoutedEventArgs e)
+    {
+        if (_macro is not null) RunEdit(_macro.RemoveSelectedEvents, "Selection deleted. Undo is available.");
+    }
+    private void Clear_Click(object sender, RoutedEventArgs e)
+    {
+        if (_macro is not null) RunEdit(() => _editor!.Execute("Clear all", _macro.Clear), "All actions cleared. Undo is available.");
     }
     private void Actions_KeyDown(object sender, KeyRoutedEventArgs e)
     {
@@ -216,7 +246,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor?.IsDirty == true) RefreshEditor();
         _rawOpen = false; _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null;
         _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
-        UpdateSelectionText();
+        UpdateSelectionScope();
     }
     private void PopulateRaw(bool enterRaw = false)
     {
@@ -238,14 +268,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
                 if (!RawList.SelectedItems.Contains(row)) RawList.SelectedItems.Add(row);
         }
         else RawList.SelectedItems.Clear();
-        _sync = false; LoadRaw(); UpdateSelectionText();
+        _sync = false; LoadRaw(); UpdateSelectionScope();
     }
     private void Raw_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_sync) return;
         LoadRaw();
         _editor?.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
-        UpdateSelectionText();
+        UpdateSelectionScope();
     }
     private void LoadRaw()
     {
@@ -296,11 +326,12 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
 
     private Brush BrushResource(string name) => (Brush)Application.Current.Resources[name];
-    private Point Map(PathPosition p) => new(18 + (p.X - _minX) * _scale, 18 + (p.Y - _minY) * _scale);
+    private Point Map(PathPosition p) { var point = _viewport.Map(p); return new(point.X, point.Y); }
     private void DrawPath()
     {
         if (PathCanvas is null || _editor is null || _presentation is null) return;
         PathCanvas.Children.Clear(); _cursor = null; _handle = null;
+        PathCanvas.Clip = new RectangleGeometry { Rect = new Rect(0, 0, PathCanvas.ActualWidth, PathCanvas.ActualHeight) };
         if (!_presentation.TryGetFrame(Selected, out var frame))
         {
             if (_loaded) _refreshTimer.Start();
@@ -309,26 +340,31 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _display = frame.Overview; _selectedDisplay = frame.SelectedSamples; _space = frame.Space;
         PathNote.Text = _space switch
         {
-            CoordinateSpace.RelativeCounts => "Device-count trace only · not a pixel path or cursor-position estimate. Separate count segments start at zero.",
-            CoordinateSpace.AbsoluteDesktop => "Absolute pixels · virtual desktop. Only this coordinate frame is shown.",
-            CoordinateSpace.AbsolutePrimary => "Absolute pixels · primary screen. Only this coordinate frame is shown.",
-            _ => "No known position here. Button-only input cannot supply a screen location."
+            CoordinateSpace.RelativeCounts => "Device counts · not screen pixels",
+            CoordinateSpace.AbsoluteDesktop => "Screen pixels · virtual desktop",
+            CoordinateSpace.AbsolutePrimary => "Screen pixels · primary screen",
+            _ => "No recorded position for this action"
         };
+        ToolTipService.SetToolTip(PathNote, _space == CoordinateSpace.RelativeCounts
+            ? "Device-count trace only, not a cursor-position estimate. Separate count segments start at zero."
+            : "Only this coordinate frame is shown. Button-only input cannot supply a screen location.");
         if (frame.Bounds is not { } bounds) { UpdateCursor(); return; }
-        var viewport = PathViewport.Fit(bounds, PathCanvas.ActualWidth, PathCanvas.ActualHeight);
-        _minX = viewport.MinX; _minY = viewport.MinY; _scale = viewport.Scale;
+        _viewport = PathViewport.Fit(bounds, PathCanvas.ActualWidth, PathCanvas.ActualHeight);
         AddPath(_display, BrushResource("TextFillColorSecondaryBrush"), 1.5);
-        AddPath(_display, BrushResource("TextFillColorPrimaryBrush"), 2, dashed: true, only: ActionKind.Drag);
+        AddPath(_display, BrushResource("TextFillColorSecondaryBrush"), 2, dashed: true, only: ActionKind.Drag);
         AddPath(_selectedDisplay, BrushResource("AccentFillColorDefaultBrush"), 3, dashed: Selected?.Kind == ActionKind.Drag);
+        AddDirectionCues();
         if (ShowSamples.IsChecked == true)
             foreach (var s in _selectedDisplay.Where(s => s.Position?.Space == _space)) AddDot(s.Position!.Value, 4, "AccentFillColorDefaultBrush");
         foreach (var action in frame.Landmarks) AddLandmark(action);
+        AddEndpoints();
         if (frame.GeometryBlockReason is null && frame.Destination is { } end)
         {
             _handle = AddDot(end, 18, "CardBackgroundFillColorDefaultBrush");
+            _handle.Fill = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             _handle.Stroke = BrushResource("AccentFillColorDefaultBrush"); _handle.StrokeThickness = 3;
         }
-        _cursor = AddDot(new(bounds.MinX, bounds.MinY, _space), 10, "TextFillColorPrimaryBrush");
+        _cursor = AddDot(new(bounds.MinX, bounds.MinY, _space), 8, "TextFillColorPrimaryBrush");
         UpdateCursor();
     }
     private void AddLandmark(RecordedAction action)
@@ -337,7 +373,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (sample.Position is not { } p || p.Space != _space) return;
         Shape marker = action.Kind == ActionKind.Drag ? new Rectangle() : new Ellipse();
         marker.Width = marker.Height = 12; marker.StrokeThickness = 2;
-        marker.Stroke = BrushResource("TextFillColorPrimaryBrush"); marker.Fill = BrushResource("CardBackgroundFillColorDefaultBrush");
+        marker.Stroke = BrushResource(ReferenceEquals(action, Selected) ? "AccentFillColorDefaultBrush" : "TextFillColorSecondaryBrush");
+        marker.Fill = BrushResource("ApplicationPageBackgroundThemeBrush");
         Place(marker, Map(p)); ToolTipService.SetToolTip(marker, action.Detail);
         marker.Tapped += (_, args) => { ActionsList.SelectedItem = action; args.Handled = true; };
         PathCanvas.Children.Add(marker);
@@ -360,6 +397,46 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (dashed) path.StrokeDashArray = new DoubleCollection { 4, 3 };
         PathCanvas.Children.Add(path);
     }
+    private void AddDirectionCues()
+    {
+        foreach (var (from, to) in PathDisplay.Directions(_selectedDisplay, _space, _viewport.Scale))
+        {
+            var a = Map(from); var b = Map(to);
+            var dx = b.X - a.X; var dy = b.Y - a.Y; var length = Math.Sqrt(dx * dx + dy * dy);
+            var ux = dx / length; var uy = dy / length;
+            var x = (a.X + b.X) / 2; var y = (a.Y + b.Y) / 2;
+            var arrow = new Polyline { Stroke = BrushResource("AccentFillColorDefaultBrush"), StrokeThickness = 2,
+                IsHitTestVisible = false, Points = new PointCollection
+                {
+                    new(x - ux * 6 - uy * 4, y - uy * 6 + ux * 4), new(x, y),
+                    new(x - ux * 6 + uy * 4, y - uy * 6 - ux * 4)
+                } };
+            PathCanvas.Children.Add(arrow);
+        }
+    }
+    private void AddEndpoints()
+    {
+        // Mark each displayed segment independently; never invent an origin or connect separate frames.
+        var samples = _selectedDisplay;
+        for (var i = 0; i < samples.Count; i++)
+        {
+            if (samples[i].Position is not { } p || p.Space != _space) continue;
+            var starts = i == 0 || samples[i].StartsSegment || samples[i - 1].Position?.Space != _space;
+            var ends = i == samples.Count - 1 || samples[i + 1].StartsSegment || samples[i + 1].Position?.Space != _space;
+            if (starts)
+            {
+                var start = AddDot(p, 12, "ApplicationPageBackgroundThemeBrush");
+                start.Stroke = BrushResource("AccentFillColorDefaultBrush"); start.StrokeThickness = 2;
+            }
+            if (ends)
+            {
+                var point = Map(p);
+                var end = new Polygon { Fill = BrushResource("AccentFillColorDefaultBrush"), IsHitTestVisible = false,
+                    Points = new PointCollection { new(point.X, point.Y - 6), new(point.X + 6, point.Y), new(point.X, point.Y + 6), new(point.X - 6, point.Y) } };
+                PathCanvas.Children.Add(end);
+            }
+        }
+    }
     private Ellipse AddDot(PathPosition position, double size, string brush)
     {
         var dot = new Ellipse { Width = size, Height = size, Fill = BrushResource(brush), IsHitTestVisible = false };
@@ -376,6 +453,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             if (p?.Space == _space) Place(_cursor, Map(p.Value));
         }
         PreviewClock.Text = $"{TimeText.Human(_previewPosition.Time)} / {TimeText.Human(_editor.Projection.TotalTime)}";
+        ToolTipService.SetToolTip(PreviewClock, $"{TimeText.Seconds(_previewPosition.Time)}s / {TimeText.Seconds(_editor.Projection.TotalTime)}s");
         _sync = true;
         Scrubber.Value = _previewPosition.Value;
         _sync = false;
@@ -385,7 +463,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
         if (_editor is null || _editor.Projection.TotalTime == 0) return;
         if (_previewPosition.Time >= _editor.Projection.TotalTime) _previewPosition.SeekTime(0, _editor.Projection.TotalTime);
-        _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start(); PreviewButton.Content = "Pause visual preview";
+        _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start(); PreviewButton.Content = "Pause";
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PreviewButton, "Pause visual preview");
     }
     private void Preview_Tick(object? sender, object e)
     {
@@ -394,7 +473,15 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         UpdateCursor();
         if (_previewPosition.Time >= _editor.Projection.TotalTime) StopPreview();
     }
-    private void StopPreview() { _previewTimer.Stop(); _previewWatch.Stop(); if (PreviewButton is not null) PreviewButton.Content = "Preview · visual only"; }
+    private void StopPreview()
+    {
+        _previewTimer.Stop(); _previewWatch.Stop();
+        if (PreviewButton is not null)
+        {
+            PreviewButton.Content = "Preview";
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PreviewButton, "Preview path, visual only");
+        }
+    }
     private void Scrub_Changed(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (_sync || _editor is null) return;
@@ -414,8 +501,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (!_dragging) return;
         var point = e.GetCurrentPoint(PathCanvas).Position;
-        DestinationX.Text = Math.Clamp(Math.Round((point.X - 18) / _scale + _minX), int.MinValue, int.MaxValue).ToString("0", CultureInfo.InvariantCulture);
-        DestinationY.Text = Math.Clamp(Math.Round((point.Y - 18) / _scale + _minY), int.MinValue, int.MaxValue).ToString("0", CultureInfo.InvariantCulture);
+        var position = _viewport.Unmap(point.X, point.Y);
+        DestinationX.Text = Math.Clamp(Math.Round(position.X), int.MinValue, int.MaxValue).ToString("0", CultureInfo.InvariantCulture);
+        DestinationY.Text = Math.Clamp(Math.Round(position.Y), int.MinValue, int.MaxValue).ToString("0", CultureInfo.InvariantCulture);
         if (_handle is not null) Place(_handle, point);
     }
     private void Canvas_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -432,17 +520,19 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void Samples_Changed(object sender, RoutedEventArgs e) => DrawPath();
     private void Editor_ThemeChanged(FrameworkElement sender, object args) => DrawPath();
     private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawPath();
-    private void Editor_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (Workspace is null) return;
-        var narrow = ActualWidth < 700; var medium = ActualWidth < 1050;
-        Workspace.ColumnDefinitions[0].Width = narrow ? new GridLength(1, GridUnitType.Star) : new GridLength(260);
+        var layout = EditorLayout.Fit(e.NewSize.Width, e.NewSize.Height);
+        var narrow = layout.Stacked; var medium = layout.InspectorBelow;
+        Workspace.ColumnDefinitions[0].Width = narrow ? new GridLength(1, GridUnitType.Star) : new GridLength(250);
         Workspace.ColumnDefinitions[1].Width = narrow ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-        Workspace.ColumnDefinitions[2].Width = medium ? new GridLength(0) : new GridLength(290);
+        Workspace.ColumnDefinitions[2].Width = medium ? new GridLength(0) : new GridLength(280);
         Grid.SetColumn(PathPanel, narrow ? 0 : 1); Grid.SetRow(PathPanel, narrow ? 1 : 0);
         Grid.SetColumn(InspectorPanel, medium ? 0 : 2); Grid.SetRow(InspectorPanel, narrow ? 2 : medium ? 1 : 0);
         Grid.SetColumnSpan(InspectorPanel, medium && !narrow ? 2 : 1);
-        var height = Math.Max(330, ActualHeight - 95);
-        ListPanel.Height = narrow ? 220 : height; PathPanel.Height = narrow ? 420 : height; InspectorPanel.Height = medium ? 440 : height;
+        ListPanel.Height = layout.ListHeight; PathPanel.Height = layout.MainHeight; InspectorPanel.Height = layout.InspectorHeight;
+        InspectorPanel.BorderThickness = medium ? new Thickness(0, 1, 0, 0) : new Thickness(1, 0, 0, 0);
+        InspectorPanel.Padding = medium ? new Thickness(0, 12, 0, 0) : new Thickness(12, 0, 0, 0);
     }
 }
