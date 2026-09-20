@@ -31,19 +31,22 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
 {
     public const int MaximumMacroBytes = 64 * 1024 * 1024;
     private readonly string _directory;
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
-    private readonly SemaphoreSlim _gate;
+    private readonly IRecordingLibraryLock _lock;
     public static string DefaultDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MacroRecorder", "Recordings");
 
     public RecordingLibraryStore(string? directory = null)
     {
         _directory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory ?? DefaultDirectory));
-        _gate = Gates.GetOrAdd(_directory, _ => new(1, 1));
+        _lock = new RecordingLibraryLock(_directory);
     }
+
+    internal RecordingLibraryStore(string directory, IRecordingLibraryLock libraryLock) : this(directory)
+        => _lock = libraryLock;
 
     public async Task<RecordingLibraryRead> ListAsync(CancellationToken cancellationToken = default)
     {
         if (!Directory.Exists(_directory)) return new([], []);
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
         var items = new List<RecordingLibraryItem>();
         var warnings = new List<string>();
         var ids = Directory.EnumerateFiles(_directory).Select(Path.GetFileName)
@@ -54,7 +57,7 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                var record = await LoadAsync(Guid.ParseExact(name, "N"), cancellationToken).ConfigureAwait(false);
+                var record = await LoadCoreAsync(Guid.ParseExact(name, "N"), cancellationToken).ConfigureAwait(false);
                 items.Add(record.Metadata);
                 if (record.Recovered) warnings.Add($"Recovered {record.Metadata.Name} from its previous saved copy. Save it to repair the current copy.");
             }
@@ -69,20 +72,21 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
 
     public async Task<StoredRecording> LoadAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
+        return await LoadCoreAsync(id, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<StoredRecording> LoadCoreAsync(Guid id, CancellationToken cancellationToken)
+    {
+        ThrowIfDeleted(id);
+        var path = RecordPath(id);
+        try { return await ReadAsync(path, id, cancellationToken).ConfigureAwait(false); }
+        catch (Exception primaryError) when (primaryError is not OperationCanceledException)
         {
-            ThrowIfDeleted(id);
-            var path = RecordPath(id);
-            try { return await ReadAsync(path, id, cancellationToken).ConfigureAwait(false); }
-            catch (Exception primaryError) when (primaryError is not OperationCanceledException)
-            {
-                try { return (await ReadAsync(path + ".bak", id, cancellationToken).ConfigureAwait(false)) with { Recovered = true }; }
-                catch (Exception backupError) when (backupError is not OperationCanceledException)
-                { throw new IOException("Neither saved copy can be read. The files have been retained.", new AggregateException(primaryError, backupError)); }
-            }
+            try { return (await ReadAsync(path + ".bak", id, cancellationToken).ConfigureAwait(false)) with { Recovered = true }; }
+            catch (Exception backupError) when (backupError is not OperationCanceledException)
+            { throw new IOException("Neither saved copy can be read. The files have been retained.", new AggregateException(primaryError, backupError)); }
         }
-        finally { _gate.Release(); }
     }
 
     public async Task SaveAsync(StoredRecording recording, CancellationToken cancellationToken = default)
@@ -91,22 +95,17 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
         var document = new LibraryDocument(1, recording.Metadata, recording.MacroBytes,
             Convert.ToHexString(SHA256.HashData(recording.MacroBytes)));
         var bytes = JsonSerializer.SerializeToUtf8Bytes(document);
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
+        ThrowIfDeleted(recording.Metadata.Id);
+        var path = RecordPath(recording.Metadata.Id);
+        // A corrupt current file must not replace the only healthy recovery copy.
+        var backup = path + ".bak";
+        if (File.Exists(path))
         {
-            ThrowIfDeleted(recording.Metadata.Id);
-            Directory.CreateDirectory(_directory);
-            var path = RecordPath(recording.Metadata.Id);
-            // A corrupt current file must not replace the only healthy recovery copy.
-            var backup = path + ".bak";
-            if (File.Exists(path))
-            {
-                try { await ReadAsync(path, recording.Metadata.Id, cancellationToken).ConfigureAwait(false); }
-                catch (Exception error) when (error is not OperationCanceledException) { backup = null; }
-            }
-            await AtomicFile.WriteAsync(path, bytes, backup, cancellationToken).ConfigureAwait(false);
+            try { await ReadAsync(path, recording.Metadata.Id, cancellationToken).ConfigureAwait(false); }
+            catch (Exception error) when (error is not OperationCanceledException) { backup = null; }
         }
-        finally { _gate.Release(); }
+        await AtomicFile.WriteAsync(path, bytes, backup, cancellationToken).ConfigureAwait(false);
     }
 
     private string RecordPath(Guid id)

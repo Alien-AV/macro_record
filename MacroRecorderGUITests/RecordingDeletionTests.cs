@@ -140,17 +140,41 @@ public sealed class RecordingDeletionTests
     }
 
     [TestMethod]
-    public async Task DifferentStoreInstancesSerializeSaveWithDeletion()
+    public async Task DifferentStoreInstancesNeverLoseASuccessfulSaveToDeletion()
     {
         var record = Recording(); var id = record.Metadata.Id;
         await Store.SaveAsync(record);
         var save = Store.SaveAsync(Recording("Before deletion", id));
         var delete = Store.DeleteAsync(id);
-        await save; await delete;
+        var saved = true;
+        try { await save; }
+        catch (RecordingDeletedException) { saved = false; }
+        await delete;
         await Assert.ThrowsAsync<RecordingDeletedException>(() => Store.SaveAsync(record));
         Assert.AreEqual(0, (await Store.ListAsync()).Items.Count);
         await Store.RestoreAsync(id);
-        Assert.AreEqual("Before deletion", (await Store.LoadAsync(id)).Metadata.Name);
+        Assert.AreEqual(saved ? "Before deletion" : record.Metadata.Name, (await Store.LoadAsync(id)).Metadata.Name);
+    }
+
+    [TestMethod]
+    public async Task ChecksumInvalidPrimaryDeletesThroughHealthyBackupAndRestoresBothExactCopies()
+    {
+        var record = Recording(); var id = record.Metadata.Id;
+        await Store.SaveAsync(record); await Store.SaveAsync(Recording("Later", id));
+        var primary = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(PathFor(id)))!;
+        primary["Sha256"] = "checksum mismatch";
+        await File.WriteAllTextAsync(PathFor(id), primary.ToJsonString());
+        var corruptBytes = await File.ReadAllBytesAsync(PathFor(id));
+        var backupBytes = await File.ReadAllBytesAsync(PathFor(id) + ".bak");
+        Assert.IsTrue((await Store.LoadAsync(id)).Recovered);
+        var deleted = await Store.DeleteAsync(id);
+        Assert.AreEqual(record.Metadata, deleted.Metadata);
+        Assert.AreEqual(0, (await Store.ListAsync()).Items.Count);
+        Assert.AreEqual(record.Metadata, (await Store.ListTrashAsync()).Items.Single().Metadata);
+        await Store.RestoreAsync(id);
+        CollectionAssert.AreEqual(corruptBytes, await File.ReadAllBytesAsync(PathFor(id)));
+        CollectionAssert.AreEqual(backupBytes, await File.ReadAllBytesAsync(PathFor(id) + ".bak"));
+        Assert.IsTrue((await Store.LoadAsync(id)).Recovered);
     }
 
     [TestMethod]

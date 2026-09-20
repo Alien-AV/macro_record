@@ -53,6 +53,7 @@ public sealed partial class HiddenFocusTests
     [STAThread]
     public static int Main(string[] args)
     {
+        if (args is ["--library-process-check", ..]) return LibraryProcessTests.RunChildAsync(args).GetAwaiter().GetResult();
         if (args is not ["--hidden-focus-check"]) return 2;
         var completion = new TaskCompletionSource();
         try

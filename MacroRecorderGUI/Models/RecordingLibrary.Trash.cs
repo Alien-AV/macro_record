@@ -28,73 +28,61 @@ public sealed partial class RecordingLibraryStore
 
     public async Task<RecordingTrashRead> ListTrashAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
+        if (!Directory.Exists(TrashDirectory)) return new([], []);
+        var items = new List<DeletedRecording>();
+        var warnings = new List<string>();
+        foreach (var path in Directory.EnumerateFiles(TrashDirectory, "*.json"))
         {
-            if (!Directory.Exists(TrashDirectory)) return new([], []);
-            var items = new List<DeletedRecording>();
-            var warnings = new List<string>();
-            foreach (var path in Directory.EnumerateFiles(TrashDirectory, "*.json"))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(path), "N", out var id)) continue;
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(path), "N", out var id)) continue;
-                try
-                {
-                    var document = await ReadTrashAsync(id, cancellationToken).ConfigureAwait(false);
-                    items.Add(new(document.Metadata, document.DeletedAt));
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                { warnings.Add($"Could not read trash entry {id:N}: {error.Message}. Its files have been retained."); }
+                var document = await ReadTrashAsync(id, cancellationToken).ConfigureAwait(false);
+                items.Add(new(document.Metadata, document.DeletedAt));
             }
-            return new(items.OrderByDescending(item => item.DeletedAt).ToArray(), warnings);
+            catch (Exception error) when (error is not OperationCanceledException)
+            { warnings.Add($"Could not read trash entry {id:N}: {error.Message}. Its files have been retained."); }
         }
-        finally { _gate.Release(); }
+        return new(items.OrderByDescending(item => item.DeletedAt).ToArray(), warnings);
     }
 
     public async Task<RecordingTrashChange> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
+        ThrowIfDeleted(id);
+        var path = RecordPath(id);
+        var primary = await ReadCopyAsync(path, cancellationToken).ConfigureAwait(false);
+        var backup = await ReadCopyAsync(path + ".bak", cancellationToken).ConfigureAwait(false);
+        var metadata = ReadRetainedRecording(id, primary, backup).Metadata;
+        var document = new TrashDocument(1, metadata, DateTimeOffset.UtcNow, primary, backup);
+        Directory.CreateDirectory(TrashDirectory);
+        // Publishing this durable bundle is the deletion commit. Even if removing a
+        // live duplicate fails or the process exits, neither copy can resurrect it.
+        await AtomicFile.WriteAsync(TrashPath(id), JsonSerializer.SerializeToUtf8Bytes(document),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var warnings = new List<string>();
+        foreach (var copy in new[] { path, path + ".bak" })
         {
-            ThrowIfDeleted(id);
-            var path = RecordPath(id);
-            var primary = await ReadCopyAsync(path, cancellationToken).ConfigureAwait(false);
-            var backup = await ReadCopyAsync(path + ".bak", cancellationToken).ConfigureAwait(false);
-            var metadata = ReadRetainedRecording(id, primary, backup).Metadata;
-            var document = new TrashDocument(1, metadata, DateTimeOffset.UtcNow, primary, backup);
-            Directory.CreateDirectory(TrashDirectory);
-            // Publishing this durable bundle is the deletion commit. Even if removing a
-            // live duplicate fails or the process exits, neither copy can resurrect it.
-            await AtomicFile.WriteAsync(TrashPath(id), JsonSerializer.SerializeToUtf8Bytes(document),
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-            var warnings = new List<string>();
-            foreach (var copy in new[] { path, path + ".bak" })
-            {
-                try { File.Delete(copy); }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                { warnings.Add($"{metadata.Name} is safely in local trash; a redundant saved copy could not be removed: {error.Message}"); }
-            }
-            return new(metadata, warnings);
+            try { File.Delete(copy); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            { warnings.Add($"{metadata.Name} is safely in local trash; a redundant saved copy could not be removed: {error.Message}"); }
         }
-        finally { _gate.Release(); }
+        return new(metadata, warnings);
     }
 
     public async Task<RecordingTrashChange> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            var document = await ReadTrashAsync(id, cancellationToken).ConfigureAwait(false);
-            var path = RecordPath(id);
-            await RestoreCopyAsync(path, document.Primary, cancellationToken).ConfigureAwait(false);
-            await RestoreCopyAsync(path + ".bak", document.Backup, cancellationToken).ConfigureAwait(false);
-            cancellationToken.ThrowIfCancellationRequested();
-            // The marker remains until BOTH saved copies are restored. Failed or
-            // interrupted restores remain hidden and can safely be retried.
-            File.Delete(TrashPath(id));
-            return new(document.Metadata, []);
-        }
-        finally { _gate.Release(); }
+        using var lease = await _lock.AcquireAsync(cancellationToken).ConfigureAwait(false);
+        var document = await ReadTrashAsync(id, cancellationToken).ConfigureAwait(false);
+        var path = RecordPath(id);
+        await RestoreCopyAsync(path, document.Primary, cancellationToken).ConfigureAwait(false);
+        await RestoreCopyAsync(path + ".bak", document.Backup, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        // The marker remains until BOTH saved copies are restored. Failed or
+        // interrupted restores remain hidden and can safely be retried.
+        File.Delete(TrashPath(id));
+        return new(document.Metadata, []);
     }
 
     private static async Task RestoreCopyAsync(string path, byte[]? bytes, CancellationToken cancellationToken)
@@ -127,10 +115,10 @@ public sealed partial class RecordingLibraryStore
     private static StoredRecording ReadRetainedRecording(Guid id, byte[]? primary, byte[]? backup)
     {
         try { return ReadDocument(primary ?? throw new IOException("Missing current copy."), id); }
-        catch (Exception primaryError) when (primaryError is IOException or JsonException or ArgumentException or Google.Protobuf.InvalidProtocolBufferException)
+        catch (Exception primaryError) when (primaryError is IOException or InvalidDataException or JsonException or ArgumentException or Google.Protobuf.InvalidProtocolBufferException)
         {
             try { return ReadDocument(backup ?? throw new IOException("Missing previous copy."), id) with { Recovered = true }; }
-            catch (Exception backupError) when (backupError is IOException or JsonException or ArgumentException or Google.Protobuf.InvalidProtocolBufferException)
+            catch (Exception backupError) when (backupError is IOException or InvalidDataException or JsonException or ArgumentException or Google.Protobuf.InvalidProtocolBufferException)
             { throw new IOException("Neither saved copy can be read. The files have been retained.", new AggregateException(primaryError, backupError)); }
         }
     }
