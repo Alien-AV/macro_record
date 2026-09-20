@@ -176,7 +176,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         var committed = CommitActionFields(refresh: false);
         if (!committed) anchors = _inspectorSelection;
         // Commit against the old inspector identity before adopting the requested selection.
-        if (_macro is not null)
+        if (_macro is not null && (_editor.IsDirty || !committed
+            || !anchors.SequenceEqual(ActionsList.SelectedItems.OfType<RecordedAction>().Select(a => a.First))))
         {
             _sync = true;
             try
@@ -615,7 +616,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (IsPreviewMode || _editor is null || !e.GetCurrentPoint(PathCanvas).Properties.IsLeftButtonPressed) return;
         // This handler runs before the parent background handler and before pointer capture.
-        if (!TryCommitPendingEdits()) { e.Handled = true; return; }
+        if (!TryCommitPendingEdits()) { ClickAwayFocus.LeaveTextInput(this, this); e.Handled = true; return; }
         ClickAwayFocus.LeaveTextInput(this, this);
         if (_editor.IsDirty) return;
         var point = e.GetCurrentPoint(PathCanvas).Position;

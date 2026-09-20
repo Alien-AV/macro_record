@@ -128,6 +128,13 @@ public sealed class HiddenFocusTests
             Assert.AreSame(macro.Events[2], ((MacroRecorderGUI.Editor.RecordedAction)actions.SelectedItem).First);
             Assert.AreEqual(500000UL, macro.Events[2].TimeSinceLastEvent);
 
+            actions.SelectedItem = macro.Editor.Projection.Actions[0];
+            var selectionChanges = 0;
+            actions.SelectionChanged += (_, _) => selectionChanges++;
+            actions.SelectedItems.Add(macro.Editor.Projection.Actions[1]);
+            Assert.AreEqual(2, actions.SelectedItems.Count);
+            Assert.AreEqual(1, selectionChanges, "Ordinary multi-selection must not be cleared and rebuilt, which resets the keyboard selection anchor.");
+
             CheckPointerPolicy();
             Assert.IsFalse(IsWindowVisible(hwnd));
         }
