@@ -34,7 +34,45 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private IReadOnlyList<PathSample> _selectedDisplay = [];
     private CoordinateSpace _space;
     private PathViewport _viewport;
-    private Ellipse? _cursor, _handle;
+    private Polygon? _cursor;
+    private Ellipse? _handle;
+    private VisualPreview? _preview;
+    private PreviewFrame? _previewFrame;
+    private RecordedAction? _pathAction;
+    private bool _isPreviewMode;
+    private string _status = "";
+    private readonly Windows.UI.ViewManagement.AccessibilitySettings _accessibility = new();
+
+    public event EventHandler? StateChanged;
+    public bool CanUndo => _editor?.CanUndo == true;
+    public bool CanPreview => _editor?.Projection.Actions.Count > 0;
+    public bool IsPreviewPlaying => _previewTimer.IsEnabled;
+    public string Summary => SummaryText?.Text ?? "";
+    public string Status
+    {
+        get => _status;
+        private set { _status = value; StateChanged?.Invoke(this, EventArgs.Empty); }
+    }
+    public bool IsPreviewMode
+    {
+        get => _isPreviewMode;
+        set
+        {
+            if (_isPreviewMode == value) return;
+            StopPreview(); CancelDrag(); _isPreviewMode = value;
+            if (value)
+            {
+                EditorPathHost.Content = null; PreviewPathHost.Content = PathPanel;
+                _previewPosition.SeekTime(0, _editor?.Projection.TotalTime ?? 0);
+            }
+            else { PreviewPathHost.Content = null; EditorPathHost.Content = PathPanel; }
+            WorkspaceScroller.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            PreviewPage.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            if (value) BuildTimeline();
+            UpdatePreviewFrame(); DrawPath();
+            Status = value ? "Preview only · no input sent" : "";
+        }
+    }
 
     public MacroTabContent()
     {
@@ -70,7 +108,20 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _rawRows.Close(); _drafts.Clear();
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
+        _preview = null; _previewFrame = null; _pathAction = null;
+        _timelineSegments = []; _heldLabels = []; _previewInitialSpace = CoordinateSpace.Unknown;
+        Timeline.Children.Clear(); Timeline.ColumnDefinitions.Clear(); HeldInputs.ItemsSource = null;
+        _previewPosition.SeekTime(0, 0);
+        PreviewStep.Text = "NO ACTIONS"; PreviewTitle.Text = "Empty recording";
+        PreviewDescription.Text = "Record or add input to preview a sequence.";
+        PreviewNext.Text = "End of sequence"; PreviewClock.Text = "0ms / 0ms"; PreviewTiming.Text = "Original timing · 0 actions";
+        HeldNote.Text = "No recorded keys or buttons held";
+        _rawOpen = false; RawContent.Visibility = Visibility.Collapsed; RawChevron.Glyph = "\uE76C";
         _display = []; _selectedDisplay = []; PathCanvas.Children.Clear();
+        SummaryText.Text = "0 actions · 0ms";
+        EmptySequence.Visibility = Visibility.Visible;
+        UpdateInspector();
+        Status = "";
     }
     public void Dispose()
     {
@@ -101,12 +152,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             }
         }
         finally { _sync = false; }
-        if (_editor.RawSelection && !_rawOpen) RawExpander.IsExpanded = true;
-        SummaryText.Text = _macro.Events.Count == 0 ? "Record a macro or add an event to get started."
-            : $"{_editor.Projection.Actions.Count:N0} {(_editor.Projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(_editor.Projection.TotalTime)}";
-        UndoButton.IsEnabled = _editor.CanUndo;
+        if (_editor.RawSelection && !_rawOpen) SetRawOpen(true);
+        SummaryText.Text = $"{_editor.Projection.Actions.Count:N0} {(_editor.Projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(_editor.Projection.TotalTime)}";
+        EmptySequence.Visibility = _macro.Events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _previewPosition.RefreshDuration(_editor.Projection.TotalTime);
-        UpdateInspector(resetDrafts); UpdateSelectionScope(); DrawPath();
+        _preview = new VisualPreview(_macro.Events, _editor.Projection);
+        if (IsPreviewMode) { BuildTimeline(); UpdatePreviewFrame(); }
+        UpdateInspector(resetDrafts); UpdateSelectionScope(); RefreshRowColors(); DrawPath();
+        StateChanged?.Invoke(this, EventArgs.Empty);
     }
     private void Actions_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -131,7 +184,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is not null && _macro is not null)
         {
             SelectionScope.Text = _editor.RawSelection ? $"{_macro.SelectedEvents.Count:N0} raw events selected"
-                : ActionsList.SelectedItems.Count > 1 ? $"{ActionsList.SelectedItems.Count:N0} actions selected" : "Ctrl/Shift to select several";
+                : ActionsList.SelectedItems.Count > 1 ? $"{ActionsList.SelectedItems.Count:N0} actions selected" : "Every captured input preserved";
             DeleteButton.IsEnabled = _macro.SelectedEvents.Count > 0;
             var deleteScope = _editor.RawSelection ? "Delete selected raw events" : "Delete selected actions";
             ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
@@ -149,33 +202,45 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _drafts.Select(a?.First, resetDrafts);
         ActionFields.IsEnabled = a is not null;
         ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
-        SelectedTitle.Text = a?.Title ?? "Select an action";
+        SelectedTitle.Text = a?.Name ?? "Select an action";
+        SampleBadge.Text = a is null ? "No input" : $"{a.Count:N0} {(a.Kind is ActionKind.Move or ActionKind.Drag ? "samples" : "events")}";
+        RawHeader.Text = a is null ? "Exact captured input" : $"Exact captured input · {a.Count:N0} events";
+        RawToggle.IsEnabled = a is not null;
         InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
         InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact delay: {TimeText.Seconds(a.Wait)}s · duration: {TimeText.Seconds(a.Duration)}s";
-        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · inspect Advanced before replay." : "";
+        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · inspect exact captured input before replay." : "";
         ActionWarning.Visibility = a is { Complete: false } ? Visibility.Visible : Visibility.Collapsed;
         ToolTipService.SetToolTip(ActionWarning, a?.WarningExplanation);
+        var path = a is not null && a.Kind is not (ActionKind.Keys or ActionKind.Scroll);
+        EditorPathHost.Visibility = path || a is null ? Visibility.Visible : Visibility.Collapsed;
+        InputVisual.Visibility = a is not null && !path ? Visibility.Visible : Visibility.Collapsed;
+        CapturedKeys.ItemsSource = a?.KeyLabels ?? Array.Empty<string>();
+        InputGlyph.Glyph = a?.Glyph ?? "\uE8A5";
+        InputDetail.Text = a?.Detail ?? "";
         if (a is null || _editor is null) { _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
         Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
-        DurationButton.IsEnabled = a.Count > 1;
+        WaitLabel.Text = $"Wait before · {TimeText.Human(a.Wait)}  ›";
         DurationInput.IsEnabled = a.Count > 1;
         var reason = _editor.GeometryBlockReason(a);
-        GeometryNote.Text = reason ?? "Destination · absolute pixels";
+        GeometryNote.Text = reason is null ? "Adjusts the end of this movement."
+            : a.Kind is ActionKind.Keys ? "Original key order is preserved."
+            : a.Kind is ActionKind.Scroll ? "Original wheel units and timing are preserved." : reason;
+        if (a.Count == 1) GeometryNote.Text += " Single event · use Wait before to change its timing.";
         ToolTipService.SetToolTip(GeometryNote, reason ?? "Drag the outlined endpoint or apply coordinates. The following path remains connected.");
-        DestinationFields.IsEnabled = reason is null;
         DestinationFields.Visibility = reason is null ? Visibility.Visible : Visibility.Collapsed;
         var end = _editor.Projection.Samples[a.End - 1].Position;
         Field(DestinationX, end?.X.ToString("0", CultureInfo.InvariantCulture) ?? "");
         Field(DestinationY, end?.Y.ToString("0", CultureInfo.InvariantCulture) ?? "");
+        ConversionPanel.Visibility = _editor.Projection.HasRelativeMovement ? Visibility.Visible : Visibility.Collapsed;
         if (_rawOpen) PopulateRaw();
     }
 
     private void RunEdit(Action operation, string message, bool resetDrafts = true)
     {
-        try { StopPreview(); operation(); RefreshEditor(resetDrafts); EditorStatus.Text = message; }
+        try { StopPreview(); operation(); RefreshEditor(resetDrafts); Status = message; }
         catch (Exception error) when (error is ArgumentException or OverflowException or FormatException)
-        { EditorStatus.Text = error.Message; RefreshEditor(); }
+        { Status = error.Message; RefreshEditor(); }
     }
     private void Wait_Click(object sender, RoutedEventArgs e)
     {
@@ -191,15 +256,16 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Convert_Click(object sender, RoutedEventArgs e)
     {
-        if (AcceptEstimate.IsChecked != true) { EditorStatus.Text = "Read the conversion assumptions and select ‘Use this explicit estimate’ first."; return; }
+        if (AcceptEstimate.IsChecked != true) { Status = "Read the conversion assumptions and select ‘Use this explicit estimate’ first."; return; }
         if (_editor is not null) RunEdit(_editor.ConvertAnchoredEstimate, "Anchored moves converted using 1 count = 1 pixel. These are estimates, not reconstructed cursor positions. Undo is available.");
         AcceptEstimate.IsChecked = false;
     }
-    private void Undo_Click(object sender, RoutedEventArgs e)
+    public bool Undo()
     {
-        if (_editor is null) return;
+        if (_editor is null) return false;
         StopPreview(); var undone = _editor.Undo(); RefreshEditor(resetDrafts: true);
-        EditorStatus.Text = undone ? "Edit undone; later captured events retained." : "Nothing safe to undo.";
+        Status = undone ? "Edit undone; later captured events retained." : "Nothing safe to undo.";
+        return undone;
     }
     private void AddMouse_Click(object sender, RoutedEventArgs e)
     {
@@ -234,19 +300,21 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
 
     private bool _rawOpen;
-    private void Raw_Expanding(Expander sender, ExpanderExpandingEventArgs args)
+    private void RawToggle_Click(object sender, RoutedEventArgs e) => SetRawOpen(!_rawOpen);
+    private void SetRawOpen(bool open)
     {
-        _rawOpen = true;
         if (_editor?.IsDirty == true) RefreshEditor();
-        PopulateRaw(enterRaw: _editor?.RawSelection != true);
-    }
-    private void Raw_Collapsed(Expander sender, ExpanderCollapsedEventArgs args)
-    {
-        // Restore action references under the refresh guard before leaving raw-selection scope.
-        if (_editor?.IsDirty == true) RefreshEditor();
-        _rawOpen = false; _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null;
-        _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
-        UpdateSelectionScope();
+        _rawOpen = open;
+        RawContent.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        RawChevron.Glyph = open ? "\uE70E" : "\uE76C";
+        if (open) PopulateRaw(enterRaw: _editor?.RawSelection != true);
+        else
+        {
+            _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null;
+            _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
+            UpdateSelectionScope();
+        }
+        ResizeWorkspace();
     }
     private void PopulateRaw(bool enterRaw = false)
     {
@@ -325,14 +393,21 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         }, "Each selected raw delay changed, including internal action timing.");
     }
 
-    private Brush BrushResource(string name) => (Brush)Application.Current.Resources[name];
+    private Brush BrushResource(string name)
+    {
+        var dictionary = Resources.MergedDictionaries[0];
+        var theme = _accessibility.HighContrast ? "HighContrast" : ActualTheme == ElementTheme.Dark ? "Default" : "Light";
+        return (Brush)((ResourceDictionary)dictionary.ThemeDictionaries[theme])["DesignedEditor" + name];
+    }
     private Point Map(PathPosition p) { var point = _viewport.Map(p); return new(point.X, point.Y); }
     private void DrawPath()
     {
         if (PathCanvas is null || _editor is null || _presentation is null) return;
         PathCanvas.Children.Clear(); _cursor = null; _handle = null;
         PathCanvas.Clip = new RectangleGeometry { Rect = new Rect(0, 0, PathCanvas.ActualWidth, PathCanvas.ActualHeight) };
-        if (!_presentation.TryGetFrame(Selected, out var frame))
+        var action = IsPreviewMode ? PreviewPathAction() : Selected;
+        _pathAction = action;
+        if (!_presentation.TryGetFrame(action, out var frame, IsPreviewMode ? PreviewCoordinateSpace : null))
         {
             if (_loaded) _refreshTimer.Start();
             return;
@@ -348,23 +423,31 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         ToolTipService.SetToolTip(PathNote, _space == CoordinateSpace.RelativeCounts
             ? "Device-count trace only, not a cursor-position estimate. Separate count segments start at zero."
             : "Only this coordinate frame is shown. Button-only input cannot supply a screen location.");
+        PathEmpty.Visibility = frame.Bounds is null ? Visibility.Visible : Visibility.Collapsed;
+        AddGridDots();
         if (frame.Bounds is not { } bounds) { UpdateCursor(); return; }
         _viewport = PathViewport.Fit(bounds, PathCanvas.ActualWidth, PathCanvas.ActualHeight);
-        AddPath(_display, BrushResource("TextFillColorSecondaryBrush"), 1.5);
-        AddPath(_display, BrushResource("TextFillColorSecondaryBrush"), 2, dashed: true, only: ActionKind.Drag);
-        AddPath(_selectedDisplay, BrushResource("AccentFillColorDefaultBrush"), 3, dashed: Selected?.Kind == ActionKind.Drag);
+        AddPath(_display, BrushResource("Muted"), 1.5, dashed: IsPreviewMode);
+        AddPath(_display, BrushResource("Muted"), 2, dashed: true, only: ActionKind.Drag);
+        AddPath(_selectedDisplay, BrushResource("Path"), 3, dashed: action?.Kind == ActionKind.Drag);
         AddDirectionCues();
         if (ShowSamples.IsChecked == true)
-            foreach (var s in _selectedDisplay.Where(s => s.Position?.Space == _space)) AddDot(s.Position!.Value, 4, "AccentFillColorDefaultBrush");
-        foreach (var action in frame.Landmarks) AddLandmark(action);
+            foreach (var s in _selectedDisplay.Where(s => s.Position?.Space == _space)) AddDot(s.Position!.Value, 4, "Path");
+        foreach (var landmark in frame.Landmarks) AddLandmark(landmark);
         AddEndpoints();
-        if (frame.GeometryBlockReason is null && frame.Destination is { } end)
+        if (!IsPreviewMode && frame.GeometryBlockReason is null && frame.Destination is { } end)
         {
-            _handle = AddDot(end, 18, "CardBackgroundFillColorDefaultBrush");
-            _handle.Fill = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-            _handle.Stroke = BrushResource("AccentFillColorDefaultBrush"); _handle.StrokeThickness = 3;
+            var halo = AddDot(end, 42, "Blue"); halo.Opacity = .09;
+            _handle = AddDot(end, 18, "Paper");
+            _handle.Stroke = BrushResource("Path"); _handle.StrokeThickness = 3;
         }
-        _cursor = AddDot(new(bounds.MinX, bounds.MinY, _space), 8, "TextFillColorPrimaryBrush");
+        _cursor = new Polygon
+        {
+            Points = new PointCollection { new(0, 0), new(5, 22), new(10, 15), new(18, 14) },
+            Fill = BrushResource("Ink"), Stroke = BrushResource("Paper"), StrokeThickness = 1.5,
+            IsHitTestVisible = false
+        };
+        PathCanvas.Children.Add(_cursor);
         UpdateCursor();
     }
     private void AddLandmark(RecordedAction action)
@@ -373,10 +456,10 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (sample.Position is not { } p || p.Space != _space) return;
         Shape marker = action.Kind == ActionKind.Drag ? new Rectangle() : new Ellipse();
         marker.Width = marker.Height = 12; marker.StrokeThickness = 2;
-        marker.Stroke = BrushResource(ReferenceEquals(action, Selected) ? "AccentFillColorDefaultBrush" : "TextFillColorSecondaryBrush");
-        marker.Fill = BrushResource("ApplicationPageBackgroundThemeBrush");
+        marker.Stroke = BrushResource(ReferenceEquals(action, _pathAction) ? "Path" : "Muted");
+        marker.Fill = BrushResource("Paper");
         Place(marker, Map(p)); ToolTipService.SetToolTip(marker, action.Detail);
-        marker.Tapped += (_, args) => { ActionsList.SelectedItem = action; args.Handled = true; };
+        marker.Tapped += (_, args) => { if (IsPreviewMode) SeekPreview(action.StartTime); else ActionsList.SelectedItem = action; args.Handled = true; };
         PathCanvas.Children.Add(marker);
     }
     private void AddPath(IReadOnlyList<PathSample> samples, Brush brush, double thickness, bool dashed = false, ActionKind? only = null)
@@ -405,7 +488,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             var dx = b.X - a.X; var dy = b.Y - a.Y; var length = Math.Sqrt(dx * dx + dy * dy);
             var ux = dx / length; var uy = dy / length;
             var x = (a.X + b.X) / 2; var y = (a.Y + b.Y) / 2;
-            var arrow = new Polyline { Stroke = BrushResource("AccentFillColorDefaultBrush"), StrokeThickness = 2,
+            var arrow = new Polyline { Stroke = BrushResource("Path"), StrokeThickness = 2,
                 IsHitTestVisible = false, Points = new PointCollection
                 {
                     new(x - ux * 6 - uy * 4, y - uy * 6 + ux * 4), new(x, y),
@@ -425,15 +508,15 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             var ends = i == samples.Count - 1 || samples[i + 1].StartsSegment || samples[i + 1].Position?.Space != _space;
             if (starts)
             {
-                var start = AddDot(p, 12, "ApplicationPageBackgroundThemeBrush");
-                start.Stroke = BrushResource("AccentFillColorDefaultBrush"); start.StrokeThickness = 2;
+                var start = AddDot(p, 12, "Paper");
+                start.Stroke = BrushResource("Path"); start.StrokeThickness = 2;
+                if (i == 0) AddPathLabel(p, "Start", below: true);
             }
             if (ends)
             {
-                var point = Map(p);
-                var end = new Polygon { Fill = BrushResource("AccentFillColorDefaultBrush"), IsHitTestVisible = false,
-                    Points = new PointCollection { new(point.X, point.Y - 6), new(point.X + 6, point.Y), new(point.X, point.Y + 6), new(point.X - 6, point.Y) } };
-                PathCanvas.Children.Add(end);
+                var end = AddDot(p, 14, "Paper");
+                end.Stroke = BrushResource("Path"); end.StrokeThickness = 2.5;
+                if (!IsPreviewMode && i == samples.Count - 1 && _pathAction is { } action) AddPathLabel(p, action.Name, below: false);
             }
         }
     }
@@ -449,8 +532,12 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         var p = _editor.Projection.SampleAt(_previewPosition.Time)?.Position;
         if (_cursor is not null)
         {
-            _cursor.Visibility = p?.Space == _space ? Visibility.Visible : Visibility.Collapsed;
-            if (p?.Space == _space) Place(_cursor, Map(p.Value));
+            _cursor.Visibility = IsPreviewMode && p?.Space == _space ? Visibility.Visible : Visibility.Collapsed;
+            if (p?.Space == _space)
+            {
+                var point = Map(p.Value);
+                Canvas.SetLeft(_cursor, point.X); Canvas.SetTop(_cursor, point.Y);
+            }
         }
         PreviewClock.Text = $"{TimeText.Human(_previewPosition.Time)} / {TimeText.Human(_editor.Projection.TotalTime)}";
         ToolTipService.SetToolTip(PreviewClock, $"{TimeText.Seconds(_previewPosition.Time)}s / {TimeText.Seconds(_editor.Projection.TotalTime)}s");
@@ -458,38 +545,39 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         Scrubber.Value = _previewPosition.Value;
         _sync = false;
     }
-    private void Preview_Click(object sender, RoutedEventArgs e)
+    public void TogglePreview()
     {
+        if (!IsPreviewMode) IsPreviewMode = true;
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
         if (_editor is null || _editor.Projection.TotalTime == 0) return;
         if (_previewPosition.Time >= _editor.Projection.TotalTime) _previewPosition.SeekTime(0, _editor.Projection.TotalTime);
-        _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start(); PreviewButton.Content = "Pause";
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PreviewButton, "Pause visual preview");
+        _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start();
+        UpdatePreviewFrame(); DrawPath();
+        StateChanged?.Invoke(this, EventArgs.Empty);
     }
     private void Preview_Tick(object? sender, object e)
     {
         if (_editor is null) { StopPreview(); return; }
         _previewPosition.SeekTime(_previewStart + (BigInteger)_previewWatch.ElapsedTicks * 1_000_000 / Stopwatch.Frequency, _editor.Projection.TotalTime);
-        UpdateCursor();
+        UpdatePreviewFrame();
+        if (!ReferenceEquals(_pathAction, PreviewPathAction()) || _space != PreviewCoordinateSpace) DrawPath(); else UpdateCursor();
         if (_previewPosition.Time >= _editor.Projection.TotalTime) StopPreview();
     }
     private void StopPreview()
     {
+        var wasPlaying = _previewTimer.IsEnabled;
         _previewTimer.Stop(); _previewWatch.Stop();
-        if (PreviewButton is not null)
-        {
-            PreviewButton.Content = "Preview";
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PreviewButton, "Preview path, visual only");
-        }
+        if (wasPlaying) StateChanged?.Invoke(this, EventArgs.Empty);
     }
     private void Scrub_Changed(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (_sync || _editor is null) return;
-        StopPreview(); _previewPosition.Scrub(e.NewValue, _editor.Projection.TotalTime); UpdateCursor();
+        StopPreview(); _previewPosition.Scrub(e.NewValue, _editor.Projection.TotalTime);
+        UpdatePreviewFrame(); DrawPath();
     }
     private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (_editor is null || _editor.IsDirty || !e.GetCurrentPoint(PathCanvas).Properties.IsLeftButtonPressed) return;
+        if (IsPreviewMode || _editor is null || _editor.IsDirty || !e.GetCurrentPoint(PathCanvas).Properties.IsLeftButtonPressed) return;
         var point = e.GetCurrentPoint(PathCanvas).Position;
         if (_handle is not null && Math.Abs(point.X - Canvas.GetLeft(_handle) - 9) < 14 && Math.Abs(point.Y - Canvas.GetTop(_handle) - 9) < 14)
         { StopPreview(); _dragging = PathCanvas.CapturePointer(e.Pointer); e.Handled = true; return; }
@@ -518,21 +606,16 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _dragging = false; PathCanvas?.ReleasePointerCaptures();
     }
     private void Samples_Changed(object sender, RoutedEventArgs e) => DrawPath();
-    private void Editor_ThemeChanged(FrameworkElement sender, object args) => DrawPath();
+    private void Editor_ThemeChanged(FrameworkElement sender, object args) => RefreshTheme();
+    /// <summary>Call on the UI thread from the host's desktop-safe theme monitor.</summary>
+    public void RefreshTheme()
+    {
+        if (_disposed) return;
+        RefreshRowColors(); if (IsPreviewMode) BuildTimeline(); DrawPath();
+    }
     private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawPath();
     private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (Workspace is null) return;
-        var layout = EditorLayout.Fit(e.NewSize.Width, e.NewSize.Height);
-        var narrow = layout.Stacked; var medium = layout.InspectorBelow;
-        Workspace.ColumnDefinitions[0].Width = narrow ? new GridLength(1, GridUnitType.Star) : new GridLength(250);
-        Workspace.ColumnDefinitions[1].Width = narrow ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-        Workspace.ColumnDefinitions[2].Width = medium ? new GridLength(0) : new GridLength(280);
-        Grid.SetColumn(PathPanel, narrow ? 0 : 1); Grid.SetRow(PathPanel, narrow ? 1 : 0);
-        Grid.SetColumn(InspectorPanel, medium ? 0 : 2); Grid.SetRow(InspectorPanel, narrow ? 2 : medium ? 1 : 0);
-        Grid.SetColumnSpan(InspectorPanel, medium && !narrow ? 2 : 1);
-        ListPanel.Height = layout.ListHeight; PathPanel.Height = layout.MainHeight; InspectorPanel.Height = layout.InspectorHeight;
-        InspectorPanel.BorderThickness = medium ? new Thickness(0, 1, 0, 0) : new Thickness(1, 0, 0, 0);
-        InspectorPanel.Padding = medium ? new Thickness(0, 12, 0, 0) : new Thickness(12, 0, 0, 0);
+        ResizeWorkspace();
     }
 }

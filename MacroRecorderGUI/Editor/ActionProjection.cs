@@ -71,7 +71,7 @@ public sealed class ActionProjection
         var continuation = CanContinue(input);
         if (!continuation)
         {
-            _active?.Notify();
+            if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
             _active = new(index, input, timeBefore) { Number = Actions.Count + 1 };
             _candidate = ActionKind.Raw;
             _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = false;
@@ -133,14 +133,34 @@ public sealed class ActionProjection
                 : ((MouseEvent)input).ActionType == MouseActionTypeFlags.HorizontalWheel
                     ? (_wheelTotal > 0 ? "Scroll right" : "Scroll left")
                     : (_wheelTotal > 0 ? "Scroll up" : "Scroll down"),
-            ActionKind.Keys => action.Detail,
+            ActionKind.Keys => "Press " + string.Join(" + ", _chord.OrderBy(code => IsModifier(code) ? 0 : 1).ThenBy(code => code).Select(KeyName)),
             ActionKind.Sequence => "Mixed input sequence",
             _ => "Raw input"
+        };
+        action.Description = action.Kind switch
+        {
+            ActionKind.Move or ActionKind.Drag or ActionKind.Click => _position is { } p
+                ? p.Space == CoordinateSpace.RelativeCounts ? "Relative movement · device counts"
+                    : $"{(p.Space == CoordinateSpace.AbsoluteDesktop ? "Virtual desktop" : "Primary screen")} · {p.X:0}, {p.Y:0} px"
+                : "Position not recorded",
+            ActionKind.Keys => $"{action.Count:N0} key transitions · original order",
+            ActionKind.Scroll => $"{_wheelTotal:+0;-0;0} wheel units · {(((MouseEvent)input).ActionType == MouseActionTypeFlags.HorizontalWheel ? "horizontal" : "vertical")}",
+            ActionKind.Sequence => "Mixed keys and buttons · original order",
+            _ => "Inspect exact captured input"
         };
         if (action.Kind is ActionKind.Click or ActionKind.Drag) MouseLandmarks.Add(action);
     }
 
-    public void FlushNotifications() => _active?.Notify();
+    public void FlushNotifications()
+    {
+        if (_active is { } action) { UpdateKeyLabels(action); action.Notify(); }
+    }
+
+    private void UpdateKeyLabels(RecordedAction action)
+    {
+        action.KeyLabels = action.Kind == ActionKind.Keys
+            ? _chord.OrderBy(code => IsModifier(code) ? 0 : 1).ThenBy(code => code).Select(KeyName).ToArray() : [];
+    }
 
     private bool CanContinue(InputEvent input)
     {

@@ -56,7 +56,7 @@ public class EditorPolishTests
         projection.FlushNotifications();
         var move = projection.Actions[0]; var keys = projection.Actions[1];
         Assert.AreEqual("1. Move pointer", move.Title);
-        Assert.AreEqual("2. Keys · Ctrl + S", keys.Title);
+        Assert.AreEqual("2. Press Ctrl + S", keys.Title);
         Assert.AreEqual(1374, keys.Start);
         StringAssert.Contains(move.TechnicalSummary, "absolute pixels");
         StringAssert.Contains(keys.TechnicalSummary, "4 raw events");
@@ -131,19 +131,18 @@ public class EditorPolishTests
     }
 
     [TestMethod]
-    [DataRow(1180d, 600d, false, false, 600d)]
-    [DataRow(1180d, 220d, false, false, 360d)]
-    [DataRow(900d, 400d, false, true, 400d)]
-    [DataRow(600d, 800d, true, true, 460d)]
-    [DataRow(600d, 180d, true, true, 360d)]
-    public void LayoutUsesViewportAndKeepsPreviewTransportWithinScrollablePanel(
-        double width, double height, bool stacked, bool below, double mainHeight)
+    [DataRow(1180d, 600d, false, 600d, 600d)]
+    [DataRow(1180d, 220d, false, 420d, 420d)]
+    [DataRow(900d, 400d, false, 420d, 420d)]
+    [DataRow(600d, 800d, true, 300d, 500d)]
+    [DataRow(600d, 180d, true, 300d, 480d)]
+    public void TwoColumnLayoutStacksOnNarrowViewportsAndKeepsDetailScrollable(
+        double width, double height, bool stacked, double listHeight, double inspectorHeight)
     {
         var layout = EditorLayout.Fit(width, height);
-        Assert.AreEqual(stacked, layout.Stacked); Assert.AreEqual(below, layout.InspectorBelow);
-        Assert.AreEqual(mainHeight, layout.MainHeight);
-        Assert.IsTrue(layout.MainHeight >= 360);
-        Assert.AreEqual(stacked ? 240 : mainHeight, layout.ListHeight);
+        Assert.AreEqual(stacked, layout.Stacked);
+        Assert.AreEqual(listHeight, layout.ListHeight);
+        Assert.AreEqual(inspectorHeight, layout.InspectorHeight);
     }
 
     [TestMethod]

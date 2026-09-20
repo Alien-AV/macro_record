@@ -24,6 +24,10 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public BigInteger EndTime => StartTime + Wait + Duration;
     public string Detail { get; internal set; } = "";
     public string Name { get; internal set; } = "";
+    public string Description { get; internal set; } = "";
+    public IReadOnlyList<string> KeyLabels { get; internal set; } = [];
+    public string DisplayNumber => Number.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+    public string DisplayTime => TimeText.Human((BigInteger)Wait + Duration);
     public string Title => $"{Number}. {Name}";
     public string Summary => $"{TimeText.Human(Wait)} delay · {TimeText.Human(Duration)} duration";
     public string TechnicalSummary => $"{Detail} · {Count:N0} raw events · events {Start + 1:N0}–{End:N0}";
@@ -40,6 +44,9 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(Summary));
         OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(DisplayNumber));
+        OnPropertyChanged(nameof(DisplayTime));
         OnPropertyChanged(nameof(TechnicalSummary));
         OnPropertyChanged(nameof(Warning));
         OnPropertyChanged(nameof(WarningVisibility));

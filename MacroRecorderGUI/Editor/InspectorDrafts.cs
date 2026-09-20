@@ -6,6 +6,7 @@ public sealed class InspectorDrafts<T> where T : notnull
     private readonly HashSet<T> _edited = [];
     private int _populationDepth;
     private object? _selection;
+    public bool IsEdited(T field) => _edited.Contains(field);
     public void Select(object? selection, bool reset = false)
     {
         if (reset || !ReferenceEquals(_selection, selection)) _edited.Clear();

@@ -1,177 +1,176 @@
-<UserControl
-    x:Class="MacroRecorderGUI.Views.MacroTabContent"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Loaded="Editor_Loaded" Unloaded="Editor_Unloaded" ActualThemeChanged="Editor_ThemeChanged">
-    <Grid Padding="4,12" RowSpacing="12">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <Grid ColumnSpacing="12">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <StackPanel Spacing="2">
-                <TextBlock Text="{Binding Name}" Style="{ThemeResource SubtitleTextBlockStyle}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-            </StackPanel>
-            <Button x:Name="UndoButton" Grid.Column="1" Content="Undo" Click="Undo_Click" IsEnabled="False"
-                    VerticalAlignment="Center" ToolTipService.ToolTip="Undo the last editor change"/>
+<UserControl x:Class="MacroRecorderGUI.Views.MacroTabContent"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Loaded="Editor_Loaded" Unloaded="Editor_Unloaded" ActualThemeChanged="Editor_ThemeChanged" FontFamily="Segoe UI">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Editor/DesignedEditorResources.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+ <Grid Background="{ThemeResource DesignedEditorSurface}">
+  <ScrollViewer x:Name="WorkspaceScroller" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" SizeChanged="Workspace_SizeChanged">
+   <Grid x:Name="Workspace">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="38*"/><ColumnDefinition Width="62*"/></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Border x:Name="ListPanel" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="0,0,1,0">
+     <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Margin="23,19,23,13"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <TextBlock Text="SEQUENCE" CharacterSpacing="95" Style="{StaticResource DesignedEditorLabel}"/>
+       <TextBlock x:Name="SummaryText" Grid.Column="1" Style="{StaticResource DesignedEditorLabel}"/>
+      </Grid>
+      <Grid Grid.Row="1">
+       <ListView x:Name="ActionsList" Margin="12,0,12,12" SelectionMode="Extended" SelectionChanged="Actions_SelectionChanged" KeyDown="Actions_KeyDown"
+        ItemContainerStyle="{StaticResource DesignedEditorActionContainer}" ContainerContentChanging="ActionRow_Changing"
+        AutomationProperties.Name="Recorded sequence" AutomationProperties.HelpText="Ctrl or Shift selects multiple actions. Delete removes the selected actions.">
+        <ListView.ContextFlyout><MenuFlyout>
+         <MenuFlyoutItem Text="Add mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Add keyboard event" Click="AddKeyboard_Click"/>
+         <MenuFlyoutSeparator/><MenuFlyoutItem Text="Delete selection" Click="Delete_Click"/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
+        </MenuFlyout></ListView.ContextFlyout>
+        <ListView.ItemTemplate><DataTemplate>
+         <Grid ColumnSpacing="10" ToolTipService.ToolTip="{Binding TechnicalSummary}">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="33"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <TextBlock Text="{Binding DisplayNumber}" VerticalAlignment="Center" Style="{StaticResource DesignedEditorLabel}"/>
+          <Border x:Name="ActionIconTile" Grid.Column="1" Width="33" Height="33" CornerRadius="8" Background="{ThemeResource DesignedEditorRawFill}"><FontIcon x:Name="ActionIcon" Glyph="{Binding Glyph}" FontSize="16" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
+          <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
+           <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" TextTrimming="CharacterEllipsis"/>
+           <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextTrimming="CharacterEllipsis"/>
+           <TextBlock Text="{Binding Warning}" Visibility="{Binding WarningVisibility}" FontSize="11" Foreground="{ThemeResource DesignedEditorWarning}" ToolTipService.ToolTip="{Binding WarningExplanation}"/>
+          </StackPanel>
+          <TextBlock Grid.Column="3" Text="{Binding DisplayTime}" VerticalAlignment="Center" Style="{StaticResource DesignedEditorLabel}" ToolTipService.ToolTip="{Binding Summary}"/>
+         </Grid>
+        </DataTemplate></ListView.ItemTemplate>
+       </ListView>
+       <StackPanel x:Name="EmptySequence" Padding="28,45" Spacing="12" Visibility="Collapsed">
+        <FontIcon Glyph="&#xE8A5;" FontSize="28" Foreground="{ThemeResource DesignedEditorMuted}"/>
+        <TextBlock Text="Your sequence starts here" HorizontalAlignment="Center" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}"/>
+        <TextBlock Text="Record a task, open a .macro file, or add an exact input event." TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}" FontSize="12"/>
+       </StackPanel>
+      </Grid>
+      <Border Grid.Row="2" Padding="22,12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}">
+       <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock x:Name="SelectionScope" Text="Every captured input preserved" VerticalAlignment="Center" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}" ToolTipService.ToolTip="Ctrl/Shift to select several actions."/>
+        <Button Grid.Column="1" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Add exact input">
+         <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE710;" FontSize="12"/><TextBlock Text="Add"/></StackPanel>
+         <Button.Flyout><MenuFlyout><MenuFlyoutItem Text="Add mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Add keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutSeparator/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/></MenuFlyout></Button.Flyout>
+        </Button>
+       </Grid>
+      </Border>
+     </Grid>
+    </Border>
+    <Border x:Name="InspectorPanel" Grid.Column="1" Padding="26,22">
+     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <Grid x:Name="DetailGrid" RowSpacing="12">
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="150"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <StackPanel Spacing="6">
+        <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+         <TextBlock x:Name="SelectedTitle" Text="Select an action" FontSize="17" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+         <Button x:Name="DeleteButton" Grid.Column="1" Style="{StaticResource DesignedEditorButton}" Padding="7" Click="Delete_Click" AutomationProperties.Name="Delete selected actions"><FontIcon Glyph="&#xE74D;" FontSize="16"/></Button>
+         <Border Grid.Column="2" Padding="8,4" CornerRadius="5" VerticalAlignment="Center" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="1"><TextBlock x:Name="SampleBadge" FontSize="10" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
         </Grid>
-        <ScrollViewer x:Name="WorkspaceScroller" Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
-                      VerticalScrollBarVisibility="Auto" SizeChanged="Workspace_SizeChanged">
-            <Grid x:Name="Workspace" ColumnSpacing="16" RowSpacing="16">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="*"/><ColumnDefinition Width="280"/></Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                <Border x:Name="ListPanel">
-                    <Grid RowSpacing="8">
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="Actions" VerticalAlignment="Center" Style="{ThemeResource BodyStrongTextBlockStyle}"
-                                       ToolTipService.ToolTip="Use Ctrl or Shift to select several actions."/>
-                            <Button Grid.Column="1" Content="Add" AutomationProperties.Name="Add raw event">
-                                <Button.Flyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem Text="Add mouse event" Click="AddMouse_Click"/>
-                                        <MenuFlyoutItem Text="Add keyboard event" Click="AddKeyboard_Click"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
-                                    </MenuFlyout>
-                                </Button.Flyout>
-                            </Button>
-                            <Button x:Name="DeleteButton" Grid.Column="2" Click="Delete_Click"
-                                    AutomationProperties.Name="Delete selected actions" ToolTipService.ToolTip="Delete selected actions (Delete)">
-                                <FontIcon Glyph="&#xE74D;" FontSize="14"/>
-                            </Button>
-                        </Grid>
-                        <TextBlock x:Name="SelectionScope" Grid.Row="1" FontSize="12" TextWrapping="Wrap"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <ListView x:Name="ActionsList" Grid.Row="2" SelectionMode="Extended" SelectionChanged="Actions_SelectionChanged"
-                                  KeyDown="Actions_KeyDown" HorizontalContentAlignment="Stretch" AutomationProperties.Name="Recorded actions"
-                                  AutomationProperties.HelpText="Use Ctrl or Shift to select multiple actions. Delete removes the selection.">
-                            <ListView.ContextFlyout>
-                                <MenuFlyout>
-                                    <MenuFlyoutItem Text="Add mouse event" Click="AddMouse_Click"/>
-                                    <MenuFlyoutItem Text="Add keyboard event" Click="AddKeyboard_Click"/>
-                                    <MenuFlyoutSeparator/>
-                                    <MenuFlyoutItem Text="Delete selection" Click="Delete_Click"/>
-                                    <MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
-                                </MenuFlyout>
-                            </ListView.ContextFlyout>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Padding="0,8" ColumnSpacing="10" ToolTipService.ToolTip="{Binding TechnicalSummary}">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <FontIcon Glyph="{Binding Glyph}" FontSize="16" VerticalAlignment="Top" Margin="0,3,0,0"/>
-                                        <StackPanel Grid.Column="1" Spacing="3">
-                                            <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Summary}" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                            <TextBlock Text="{Binding Warning}" Visibility="{Binding WarningVisibility}" FontSize="12"
-                                                       Foreground="{ThemeResource SystemFillColorCautionBrush}" ToolTipService.ToolTip="{Binding WarningExplanation}"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </Grid>
-                </Border>
-                <Border x:Name="PathPanel" Grid.Column="1">
-                    <Grid RowSpacing="8">
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                        <TextBlock Text="Path preview" Style="{ThemeResource BodyStrongTextBlockStyle}"
-                                   ToolTipService.ToolTip="Selected path is accented. Start is an open circle; end is a diamond. Clicks use circles, drag starts use squares and drag paths use dashes. Paths are display-sampled; all original input is retained."/>
-                        <TextBlock x:Name="PathNote" Grid.Row="1" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <Border Grid.Row="2" CornerRadius="6" BorderThickness="1" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                                Background="{ThemeResource SubtleFillColorSecondaryBrush}">
-                            <Canvas x:Name="PathCanvas" Background="Transparent" SizeChanged="Canvas_SizeChanged"
-                                    PointerPressed="Canvas_PointerPressed" PointerMoved="Canvas_PointerMoved" PointerReleased="Canvas_PointerReleased"
-                                    PointerCanceled="Canvas_PointerCanceled" PointerCaptureLost="Canvas_PointerCanceled"
-                                    AutomationProperties.Name="Visual path; select actions or enter destination coordinates in the inspector"/>
-                        </Border>
-                        <Slider x:Name="Scrubber" Grid.Row="3" Minimum="0" Maximum="1000" StepFrequency="1"
-                                ValueChanged="Scrub_Changed" AutomationProperties.Name="Visual preview position"/>
-                        <Grid Grid.Row="4" ColumnSpacing="8">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <Button x:Name="PreviewButton" Content="Preview" Click="Preview_Click" AutomationProperties.Name="Preview path, visual only"
-                                    ToolTipService.ToolTip="Visual preview only. No input is sent."/>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock x:Name="PreviewClock" FontSize="12" TextWrapping="Wrap"/>
-                                <TextBlock Text="Visual only · no input sent" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-                </Border>
-                <Border x:Name="InspectorPanel" Grid.Column="2" Padding="12,0,0,0"
-                        BorderThickness="1,0,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Spacing="12" Padding="0,0,8,8">
-                            <TextBlock x:Name="SelectedTitle" Text="Select an action" TextWrapping="Wrap" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
-                            <TextBlock x:Name="InspectorScope" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed"/>
-                            <TextBlock x:Name="ActionWarning" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource SystemFillColorCautionBrush}" Visibility="Collapsed"/>
-                            <ContentControl x:Name="ActionFields" IsEnabled="False" HorizontalContentAlignment="Stretch">
-                                <StackPanel Spacing="10">
-                                    <TextBlock Text="Timing" FontWeight="SemiBold"
-                                               ToolTipService.ToolTip="Delay precedes the action; duration is the time within it. Seconds accept up to 6 decimal places for exact microseconds. Apply each field separately."/>
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBox x:Name="WaitInput" Header="Delay (s)" MinWidth="0" ToolTipService.ToolTip="Seconds before this action. Up to 6 decimal places."/>
-                                        <Button Grid.Column="1" Content="Apply" Click="Wait_Click" VerticalAlignment="Bottom" AutomationProperties.Name="Apply delay"/>
-                                    </Grid>
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBox x:Name="DurationInput" Header="Duration (s)" MinWidth="0" ToolTipService.ToolTip="Time within this action. Preserves every event. Up to 6 decimal places."/>
-                                        <Button x:Name="DurationButton" Grid.Column="1" Content="Apply" Click="Duration_Click" VerticalAlignment="Bottom" AutomationProperties.Name="Apply duration"/>
-                                    </Grid>
-                                    <TextBlock x:Name="GeometryNote" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                    <ContentControl x:Name="DestinationFields" HorizontalContentAlignment="Stretch" Visibility="Collapsed">
-                                        <StackPanel Spacing="8">
-                                            <Grid ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBox x:Name="DestinationX" Header="X (px)" MinWidth="0" AutomationProperties.Name="Destination X in absolute pixels"/>
-                                                <TextBox x:Name="DestinationY" Grid.Column="1" Header="Y (px)" MinWidth="0" AutomationProperties.Name="Destination Y in absolute pixels"/>
-                                            </Grid>
-                                            <Button Content="Apply position" Click="Destination_Click"
-                                                    ToolTipService.ToolTip="Moves this endpoint and keeps the following movement connected."/>
-                                        </StackPanel>
-                                    </ContentControl>
-                                </StackPanel>
-                            </ContentControl>
-                            <Expander x:Name="RawExpander" Header="Advanced" HorizontalAlignment="Stretch" Expanding="Raw_Expanding" Collapsed="Raw_Collapsed">
-                                <StackPanel Spacing="8">
-                                    <TextBlock x:Name="TechnicalDetail" FontSize="12" TextWrapping="Wrap"/>
-                                    <CheckBox x:Name="ShowSamples" Content="Show path samples" Checked="Samples_Changed" Unchecked="Samples_Changed"/>
-                                    <TextBlock Text="Original events · Ctrl/Shift to select several. Deleting now uses this raw selection." FontSize="12" TextWrapping="Wrap"/>
-                                    <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" AutomationProperties.Name="Original events in the selected actions">
-                                        <ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="12"/></DataTemplate></ListView.ItemTemplate>
-                                    </ListView>
-                                    <TextBox x:Name="RawDelay" Header="This event's delay (µs)"/>
-                                    <StackPanel x:Name="RawMouseFields" Spacing="6">
-                                        <TextBox x:Name="RawX" Header="Raw X (pixels or device counts)"/>
-                                        <TextBox x:Name="RawY" Header="Raw Y (pixels or device counts)"/>
-                                        <TextBox x:Name="RawFlags" Header="Mouse flags (unsigned decimal)"/>
-                                        <TextBox x:Name="RawData" Header="mouseData (unsigned decimal bits)"/>
-                                        <CheckBox x:Name="RawRelative" Content="Relative device counts"/>
-                                        <CheckBox x:Name="RawDesktop" Content="Virtual desktop mapping"/>
-                                    </StackPanel>
-                                    <StackPanel x:Name="RawKeyFields" Spacing="6">
-                                        <TextBox x:Name="RawKey" Header="Virtual-key code (unsigned decimal)"/>
-                                        <CheckBox x:Name="RawKeyUp" Content="Key up"/>
-                                    </StackPanel>
-                                    <Button x:Name="RawApply" Content="Apply this raw event" Click="RawApply_Click" IsEnabled="False"/>
-                                    <TextBox x:Name="RawEachDelay" Header="Delay for EACH selected raw event (µs)" Text="5000"/>
-                                    <Button Content="Set each selected raw delay" Click="RawEach_Click"/>
-                                    <TextBlock Text="Bulk raw delay changes also change the action's duration." FontSize="12" TextWrapping="Wrap"/>
-                                    <Expander Header="Convert path estimate" HorizontalAlignment="Stretch">
-                                        <StackPanel Spacing="8">
-                                            <TextBlock Text="Relative values are device counts, not pixels. Conversion assumes 1 count = 1 pixel after an existing absolute anchor; pointer speed/acceleration are unknown. Earlier unanchored input stays relative. This changes actual playback coordinates and is undoable." TextWrapping="Wrap" FontSize="12"/>
-                                            <CheckBox x:Name="AcceptEstimate" Content="Use this explicit estimate"/>
-                                            <Button Content="Convert anchored moves" Click="Convert_Click"/>
-                                        </StackPanel>
-                                    </Expander>
-                                </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
+        <TextBlock x:Name="InspectorScope" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <TextBlock x:Name="ActionWarning" FontSize="12" Foreground="{ThemeResource DesignedEditorWarning}" TextWrapping="Wrap" Visibility="Collapsed"/>
+       </StackPanel>
+       <Grid Grid.Row="1">
+        <ContentControl x:Name="EditorPathHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+         <Border x:Name="PathPanel" CornerRadius="9" BorderThickness="1" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorPaper}">
+          <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+           <Border BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="0,0,0,1" Padding="13,10">
+            <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+             <FontIcon Glyph="&#xE7F4;" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
+             <TextBlock x:Name="PathNote" Grid.Column="1" TextTrimming="CharacterEllipsis" Style="{StaticResource DesignedEditorLabel}"/>
+             <TextBlock Grid.Column="2" Text="Fit path" Style="{StaticResource DesignedEditorLabel}"/>
             </Grid>
-        </ScrollViewer>
-        <TextBlock x:Name="EditorStatus" Grid.Row="2" TextWrapping="Wrap" FontSize="12" AutomationProperties.LiveSetting="Polite"/>
+           </Border>
+           <Canvas x:Name="PathCanvas" Grid.Row="1" Background="Transparent" SizeChanged="Canvas_SizeChanged" PointerPressed="Canvas_PointerPressed" PointerMoved="Canvas_PointerMoved" PointerReleased="Canvas_PointerReleased" PointerCanceled="Canvas_PointerCanceled" PointerCaptureLost="Canvas_PointerCanceled" AutomationProperties.Name="Recorded path; editable destinations are also available as coordinate fields"/>
+           <TextBlock x:Name="PathEmpty" Grid.Row="1" Margin="24" Text="No recorded pointer position" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}" IsHitTestVisible="False"/>
+          </Grid>
+         </Border>
+        </ContentControl>
+        <Border x:Name="InputVisual" Visibility="Collapsed" CornerRadius="8" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="1" Background="{ThemeResource DesignedEditorPaper}" Padding="20,30">
+         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+          <FontIcon x:Name="InputGlyph" FontSize="30" Foreground="{ThemeResource DesignedEditorMuted}"/>
+          <ItemsControl x:Name="CapturedKeys"><ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+           <ItemsControl.ItemTemplate><DataTemplate><Border Margin="4" Padding="14,10" CornerRadius="5" BorderThickness="1,1,1,3" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorSurface}"><TextBlock Text="{Binding}" FontSize="20" Foreground="{ThemeResource DesignedEditorInk}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="InputDetail" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}"/>
+         </StackPanel>
+        </Border>
+       </Grid>
+       <ContentControl x:Name="ActionFields" Grid.Row="2" HorizontalContentAlignment="Stretch" IsEnabled="False">
+        <StackPanel Spacing="8">
+         <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+          <StackPanel Spacing="7"><TextBlock Text="Duration · s" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DurationInput" Style="{StaticResource DesignedEditorField}" LostFocus="Duration_LostFocus" KeyDown="Duration_KeyDown" AutomationProperties.Name="Duration in seconds" ToolTipService.ToolTip="Time within this action. Up to six decimal places; Enter or leave the field to apply."/></StackPanel>
+          <Grid x:Name="DestinationFields" Grid.Column="1" ColumnSpacing="12" Visibility="Collapsed"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+           <StackPanel Spacing="7"><TextBlock Text="Destination X · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationX" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination X in absolute pixels"/></StackPanel>
+           <StackPanel Grid.Column="1" Spacing="7"><TextBlock Text="Destination Y · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationY" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination Y in absolute pixels"/></StackPanel>
+          </Grid>
+         </Grid>
+         <TextBlock x:Name="GeometryNote" FontSize="10" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+         <Button x:Name="WaitButton" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" Padding="0,3" HorizontalAlignment="Left"><TextBlock x:Name="WaitLabel" Text="Wait before" FontSize="11"/>
+          <Button.Flyout><Flyout><StackPanel Width="280" Spacing="10"><TextBlock Text="Wait before this action" FontWeight="SemiBold"/><TextBox x:Name="WaitInput" Header="Seconds" Style="{StaticResource DesignedEditorField}"/><TextBlock Text="Changes the delay before its first event. A standalone trailing wait is not stored by the .macro format." FontSize="12" TextWrapping="Wrap"/><Button Content="Apply wait" Style="{StaticResource DesignedEditorButton}" Click="Wait_Click"/></StackPanel></Flyout></Button.Flyout>
+         </Button>
+        </StackPanel>
+       </ContentControl>
+       <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}" Padding="0,10,0,0">
+        <Button x:Name="RawToggle" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Click="RawToggle_Click" AutomationProperties.Name="Show or hide exact captured input">
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="RawHeader" Text="Exact captured input" FontSize="11"/><FontIcon x:Name="RawChevron" Grid.Column="1" Glyph="&#xE76C;" FontSize="10" Margin="12,0,0,0"/></Grid>
+        </Button>
+       </Border>
+       <StackPanel x:Name="RawContent" Grid.Row="4" Visibility="Collapsed" Spacing="8">
+        <TextBlock x:Name="TechnicalDetail" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorInk}"/>
+        <CheckBox x:Name="ShowSamples" Content="Show path samples" Checked="Samples_Changed" Unchecked="Samples_Changed"/>
+        <TextBlock Text="Original events · Ctrl/Shift to select several. Delete uses this raw selection." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+        <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" AutomationProperties.Name="Original events in the selected actions"><ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource DesignedEditorInk}"/></DataTemplate></ListView.ItemTemplate></ListView>
+        <TextBox x:Name="RawDelay" Header="This event's delay (µs)" Style="{StaticResource DesignedEditorField}"/>
+        <StackPanel x:Name="RawMouseFields" Spacing="6">
+         <TextBox x:Name="RawX" Header="Raw X (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawY" Header="Raw Y (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/>
+         <TextBox x:Name="RawFlags" Header="Mouse flags (unsigned decimal)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawData" Header="mouseData (unsigned decimal bits)" Style="{StaticResource DesignedEditorField}"/>
+         <CheckBox x:Name="RawRelative" Content="Relative device counts"/><CheckBox x:Name="RawDesktop" Content="Virtual desktop mapping"/>
+        </StackPanel>
+        <StackPanel x:Name="RawKeyFields" Spacing="6"><TextBox x:Name="RawKey" Header="Virtual-key code (unsigned decimal)" Style="{StaticResource DesignedEditorField}"/><CheckBox x:Name="RawKeyUp" Content="Key up"/></StackPanel>
+        <Button x:Name="RawApply" Content="Apply this raw event" Style="{StaticResource DesignedEditorButton}" Click="RawApply_Click" IsEnabled="False"/>
+        <TextBox x:Name="RawEachDelay" Header="Delay for EACH selected raw event (µs)" Text="5000" Style="{StaticResource DesignedEditorField}"/>
+        <Button Content="Set each selected raw delay" Style="{StaticResource DesignedEditorButton}" Click="RawEach_Click"/>
+        <TextBlock Text="Bulk raw delay changes also change the action's duration." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+        <Expander x:Name="ConversionPanel" Header="Convert path estimate" HorizontalAlignment="Stretch"><StackPanel Spacing="8">
+         <TextBlock Text="Relative values are device counts, not pixels. Conversion assumes 1 count = 1 pixel after an existing absolute anchor; pointer speed/acceleration are unknown. Earlier unanchored input stays relative. This changes actual playback coordinates and is undoable." TextWrapping="Wrap" FontSize="12"/>
+         <CheckBox x:Name="AcceptEstimate" Content="Use this explicit estimate"/><Button Content="Convert anchored moves" Style="{StaticResource DesignedEditorButton}" Click="Convert_Click"/>
+        </StackPanel></Expander>
+       </StackPanel>
+      </Grid>
+     </ScrollViewer>
+    </Border>
+   </Grid>
+  </ScrollViewer>
+  <Grid x:Name="PreviewPage" Visibility="Collapsed">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Border Padding="26,12" Background="{ThemeResource DesignedEditorSoft}" BorderBrush="{ThemeResource DesignedEditorSelectedBorder}" BorderThickness="0,0,0,1">
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{ThemeResource DesignedEditorBlue}"/><TextBlock Text="Preview · no input sent to other apps" FontSize="12" Foreground="{ThemeResource DesignedEditorBlue}"/></StackPanel>
+     <TextBlock x:Name="VirtualLabel" Grid.Column="1" Text="Virtual pointer &amp; keys" FontSize="12" Foreground="{ThemeResource DesignedEditorBlue}"/>
     </Grid>
+   </Border>
+   <ScrollViewer x:Name="PreviewScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" SizeChanged="PreviewBody_SizeChanged">
+    <Grid x:Name="PreviewBody" Padding="32,25" ColumnSpacing="25" RowSpacing="12">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="215"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <Grid x:Name="PreviewVisual"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <ContentControl x:Name="PreviewPathHost" MinHeight="200" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+      <StackPanel Grid.Row="1" Spacing="8" Margin="0,10,0,0" HorizontalAlignment="Center">
+       <ItemsControl x:Name="HeldInputs" ToolTipService.ToolTip="Held state from recorded transitions at this exact time. Initial physical key/button state was not captured."><ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate><DataTemplate><Border Margin="4,0" Padding="12,5" CornerRadius="4" BorderThickness="1,1,1,3" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorPaper}"><TextBlock Text="{Binding}" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+       </ItemsControl>
+       <TextBlock x:Name="HeldNote" Text="No recorded keys or buttons held" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
+      </StackPanel>
+     </Grid>
+     <StackPanel x:Name="PreviewCurrent" Grid.Column="1" VerticalAlignment="Center" Spacing="12">
+      <TextBlock x:Name="PreviewStep" Text="NO ACTIONS" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
+      <TextBlock x:Name="PreviewTitle" Text="Empty recording" FontSize="25" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" TextWrapping="Wrap"/>
+      <TextBlock x:Name="PreviewDescription" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/>
+      <Border Margin="0,14,0,0" Padding="0,17,0,0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}"><TextBlock x:Name="PreviewNext" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/></Border>
+     </StackPanel>
+    </Grid>
+   </ScrollViewer>
+   <StackPanel Grid.Row="2" Margin="32,0,32,18" Spacing="10">
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="PreviewClock" Style="{StaticResource DesignedEditorLabel}"/><TextBlock x:Name="PreviewTiming" Grid.Column="1" Style="{StaticResource DesignedEditorLabel}"/></Grid>
+    <Grid x:Name="Timeline" Height="30" ColumnSpacing="4"/>
+    <Slider x:Name="Scrubber" Minimum="0" Maximum="1000" StepFrequency="1" ValueChanged="Scrub_Changed" AutomationProperties.Name="Visual preview position"/>
+   </StackPanel>
+  </Grid>
+ </Grid>
 </UserControl>

@@ -1,0 +1,114 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="DesignedEditorPaper" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="DesignedEditorSurface" Color="#F6F7F8"/>
+            <SolidColorBrush x:Key="DesignedEditorInk" Color="#202832"/>
+            <SolidColorBrush x:Key="DesignedEditorMuted" Color="#6B7481"/>
+            <SolidColorBrush x:Key="DesignedEditorLine" Color="#E4E7EB"/>
+            <SolidColorBrush x:Key="DesignedEditorBlue" Color="#285ED9"/>
+            <SolidColorBrush x:Key="DesignedEditorPath" Color="#3973DF"/>
+            <SolidColorBrush x:Key="DesignedEditorSoft" Color="#EDF3FF"/>
+            <SolidColorBrush x:Key="DesignedEditorSelectedBorder" Color="#CBDCFF"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyFill" Color="#F3ECE0"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyInk" Color="#97703C"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseFill" Color="#E9F0FF"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseInk" Color="#3470CE"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollFill" Color="#EAF3EC"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollInk" Color="#487B59"/>
+            <SolidColorBrush x:Key="DesignedEditorRawFill" Color="#EDF0F2"/>
+            <SolidColorBrush x:Key="DesignedEditorTrack" Color="#DCE4F1"/>
+            <SolidColorBrush x:Key="DesignedEditorWaitTrack" Color="#E4E7EA"/>
+            <SolidColorBrush x:Key="DesignedEditorWarning" Color="#8B5B13"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="DesignedEditorPaper" Color="#222B38"/>
+            <SolidColorBrush x:Key="DesignedEditorSurface" Color="#1D2531"/>
+            <SolidColorBrush x:Key="DesignedEditorInk" Color="#EDF2F9"/>
+            <SolidColorBrush x:Key="DesignedEditorMuted" Color="#A4B0C1"/>
+            <SolidColorBrush x:Key="DesignedEditorLine" Color="#354152"/>
+            <SolidColorBrush x:Key="DesignedEditorBlue" Color="#8CAFFF"/>
+            <SolidColorBrush x:Key="DesignedEditorPath" Color="#8FB4FF"/>
+            <SolidColorBrush x:Key="DesignedEditorSoft" Color="#2A3C5C"/>
+            <SolidColorBrush x:Key="DesignedEditorSelectedBorder" Color="#526A93"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyFill" Color="#483F31"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyInk" Color="#E2C58F"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseFill" Color="#304266"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseInk" Color="#A5C0FF"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollFill" Color="#2C443B"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollInk" Color="#ABD0B4"/>
+            <SolidColorBrush x:Key="DesignedEditorRawFill" Color="#3A414C"/>
+            <SolidColorBrush x:Key="DesignedEditorTrack" Color="#415572"/>
+            <SolidColorBrush x:Key="DesignedEditorWaitTrack" Color="#3C444F"/>
+            <SolidColorBrush x:Key="DesignedEditorWarning" Color="#E5C285"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="DesignedEditorPaper" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorSurface" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorInk" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorMuted" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorLine" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorBlue" Color="{ThemeResource SystemColorHighlightColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorPath" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorSoft" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorSelectedBorder" Color="{ThemeResource SystemColorHighlightColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyFill" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorKeyInk" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseFill" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorMouseInk" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollFill" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorScrollInk" Color="{ThemeResource SystemColorWindowTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorRawFill" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorTrack" Color="{ThemeResource SystemColorGrayTextColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorWaitTrack" Color="{ThemeResource SystemColorWindowColor}"/>
+            <SolidColorBrush x:Key="DesignedEditorWarning" Color="{ThemeResource SystemColorWindowTextColor}"/>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+    <Style x:Key="DesignedEditorButton" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource DesignedEditorPaper}"/>
+        <Setter Property="Foreground" Value="{ThemeResource DesignedEditorMuted}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource DesignedEditorLine}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="9,7"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="UseSystemFocusVisuals" Value="True"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+            <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+                <VisualStateManager.VisualStateGroups><VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal"/>
+                    <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="ButtonBorder.Background" Value="{ThemeResource DesignedEditorSoft}"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="ButtonBorder.BorderBrush" Value="{ThemeResource DesignedEditorBlue}"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="ButtonBorder.Opacity" Value="0.4"/></VisualState.Setters></VisualState>
+                </VisualStateGroup></VisualStateManager.VisualStateGroups>
+                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+            </Border>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="DesignedEditorField" TargetType="TextBox">
+        <Setter Property="FontSize" Value="13"/><Setter Property="MinWidth" Value="0"/><Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Padding" Value="9,7"/><Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Background" Value="{ThemeResource DesignedEditorPaper}"/><Setter Property="Foreground" Value="{ThemeResource DesignedEditorInk}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource DesignedEditorLine}"/><Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="SelectionHighlightColor" Value="{ThemeResource DesignedEditorBlue}"/>
+    </Style>
+    <Style x:Key="DesignedEditorLabel" TargetType="TextBlock"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="{ThemeResource DesignedEditorMuted}"/></Style>
+    <Style x:Key="DesignedEditorActionContainer" TargetType="ListViewItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Margin" Value="0,0,0,3"/><Setter Property="MinHeight" Value="54"/><Setter Property="UseSystemFocusVisuals" Value="True"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListViewItem">
+            <Grid Background="Transparent">
+                <VisualStateManager.VisualStateGroups><VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal"/>
+                    <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="RowBorder.Background" Value="{ThemeResource DesignedEditorSurface}"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="RowBorder.Background" Value="{ThemeResource DesignedEditorSoft}"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="Selected"><VisualState.Setters><Setter Target="RowBorder.Background" Value="{ThemeResource DesignedEditorSoft}"/><Setter Target="RowBorder.BorderBrush" Value="{ThemeResource DesignedEditorSelectedBorder}"/><Setter Target="SelectionMark.Opacity" Value="1"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="PointerOverSelected"><VisualState.Setters><Setter Target="RowBorder.Background" Value="{ThemeResource DesignedEditorSoft}"/><Setter Target="RowBorder.BorderBrush" Value="{ThemeResource DesignedEditorSelectedBorder}"/><Setter Target="SelectionMark.Opacity" Value="1"/></VisualState.Setters></VisualState>
+                    <VisualState x:Name="PressedSelected"><VisualState.Setters><Setter Target="RowBorder.Background" Value="{ThemeResource DesignedEditorSoft}"/><Setter Target="RowBorder.BorderBrush" Value="{ThemeResource DesignedEditorBlue}"/><Setter Target="SelectionMark.Opacity" Value="1"/></VisualState.Setters></VisualState>
+                </VisualStateGroup></VisualStateManager.VisualStateGroups>
+                <Border x:Name="RowBorder" BorderBrush="Transparent" BorderThickness="1" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch"/></Border>
+                <Border x:Name="SelectionMark" Width="3" Margin="0,12" HorizontalAlignment="Left" Background="{ThemeResource DesignedEditorBlue}" CornerRadius="2" Opacity="0"/>
+            </Grid>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+</ResourceDictionary>
