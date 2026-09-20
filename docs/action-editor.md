@@ -150,8 +150,10 @@ wait with no next event is not representable in the existing file format.
 
 ## User smoke checks after integration
 
-No application launch or real keyboard/mouse injection was used for development
-verification. The user will perform these smoke checks after integration:
+No visible application launch or real keyboard/mouse injection is used for development
+verification. A separate hidden test process constructs controls with fake engines;
+it does not activate a window or verify physical pointer/focus delivery.
+The user will perform these smoke checks after integration:
 
 1. On Windows 11, open in light/dark themes and switch themes with the window
    open. Check active/inactive title text and caption-button normal/hover/pressed

@@ -18,8 +18,8 @@ timestamp confirms that this input belonged to the recorder command. This also
 handles a command delivered before its raw trigger. Ordinary/controller stops
 flush provisional input unchanged. No editor cleanup or file-load trimming runs.
 
-Other keyboard or mouse input makes a modifier genuine recorded input and flushes
-it with its original events and delays. Thus Ctrl used for a drag can truthfully
+Before a possible stop trigger, other keyboard or mouse input makes a modifier
+genuine recorded input and flushes it with its original events and delays. Thus Ctrl used for a drag can truthfully
 remain incomplete if it is still held when recording stops. The filter does not
 erase that press or invent a release. A fixed 256-event buffer flushes unchanged
 on overflow, preferring possible command contamination over loss of real input.
