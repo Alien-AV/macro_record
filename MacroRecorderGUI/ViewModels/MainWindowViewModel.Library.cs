@@ -48,15 +48,16 @@ public partial class MainWindowViewModel
     public string NewRecordingName(DateTimeOffset? localTime = null) => RecordingNames.NewDefault(localTime ?? DateTimeOffset.Now,
         Library.Select(item => item.Name).Concat(MacroTabs.Select(macro => macro.Name)));
 
-    public async Task<MacroViewModel> CreateDraftAsync(string? name = null)
+    public async Task<MacroViewModel> CreateDraftAsync(string? name = null, CancellationToken cancellationToken = default)
     {
         EnsureLibraryWritable();
         await InitializeLibraryAsync();
+        cancellationToken.ThrowIfCancellationRequested();
         EnsureLibraryWritable();
         var draftName = name is null ? NewRecordingName() : RecordingNames.Validate(name);
         var macro = AddNewTab();
         macro.Name = draftName;
-        await SaveRecordingAsync(macro);
+        await SaveRecordingAsync(macro, cancellationToken);
         return macro;
     }
 
@@ -139,10 +140,10 @@ public partial class MainWindowViewModel
         return FileOperations.WriteMacroBytesAsync(path, macro.SnapshotBytes());
     }
 
-    public async Task SaveRecordingAsync(MacroViewModel macro)
+    public async Task SaveRecordingAsync(MacroViewModel macro, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        await _libraryGate.WaitAsync();
+        await _libraryGate.WaitAsync(cancellationToken);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -151,7 +152,7 @@ public partial class MainWindowViewModel
             var bytes = macro.SnapshotBytes();
             var metadata = RecordingLibraryStore.Describe(macro.RecordingId, macro.Name, macro.IsDraft,
                 macro.CreatedAt, DateTimeOffset.UtcNow, bytes);
-            await _libraryStore.SaveAsync(new(metadata, bytes));
+            await _libraryStore.SaveAsync(new(metadata, bytes), cancellationToken);
             macro.Saved(version, metadata.UpdatedAt);
             var previous = _library.FirstOrDefault(item => item.Id == metadata.Id);
             if (previous is not null) _library.Remove(previous);

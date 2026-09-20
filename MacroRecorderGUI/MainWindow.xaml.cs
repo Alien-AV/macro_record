@@ -31,8 +31,9 @@ public sealed partial class MainWindow : Window
     private MacroViewModel? _runMacro;
     private ShellDialogs? _dialogs;
     private ShellDialogs Dialogs => _dialogs ??= new ShellDialogs(RootGrid);
-    private PlaybackOptions _playbackOptions = new();
-    private ulong? _overrideRecordingDelay;
+    private readonly RunPreferences _preferences;
+    private PlaybackOptions? _runPlaybackOptions;
+    private ulong? _runRecordingDelay;
     private string _shortcutStatus = "Global shortcuts register when the main window is activated.";
     private readonly ShellFeedback _feedback = new();
     private string? _runError;
@@ -49,8 +50,12 @@ public sealed partial class MainWindow : Window
     // This path never constructs native engines and never shows or activates a window.
     // The caller supplies fake engines and a temporary library through the view model.
     public MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys = true)
+        : this(viewModel, registerGlobalHotkeys, new RunPreferences(new RunPreferenceStore())) { }
+
+    internal MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys, RunPreferences preferences)
     {
         ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        _preferences = preferences ?? throw new ArgumentNullException(nameof(preferences));
         ViewModel.SetEmergencyStopAvailability(false, "The emergency stop shortcut has not registered yet.");
         _registerGlobalHotkeys = registerGlobalHotkeys;
         InitializeComponent();
@@ -85,6 +90,9 @@ public sealed partial class MainWindow : Window
         _initializing = true;
         try
         {
+            await _preferences.InitializeAsync();
+            if (_closed || _closing) return;
+            RefreshShell();
             await ViewModel.InitializeLibraryAsync();
             if (_closed || _closing) return;
             _initialized = true;
@@ -162,21 +170,32 @@ public sealed partial class MainWindow : Window
         EmptyEditor.Visibility = !_libraryVisible && macro is null ? Visibility.Visible : Visibility.Collapsed;
         UndoButton.Visibility = _libraryVisible ? Visibility.Collapsed : Visibility.Visible;
         UndoButton.IsEnabled = !_busy && !RunActive && ActiveEditor?.CanUndo == true;
-        NewRecordingButton.IsEnabled = !_busy && !RunActive && ViewModel.CanRecord;
+        RecordButton.IsEnabled = !_busy && !RunActive && ViewModel.CanRecord && _preferences.IsLoaded;
+        RecordingOptionsButton.IsEnabled = !_busy && !RunActive;
+        ToolTipService.SetToolTip(RecordButton, _preferences.IsLoaded
+            ? $"Record a new task (Ctrl+Q) · {_preferences.Recording.CountdownSeconds}s delay. Rename afterwards."
+            : "Loading recording options…");
         DocumentButton.IsEnabled = !_busy && !RunActive;
         EditorHost.IsEnabled = !_busy && !RunActive;
         Library.IsEnabled = !_busy && !RunActive;
-        SpeedButton.Visibility = RepeatButton.Visibility = _libraryVisible ? Visibility.Collapsed : Visibility.Visible;
-        SpeedButton.IsEnabled = RepeatButton.IsEnabled = !_busy && !RunActive;
-        SpeedLabel.Text = $"{_playbackOptions.Speed:0.##}× {(preview ? "playback" : "speed")}";
-        RepeatLabel.Text = _playbackOptions.RepeatUntilStopped ? "Until stopped" : _playbackOptions.RepeatCount == 1 ? "Play once" : $"{_playbackOptions.RepeatCount} repeats";
+        var playback = _runPlaybackOptions ?? (macro is null ? new PlaybackOptions() : _preferences.PlaybackFor(macro.RecordingId));
+        PlaybackSettings.Visibility = _libraryVisible || macro is null ? Visibility.Collapsed : Visibility.Visible;
+        PlaybackSettingsSummary.Text = RunSettingsPresentation.PlaybackSummary(_preferences.IsLoaded, playback);
+        PlaybackSettingsSummary.Foreground = Resource(_preferences.IsLoaded && playback.RepeatUntilStopped ? "MacroRedBrush" : "MacroInkBrush");
+        PlaybackSafetyNote.Text = preview ? "Preview: original timing · no input" : "Play sends real keyboard and mouse input";
+        PreferenceWarning.Text = _preferences.Warning ?? "";
+        PreferenceWarning.Visibility = _preferences.Warning is null ? Visibility.Collapsed : Visibility.Visible;
         BackToEditorButton.Visibility = NextActionButton.Visibility = preview ? Visibility.Visible : Visibility.Collapsed;
         PreviewButton.Visibility = _libraryVisible || RunActive ? Visibility.Collapsed : Visibility.Visible;
         PreviewButton.IsEnabled = !_busy && ActiveEditor?.CanPreview == true;
         PreviewLabel.Text = preview ? ActiveEditor?.IsPreviewPlaying == true ? "Pause" : "Play preview" : "Preview";
         PreviewIcon.Glyph = ActiveEditor?.IsPreviewPlaying == true ? "\uE769" : "\uE768";
         PlayButton.Visibility = _libraryVisible || preview || RunActive ? Visibility.Collapsed : Visibility.Visible;
-        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0;
+        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0 && _preferences.IsLoaded;
+        PlaybackOptionsButton.Visibility = PlayButton.Visibility;
+        PlaybackOptionsButton.IsEnabled = !_busy && !RunActive && macro is not null;
+        ToolTipService.SetToolTip(PlayButton, $"Play (Ctrl+E) sends real input to the focused app. {PlaybackSettingsSummary.Text}. Emergency stop: {EmergencyShortcut}.");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PlayButton, $"Play, sends real input. {PlaybackSettingsSummary.Text}");
         ImportButton.Visibility = _libraryVisible ? Visibility.Visible : Visibility.Collapsed;
         ImportButton.IsEnabled = !_busy && !RunActive;
         StopButton.Visibility = RunActive ? Visibility.Visible : Visibility.Collapsed;
@@ -350,26 +369,30 @@ public sealed partial class MainWindow : Window
         _feedback.Clear(); RefreshShell();
     }
     private void NextAction_Click(object sender, RoutedEventArgs e) { ActiveEditor?.StepPreview(); RefreshShell(); }
-    private async void Timing_Click(object sender, RoutedEventArgs e) => await OperationAsync(async () =>
+    private async Task EditOptionsAsync(Func<RunLease, Task> edit)
     {
-        var choice = await Dialogs.TimingAsync(_playbackOptions, _playbackOptions.RepeatUntilStopped, false, "", EmergencyShortcut);
-        if (choice is null) return;
-        _playbackOptions = choice.Options with { RepeatUntilStopped = choice.Loop };
+        var lease = _runLifetime.Begin();
+        try { await edit(lease); }
+        catch (OperationCanceledException) { }
+        finally { _runLifetime.Complete(lease); RefreshShell(); }
+    }
+
+    private async void RecordingOptions_Click(object sender, RoutedEventArgs e) => await OperationAsync(() =>
+        EditOptionsAsync(lease => DirectRunPreparation.EditRecordingOptionsAsync(_preferences, lease, Dialogs.RecordingOptionsAsync)));
+
+    private async void PlaybackOptions_Click(object sender, RoutedEventArgs e) => await OperationAsync(async () =>
+    {
+        if (ViewModel.ActiveMacro is not { } macro) return;
+        var id = macro.RecordingId;
+        var name = macro.Name;
+        await EditOptionsAsync(lease => DirectRunPreparation.EditPlaybackOptionsAsync(_preferences, lease, id,
+            options => Dialogs.PlaybackOptionsAsync(options, name, EmergencyShortcut)));
     });
 
-    private async void NewRecording_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => StartRecordingAsync(false, false));
-    internal static async Task<RecordingChoices?> PrepareRecordingChoicesAsync(MainWindowViewModel viewModel, RunLease run,
-        bool intoExisting, bool fromHotkey, ulong? overrideDelay, Func<string, Task<RecordingChoices?>> showDialog)
-    {
-        await run.PrepareAsync(viewModel.InitializeLibraryAsync);
-        var name = intoExisting ? viewModel.ActiveMacro?.Name ?? "Untitled recording" : viewModel.NewRecordingName();
-        if (fromHotkey) return new(name, 3, false, overrideDelay);
-        RecordingChoices? choice = null;
-        await run.PrepareAsync(async () => { choice = await showDialog(name); });
-        return choice;
-    }
+    private async void Record_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => StartRecordingAsync(false, false));
     private async Task StartRecordingAsync(bool intoExisting, bool fromHotkey)
     {
+        if (!_preferences.IsLoaded) { SetMessage("Recording options are loading. Try Record when they are ready."); return; }
         if (!ViewModel.CanRecord || RunActive || _globalHotkeys?.EmergencyStop is null)
         { SetMessage("An emergency stop shortcut must be registered before recording."); return; }
         var cancellation = _runLifetime.Begin();
@@ -379,31 +402,27 @@ public sealed partial class MainWindow : Window
         _preparingRun = true; RefreshShell();
         try
         {
-            // Both entry points own a lease before library loading or the recording dialog can await.
-            var choice = await PrepareRecordingChoicesAsync(ViewModel, cancellation, intoExisting, fromHotkey,
-                _overrideRecordingDelay, name => Dialogs.RecordAsync(name, intoExisting, _overrideRecordingDelay));
+            var choice = await DirectRunPreparation.RecordAsync(ViewModel, _preferences, cancellation, intoExisting, Dialogs.RecordIntoExistingAsync);
             if (choice is null) { FinishController(cancellation); return; }
-            await cancellation.PrepareAsync(SaveActiveAsync);
-            if (!intoExisting) await cancellation.PrepareAsync(async () => { await ViewModel.CreateDraftAsync(choice.Name); });
-            else if (ViewModel.ActiveMacro is { } existing) existing.Name = choice.Name;
             cancellation.ThrowIfCancelled(); ThrowIfClosing();
+            ViewModel.SelectedTabIndex = ViewModel.MacroTabs.IndexOf(choice.Macro);
             ShowEditor(); ActiveEditor!.IsPreviewMode = false;
-            _overrideRecordingDelay = choice.OverrideDelay;
-            _runMacro = ViewModel.ActiveMacro;
+            _runRecordingDelay = choice.Options.OverrideDelay;
+            _runMacro = choice.Macro;
             _recordCountdown = cancellation;
-            _recordCountdownSeconds = choice.CountdownSeconds;
+            _recordCountdownSeconds = choice.Options.CountdownSeconds;
             _preparingRun = false;
-            ShowController(ViewModel.ActiveMacro!.Name);
+            ShowController(choice.Macro.Name);
             var watch = Stopwatch.StartNew();
             while (_recordCountdownSeconds > 0)
             {
                 RefreshController();
                 await Task.Delay(50, cancellation.Token);
-                _recordCountdownSeconds = Math.Max(0, choice.CountdownSeconds - watch.Elapsed.TotalSeconds);
+                _recordCountdownSeconds = Math.Max(0, choice.Options.CountdownSeconds - watch.Elapsed.TotalSeconds);
             }
             cancellation.Token.ThrowIfCancellationRequested();
             _recordCountdown = null;
-            if (!ViewModel.StartRecording(fromHotkey, choice.Clear)) FinishController(cancellation);
+            if (!ViewModel.StartRecording(choice.Macro, fromHotkey, choice.Clear)) FinishController(cancellation);
         }
         catch (OperationCanceledException) { if (!_closed) SetMessage("Recording cancelled"); FinishController(cancellation); }
         catch { FinishController(cancellation); throw; }
@@ -412,24 +431,27 @@ public sealed partial class MainWindow : Window
     private async void Play_Click(object sender, RoutedEventArgs e) => await OperationAsync(PreparePlaybackAsync);
     private async Task PreparePlaybackAsync()
     {
+        if (!_preferences.IsLoaded) { SetMessage("Playback options are loading. Try Play when they are shown."); return; }
+        if (!ViewModel.CanPlay || RunActive) return;
         if (ViewModel.ActiveMacro is not { } macro || macro.Events.Count == 0) return;
         if (_globalHotkeys?.EmergencyStop is null) { SetMessage("An emergency stop shortcut must be registered before playback."); return; }
-        var choice = await Dialogs.TimingAsync(_playbackOptions, _playbackOptions.RepeatUntilStopped, true, macro.Name, EmergencyShortcut);
-        if (choice is null) return;
-        _playbackOptions = choice.Options with { RepeatUntilStopped = choice.Loop };
         var run = _runLifetime.Begin();
         _isRecordingRun = false;
         _runError = null;
         _activeRun = run;
         _runMacro = macro;
+        _runPlaybackOptions = _preferences.PlaybackFor(macro.RecordingId);
         _preparingRun = true; RefreshShell();
         try
         {
-            await run.PrepareAsync(SaveActiveAsync);
-            run.ThrowIfCancelled(); ThrowIfClosing(); ActiveEditor!.IsPreviewMode = false;
+            var prepared = await DirectRunPreparation.PlayAsync(ViewModel, _preferences, run, macro);
+            _runPlaybackOptions = prepared.Options;
+            run.ThrowIfCancelled(); ThrowIfClosing();
+            ViewModel.SelectedTabIndex = ViewModel.MacroTabs.IndexOf(prepared.Macro);
+            ShowEditor(); ActiveEditor!.IsPreviewMode = false;
             _preparingRun = false;
             ShowController(macro.Name);
-            await ViewModel.PlayActiveMacro(_playbackOptions);
+            await ViewModel.PlayMacroAsync(prepared.Macro, prepared.Options);
         }
         catch (OperationCanceledException) { if (!_closed) SetMessage("Playback cancelled"); }
         finally { _preparingRun = false; if (!RunActive) FinishController(run); RefreshShell(); }
@@ -458,9 +480,9 @@ public sealed partial class MainWindow : Window
         {
             _runLifetime.Cancel();
             _recordCountdown?.Cancel();
-            if (_preparingRun) _dialogs?.Dismiss();
+            _dialogs?.Dismiss();
             var recording = ViewModel.RecordingMacro;
-            if (ViewModel.IsRecording || ViewModel.IsFinalizingRecording) await ViewModel.StopRecordingAsync(_overrideRecordingDelay);
+            if (ViewModel.IsRecording || ViewModel.IsFinalizingRecording) await ViewModel.StopRecordingAsync(_runRecordingDelay);
             if (_closed) return;
             ViewModel.EmergencyStop();
             if (recording is not null) await SaveRunAsync(recording);
@@ -513,7 +535,7 @@ public sealed partial class MainWindow : Window
             _controller.Finish(); _controller = null;
         }
         if (_activeRun is { } run) _runLifetime.Complete(run);
-        _activeRun = null; _runMacro = null;
+        _activeRun = null; _runMacro = null; _runPlaybackOptions = null;
         if (_mainHiddenForRun && !_closed && !_allowClose) AppWindow.Show(false);
         _mainHiddenForRun = false;
     }
@@ -527,11 +549,7 @@ public sealed partial class MainWindow : Window
             var recorded = _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control,
                 async () => await OperationAsync(() => StartRecordingAsync(false, true)));
             var stopped = _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control, async () => await StopRunAsync());
-            var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async () => await OperationAsync(async () =>
-            {
-                Activate();
-                await PreparePlaybackAsync();
-            }));
+            var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async () => await OperationAsync(PreparePlaybackAsync));
             SetEmergencyShortcut(KeyboardShortcuts.EmergencyStopChoices[0]);
             _shortcutStatus = recorded && stopped && played ? "Start, stop, and playback shortcuts are registered."
                 : "One or more Ctrl + Q / W / E shortcuts are unavailable. Use the on-screen controls.";
@@ -618,11 +636,11 @@ public sealed partial class MainWindow : Window
         RailColumn.Width = new GridLength(74);
         PageHeading.Padding = narrow ? new Thickness(18) : new Thickness(30, 18, 30, 17);
         Transport.Padding = narrow ? new Thickness(18, 12, 18, 12) : new Thickness(24, 12, 24, 12);
-        TransportInfo.Spacing = narrow ? 10 : 22;
+        TransportInfo.ColumnSpacing = narrow ? 10 : 22;
+        Grid.SetColumnSpan(TransportInfo, narrow ? 2 : 1);
         Grid.SetRow(TransportControls, narrow ? 1 : 0);
         Grid.SetColumn(TransportControls, narrow ? 0 : 1);
         Grid.SetColumnSpan(TransportControls, narrow ? 2 : 1);
-        NewRecordingLabel.Text = e.NewSize.Width < 680 ? "Record" : "New recording";
         PageTitle.FontSize = narrow ? 21 : 25;
         var stackedHeading = e.NewSize.Width < 680;
         Grid.SetRow(HeadingActions, stackedHeading ? 1 : 0);

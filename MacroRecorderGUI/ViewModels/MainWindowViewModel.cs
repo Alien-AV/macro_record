@@ -61,7 +61,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     private Task PlayMacroAsync(MacroViewModel macro) => PlayMacroAsync(macro, null);
 
-    private async Task PlayMacroAsync(MacroViewModel macro, PlaybackOptions? options)
+    internal async Task PlayMacroAsync(MacroViewModel macro, PlaybackOptions? options)
     {
         if (_disposed || _shuttingDown) return;
         if (!EmergencyStopAvailable || IsRecording || IsFinalizingRecording)
@@ -321,7 +321,12 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     public bool StartRecording(bool fromHotkey = false, bool clear = false)
     {
-        if (!CanRecord || ActiveMacro is not { } macro) return false;
+        return ActiveMacro is { } macro && StartRecording(macro, fromHotkey, clear);
+    }
+
+    internal bool StartRecording(MacroViewModel macro, bool fromHotkey, bool clear)
+    {
+        if (!CanRecord || !MacroTabs.Contains(macro)) return false;
         if (clear) macro.Clear();
         var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision));
         return StartRecordingSession(session);

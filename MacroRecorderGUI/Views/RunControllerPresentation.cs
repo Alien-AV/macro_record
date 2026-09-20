@@ -31,7 +31,7 @@ internal sealed record RunControllerPresentation(string State, string Clock, str
             _ => throw new ArgumentOutOfRangeException(nameof(state))
         };
         var countdown = state.Phase == PlaybackPhase.Countdown;
-        var detail = countdown ? "seconds until playback"
+        var detail = countdown ? (state.RepeatUntilStopped ? "seconds until playback · Until stopped" : "seconds until playback")
             : state.Phase == PlaybackPhase.Idle ? "Playback has not started"
             : state.Phase == PlaybackPhase.Stopping ? "Waiting for playback to stop"
             : state.RepeatUntilStopped ? (state.IsActive ? "Repeating until stopped" : "Repeat until stopped")

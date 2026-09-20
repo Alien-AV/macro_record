@@ -55,11 +55,15 @@
                             <Button.Flyout><MenuFlyout x:Name="DocumentMenu" Opening="DocumentMenu_Opening"/></Button.Flyout>
                             <FontIcon Glyph="&#xE712;" FontSize="16"/>
                         </Button>
-                        <Button x:Name="NewRecordingButton" Style="{StaticResource MacroDarkButtonStyle}" Click="NewRecording_Click">
+                        <Button x:Name="RecordButton" Style="{StaticResource MacroDarkButtonStyle}" Click="Record_Click" AutomationProperties.Name="Record a new task after the saved countdown, Ctrl+Q">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Ellipse Width="9" Height="9" Fill="{ThemeResource MacroRedBrush}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="NewRecordingLabel" Text="New recording"/>
+                                <TextBlock Text="Record"/>
                             </StackPanel>
+                        </Button>
+                        <Button x:Name="RecordingOptionsButton" Style="{StaticResource MacroIconButtonStyle}" Click="RecordingOptions_Click"
+                            AutomationProperties.Name="Recording options, does not start recording" ToolTipService.ToolTip="Recording options · saved for future recordings">
+                            <FontIcon Glyph="&#xE70D;" FontSize="12"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -75,37 +79,43 @@
             </Grid>
             <Border Grid.Row="2" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="0,1,0,0">
                 <Grid x:Name="Transport" Padding="24,12" ColumnSpacing="18" RowSpacing="10">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <StackPanel x:Name="TransportInfo" Orientation="Horizontal" Spacing="22" VerticalAlignment="Center">
+                    <Grid x:Name="TransportInfo" ColumnSpacing="22" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                            <StackPanel Orientation="Horizontal" Spacing="9">
+                            <Grid ColumnSpacing="9">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="StatusText" Text="Stopped" FontSize="12" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis" MaxWidth="320" AutomationProperties.LiveSetting="Polite"/>
-                            </StackPanel>
-                            <TextBlock x:Name="SummaryText" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}"/>
+                                <TextBlock x:Name="StatusText" Grid.Column="1" Text="Stopped" FontSize="12" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite"/>
+                            </Grid>
+                            <TextBlock x:Name="SummaryText" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <Button x:Name="SpeedButton" Style="{StaticResource MacroTextButtonStyle}" Click="Timing_Click" ToolTipService.ToolTip="Playback speed in other apps. Visual preview uses captured timing.">
-                            <StackPanel Orientation="Horizontal" Spacing="7"><TextBlock x:Name="SpeedLabel" Text="1× speed"/><FontIcon Glyph="&#xE76C;" FontSize="10"/></StackPanel>
-                        </Button>
-                        <Button x:Name="RepeatButton" Style="{StaticResource MacroTextButtonStyle}" Click="Timing_Click" ToolTipService.ToolTip="Repeats when playing in other apps">
-                            <StackPanel Orientation="Horizontal" Spacing="7"><FontIcon Glyph="&#xE8EE;" FontSize="13"/><TextBlock x:Name="RepeatLabel" Text="Play once"/></StackPanel>
-                        </Button>
-                    </StackPanel>
+                        <StackPanel x:Name="PlaybackSettings" Grid.Column="1" Spacing="3" MaxWidth="240" VerticalAlignment="Center">
+                            <TextBlock x:Name="PlaybackSettingsSummary" Text="Loading playback options…" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                            <TextBlock x:Name="PlaybackSafetyNote" Text="Play sends real keyboard and mouse input" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
                     <StackPanel x:Name="TransportControls" Grid.Column="1" Orientation="Horizontal" Spacing="9" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="BackToEditorButton" Content="←  Back to edit" Click="BackToEditor_Click" Visibility="Collapsed"/>
                         <Button x:Name="NextActionButton" Style="{StaticResource MacroIconButtonStyle}" Click="NextAction_Click" Visibility="Collapsed" AutomationProperties.Name="Next preview action">
                             <FontIcon Glyph="&#xE893;" FontSize="16"/>
                         </Button>
-                        <Button x:Name="PreviewButton" Style="{StaticResource MacroPrimaryButtonStyle}" Click="Preview_Click" AutomationProperties.Name="Preview, no input sent to other apps">
+                        <Button x:Name="PreviewButton" Style="{StaticResource MacroPrimaryButtonStyle}" Click="Preview_Click" AutomationProperties.Name="Preview, original timing, no input sent to other apps" ToolTipService.ToolTip="Visual preview only · original captured timing · no input sent">
                             <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon x:Name="PreviewIcon" Glyph="&#xE768;" FontSize="16"/><TextBlock x:Name="PreviewLabel" Text="Preview"/></StackPanel>
                         </Button>
                         <Button x:Name="PlayButton" Click="Play_Click" AutomationProperties.Name="Play in other apps, sends real input">
-                            <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="Play in other apps"/><FontIcon Glyph="&#xE76C;" FontSize="13"/></StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE768;" FontSize="13"/><TextBlock Text="Play"/></StackPanel>
+                        </Button>
+                        <Button x:Name="PlaybackOptionsButton" Style="{StaticResource MacroIconButtonStyle}" Click="PlaybackOptions_Click"
+                            AutomationProperties.Name="Playback options for this recording, does not start playback" ToolTipService.ToolTip="Playback options · saved for this recording">
+                            <FontIcon Glyph="&#xE70D;" FontSize="12"/>
                         </Button>
                         <Button x:Name="StopButton" Content="Stop" Style="{StaticResource MacroStopButtonStyle}" Click="Stop_Click" Visibility="Collapsed"/>
                         <Button x:Name="ImportButton" Content="Import .macro" Click="Import_Click" Visibility="Collapsed"/>
                     </StackPanel>
+                    <TextBlock x:Name="PreferenceWarning" Grid.Row="2" Grid.ColumnSpan="2" Visibility="Collapsed" FontSize="12"
+                        Foreground="{ThemeResource MacroRedBrush}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
                 </Grid>
             </Border>
         </Grid>
