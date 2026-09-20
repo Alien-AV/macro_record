@@ -11,7 +11,7 @@ public interface IMainWindowViewModel
     MacroViewModel? ActiveMacro { get; }
 }
 
-public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposable
+public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposable
 {
     private readonly SynchronizationContext? _uiContext;
     private int _selectedTabIndex;
@@ -27,13 +27,18 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
     public MainWindowViewModel()
         : this(new RecordEngine(), new PlaybackEngine())
     {
+        SetEmergencyStopAvailability(false);
     }
 
-    public MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine)
+    public MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine, IRecordingLibraryStore? libraryStore = null)
     {
         _uiContext = SynchronizationContext.Current;
+        _libraryStore = libraryStore ?? new RecordingLibraryStore();
+        Library = new ReadOnlyObservableCollection<RecordingLibraryItem>(_library);
         RecordEngine = recordEngine;
         PlaybackEngine = playbackEngine;
+        _playbackWorkflow = new PlaybackWorkflow(playbackEngine);
+        _playbackWorkflow.StateChanged += PlaybackStateChanged;
         RecordEngine.RecordStatus += RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent += RecordEngineOnRecordedEvent;
         RecordEngine.RecordingEnded += RecordEngineOnRecordingEnded;
@@ -54,9 +59,17 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
     public Task PlayActiveMacro() => ActiveMacro is { } macro ? PlayMacroAsync(macro) : Task.CompletedTask;
 
-    private async Task PlayMacroAsync(MacroViewModel macro)
+    private Task PlayMacroAsync(MacroViewModel macro) => PlayMacroAsync(macro, null);
+
+    private async Task PlayMacroAsync(MacroViewModel macro, PlaybackOptions? options)
     {
-        if (_disposed) return;
+        if (_disposed || _shuttingDown) return;
+        if (!EmergencyStopAvailable || IsRecording || IsFinalizingRecording)
+        {
+            StatusMessageRequested?.Invoke(this, EmergencyStopAvailable
+                ? "Stop recording and wait for captured input to finish before playback." : EmergencyStopError!);
+            return;
+        }
         if (_playingMacro is not null)
         {
             StatusMessageRequested?.Invoke(this, "Playback is already running. Abort it before starting another macro.");
@@ -65,11 +78,14 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         if (macro.Events.Count == 0 || !MacroTabs.Contains(macro)) return;
         var version = ++_playbackVersion;
         _playingMacro = macro;
+        _usingPlaybackWorkflow = options is not null;
         OnPropertyChanged(nameof(PlayingMacro));
         string? completionMessage = null;
         try
         {
-            var completion = PlaybackEngine.PlaybackEventsAsync(macro.Events.ToArray(), LoopPlayback);
+            var completion = options is null
+                ? PlaybackEngine.PlaybackEventsAsync(macro.Events.ToArray(), LoopPlayback)
+                : _playbackWorkflow.PlayAsync(macro.Events, options);
             _playbackCompletion = completion;
             StatusMessageRequested?.Invoke(this, $"Playing {macro.Name}");
             await completion;
@@ -104,7 +120,8 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         if (_disposed || _playingMacro is null) return;
         try
         {
-            PlaybackEngine.PlaybackEventAbort();
+            if (_usingPlaybackWorkflow) _playbackWorkflow.Abort();
+            else PlaybackEngine.PlaybackEventAbort();
             // Poll may have already collected a native failure and released its
             // worker while the UI continuation is still queued. Consume that
             // failure before invalidating the old completion's version.
@@ -136,12 +153,21 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         ++_playbackVersion;
         _playingMacro = null;
         _playbackCompletion = null;
+        _usingPlaybackWorkflow = false;
         OnPropertyChanged(nameof(PlayingMacro));
+        OnPropertyChanged(nameof(PlaybackState));
+        OnPropertyChanged(nameof(CanRecord));
+        OnPropertyChanged(nameof(CanPlay));
     }
 
     public void Dispose()
     {
         if (_disposed) return;
+        if (_usingPlaybackWorkflow)
+        {
+            try { _playbackWorkflow.Abort(); }
+            catch (PlaybackStoppedException) { }
+        }
         _disposed = true;
         ++_playbackVersion;
         RecordEngine.RecordStatus -= RecordEngineOnRecordStatus;
@@ -150,6 +176,10 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         RecordEngine.Dispose();
         foreach (var macro in MacroTabs) { macro.ContentReplaced -= MacroContentReplaced; macro.Dispose(); }
         _pendingRecordingDelays.Clear();
+        foreach (var drain in _recordingDrains.Values) drain.Completion.TrySetCanceled();
+        _recordingDrains.Clear();
+        _recordingClock.Stop();
+        _playbackWorkflow.StateChanged -= PlaybackStateChanged;
         PlaybackEngine.Dispose();
         _playingMacro = null;
         _playbackCompletion = null;
@@ -178,6 +208,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         {
             if (value == _loopPlayback)
             {
+                return;
+            }
+            if (_usingPlaybackWorkflow)
+            {
+                StatusMessageRequested?.Invoke(this, "Finite playback options cannot be changed during a run.");
                 return;
             }
 
@@ -215,6 +250,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
         var selectedMacro = ActiveMacro;
         if (ReferenceEquals(_playingMacro, macro)) AbortPlayback();
+        if (ReferenceEquals(_playingMacro, macro)) return;
         if (_recordingSession?.Context is RecordingTarget target && ReferenceEquals(target.Macro, macro)) StopRecording();
         macro.ContentReplaced -= MacroContentReplaced;
         macro.Dispose();
@@ -270,6 +306,11 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
             if (e.Session.Context is not RecordingTarget target || !IsCurrentTarget(target)) return;
             var input = InputEvent.CreateInputEvent(e.InputEvent);
             target.Macro.AddEvent(input);
+            if (ReferenceEquals(target.Macro, _recordingMacro))
+            {
+                _recordedEventCount++;
+                OnPropertyChanged(nameof(RecordedEventCount));
+            }
             foreach (var (throughSession, adjustment) in _pendingRecordingDelays)
             {
                 if (e.Session.Id <= throughSession && ReferenceEquals(adjustment.Macro, target.Macro)
@@ -280,7 +321,7 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
 
     public bool StartRecording(bool fromHotkey = false, bool clear = false)
     {
-        if (_disposed || _recordingSession is not null || ActiveMacro is not { } macro) return false;
+        if (!CanRecord || ActiveMacro is not { } macro) return false;
         if (clear) macro.Clear();
         var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision));
         return StartRecordingSession(session);
@@ -291,19 +332,31 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         var macro = ((RecordingTarget)session.Context!).Macro;
         _recordingSession = session;
         _latestRecordingId = session.Id;
+        _recordingMacro = macro;
+        _recordedEventCount = 0;
+        _recordingClock.Restart();
+        _recordingDrains.Add(session.Id, (macro, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)));
         try
         {
             if (!RecordEngine.StartRecord(session))
             {
                 _recordingSession = null;
+                _recordingDrains.Remove(session.Id);
+                _recordingClock.Stop();
+                NotifyRecordingState();
                 return false;
             }
             StatusMessageRequested?.Invoke(this, $"Recording {macro.Name}");
+            macro.IsDraft = false;
+            NotifyRecordingState();
             return true;
         }
         catch (Exception error)
         {
             _recordingSession = null;
+            _recordingDrains.Remove(session.Id);
+            _recordingClock.Stop();
+            NotifyRecordingState();
             StatusMessageRequested?.Invoke(this, $"Could not start recording: {error.Message}");
             return false;
         }
@@ -323,6 +376,8 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
         {
             RecordEngine.StopRecord();
             _recordingSession = null;
+            _recordingClock.Stop();
+            NotifyRecordingState();
         }
         catch (Exception error)
         {
@@ -361,6 +416,9 @@ public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, IDisposa
                 }
             }
             if (ReferenceEquals(_recordingSession, session)) _recordingSession = null;
+            if (_recordingDrains.Remove(session.Id, out var drain)) drain.Completion.TrySetResult();
+            if (_latestRecordingId == session.Id) _recordingClock.Stop();
+            NotifyRecordingState();
             if (_latestRecordingId == session.Id)
                 StatusMessageRequested?.Invoke(this, error is null ? "Recording stopped" : $"Could not record: {error.Message}");
         });

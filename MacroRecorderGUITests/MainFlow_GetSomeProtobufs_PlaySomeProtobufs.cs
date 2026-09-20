@@ -81,6 +81,7 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     public IEnumerable<InputEvent> PlayedEvents { get; private set; } = [];
 
     public bool Loop { get; private set; }
+    public int LoopUpdates { get; private set; }
     public int Starts { get; private set; }
     public int Aborts { get; private set; }
     public bool Disposed { get; private set; }
@@ -100,7 +101,7 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     }
 
     public void Dispose() => Disposed = true;
-    public void SetLoopPlayback(bool loop) => Loop = loop;
+    public void SetLoopPlayback(bool loop) { Loop = loop; LoopUpdates++; }
 }
 
 internal sealed class FakeMainWindowViewModel : MainWindowViewModel
@@ -141,6 +142,7 @@ public class MainFlowTest
             recordEngine.PushEvent(inputEvent);
         }
 
+        await viewModel.StopRecordingAsync();
         await viewModel.ActiveMacro!.PlayMacro();
         var actualPlaybackEvents = playbackEngine.PlayedEvents
             .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)

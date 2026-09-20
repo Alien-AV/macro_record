@@ -7,14 +7,18 @@ using MacroRecorderGUI.Editor;
 
 namespace MacroRecorderGUI.ViewModels;
 
-public sealed class MacroViewModel : ViewModelBase, IDisposable
+public sealed partial class MacroViewModel : ViewModelBase, IDisposable
 {
     private readonly IPlaybackEngine _playbackEngine;
     private readonly Func<MacroViewModel, Task>? _playMacro;
     private string _name;
     private ActionEditor? _editor;
     public ActionEditor Editor => _editor ??= new ActionEditor(this);
-    public void Dispose() => _editor?.Dispose();
+    public void Dispose()
+    {
+        DetachPersistenceTracking();
+        _editor?.Dispose();
+    }
     internal void InvalidateEditorUndo() => _editor?.InvalidateUndo();
 
     public MacroViewModel(string name, IPlaybackEngine playbackEngine, Func<MacroViewModel, Task>? playMacro = null)
@@ -22,6 +26,7 @@ public sealed class MacroViewModel : ViewModelBase, IDisposable
         _playbackEngine = playbackEngine;
         _playMacro = playMacro;
         _name = name;
+        Events.CollectionChanged += EventsChanged;
     }
 
     public ObservableCollection<InputEvent> Events { get; } = [];
@@ -42,6 +47,7 @@ public sealed class MacroViewModel : ViewModelBase, IDisposable
 
             _name = value;
             OnPropertyChanged();
+            MarkChanged();
         }
     }
 
