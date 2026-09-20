@@ -7,7 +7,8 @@ using Windows.System;
 
 namespace MacroRecorderGUI.Editor;
 
-public readonly record struct PathSample(int Index, BigInteger Time, PathPosition? Position, bool StartsSegment, int Segment);
+public readonly record struct PathSample(int Index, BigInteger Time, PathPosition? Position, bool StartsSegment, int Segment,
+    int? OriginEventIndex = null);
 
 /// <summary>Streaming, lossless interpretation. All ranges partition the input in original order.</summary>
 public sealed class ActionProjection
@@ -51,7 +52,7 @@ public sealed class ActionProjection
             ? new PathPosition(point.X, point.Y, origin.AdoptedEvent is not null && !origin.SetupEvent().MouseEvent.MappedToVirtualDesktop
                 ? CoordinateSpace.AbsolutePrimary : CoordinateSpace.AbsoluteDesktop) : null;
         _segment++;
-        var marker = new PathSample(origin.EventIndex - 1, TotalTime, _position, true, _segment);
+        var marker = new PathSample(origin.EventIndex - 1, TotalTime, _position, true, _segment, OriginEventIndex: origin.EventIndex);
         _originSamples.Add(marker); RenderSamples.Add(marker); RenderRevision++;
         if (_position is { } position)
             _bounds[position.Space] = _bounds.TryGetValue(position.Space, out var bounds) ? bounds.Include(position)
@@ -228,6 +229,8 @@ public sealed class ActionProjection
         }
         return null;
     }
+
+    public RecordedAction? ActionForSample(PathSample sample) => ActionAt(sample.OriginEventIndex ?? sample.Index);
 
     // Sample-and-hold is deliberate: interpolating between device reports would invent motion during waits.
     public PathSample? SampleAt(BigInteger time)

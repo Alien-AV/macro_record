@@ -562,7 +562,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void UpdateCursor()
     {
         if (_editor is null) return;
-        var p = _editor.Projection.SampleAt(_previewPosition.Time)?.Position;
+        var p = _editor.Projection.PointerAt(_previewPosition.Time)?.Position;
         if (_cursor is not null)
         {
             _cursor.Visibility = IsPreviewMode && p?.Space == _space ? Visibility.Visible : Visibility.Collapsed;
@@ -619,9 +619,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         var point = e.GetCurrentPoint(PathCanvas).Position;
         if (_handle is not null && Math.Abs(point.X - Canvas.GetLeft(_handle) - 9) < 14 && Math.Abs(point.Y - Canvas.GetTop(_handle) - 9) < 14)
         { StopPreview(); _dragging = PathCanvas.CapturePointer(e.Pointer); e.Handled = true; return; }
+        SelectPathAction(point);
+    }
+    private void SelectPathAction(Point point)
+    {
         var nearest = _display.Concat(_selectedDisplay).Where(s => s.Position?.Space == _space)
             .Select(s => (Sample: s, P: Map(s.Position!.Value))).OrderBy(s => Math.Pow(s.P.X - point.X, 2) + Math.Pow(s.P.Y - point.Y, 2)).FirstOrDefault();
-        if (nearest.Sample.Position is not null) ActionsList.SelectedItem = _editor.Projection.ActionAt(nearest.Sample.Index);
+        if (nearest.Sample.Position is not null && _editor?.Projection.ActionForSample(nearest.Sample) is { } action)
+            ActionsList.SelectedItem = action;
     }
     private void Canvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {

@@ -493,6 +493,31 @@ public sealed class PointerOriginTests
         Assert.HasCount(3, projection.Samples); Assert.AreEqual(2, projection.Actions[1].Start);
     }
 
+    [TestMethod]
+    public void RenderOriginOwnershipIsSeparateFromTimingAndRawStateIndices()
+    {
+        using var macro = new MacroViewModel("Origin ownership", new FakePlaybackEngine());
+        macro.AddCaptureOrigin(new(10, 20));
+        macro.AddEvent(new KeyboardEvent(VirtualKey.A, false) { TimeSinceLastEvent = 100 });
+        macro.AddEvent(new KeyboardEvent(VirtualKey.A, true) { TimeSinceLastEvent = 100 });
+        macro.AddCaptureOrigin(new(-400, 150)); macro.AddEvent(Move(7, 8, true, delay: 100));
+        macro.AddCaptureOrigin(new(800, 900)); macro.Editor.Refresh();
+        var projection = macro.Editor.Projection;
+        var origins = projection.RenderSamples.Where(sample => sample.OriginEventIndex is not null).ToArray();
+        CollectionAssert.AreEqual(new[] { -1, 1, 2 }, origins.Select(sample => sample.Index).ToArray());
+        CollectionAssert.AreEqual(new int?[] { 0, 2, 3 }, origins.Select(sample => sample.OriginEventIndex).ToArray());
+        Assert.AreSame(projection.Actions[0], projection.ActionForSample(origins[0]));
+        Assert.AreSame(projection.Actions[1], projection.ActionForSample(origins[1]));
+        Assert.IsNull(projection.ActionForSample(origins[2]));
+        var preview = new MacroRecorderGUI.Editor.VisualPreview(macro.Events, projection);
+        Assert.HasCount(1, preview.Seek(199).HeldKeys);
+        var boundary = preview.Seek(200);
+        Assert.IsEmpty(boundary.HeldKeys); Assert.AreEqual(-400d, boundary.Pointer!.Value.Position!.Value.X);
+        Assert.AreEqual(1, projection.SampleAt(200)!.Value.Index);
+        Assert.HasCount(1, preview.Seek(199).HeldKeys);
+        Assert.HasCount(3, projection.Samples); Assert.HasCount(3, macro.Events);
+    }
+
     private sealed class TrackingEngine : IPlaybackEngine
     {
         public List<InputEvent[]> Runs { get; } = [];

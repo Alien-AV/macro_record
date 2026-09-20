@@ -129,8 +129,8 @@ public sealed class RecordingLibraryWorkflowTests
             var two = await vm.CreateDraftAsync("Same name");
             Assert.AreNotEqual(id, two.RecordingId);
             var count = vm.MacroTabs.Count;
-            var snapshot = await vm.LoadRecordingSnapshotAsync(id);
-            snapshot[0].TimeSinceLastEvent = 99;
+            var snapshot = await vm.LoadRecordingPreviewAsync(id);
+            snapshot.Events[0].TimeSinceLastEvent = 99;
             Assert.AreSame(two, vm.ActiveMacro);
             Assert.AreEqual(count, vm.MacroTabs.Count);
             Assert.AreEqual(0ul, one.Events[0].TimeSinceLastEvent);

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using MacroRecorderGUI.Models;
-using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Utils;
 
 namespace MacroRecorderGUI.ViewModels;
@@ -17,13 +16,6 @@ public partial class MainWindowViewModel
     public string? LibraryError { get; private set; }
 
     public IEnumerable<RecordingLibraryItem> SearchLibrary(string? query) => Library.Where(item => item.Matches(query));
-
-    public async Task<IReadOnlyList<InputEvent>> LoadRecordingSnapshotAsync(Guid id)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        var record = await _libraryStore.LoadAsync(id);
-        return SerializeEvents.DeserializeEventsFromByteArray(record.MacroBytes).ToArray();
-    }
 
     public async Task InitializeLibraryAsync()
     {

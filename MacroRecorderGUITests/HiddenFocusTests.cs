@@ -161,6 +161,7 @@ public sealed partial class HiddenFocusTests
 
             CheckRawDraftSurvivesMovementMerge(editor, macro);
             CheckPointerPolicy();
+            CheckOriginPreviewCursor(host);
             Assert.IsFalse(IsWindowVisible(hwnd));
         }
         finally
@@ -215,6 +216,65 @@ public sealed partial class HiddenFocusTests
         Assert.IsFalse(ClickAwayFocus.IsBackgroundPress(root, new DependencyObject[] { root }, false, false));
         Assert.IsFalse(ClickAwayFocus.IsBackgroundPress(root, new DependencyObject[] { root }, true, true));
         Assert.IsFalse(ClickAwayFocus.IsBackgroundPress(root, new DependencyObject[] { new TextBlock() }, true, false));
+    }
+
+    private static void CheckOriginPreviewCursor(ContentControl host)
+    {
+        var engine = new FakePlaybackEngine();
+        using var macro = new MacroViewModel("Origin preview", engine);
+        macro.AddCaptureOrigin(new(10, 20));
+        macro.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.A, false) { TimeSinceLastEvent = 100 });
+        macro.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.A, true) { TimeSinceLastEvent = 100 });
+        macro.AddCaptureOrigin(new(-400, 150));
+        macro.AddEvent(new MouseEvent(0, 0, MouseActionTypeFlags.LeftDown) { RelativePosition = true, TimeSinceLastEvent = 100 });
+        macro.AddEvent(new MouseEvent(0, 0, MouseActionTypeFlags.LeftUp) { RelativePosition = true, TimeSinceLastEvent = 100 });
+        var bytes = macro.SnapshotBytes();
+        using var editor = new MacroTabContent { DataContext = macro };
+        var previous = host.Content;
+        try
+        {
+            host.Content = editor; Call(editor, "Attach"); editor.IsPreviewMode = true;
+            var canvas = Field<Canvas>(editor, "PathCanvas");
+            canvas.Measure(new Windows.Foundation.Size(600, 400));
+            canvas.Arrange(new Windows.Foundation.Rect(0, 0, 600, 400));
+            Check(0, 10, 20, 0, 0);
+            Check(50, 10, 20, 0, 0);
+            Check(150, 10, 20, 1, 0);
+            Check(200, -400, 150, 0, 0);
+            Check(250, -400, 150, 0, 0);
+            Check(350, -400, 150, 0, 1);
+            Check(50, 10, 20, 0, 0);
+            editor.IsPreviewMode = false;
+            var actions = Field<ListView>(editor, "ActionsList");
+            actions.SelectedItem = macro.Editor.Projection.Actions[1];
+            ClickOrigin(10, 20);
+            Assert.AreSame(macro.Editor.Projection.Actions[0], actions.SelectedItem, "The initial origin owns the first action.");
+            ClickOrigin(-400, 150);
+            Assert.AreSame(macro.Editor.Projection.Actions[1], actions.SelectedItem, "The second origin owns its following capture action, not the previous capture.");
+            CollectionAssert.AreEqual(bytes, macro.SnapshotBytes());
+            Assert.AreEqual(0, engine.Starts); Assert.AreEqual(0, engine.Aborts);
+        }
+        finally { host.Content = previous; }
+
+        void ClickOrigin(int x, int y)
+        {
+            var point = Field<MacroRecorderGUI.Editor.PathViewport>(editor, "_viewport").Map(new(x, y, MacroRecorderGUI.Editor.CoordinateSpace.AbsoluteDesktop));
+            Call(editor, "SelectPathAction", new Windows.Foundation.Point(point.X, point.Y));
+        }
+
+        void Check(int time, int x, int y, int keys, int buttons)
+        {
+            Call(editor, "SeekPreview", new System.Numerics.BigInteger(time));
+            var cursor = Field<Microsoft.UI.Xaml.Shapes.Polygon>(editor, "_cursor");
+            Assert.IsNotNull(cursor);
+            Assert.AreEqual(Visibility.Visible, cursor.Visibility, $"The metadata cursor must be drawn at {time} µs.");
+            var viewport = Field<MacroRecorderGUI.Editor.PathViewport>(editor, "_viewport");
+            var point = viewport.Map(new(x, y, MacroRecorderGUI.Editor.CoordinateSpace.AbsoluteDesktop));
+            Assert.AreEqual(point.X, Canvas.GetLeft(cursor), 0.001);
+            Assert.AreEqual(point.Y, Canvas.GetTop(cursor), 0.001);
+            var frame = Field<MacroRecorderGUI.Editor.PreviewFrame>(editor, "_previewFrame");
+            Assert.HasCount(keys, frame.HeldKeys); Assert.HasCount(buttons, frame.HeldButtons);
+        }
     }
 
     [DllImport("user32.dll")]
