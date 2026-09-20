@@ -249,3 +249,6 @@ ModelManifest.xml
 /Common/protobuf/protoc.exe
 /Common/protobuf/libprotoc.dll
 /Common/protobuf/libprotobuf.dll
+
+# Isolated local implementation/review worktrees
+/.agent-worktrees/
