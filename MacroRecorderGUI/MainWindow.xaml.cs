@@ -472,9 +472,10 @@ public sealed partial class MainWindow : Window
         if (ReferenceEquals(sender, _controller)) await StopRunAsync();
     }
     private async void Stop_Click(object sender, RoutedEventArgs e) => await StopRunAsync();
-    private async Task StopRunAsync()
+    private async Task StopRunAsync(RecordingStopCommand? command = null)
     {
         if (_stopping) return;
+        if (ViewModel.IsRecording && command is { } hotkey && !ViewModel.AcceptsRecordingStop(hotkey)) return;
         var run = _activeRun;
         _stopping = true;
         try
@@ -483,7 +484,7 @@ public sealed partial class MainWindow : Window
             _recordCountdown?.Cancel();
             _dialogs?.Dismiss();
             var recording = ViewModel.RecordingMacro;
-            if (ViewModel.IsRecording || ViewModel.IsFinalizingRecording) await ViewModel.StopRecordingAsync(_runRecordingDelay);
+            if (ViewModel.IsRecording || ViewModel.IsFinalizingRecording) await ViewModel.StopRecordingAsync(_runRecordingDelay, command);
             if (_closed) return;
             ViewModel.EmergencyStop();
             if (recording is not null) await SaveRunAsync(recording);
@@ -548,9 +549,10 @@ public sealed partial class MainWindow : Window
         {
             _globalHotkeys = new GlobalHotkeys(WinRT.Interop.WindowNative.GetWindowHandle(this));
             var recorded = _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control,
-                async () => await OperationAsync(() => StartRecordingAsync(false, true)));
-            var stopped = _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control, async () => await StopRunAsync());
-            var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async () => await OperationAsync(PreparePlaybackAsync));
+                async _ => await OperationAsync(() => StartRecordingAsync(false, true)));
+            var stopped = _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control,
+                async time => await StopRunAsync(new RecordingStopCommand(RecordingStopGestures.ControlW, time)));
+            var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async _ => await OperationAsync(PreparePlaybackAsync));
             SetEmergencyShortcut(KeyboardShortcuts.EmergencyStopChoices[0]);
             _shortcutStatus = recorded && stopped && played ? "Start, stop, and playback shortcuts are registered."
                 : "One or more Ctrl + Q / W / E shortcuts are unavailable. Use the on-screen controls.";
@@ -561,7 +563,8 @@ public sealed partial class MainWindow : Window
     private void SetEmergencyShortcut(HotkeyGesture gesture)
     {
         if (_globalHotkeys is null) return;
-        var changed = _globalHotkeys.TrySetEmergencyStop(gesture, async () => await StopRunAsync(), out var error);
+        var changed = _globalHotkeys.TrySetEmergencyStop(gesture, async command => await StopRunAsync(command), out var error);
+        ViewModel.RegisteredRecordingStops = _globalHotkeys.RegisteredRecordingStops;
         ViewModel.SetEmergencyStopAvailability(_globalHotkeys.EmergencyStop is not null, error);
         if (!changed) SetMessage(error ?? "The shortcut could not be registered. The previous emergency shortcut remains active.");
         RefreshShell();

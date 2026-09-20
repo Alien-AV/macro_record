@@ -182,8 +182,10 @@ internal sealed class FakeRecordingTransport : IRecordingTransport
     public Exception? StopError { get; set; }
     public List<ulong> Starts { get; } = [];
     public List<ulong> Stops { get; } = [];
-    public void Start(ulong sessionId) { if (StartError is not null) throw StartError; Starts.Add(sessionId); }
-    public void Stop(ulong sessionId) { if (StopError is not null) throw StopError; Stops.Add(sessionId); }
+    public List<RecordingStopGestures> StartGestures { get; } = [];
+    public List<RecordingStopCommand?> StopCommands { get; } = [];
+    public void Start(ulong sessionId, RecordingStopGestures stopGestures) { if (StartError is not null) throw StartError; Starts.Add(sessionId); StartGestures.Add(stopGestures); }
+    public void Stop(ulong sessionId, RecordingStopCommand? command) { if (StopError is not null) throw StopError; Stops.Add(sessionId); StopCommands.Add(command); }
     public void Begin(RecordingSession session, RecordingStartKeys keys = RecordingStartKeys.None, RecordingStartKeys idleReleasedKeys = RecordingStartKeys.None) =>
         Begin(session.Id, keys, idleReleasedKeys);
     public void End(RecordingSession session) => End(session.Id);

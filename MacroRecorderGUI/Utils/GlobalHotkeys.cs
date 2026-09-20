@@ -22,13 +22,16 @@ public sealed class GlobalHotkeys : IDisposable
 
     private readonly nint _windowHandle;
     private readonly SubclassProcedure _subclassProcedure;
-    private readonly Dictionary<int, Action> _handlers = [];
+    private readonly Dictionary<int, Action<uint>> _handlers = [];
+    private readonly Dictionary<int, RecordingStopGestures> _recordingStops = [];
     private int _nextHotKeyId = 9000;
     private bool _disposed;
     private readonly Func<int, VirtualKey, HotKeyModifiers, bool> _register;
     private readonly Func<int, bool> _unregister;
     private int? _emergencyId;
     public HotkeyGesture? EmergencyStop { get; private set; }
+    public RecordingStopGestures RegisteredRecordingStops => _recordingStops.Values.Aggregate(
+        RecordingStopGestures.None, (result, gesture) => result | gesture);
 
     public GlobalHotkeys(nint windowHandle)
     {
@@ -50,35 +53,38 @@ public sealed class GlobalHotkeys : IDisposable
         _subclassProcedure = WindowSubclassProcedure;
     }
 
-    public bool TrySetEmergencyStop(HotkeyGesture gesture, Action handler, out string? error)
+    public bool TrySetEmergencyStop(HotkeyGesture gesture, Action<RecordingStopCommand> handler, out string? error)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(handler);
         error = null;
         if (!KeyboardShortcuts.EmergencyStopChoices.Contains(gesture))
         { error = "Choose one of the supported emergency-stop shortcuts."; return false; }
+        Action<uint> onHotkey = time => handler(new RecordingStopCommand(RecordingStopCommand.For(gesture), time));
         if (gesture == EmergencyStop && _emergencyId is { } existing)
-        { _handlers[existing] = handler; return true; }
+        { _handlers[existing] = onHotkey; return true; }
         var id = _nextHotKeyId++;
         if (!_register(id, gesture.Key, gesture.Modifiers))
         { error = $"Could not register {gesture.DisplayName}. It may be in use by another application."; return false; }
-        _handlers.Add(id, handler);
+        _handlers.Add(id, onHotkey);
+        _recordingStops.Add(id, RecordingStopCommand.For(gesture));
         if (_emergencyId is { } previous)
         {
             if (!_unregister(previous))
             {
-                if (_unregister(id)) _handlers.Remove(id);
+                if (_unregister(id)) { _handlers.Remove(id); _recordingStops.Remove(id); }
                 error = "Could not release the previous shortcut. The previous emergency stop remains selected.";
                 return false;
             }
             _handlers.Remove(previous);
+            _recordingStops.Remove(previous);
         }
         _emergencyId = id;
         EmergencyStop = gesture;
         return true;
     }
 
-    public bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action handler)
+    public bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action<uint> handler)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -89,6 +95,7 @@ public sealed class GlobalHotkeys : IDisposable
         }
 
         _handlers.Add(id, handler);
+        _recordingStops.Add(id, RecordingStopCommand.For(new HotkeyGesture(key, modifiers)));
         return true;
     }
 
@@ -105,6 +112,7 @@ public sealed class GlobalHotkeys : IDisposable
         }
 
         _handlers.Clear();
+        _recordingStops.Clear();
         if (_windowHandle != 0) RemoveWindowSubclass(_windowHandle, _subclassProcedure, SubclassId);
         EmergencyStop = null;
         _disposed = true;
@@ -119,14 +127,23 @@ public sealed class GlobalHotkeys : IDisposable
         UIntPtr referenceData)
     {
         if (message == WindowMessageHotKey
-            && _handlers.TryGetValue(unchecked((int)wParam.ToUInt64()), out var handler))
+            && DispatchHotkey(unchecked((int)wParam.ToUInt64()), unchecked((uint)GetMessageTime())))
         {
-            handler();
             return nint.Zero;
         }
 
         return DefSubclassProc(windowHandle, message, wParam, lParam);
     }
+
+    internal bool DispatchHotkey(int id, uint messageTime)
+    {
+        if (!_handlers.TryGetValue(id, out var handler)) return false;
+        handler(messageTime);
+        return true;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern int GetMessageTime();
 
     private delegate nint SubclassProcedure(
         nint windowHandle,

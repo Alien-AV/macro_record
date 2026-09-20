@@ -50,10 +50,11 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(PlaybackState));
     }
 
-    public async Task StopRecordingAsync(ulong? autoDelay = null)
+    public async Task StopRecordingAsync(ulong? autoDelay = null, RecordingStopCommand? command = null)
     {
+        if (IsRecording && command is { } hotkey && !AcceptsRecordingStop(hotkey)) return;
         var drains = _recordingDrains.Values.Select(drain => drain.Completion.Task).ToArray();
-        StopRecording(autoDelay);
+        StopRecording(autoDelay, command);
         if (IsRecording) throw new InvalidOperationException("Recording could not be stopped.");
         await Task.WhenAll(drains);
     }

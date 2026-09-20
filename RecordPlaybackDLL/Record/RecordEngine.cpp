@@ -79,7 +79,11 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
         } else if (GetMessage(&message, nullptr, 0, 0) <= 0) break;
         if (message.message == WM_SHUTDOWN_RECORD || message.message == WM_QUIT) break;
         if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
-            commands_.push_back({message.message, static_cast<uint64_t>(message.wParam), message.time});
+            const auto payload = static_cast<uint64_t>(message.lParam);
+            const auto gestures = static_cast<uint32_t>(payload);
+            const auto cutoff = message.message == WM_STOP_RECORD && gestures
+                ? static_cast<DWORD>(payload >> 32) : message.time;
+            commands_.push_back({message.message, static_cast<uint64_t>(message.wParam), cutoff, gestures});
         } else {
             TranslateMessage(&message);
             DispatchMessage(&message);
@@ -105,12 +109,12 @@ void RecordEngine::advance_boundaries(HWND hwnd) {
     if (drained) {
         commands_.pop_front();
         if (command.kind == WM_START_RECORD) {
-            if (stream_.start(command.session)) {
+            if (stream_.start(command.session, command.gestures)) {
                 time_of_last_event_ = std::chrono::steady_clock::now();
                 fake_mouse_event_for_initial_pos();
             }
         } else {
-            stream_.stop(command.session);
+            stream_.stop(command.session, command.gestures, command.cutoff);
         }
     }
     // At most 256 raw messages per turn. The fixed cutoff excludes future input,
@@ -175,7 +179,7 @@ void RecordEngine::handle_mouse_event(const RAWMOUSE& data) {
 }
 
 void RecordEngine::process_recorded_event(std::unique_ptr<Event> event) {
-    stream_.input(std::move(event));
+    stream_.input(std::move(event), static_cast<DWORD>(GetMessageTime()));
 }
 
 void RecordEngine::fake_mouse_event_for_initial_pos() {
@@ -219,11 +223,13 @@ RecordEngine::~RecordEngine() {
     if (collector_thread_.joinable()) collector_thread_.join();
 }
 
-bool RecordEngine::start_record(uint64_t session_id) const {
-    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_START_RECORD, static_cast<WPARAM>(session_id), 0);
+bool RecordEngine::start_record(uint64_t session_id, uint32_t stop_gestures) const {
+    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_START_RECORD, static_cast<WPARAM>(session_id), stop_gestures);
 }
 
-bool RecordEngine::stop_record(uint64_t session_id) const {
-    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_STOP_RECORD, static_cast<WPARAM>(session_id), 0);
+bool RecordEngine::stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) const {
+    static_assert(sizeof(LPARAM) == sizeof(uint64_t), "Recording command payload requires x64.");
+    const auto payload = (static_cast<uint64_t>(message_time) << 32) | gesture;
+    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_STOP_RECORD, static_cast<WPARAM>(session_id), static_cast<LPARAM>(payload));
 }
 }

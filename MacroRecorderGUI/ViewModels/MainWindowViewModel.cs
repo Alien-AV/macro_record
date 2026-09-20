@@ -328,7 +328,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     {
         if (!CanRecord || !MacroTabs.Contains(macro)) return false;
         if (clear) macro.Clear();
-        var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision));
+        var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision), RegisteredRecordingStops);
         return StartRecordingSession(session);
     }
 
@@ -367,9 +367,13 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
         }
     }
 
-    public void StopRecording(ulong? autoDelay = null)
+    public RecordingStopGestures RegisteredRecordingStops { get; set; }
+    public bool AcceptsRecordingStop(RecordingStopCommand command) => _recordingSession?.Accepts(command) == true;
+
+    public void StopRecording(ulong? autoDelay = null, RecordingStopCommand? command = null)
     {
         if (_disposed || _recordingSession is not { } session) return;
+        if (command is { } hotkey && !session.Accepts(hotkey)) return;
         var target = (RecordingTarget)session.Context!;
         target.Delay = autoDelay;
         if (autoDelay is not null && IsCurrentTarget(target))
@@ -379,7 +383,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
         }
         try
         {
-            RecordEngine.StopRecord();
+            if (!RecordEngine.StopRecord(command)) return;
             _recordingSession = null;
             _recordingClock.Stop();
             NotifyRecordingState();

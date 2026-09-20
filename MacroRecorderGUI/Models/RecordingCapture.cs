@@ -51,7 +51,7 @@ public sealed class RecordingCapture : IDisposable
             _requestedSession = session;
             try
             {
-                _transport.Start(session.Id);
+                _transport.Start(session.Id, session.StopGestures);
                 return true;
             }
             catch (Exception exception)
@@ -64,17 +64,18 @@ public sealed class RecordingCapture : IDisposable
         }
     }
 
-    public void Stop()
+    public bool Stop(RecordingStopCommand? command = null)
     {
         lock (_gate)
         {
-            if (_requestedSession is null)
+            if (_requestedSession is null || command is { } hotkey && !_requestedSession.Accepts(hotkey))
             {
-                return;
+                return false;
             }
 
-            _transport.Stop(_requestedSession.Id);
+            _transport.Stop(_requestedSession.Id, command);
             _requestedSession = null;
+            return true;
         }
     }
 

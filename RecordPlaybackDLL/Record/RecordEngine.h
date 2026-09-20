@@ -20,14 +20,14 @@ public:
     RecordEngine(const RecordEngine&) = delete;
     RecordEngine& operator=(const RecordEngine&) = delete;
     bool ready() const { return ready_; }
-    bool start_record(uint64_t session_id) const;
-    bool stop_record(uint64_t session_id) const;
+    bool start_record(uint64_t session_id, uint32_t stop_gestures) const;
+    bool stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) const;
 
 private:
     static constexpr UINT WM_START_RECORD = WM_APP + 1;
     static constexpr UINT WM_STOP_RECORD = WM_APP + 2;
     static constexpr UINT WM_SHUTDOWN_RECORD = WM_APP + 4;
-    struct Command { UINT kind; uint64_t session; DWORD cutoff; };
+    struct Command { UINT kind; uint64_t session; DWORD cutoff; uint32_t gestures; };
 
     record_events_callback_t record_events_callback_;
     status_callback_t status_callback_;

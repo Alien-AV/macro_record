@@ -9,7 +9,7 @@ public interface IRecordEngine : IDisposable
     event RecordEngine.RecordStatusEventHandler? RecordStatus;
     event Action<RecordingSession, Exception?>? RecordingEnded;
     bool StartRecord(RecordingSession session);
-    void StopRecord();
+    bool StopRecord(RecordingStopCommand? command = null);
 }
 
 public sealed class RecordEngine : IRecordEngine
@@ -32,7 +32,7 @@ public sealed class RecordEngine : IRecordEngine
     public event RecordStatusEventHandler? RecordStatus;
     public event Action<RecordingSession, Exception?>? RecordingEnded;
     public bool StartRecord(RecordingSession session) => _capture.Start(session);
-    public void StopRecord() => _capture.Stop();
+    public bool StopRecord(RecordingStopCommand? command = null) => _capture.Stop(command);
     public void Dispose() => _capture.Dispose();
 
     public sealed class RecordEventsEventArgs(ProtobufInputEvent inputEvent, RecordingSession session) : EventArgs

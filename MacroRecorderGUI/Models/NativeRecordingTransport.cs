@@ -32,16 +32,17 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys>? Boundary;
     public event Action<StatusCode>? Status;
 
-    public void Start(ulong sessionId)
+    public void Start(ulong sessionId, RecordingStopGestures stopGestures)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!DllStartRecord(sessionId)) throw new InvalidOperationException("The capture thread could not start recording.");
+        if (!DllStartRecord(sessionId, stopGestures)) throw new InvalidOperationException("The capture thread could not start recording.");
     }
 
-    public void Stop(ulong sessionId)
+    public void Stop(ulong sessionId, RecordingStopCommand? command)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!DllStopRecord(sessionId)) throw new InvalidOperationException("The capture thread could not stop recording.");
+        if (!DllStopRecord(sessionId, command?.Gesture ?? RecordingStopGestures.None, command?.MessageTime ?? 0))
+            throw new InvalidOperationException("The capture thread could not stop recording.");
     }
 
     private void OnInput(nint buffer, int bufferSize, ulong sessionId)
@@ -73,10 +74,10 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
     [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool DllStartRecord(ulong sessionId);
+    private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures);
     [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_stop_record", CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool DllStopRecord(ulong sessionId);
+    private static extern bool DllStopRecord(ulong sessionId, RecordingStopGestures gesture, uint messageTime);
     [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_record_shutdown", CallingConvention = CallingConvention.Cdecl)]
     private static extern void DllShutdown();
 }

@@ -46,8 +46,8 @@ RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t event_record
 	return false;
 }
 
-RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id) noexcept { return record_engine_singleton && record_engine_singleton->start_record(session_id); }
-RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id) noexcept { return record_engine_singleton && record_engine_singleton->stop_record(session_id); }
+RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures) noexcept { return record_engine_singleton && record_engine_singleton->start_record(session_id, stop_gestures); }
+RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) noexcept { return record_engine_singleton && record_engine_singleton->stop_record(session_id, gesture, message_time); }
 RECORD_PLAYBACK_DLL_API void iac_dll_record_shutdown() noexcept {
 	record_engine_singleton.reset();
 	c_callback_for_record_event_reporting = nullptr;

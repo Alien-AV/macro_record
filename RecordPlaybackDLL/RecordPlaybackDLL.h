@@ -22,8 +22,8 @@ extern "C" {
 	using iac_dll_record_boundary_cb_t = void(*)(uint64_t session_id, uint32_t boundary, uint32_t held_keys, uint32_t idle_released_keys);
 	RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t, iac_dll_status_cb_t, iac_dll_record_boundary_cb_t) noexcept;
 	
-	RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id) noexcept;
-	RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id) noexcept;
+    RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures) noexcept;
+    RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) noexcept;
 	RECORD_PLAYBACK_DLL_API void iac_dll_record_shutdown() noexcept;
 
 	// Input is copied before returning. Empty/malformed lists are rejected without injection.

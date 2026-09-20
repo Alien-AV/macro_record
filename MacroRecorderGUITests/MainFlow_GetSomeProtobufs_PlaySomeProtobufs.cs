@@ -24,11 +24,12 @@ internal sealed class FakeRecordEngine : IRecordEngine
         return true;
     }
 
-    public void StopRecord()
+    public bool StopRecord(RecordingStopCommand? command = null)
     {
-        _engine.StopRecord();
+        if (!_engine.StopRecord(command)) return false;
         if (_session is { } session) _transport.End(session);
         _session = null;
+        return true;
     }
     public void Dispose() => _engine.Dispose();
 

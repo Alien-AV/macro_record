@@ -416,8 +416,8 @@ public sealed class DirectRunControlsTests
         var shell = File.ReadAllText(Path.Combine(root, "MainWindow.xaml.cs"));
         StringAssert.Contains(shell, "PlaybackSettingsSummary.Visibility = preview ? Visibility.Collapsed : Visibility.Visible");
         StringAssert.Contains(shell, "PlaybackSafetyNote.Text = preview ? \"Preview: original timing · no input\"");
-        StringAssert.Contains(shell, "async () => await OperationAsync(() => StartRecordingAsync(false, true))");
-        StringAssert.Contains(shell, "async () => await OperationAsync(PreparePlaybackAsync)");
+        StringAssert.Contains(shell, "async _ => await OperationAsync(() => StartRecordingAsync(false, true))");
+        StringAssert.Contains(shell, "async _ => await OperationAsync(PreparePlaybackAsync)");
         StringAssert.Contains(shell, "PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0 && _preferences.IsLoaded");
         StringAssert.Contains(shell, "if (!_preferences.IsLoaded) { SetMessage(\"Playback options are loading.");
         StringAssert.Contains(shell, "New empty recording");
