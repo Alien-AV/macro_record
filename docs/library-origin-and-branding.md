@@ -19,6 +19,8 @@
 - Legacy recordings require explicit adoption of their first positioning event
   before treating it as metadata. Preserve old behavior by default and explain
   missing or incompatible origins rather than silently misplaying them.
+- Keep the `.macro` extension. Version new document contents so older players
+  reject unsupported semantics; continue importing legacy `.macro` files.
 - State-change waits remain a separate planning exercise, not implementation
   scope for this pass.
 
