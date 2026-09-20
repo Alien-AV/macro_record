@@ -5,7 +5,7 @@ public readonly record struct EditorLayout(bool Stacked, double ListHeight, doub
 {
     public static EditorLayout Fit(double width, double viewportHeight)
     {
-        var stacked = width < 720;
+        var stacked = width < 900;
         return new(stacked, stacked ? 300 : Math.Max(420, viewportHeight),
             stacked ? Math.Max(480, viewportHeight - 300) : Math.Max(420, viewportHeight));
     }

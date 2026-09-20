@@ -71,7 +71,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="6"/>
         <Setter Property="Padding" Value="9,7"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="UseSystemFocusVisuals" Value="True"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
             <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
@@ -92,7 +92,7 @@
         <Setter Property="BorderBrush" Value="{ThemeResource DesignedEditorLine}"/><Setter Property="BorderThickness" Value="1"/>
         <Setter Property="SelectionHighlightColor" Value="{ThemeResource DesignedEditorBlue}"/>
     </Style>
-    <Style x:Key="DesignedEditorLabel" TargetType="TextBlock"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="{ThemeResource DesignedEditorMuted}"/></Style>
+    <Style x:Key="DesignedEditorLabel" TargetType="TextBlock"><Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="{ThemeResource DesignedEditorMuted}"/></Style>
     <Style x:Key="DesignedEditorActionContainer" TargetType="ListViewItem">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="10,8"/>
         <Setter Property="Margin" Value="0,0,0,3"/><Setter Property="MinHeight" Value="54"/><Setter Property="UseSystemFocusVisuals" Value="True"/>

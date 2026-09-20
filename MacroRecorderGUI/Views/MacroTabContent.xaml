@@ -29,24 +29,27 @@
           <Border x:Name="ActionIconTile" Grid.Column="1" Width="33" Height="33" CornerRadius="8" Background="{ThemeResource DesignedEditorRawFill}"><FontIcon x:Name="ActionIcon" Glyph="{Binding Glyph}" FontSize="16" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
           <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" TextTrimming="CharacterEllipsis"/>
-           <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextTrimming="CharacterEllipsis"/>
-           <TextBlock Text="{Binding Warning}" Visibility="{Binding WarningVisibility}" FontSize="11" Foreground="{ThemeResource DesignedEditorWarning}" ToolTipService.ToolTip="{Binding WarningExplanation}"/>
+           <TextBlock Text="{Binding Description}" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}" TextTrimming="CharacterEllipsis"/>
+           <TextBlock Text="{Binding Warning}" Visibility="{Binding WarningVisibility}" FontSize="13" Foreground="{ThemeResource DesignedEditorWarning}" ToolTipService.ToolTip="{Binding WarningExplanation}"/>
           </StackPanel>
-          <TextBlock Grid.Column="3" Text="{Binding DisplayTime}" VerticalAlignment="Center" Style="{StaticResource DesignedEditorLabel}" ToolTipService.ToolTip="{Binding Summary}"/>
+          <StackPanel Grid.Column="3" Spacing="2" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding Summary}">
+           <TextBlock Text="{Binding DisplayTime}" HorizontalAlignment="Right" Style="{StaticResource DesignedEditorLabel}"/>
+           <TextBlock Text="total" HorizontalAlignment="Right" Style="{StaticResource DesignedEditorLabel}"/>
+          </StackPanel>
          </Grid>
         </DataTemplate></ListView.ItemTemplate>
        </ListView>
        <StackPanel x:Name="EmptySequence" Padding="28,45" Spacing="12" Visibility="Collapsed">
         <FontIcon Glyph="&#xE8A5;" FontSize="28" Foreground="{ThemeResource DesignedEditorMuted}"/>
         <TextBlock Text="Your sequence starts here" HorizontalAlignment="Center" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}"/>
-        <TextBlock Text="Record a task, open a .macro file, or add an exact input event." TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}" FontSize="12"/>
+        <TextBlock Text="Record a task, open a .macro file, or add an exact input event." TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}" FontSize="13"/>
        </StackPanel>
       </Grid>
       <Border Grid.Row="2" Padding="22,12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}">
        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <TextBlock x:Name="SelectionScope" Text="Every captured input preserved" VerticalAlignment="Center" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}" ToolTipService.ToolTip="Ctrl/Shift to select several actions."/>
         <Button Grid.Column="1" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Add exact input">
-         <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE710;" FontSize="12"/><TextBlock Text="Add"/></StackPanel>
+         <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE710;" FontSize="13"/><TextBlock Text="Add"/></StackPanel>
          <Button.Flyout><MenuFlyout><MenuFlyoutItem Text="Add mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Add keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutSeparator/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/></MenuFlyout></Button.Flyout>
         </Button>
        </Grid>
@@ -61,21 +64,27 @@
         <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <TextBlock x:Name="SelectedTitle" Text="Select an action" FontSize="17" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" VerticalAlignment="Center" TextWrapping="Wrap"/>
          <Button x:Name="DeleteButton" Grid.Column="1" Style="{StaticResource DesignedEditorButton}" Padding="7" Click="Delete_Click" AutomationProperties.Name="Delete selected actions"><FontIcon Glyph="&#xE74D;" FontSize="16"/></Button>
-         <Border Grid.Column="2" Padding="8,4" CornerRadius="5" VerticalAlignment="Center" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="1"><TextBlock x:Name="SampleBadge" FontSize="10" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
+         <Border Grid.Column="2" Padding="8,4" CornerRadius="5" VerticalAlignment="Center" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="1"><TextBlock x:Name="SampleBadge" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
         </Grid>
-        <TextBlock x:Name="InspectorScope" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap" Visibility="Collapsed"/>
-        <TextBlock x:Name="ActionWarning" FontSize="12" Foreground="{ThemeResource DesignedEditorWarning}" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <TextBlock x:Name="InspectorScope" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <TextBlock x:Name="ActionWarning" FontSize="13" Foreground="{ThemeResource DesignedEditorWarning}" TextWrapping="Wrap" Visibility="Collapsed"/>
        </StackPanel>
        <Grid Grid.Row="1">
         <ContentControl x:Name="EditorPathHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
          <Border x:Name="PathPanel" CornerRadius="9" BorderThickness="1" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorPaper}">
           <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
            <Border BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="0,0,0,1" Padding="13,10">
-            <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-             <FontIcon Glyph="&#xE7F4;" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
-             <TextBlock x:Name="PathNote" Grid.Column="1" TextTrimming="CharacterEllipsis" Style="{StaticResource DesignedEditorLabel}"/>
-             <TextBlock Grid.Column="2" Text="Fit path" Style="{StaticResource DesignedEditorLabel}"/>
-            </Grid>
+            <StackPanel Spacing="6">
+             <TextBlock x:Name="PathNote" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}"/>
+             <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Line X1="0" X2="24" Y1="6" Y2="6" Stroke="{ThemeResource DesignedEditorMuted}" StrokeThickness="1.5" StrokeDashArray="3,3" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Text="Recording context" Style="{StaticResource DesignedEditorLabel}"/>
+             </Grid>
+             <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Line x:Name="SelectedPathLegend" X1="0" X2="24" Y1="6" Y2="6" Stroke="{ThemeResource DesignedEditorPath}" StrokeThickness="3" VerticalAlignment="Center"/>
+              <TextBlock x:Name="PathSelectionNote" Grid.Column="1" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/>
+             </Grid>
+            </StackPanel>
            </Border>
            <Canvas x:Name="PathCanvas" Grid.Row="1" Background="Transparent" SizeChanged="Canvas_SizeChanged" PointerPressed="Canvas_PointerPressed" PointerMoved="Canvas_PointerMoved" PointerReleased="Canvas_PointerReleased" PointerCanceled="Canvas_PointerCanceled" PointerCaptureLost="Canvas_PointerCanceled" AutomationProperties.Name="Recorded path; editable destinations are also available as coordinate fields"/>
            <TextBlock x:Name="PathEmpty" Grid.Row="1" Margin="24" Text="No recorded pointer position" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}" IsHitTestVisible="False"/>
@@ -88,35 +97,41 @@
           <ItemsControl x:Name="CapturedKeys"><ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
            <ItemsControl.ItemTemplate><DataTemplate><Border Margin="4" Padding="14,10" CornerRadius="5" BorderThickness="1,1,1,3" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorSurface}"><TextBlock Text="{Binding}" FontSize="20" Foreground="{ThemeResource DesignedEditorInk}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
           </ItemsControl>
-          <TextBlock x:Name="InputDetail" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}"/>
+          <TextBlock x:Name="InputDetail" FontSize="13" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}"/>
+          <TextBlock Text="No pointer movement in this action" FontSize="13" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource DesignedEditorMuted}"/>
          </StackPanel>
         </Border>
        </Grid>
        <ContentControl x:Name="ActionFields" Grid.Row="2" HorizontalContentAlignment="Stretch" IsEnabled="False">
         <StackPanel Spacing="8">
-         <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
-          <StackPanel Spacing="7"><TextBlock Text="Duration · s" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DurationInput" Style="{StaticResource DesignedEditorField}" LostFocus="Duration_LostFocus" KeyDown="Duration_KeyDown" AutomationProperties.Name="Duration in seconds" ToolTipService.ToolTip="Time within this action. Up to six decimal places; Enter or leave the field to apply."/></StackPanel>
-          <Grid x:Name="DestinationFields" Grid.Column="1" ColumnSpacing="12" Visibility="Collapsed"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-           <StackPanel Spacing="7"><TextBlock Text="Destination X · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationX" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination X in absolute pixels"/></StackPanel>
-           <StackPanel Grid.Column="1" Spacing="7"><TextBlock Text="Destination Y · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationY" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination Y in absolute pixels"/></StackPanel>
-          </Grid>
+         <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DurationColumn" Width="*"/></Grid.ColumnDefinitions>
+          <StackPanel Spacing="7"><TextBlock Text="Wait before · s" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="WaitInput" Style="{StaticResource DesignedEditorField}" LostFocus="Wait_LostFocus" KeyDown="Wait_KeyDown" AutomationProperties.Name="Wait before this action in seconds" ToolTipService.ToolTip="Delay before the first event. Enter or leave the field to apply."/></StackPanel>
+          <StackPanel x:Name="DurationFields" Grid.Column="1" Spacing="7"><TextBlock Text="Execution · s" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DurationInput" Style="{StaticResource DesignedEditorField}" LostFocus="Duration_LostFocus" KeyDown="Duration_KeyDown" AutomationProperties.Name="Execution duration in seconds" ToolTipService.ToolTip="Time from the first event to the last, excluding Wait before. Enter or leave the field to apply."/></StackPanel>
          </Grid>
-         <TextBlock x:Name="GeometryNote" FontSize="10" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
-         <Button x:Name="WaitButton" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" Padding="0,3" HorizontalAlignment="Left"><TextBlock x:Name="WaitLabel" Text="Wait before" FontSize="11"/>
-          <Button.Flyout><Flyout><StackPanel Width="280" Spacing="10"><TextBlock Text="Wait before this action" FontWeight="SemiBold"/><TextBox x:Name="WaitInput" Header="Seconds" Style="{StaticResource DesignedEditorField}"/><TextBlock Text="Changes the delay before its first event. A standalone trailing wait is not stored by the .macro format." FontSize="12" TextWrapping="Wrap"/><Button Content="Apply wait" Style="{StaticResource DesignedEditorButton}" Click="Wait_Click"/></StackPanel></Flyout></Button.Flyout>
+         <TextBlock x:Name="TimingSummary" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+         <Grid x:Name="DestinationFields" ColumnSpacing="12" Visibility="Collapsed"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <StackPanel Spacing="7"><TextBlock Text="Destination X · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationX" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination X in absolute pixels"/></StackPanel>
+          <StackPanel Grid.Column="1" Spacing="7"><TextBlock Text="Destination Y · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationY" Style="{StaticResource DesignedEditorField}" LostFocus="Destination_LostFocus" KeyDown="Destination_KeyDown" AutomationProperties.Name="Destination Y in absolute pixels"/></StackPanel>
+         </Grid>
+         <Button Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" Padding="0,3" Content="Timing &amp; position help" AutomationProperties.Name="Timing and position help">
+          <Button.Flyout><Flyout><StackPanel MaxWidth="340" Spacing="10">
+           <TextBlock Text="Total = wait before + execution. A single event has no execution duration. Seconds accept up to six decimal places." FontSize="13" TextWrapping="Wrap"/>
+           <TextBlock Text="Wait changes the first event's delay; execution scales only the delays inside the action. Standalone trailing waits are not stored." FontSize="13" TextWrapping="Wrap"/>
+           <TextBlock x:Name="GeometryNote" FontSize="13" TextWrapping="Wrap"/>
+          </StackPanel></Flyout></Button.Flyout>
          </Button>
         </StackPanel>
        </ContentControl>
        <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}" Padding="0,10,0,0">
         <Button x:Name="RawToggle" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Click="RawToggle_Click" AutomationProperties.Name="Show or hide exact captured input">
-         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="RawHeader" Text="Exact captured input" FontSize="11"/><FontIcon x:Name="RawChevron" Grid.Column="1" Glyph="&#xE76C;" FontSize="10" Margin="12,0,0,0"/></Grid>
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="RawHeader" Text="Exact captured input" FontSize="13"/><FontIcon x:Name="RawChevron" Grid.Column="1" Glyph="&#xE76C;" FontSize="13" Margin="12,0,0,0"/></Grid>
         </Button>
        </Border>
        <StackPanel x:Name="RawContent" Grid.Row="4" Visibility="Collapsed" Spacing="8">
-        <TextBlock x:Name="TechnicalDetail" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorInk}"/>
+        <TextBlock x:Name="TechnicalDetail" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorInk}"/>
         <CheckBox x:Name="ShowSamples" Content="Show path samples" Checked="Samples_Changed" Unchecked="Samples_Changed"/>
-        <TextBlock Text="Original events · Ctrl/Shift to select several. Delete uses this raw selection." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
-        <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" AutomationProperties.Name="Original events in the selected actions"><ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource DesignedEditorInk}"/></DataTemplate></ListView.ItemTemplate></ListView>
+        <TextBlock Text="Original events · Ctrl/Shift to select several. Delete uses this raw selection." FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+        <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" AutomationProperties.Name="Original events in the selected actions"><ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/></DataTemplate></ListView.ItemTemplate></ListView>
         <TextBox x:Name="RawDelay" Header="This event's delay (µs)" Style="{StaticResource DesignedEditorField}"/>
         <StackPanel x:Name="RawMouseFields" Spacing="6">
          <TextBox x:Name="RawX" Header="Raw X (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawY" Header="Raw Y (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/>
@@ -127,9 +142,9 @@
         <Button x:Name="RawApply" Content="Apply this raw event" Style="{StaticResource DesignedEditorButton}" Click="RawApply_Click" IsEnabled="False"/>
         <TextBox x:Name="RawEachDelay" Header="Delay for EACH selected raw event (µs)" Text="5000" Style="{StaticResource DesignedEditorField}"/>
         <Button Content="Set each selected raw delay" Style="{StaticResource DesignedEditorButton}" Click="RawEach_Click"/>
-        <TextBlock Text="Bulk raw delay changes also change the action's duration." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
+        <TextBlock Text="Bulk raw delay changes also change the action's duration." FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
         <Expander x:Name="ConversionPanel" Header="Convert path estimate" HorizontalAlignment="Stretch"><StackPanel Spacing="8">
-         <TextBlock Text="Relative values are device counts, not pixels. Conversion assumes 1 count = 1 pixel after an existing absolute anchor; pointer speed/acceleration are unknown. Earlier unanchored input stays relative. This changes actual playback coordinates and is undoable." TextWrapping="Wrap" FontSize="12"/>
+         <TextBlock Text="Relative values are device counts, not pixels. Conversion assumes 1 count = 1 pixel after an existing absolute anchor; pointer speed/acceleration are unknown. Earlier unanchored input stays relative. This changes actual playback coordinates and is undoable." TextWrapping="Wrap" FontSize="13"/>
          <CheckBox x:Name="AcceptEstimate" Content="Use this explicit estimate"/><Button Content="Convert anchored moves" Style="{StaticResource DesignedEditorButton}" Click="Convert_Click"/>
         </StackPanel></Expander>
        </StackPanel>
@@ -142,8 +157,8 @@
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <Border Padding="26,12" Background="{ThemeResource DesignedEditorSoft}" BorderBrush="{ThemeResource DesignedEditorSelectedBorder}" BorderThickness="0,0,0,1">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{ThemeResource DesignedEditorBlue}"/><TextBlock Text="Preview · no input sent to other apps" FontSize="12" Foreground="{ThemeResource DesignedEditorBlue}"/></StackPanel>
-     <TextBlock x:Name="VirtualLabel" Grid.Column="1" Text="Virtual pointer &amp; keys" FontSize="12" Foreground="{ThemeResource DesignedEditorBlue}"/>
+     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{ThemeResource DesignedEditorBlue}"/><TextBlock Text="Preview · no input sent to other apps" FontSize="13" Foreground="{ThemeResource DesignedEditorBlue}"/></StackPanel>
+     <TextBlock x:Name="VirtualLabel" Grid.Column="1" Text="Virtual pointer &amp; keys" FontSize="13" Foreground="{ThemeResource DesignedEditorBlue}"/>
     </Grid>
    </Border>
    <ScrollViewer x:Name="PreviewScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" SizeChanged="PreviewBody_SizeChanged">
@@ -155,14 +170,14 @@
        <ItemsControl x:Name="HeldInputs" ToolTipService.ToolTip="Held state from recorded transitions at this exact time. Initial physical key/button state was not captured."><ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate><DataTemplate><Border Margin="4,0" Padding="12,5" CornerRadius="4" BorderThickness="1,1,1,3" BorderBrush="{ThemeResource DesignedEditorLine}" Background="{ThemeResource DesignedEditorPaper}"><TextBlock Text="{Binding}" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/></Border></DataTemplate></ItemsControl.ItemTemplate>
        </ItemsControl>
-       <TextBlock x:Name="HeldNote" Text="No recorded keys or buttons held" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
+       <TextBlock x:Name="HeldNote" Text="No recorded keys or buttons held" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}"/>
       </StackPanel>
      </Grid>
      <StackPanel x:Name="PreviewCurrent" Grid.Column="1" VerticalAlignment="Center" Spacing="12">
-      <TextBlock x:Name="PreviewStep" Text="NO ACTIONS" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}"/>
+      <TextBlock x:Name="PreviewStep" Text="NO ACTIONS" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}"/>
       <TextBlock x:Name="PreviewTitle" Text="Empty recording" FontSize="25" FontWeight="SemiBold" Foreground="{ThemeResource DesignedEditorInk}" TextWrapping="Wrap"/>
-      <TextBlock x:Name="PreviewDescription" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/>
-      <Border Margin="0,14,0,0" Padding="0,17,0,0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}"><TextBlock x:Name="PreviewNext" FontSize="12" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/></Border>
+      <TextBlock x:Name="PreviewDescription" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/>
+      <Border Margin="0,14,0,0" Padding="0,17,0,0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}"><TextBlock x:Name="PreviewNext" FontSize="13" Foreground="{ThemeResource DesignedEditorMuted}" TextWrapping="Wrap"/></Border>
      </StackPanel>
     </Grid>
    </ScrollViewer>

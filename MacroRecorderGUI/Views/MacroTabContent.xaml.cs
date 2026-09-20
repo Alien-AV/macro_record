@@ -153,7 +153,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         }
         finally { _sync = false; }
         if (_editor.RawSelection && !_rawOpen) SetRawOpen(true);
-        SummaryText.Text = $"{_editor.Projection.Actions.Count:N0} {(_editor.Projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(_editor.Projection.TotalTime)}";
+        SummaryText.Text = $"{EditorText.Count(_editor.Projection.Actions.Count, "action")} · {TimeText.Human(_editor.Projection.TotalTime)}";
         EmptySequence.Visibility = _macro.Events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _previewPosition.RefreshDuration(_editor.Projection.TotalTime);
         _preview = new VisualPreview(_macro.Events, _editor.Projection);
@@ -183,8 +183,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_editor is not null && _macro is not null)
         {
-            SelectionScope.Text = _editor.RawSelection ? $"{_macro.SelectedEvents.Count:N0} raw events selected"
-                : ActionsList.SelectedItems.Count > 1 ? $"{ActionsList.SelectedItems.Count:N0} actions selected" : "Every captured input preserved";
+            SelectionScope.Text = _editor.RawSelection ? $"{EditorText.Count(_macro.SelectedEvents.Count, "raw event")} selected"
+                : ActionsList.SelectedItems.Count > 1 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Every captured input preserved";
             DeleteButton.IsEnabled = _macro.SelectedEvents.Count > 0;
             var deleteScope = _editor.RawSelection ? "Delete selected raw events" : "Delete selected actions";
             ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
@@ -203,13 +203,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         ActionFields.IsEnabled = a is not null;
         ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
         SelectedTitle.Text = a?.Name ?? "Select an action";
-        SampleBadge.Text = a is null ? "No input" : $"{a.Count:N0} {(a.Kind is ActionKind.Move or ActionKind.Drag ? "samples" : "events")}";
-        RawHeader.Text = a is null ? "Exact captured input" : $"Exact captured input · {a.Count:N0} events";
+        SampleBadge.Text = a?.EventCountLabel ?? "No input";
+        var rawCount = ActionsList.SelectedItems.OfType<RecordedAction>().Sum(action => action.Count);
+        RawHeader.Text = a is null ? "Exact captured input" : $"Exact captured input · {EditorText.Count(rawCount, "event")}";
         RawToggle.IsEnabled = a is not null;
         InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
         InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
-        TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact delay: {TimeText.Seconds(a.Wait)}s · duration: {TimeText.Seconds(a.Duration)}s";
-        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · inspect exact captured input before replay." : "";
+        TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact wait: {TimeText.Seconds(a.Wait)}s · execution: {TimeText.Seconds(a.Duration)}s";
+        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · see exact input" : "";
         ActionWarning.Visibility = a is { Complete: false } ? Visibility.Visible : Visibility.Collapsed;
         ToolTipService.SetToolTip(ActionWarning, a?.WarningExplanation);
         var path = a is not null && a.Kind is not (ActionKind.Keys or ActionKind.Scroll);
@@ -220,13 +221,13 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         InputDetail.Text = a?.Detail ?? "";
         if (a is null || _editor is null) { _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
         Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
-        WaitLabel.Text = $"Wait before · {TimeText.Human(a.Wait)}  ›";
-        DurationInput.IsEnabled = a.Count > 1;
+        DurationFields.Visibility = a.CanEditDuration ? Visibility.Visible : Visibility.Collapsed;
+        DurationColumn.Width = new GridLength(a.CanEditDuration ? 1 : 0, GridUnitType.Star);
+        TimingSummary.Text = a.CanEditDuration ? $"{a.Summary} = {a.DisplayTime} total" : $"{a.DisplayTime} total · wait before one event";
         var reason = _editor.GeometryBlockReason(a);
         GeometryNote.Text = reason is null ? "Adjusts the end of this movement."
             : a.Kind is ActionKind.Keys ? "Original key order is preserved."
             : a.Kind is ActionKind.Scroll ? "Original wheel units and timing are preserved." : reason;
-        if (a.Count == 1) GeometryNote.Text += " Single event · use Wait before to change its timing.";
         ToolTipService.SetToolTip(GeometryNote, reason ?? "Drag the outlined endpoint or apply coordinates. The following path remains connected.");
         DestinationFields.Visibility = reason is null ? Visibility.Visible : Visibility.Collapsed;
         var end = _editor.Projection.Samples[a.End - 1].Position;
@@ -269,11 +270,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void AddMouse_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(_macro.CreateMouseEventManually, "Mouse event added. Edit it in Advanced.", resetDrafts: false);
+        if (_macro is not null) RunEdit(_macro.CreateMouseEventManually, "Mouse event added. Edit it in Exact captured input.", resetDrafts: false);
     }
     private void AddKeyboard_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(_macro.CreateKeyboardEventManually, "Keyboard event added. Edit it in Advanced.", resetDrafts: false);
+        if (_macro is not null) RunEdit(_macro.CreateKeyboardEventManually, "Keyboard event added. Edit it in Exact captured input.", resetDrafts: false);
     }
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
@@ -413,6 +414,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             return;
         }
         _display = frame.Overview; _selectedDisplay = frame.SelectedSamples; _space = frame.Space;
+        PathSelectionNote.Text = action is null ? "Select an action to see its movement"
+            : frame.HasSelectedPosition ? $"Action {action.Number:D2} · {frame.SelectionLabel}" : frame.SelectionLabel;
+        SelectedPathLegend.Visibility = frame.HasSelectedPosition ? Visibility.Visible : Visibility.Collapsed;
         PathNote.Text = _space switch
         {
             CoordinateSpace.RelativeCounts => "Device counts · not screen pixels",
@@ -427,14 +431,20 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         AddGridDots();
         if (frame.Bounds is not { } bounds) { UpdateCursor(); return; }
         _viewport = PathViewport.Fit(bounds, PathCanvas.ActualWidth, PathCanvas.ActualHeight);
-        AddPath(_display, BrushResource("Muted"), 1.5, dashed: IsPreviewMode);
-        AddPath(_display, BrushResource("Muted"), 2, dashed: true, only: ActionKind.Drag);
-        AddPath(_selectedDisplay, BrushResource("Path"), 3, dashed: action?.Kind == ActionKind.Drag);
+        AddPath(_display, BrushResource("Muted"), 1.5, dashed: true);
+        AddPath(_selectedDisplay, BrushResource("Path"), 3);
         AddDirectionCues();
         if (ShowSamples.IsChecked == true)
             foreach (var s in _selectedDisplay.Where(s => s.Position?.Space == _space)) AddDot(s.Position!.Value, 4, "Path");
         foreach (var landmark in frame.Landmarks) AddLandmark(landmark);
-        AddEndpoints();
+        if (frame.HasSelectedPath) AddEndpoints();
+        else if (frame.HasSelectedPosition)
+        {
+            var position = _selectedDisplay.Last(s => s.Position?.Space == _space).Position!.Value;
+            var marker = AddDot(position, 14, "Paper");
+            marker.Stroke = BrushResource("Path"); marker.StrokeThickness = 3;
+            AddPathLabel(position, "Recorded position", below: false);
+        }
         if (!IsPreviewMode && frame.GeometryBlockReason is null && frame.Destination is { } end)
         {
             var halo = AddDot(end, 42, "Blue"); halo.Opacity = .09;
@@ -452,22 +462,22 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void AddLandmark(RecordedAction action)
     {
-        var sample = _editor!.Projection.Samples[action.Kind == ActionKind.Drag ? action.Start : action.End - 1];
+        var sample = _editor!.Projection.Samples[action.Start];
         if (sample.Position is not { } p || p.Space != _space) return;
-        Shape marker = action.Kind == ActionKind.Drag ? new Rectangle() : new Ellipse();
+        var marker = new Rectangle();
         marker.Width = marker.Height = 12; marker.StrokeThickness = 2;
         marker.Stroke = BrushResource(ReferenceEquals(action, _pathAction) ? "Path" : "Muted");
         marker.Fill = BrushResource("Paper");
-        Place(marker, Map(p)); ToolTipService.SetToolTip(marker, action.Detail);
+        Place(marker, Map(p)); ToolTipService.SetToolTip(marker, $"Action {action.Number:D2} · {action.Detail} · last recorded position before drag");
         marker.Tapped += (_, args) => { if (IsPreviewMode) SeekPreview(action.StartTime); else ActionsList.SelectedItem = action; args.Handled = true; };
         PathCanvas.Children.Add(marker);
     }
-    private void AddPath(IReadOnlyList<PathSample> samples, Brush brush, double thickness, bool dashed = false, ActionKind? only = null)
+    private void AddPath(IReadOnlyList<PathSample> samples, Brush brush, double thickness, bool dashed = false)
     {
         var geometry = new PathGeometry(); PathFigure? figure = null; PolyLineSegment? segment = null;
         foreach (var sample in samples)
         {
-            if (sample.Position is not { } p || p.Space != _space || only is { } kind && _editor!.Projection.ActionAt(sample.Index)?.Kind != kind) { figure = null; continue; }
+            if (sample.Position is not { } p || p.Space != _space) { figure = null; continue; }
             var point = Map(p);
             if (figure is null || sample.StartsSegment)
             {
@@ -516,7 +526,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             {
                 var end = AddDot(p, 14, "Paper");
                 end.Stroke = BrushResource("Path"); end.StrokeThickness = 2.5;
-                if (!IsPreviewMode && i == samples.Count - 1 && _pathAction is { } action) AddPathLabel(p, action.Name, below: false);
+                if (!IsPreviewMode && i == samples.Count - 1 && _pathAction is { } action) AddPathLabel(p, $"Action {action.Number:D2} end", below: false);
             }
         }
     }

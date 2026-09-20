@@ -3,7 +3,17 @@ namespace MacroRecorderGUI.Editor;
 public sealed record PresentationRefresh(IReadOnlyList<RecordedAction> Selection, int ProjectedEvents, int SelectionEventsVisited);
 public sealed record PathFrame(IReadOnlyList<PathSample> Overview, IReadOnlyList<PathSample> SelectedSamples,
     CoordinateSpace Space, PathBounds? Bounds, string? GeometryBlockReason, PathPosition? Destination,
-    IReadOnlyList<RecordedAction> Landmarks);
+    IReadOnlyList<RecordedAction> Landmarks, ActionKind? SelectedKind)
+{
+    public bool HasSelectedPath => SelectedSamples.Zip(SelectedSamples.Skip(1)).Any(pair =>
+        !pair.Second.StartsSegment && pair.First.Segment == pair.Second.Segment
+        && pair.First.Position is { } from && pair.Second.Position is { } to
+        && from.Space == Space && to.Space == Space && (from.X != to.X || from.Y != to.Y));
+    public bool HasSelectedPosition => SelectedSamples.Any(sample => sample.Position?.Space == Space);
+    public string SelectionLabel => HasSelectedPath ? SelectedKind == ActionKind.Drag ? "Selected drag" : "Selected movement"
+        : HasSelectedPosition ? SelectedKind == ActionKind.Drag ? "Selected drag position · no movement path" : "Selected position · no movement path"
+        : "No pointer movement in this action";
+}
 
 /// <summary>The view's refresh/redraw boundary, independent of XAML dispatch and layout events.</summary>
 public sealed class EditorPresentation(ActionEditor editor)
@@ -37,13 +47,21 @@ public sealed class EditorPresentation(ActionEditor editor)
         var destination = selected is null ? null : projection.Samples[selected.End - 1].Position;
         var space = displaySpace ?? destination?.Space ?? CoordinateSpace.Unknown;
         var overview = PathDisplay.Decimate(projection.Samples, 0, projection.Samples.Count);
-        var detail = selected is null ? [] : PathDisplay.Decimate(projection.Samples, Math.Max(0, selected.Start - 1), selected.Count + (selected.Start > 0 ? 1 : 0), 512);
+        var includeAnchor = selected is { Start: > 0 } && !projection.Samples[selected.Start].StartsSegment
+            && projection.Samples[selected.Start - 1].Position is not null;
+        var detail = selected is not { MovementCount: > 0 } ? []
+            : PathDisplay.Decimate(projection.Samples, selected.Start - (includeAnchor ? 1 : 0), selected.Count + (includeAnchor ? 1 : 0), 512);
         var landmarks = projection.MouseLandmarks;
         var visible = new HashSet<RecordedAction>();
         var count = Math.Min(256, landmarks.Count);
-        for (var i = 0; i < count; i++) visible.Add(landmarks[count == 1 ? 0 : (int)((long)i * (landmarks.Count - 1) / (count - 1))]);
-        if (selected is { Kind: ActionKind.Click or ActionKind.Drag }) visible.Add(selected);
-        frame = new(overview, detail, space, projection.BoundsFor(space), selected is null ? "Select an action." : editor.GeometryBlockReason(selected), destination, visible.ToArray());
+        for (var i = 0; i < count; i++)
+        {
+            var landmark = landmarks[count == 1 ? 0 : (int)((long)i * (landmarks.Count - 1) / (count - 1))];
+            // Click-only events have no recorded position of their own.
+            if (landmark.Kind == ActionKind.Drag) visible.Add(landmark);
+        }
+        if (selected is { Kind: ActionKind.Drag }) visible.Add(selected);
+        frame = new(overview, detail, space, projection.BoundsFor(space), selected is null ? "Select an action." : editor.GeometryBlockReason(selected), destination, visible.ToArray(), selected?.Kind);
         _frame = frame; _frameSelection = selected; _frameCount = projection.ProcessedCount; _frameSpace = displaySpace;
         return true;
     }

@@ -15,6 +15,7 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public int Number { get; internal set; }
     public InputEvent First { get; } = first;
     public int Count { get; internal set; }
+    public int MovementCount { get; internal set; }
     public int End => Start + Count;
     public ActionKind Kind { get; internal set; }
     public bool Complete { get; internal set; }
@@ -29,11 +30,14 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public string DisplayNumber => Number.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
     public string DisplayTime => TimeText.Human((BigInteger)Wait + Duration);
     public string Title => $"{Number}. {Name}";
-    public string Summary => $"{TimeText.Human(Wait)} delay · {TimeText.Human(Duration)} duration";
-    public string TechnicalSummary => $"{Detail} · {Count:N0} raw events · events {Start + 1:N0}–{End:N0}";
+    public bool CanEditDuration => Count > 1;
+    public string EventCountLabel => EditorText.Count(Count, "event");
+    public string Summary => $"{TimeText.Human(Wait)} wait + {TimeText.Human(Duration)} execution";
+    public string TechnicalSummary => $"{Detail} · {EditorText.Count(Count, "raw event")} · "
+        + (Count == 1 ? $"event {End:N0}" : $"events {Start + 1:N0}–{End:N0}");
     public string Warning => Complete ? "" : "Incomplete";
     public Microsoft.UI.Xaml.Visibility WarningVisibility => Complete ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
-    public string WarningExplanation => Complete ? "" : "Missing or unmatched key/button transitions. Inspect Advanced before replaying or editing geometry.";
+    public string WarningExplanation => Complete ? "" : "Missing or unmatched key/button transitions. Inspect Exact captured input before replaying or editing geometry.";
     public string Glyph => Kind switch
     {
         ActionKind.Move => "\uE7C2", ActionKind.Click => "\uE8B0", ActionKind.Drag => "\uE7C9",

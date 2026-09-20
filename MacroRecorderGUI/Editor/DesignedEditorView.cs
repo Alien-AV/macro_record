@@ -16,6 +16,15 @@ public sealed partial class MacroTabContent
     private string[] _heldLabels = [];
     private CoordinateSpace _previewInitialSpace;
 
+    private void Wait_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!_sync && !_dragging && _drafts.IsEdited(WaitInput)) Wait_Click(sender, e);
+    }
+    private void Wait_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Enter) return;
+        Wait_Click(sender, e); e.Handled = true;
+    }
     private void Duration_LostFocus(object sender, RoutedEventArgs e)
     {
         if (!_sync && !_dragging && _drafts.IsEdited(DurationInput)) Duration_Click(sender, e);
@@ -65,7 +74,7 @@ public sealed partial class MacroTabContent
         var held = _previewFrame.HeldKeys.Select(ActionProjection.KeyName).Concat(_previewFrame.HeldButtons).ToArray();
         if (!_heldLabels.SequenceEqual(held)) { _heldLabels = held; HeldInputs.ItemsSource = held; }
         HeldNote.Text = held.Length == 0 ? "No recorded keys or buttons held" : "Held in the recorded stream";
-        PreviewTiming.Text = $"Original timing · {_editor.Projection.Actions.Count:N0} actions";
+        PreviewTiming.Text = $"Original timing · {EditorText.Count(_editor.Projection.Actions.Count, "action")}";
         for (var i = 0; i < _timelineSegments.Count; i++)
         {
             var segment = _timelineSegments[i];
@@ -128,7 +137,7 @@ public sealed partial class MacroTabContent
             Padding = below ? new Thickness(0) : new Thickness(10, 6, 10, 6), CornerRadius = new CornerRadius(5),
             Background = BrushResource("Paper"), BorderBrush = BrushResource("Line"),
             BorderThickness = new Thickness(below ? 0 : 1), IsHitTestVisible = false,
-            Child = new TextBlock { Text = text, FontSize = 11, Foreground = BrushResource("Muted"), TextTrimming = TextTrimming.CharacterEllipsis }
+            Child = new TextBlock { Text = text, FontSize = 13, Foreground = BrushResource("Muted"), TextTrimming = TextTrimming.CharacterEllipsis }
         };
         label.Measure(new Windows.Foundation.Size(Math.Max(0, PathCanvas.ActualWidth - 16), 40));
         Canvas.SetLeft(label, Math.Clamp(point.X + (below ? -12 : 20), 8, Math.Max(8, PathCanvas.ActualWidth - label.DesiredSize.Width - 8)));
@@ -166,7 +175,7 @@ public sealed partial class MacroTabContent
         ListPanel.Height = layout.ListHeight; InspectorPanel.Height = layout.InspectorHeight;
         ListPanel.BorderThickness = layout.Stacked ? new Thickness(0, 0, 0, 1) : new Thickness(0, 0, 1, 0);
         InspectorPanel.Padding = new Thickness(layout.Stacked ? 20 : 26, 22, layout.Stacked ? 20 : 26, 22);
-        DetailGrid.RowDefinitions[1].Height = new GridLength(Math.Max(170, layout.InspectorHeight - (_rawOpen ? 420 : 252)));
+        DetailGrid.RowDefinitions[1].Height = new GridLength(Math.Max(240, layout.InspectorHeight - (_rawOpen ? 510 : 360)));
     }
     private void PreviewBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
