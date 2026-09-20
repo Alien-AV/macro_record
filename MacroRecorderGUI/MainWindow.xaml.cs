@@ -73,7 +73,6 @@ public sealed partial class MainWindow : Window
         AppWindow.Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
         _runTimer.Tick += RunTimer_Tick;
-        RootGrid.KeyDown += Root_KeyDown;
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96d;
         var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
         AppWindow.Resize(new SizeInt32(Math.Min(workArea.Width, (int)(1328 * scale)), Math.Min(workArea.Height, (int)(878 * scale))));

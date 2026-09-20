@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 using MacroRecorderGUI;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
@@ -16,6 +18,24 @@ namespace MacroRecorderGUITests;
 [TestClass]
 public sealed class HiddenFocusTests
 {
+    [TestMethod]
+    public void ShellShortcutsAreWiredOnTheOutermostClickAwayFocusSurface()
+    {
+        // Routed keyboard input cannot be generated in an unactivated window. Verify
+        // the routing topology: the handler must own the surface itself and its descendants.
+        var window = XDocument.Load(MainWindowXaml()).Root!;
+        var surface = window.Elements().Single();
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        Assert.AreEqual("FocusSurface", (string?)surface.Attribute(x + "Name"));
+        Assert.AreEqual("Root_KeyDown", (string?)surface.Attribute("KeyDown"),
+            "After click-away, keys originate on FocusSurface and cannot bubble down into RootGrid.");
+        Assert.AreEqual("RootGrid", (string?)surface.Elements().Single().Attribute(x + "Name"));
+        Assert.AreEqual(1, window.Descendants().Count(element => (string?)element.Attribute("KeyDown") == "Root_KeyDown"));
+    }
+
+    private static string MainWindowXaml([CallerFilePath] string testFile = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(testFile)!, "..", "MacroRecorderGUI", "MainWindow.xaml"));
+
     // WinUI needs an STA entry point and its own lifetime, outside the VSTest host.
     [TestMethod]
     [DoNotParallelize]
