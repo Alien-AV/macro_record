@@ -1,0 +1,35 @@
+<Window x:Class="MacroRecorderGUI.Views.RunController"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Macro">
+    <Grid x:Name="ControllerRoot" Background="{ThemeResource MacroPaperBrush}" Padding="26"
+        ActualThemeChanged="Root_ThemeChanged" Loaded="Root_Loaded">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid ColumnSpacing="15">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="9">
+                <Ellipse x:Name="StateDot" Width="9" Height="9" Fill="{ThemeResource MacroRedBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="StateLabel" Text="Ready" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroRedBrush}" AutomationProperties.LiveSetting="Polite"/>
+            </StackPanel>
+            <TextBlock x:Name="RecordingName" Grid.Column="1" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        </Grid>
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="5" Margin="0,15">
+            <TextBlock x:Name="ElapsedLabel" Text="00:00.0" FontSize="49" FontWeight="Light" CharacterSpacing="-40" Foreground="{ThemeResource MacroInkBrush}"/>
+            <TextBlock x:Name="DetailLabel" Text="Elapsed time" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap"/>
+            <TextBlock x:Name="RunNote" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap" Margin="0,9,0,0"/>
+        </StackPanel>
+        <Border Grid.Row="2" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="0,1,0,0" Padding="0,20,0,0">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Spacing="5" VerticalAlignment="Center">
+                    <TextBlock Text="Emergency stop" FontSize="10" Foreground="{ThemeResource MacroMutedBrush}"/>
+                    <Border BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" Background="{ThemeResource MacroSurfaceBrush}" CornerRadius="4" Padding="5,2" HorizontalAlignment="Left">
+                        <TextBlock x:Name="ShortcutLabel" Text="Ctrl + R" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}"/>
+                    </Border>
+                </StackPanel>
+                <Button x:Name="StopButton" Grid.Column="1" Click="Stop_Click" Style="{StaticResource MacroStopButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE71A;" FontSize="15"/><TextBlock x:Name="StopLabel" Text="Stop"/></StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

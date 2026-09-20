@@ -1,0 +1,80 @@
+<UserControl x:Class="MacroRecorderGUI.Views.LibraryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    SizeChanged="View_SizeChanged" ActualThemeChanged="View_ThemeChanged">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel x:Name="LibraryLayout" Padding="30,27" Spacing="23">
+            <Grid ColumnSpacing="20" RowSpacing="12">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel x:Name="RecentHeading" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                    <TextBlock Text="Your recordings" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}"/>
+                    <TextBlock x:Name="CountLabel" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Border x:Name="SearchHost" Grid.Column="1" Width="220" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" CornerRadius="6" Background="{ThemeResource MacroPaperBrush}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{ThemeResource MacroMutedBrush}" Margin="11,0,0,0"/>
+                        <TextBox x:Name="SearchBox" Grid.Column="1" PlaceholderText="Find a recording" FontSize="12" BorderThickness="0" Background="Transparent"
+                            TextChanged="Search_Changed" AutomationProperties.Name="Find a recording"/>
+                    </Grid>
+                </Border>
+            </Grid>
+            <GridView x:Name="Cards" Margin="-10,0" SelectionMode="None" IsItemClickEnabled="True" ItemClick="Cards_ItemClick"
+                HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled">
+                <GridView.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="300"/></ItemsPanelTemplate></GridView.ItemsPanel>
+                <GridView.ItemContainerStyle>
+                    <Style TargetType="GridViewItem">
+                        <Setter Property="Margin" Value="10,0,10,20"/><Setter Property="Padding" Value="0"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                        <Setter Property="CornerRadius" Value="9"/><Setter Property="UseSystemFocusVisuals" Value="True"/>
+                        <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}"/>
+                    </Style>
+                </GridView.ItemContainerStyle>
+                <GridView.ItemTemplate>
+                    <DataTemplate>
+                        <Border CornerRadius="9" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" Background="{ThemeResource MacroPaperBrush}">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="140"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Border Background="{ThemeResource MacroCardArtBrush}" CornerRadius="8,8,0,0">
+                                    <Grid Margin="26,20">
+                                        <Canvas x:Name="ThumbnailCanvas" Loaded="Thumbnail_Loaded" SizeChanged="Thumbnail_SizeChanged" IsHitTestVisible="False"/>
+                                        <TextBlock Text="{Binding TraceLabel}" FontSize="10" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Bottom" Margin="0,0,0,-14"/>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Row="1" Padding="18,19" Spacing="7">
+                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding LastOpened}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="24" AutomationProperties.Name="Recording options" Click="CardOptions_Click">
+                                            <FontIcon Glyph="&#xE712;" FontSize="14"/>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </GridView.ItemTemplate>
+            </GridView>
+            <StackPanel x:Name="EmptyState" Padding="25,30" HorizontalAlignment="Center" Spacing="10" Visibility="Collapsed">
+                <TextBlock x:Name="EmptyTitle" Text="Your library starts here" FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextAlignment="Center"/>
+                <TextBlock x:Name="EmptyDescription" Text="Record a task or import an existing .macro file." FontSize="13" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+            </StackPanel>
+            <Border BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="0,1,0,0" Padding="0,28,0,0" Margin="0,4,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="14">
+                    <Border Background="{ThemeResource MacroKeyboardBrush}" CornerRadius="8" Width="33" Height="33">
+                        <FontIcon Glyph="&#xE765;" FontSize="16" Foreground="{ThemeResource MacroKeyboardTextBrush}"/>
+                    </Border>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Your next repetitive task, simplified." FontSize="12" Foreground="{ThemeResource MacroInkBrush}"/>
+                        <TextBlock Text="Start recording with Ctrl + Q. Stop with Ctrl + W." FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
