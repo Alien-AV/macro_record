@@ -8,13 +8,31 @@ the next accepted event; the protobuf schema and `.macro` format are unchanged.
 Button starts do not enable this filter. `MOD_NOREPEAT` prevents a held shortcut
 from repeatedly issuing UI commands, and duplicate starts cannot clear a live macro.
 
+## Stop-command input
+
+Each session snapshots the stop gestures that were actually registered: Ctrl+W
+and the effective emergency shortcut. Native capture provisionally holds fresh,
+otherwise-unused modifier presses and a possible registered shortcut trigger.
+Only a stop request carrying that shortcut's identity and original `WM_HOTKEY`
+timestamp confirms that this input belonged to the recorder command. This also
+handles a command delivered before its raw trigger. Ordinary/controller stops
+flush provisional input unchanged. No editor cleanup or file-load trimming runs.
+
+Other keyboard or mouse input makes a modifier genuine recorded input and flushes
+it with its original events and delays. Thus Ctrl used for a drag can truthfully
+remain incomplete if it is still held when recording stops. The filter does not
+erase that press or invent a release. A fixed 256-event buffer flushes unchanged
+on overflow, preferring possible command contamination over loss of real input.
+There is no time-based guess about how long a command chord takes.
+
 ## Native ordering
 
 The native recorder registers Raw Input once at initialization and unregisters on
-shutdown. While idle it retains only Q/left-Ctrl/right-Ctrl held and release bits, not
-events or typed text. Mouse input is discarded while idle. This background input
+shutdown. While idle it retains virtual-key held bits and the start chord's release
+bits, not events or typed text. Mouse input is discarded while idle. This background input
 registration is the cost of keeping key state consistent with the raw queue.
-Ctrl's raw extended flag identifies its side before tracking and serialization.
+Ctrl/Alt extended flags and Shift scan codes identify their sides before tracking
+and serialization.
 
 A posted start or stop can be retrieved before older hardware input. Each command
 therefore has a fixed `MSG.time` cutoff. The capture thread consumes raw messages
@@ -31,9 +49,9 @@ followed by new presses. This compact history lets a rollover drain the original
 press without suppressing a newly held press that has the same virtual key.
 Started, input, and
 stopped packets use one FIFO and carry a session ID. Started precedes the initial
-cursor-position event; stopped follows the captured tail. The collector wakes
-on a condition variable and drains that FIFO. Stop requests do not discard
-already captured input. Shutdown joins both native threads before releasing the
+cursor-position event; stopped follows the accepted captured tail. The collector wakes
+on a condition variable and drains that FIFO. Stop requests retain captured input
+apart from confirmed provisional stop-command input described above. Shutdown joins both native threads before releasing the
 managed callbacks. The native callback ABI changed and requires the matching DLL;
 this does not change saved macro compatibility.
 
