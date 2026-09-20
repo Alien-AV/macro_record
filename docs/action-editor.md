@@ -10,10 +10,10 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   the primary selected action. Add and Delete live above the action list;
   its context menu also offers these commands and Clear all. Clear all is
   also available from Add. Delete removes the selected input.
-- Expanding Advanced enters raw selection and selects its first row. Raw rows
+- Expanding Exact captured input enters raw selection and selects its first row. Raw rows
   cover all selected actions. Ctrl/Shift selects an exact raw subset. The
   label above the list and Delete's accessible name identify the current scope.
-  Capture/refresh never broadens that subset. Collapsing Advanced returns to
+  Capture/refresh never broadens that subset. Collapsing Exact captured input returns to
   the highlighted action selection. Undo can reopen a restored raw selection.
 - Wait-before changes only the first event's delay. Duration scales the other
   delays using cumulative integer arithmetic, preserving their exact requested
@@ -22,11 +22,11 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   Overflowing per-event results are rejected before any mutation.
 - Action rows are numbered by group, with intent names, icons and concise
   incomplete warnings. Raw event counts, coordinate representation and original
-  indices are available in row tooltips and Advanced. The macro heading shows
+  indices are available in row tooltips and Exact captured input. The macro heading shows
   its name, action count and total time.
 - Display timing is rounded (for example, 279ms or 2.44s); nonzero sub-millisecond
   values use µs. Inspector seconds accept up to six
-  decimal places, giving exact microsecond precision. Advanced raw delays expose
+  decimal places, giving exact microsecond precision. Exact captured input exposes
   the original unsigned microsecond values. Bulk raw delay editing explicitly
   sets **each** selected delay and therefore changes internal duration too.
 - The navigation rail opens the recording library, appearance and settings.
@@ -77,9 +77,10 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   256 overview landmarks plus the selected landmark). Original events are
   always retained. Bounds include the complete stream in each coordinate frame,
   including extrema omitted from display samples. The selected path uses accent
-  color and a heavier stroke; other paths are subdued. Clicks use circles, drag
-  starts use squares, and drag paths use dashes. Selected segments have open
-  start circles and end diamonds; up to eight direction cues follow only known,
+  color and a heavier solid stroke; recording context is subdued and dashed.
+  Drag starts use squares and selected drags are explicitly labelled. Stationary
+  actions do not claim an inherited position as their movement. Selected movement
+  segments have labelled endpoints; up to eight direction cues follow only known,
   continuous displayed segments. The viewport centers the complete frame with
   margins and has no pixel grid over device counts. The action list and
   coordinate fields provide keyboard alternatives.
@@ -133,7 +134,9 @@ windows stack these panels; short windows keep content scrollable. A separate
 preview view contains the path, current/next action, held input, segmented
 timeline and scrubber. Its transport never calls the real playback engine.
 Position fields appear only when edits are safe; otherwise a reason is shown.
-Wait-before and duration retain independent exact values. There is no synthetic
+Wait-before and execution duration are visible together with their total and
+retain independent exact values. Single-event actions show only their wait.
+There is no synthetic
 standalone wait input: waits remain delays on recorded events, and a trailing
 wait with no next event is not representable in the existing file format.
 
@@ -152,11 +155,11 @@ verification. The user will perform these smoke checks after integration:
    Stop and the emergency shortcut, and scroll the action/raw lists. Confirm
    Play in other apps remains distinct from Preview. Import a known macro;
    check the heading, sequential group numbers, short times and exact
-   values/counts in Advanced. Export without editing
+   values/counts in Exact captured input. Export without editing
    and compare the decoded events.
 3. Select moves, clicks, drags, scroll groups, a Ctrl+S chord, and an incomplete
-   sequence. Check warning explanations, path highlights, open start circles,
-   end diamonds, direction cues, circle/square landmarks, dashed drags, and
+   sequence. Check warning explanations, path highlights, labelled endpoints,
+   direction cues, drag-start squares, selected-drag labels, dashed context, and
    exact raw drilldown. A long Shift/Ctrl-assisted mouse gesture should stay compact.
 4. Use Preview and scrub with both pointer and arrow keys through waits, zero-time events, relative segments,
    clicks, and drags. Only the virtual pointer and held-input display should
@@ -171,16 +174,16 @@ verification. The user will perform these smoke checks after integration:
    Undo both changes.
 7. Open an unanchored/relative/mixed-frame recording. Confirm truthful labels,
    hidden position fields with a reason, and no automatic conversion. If testing
-   Convert path estimate inside Advanced, acknowledge its assumptions, inspect changed raw values,
+   Convert path estimate inside Exact captured input, acknowledge its assumptions, inspect changed raw values,
    and Undo before saving. Incomplete input must remain conservative.
-8. Ctrl/Shift-select actions, expand Advanced, select a raw subset (including
+8. Ctrl/Shift-select actions, expand Exact captured input, select a raw subset (including
    across selected actions), and remove it. Exactly the visible selected raw
-   rows should disappear; Undo restores them. Collapse Advanced and confirm the
+   rows should disappear; Undo restores them. Collapse Exact captured input and confirm the
    label above the list and Delete tooltip return to actions. Press Delete inside a numeric text
    field: only text should be deleted.
 9. Record a dense stream while typing an unapplied timing/raw draft and while
    selecting raw rows. The draft and raw subset must survive appends. Collapse
-   Advanced and verify capture remains responsive. Then stop recording.
+   Exact captured input and verify capture remains responsive. Then stop recording.
    With an unapplied Delay or raw-field draft, use Add mouse and Add keyboard
    while the same first input remains selected; verify drafts still survive.
 10. Edit, append a recording, and Undo: later capture input must remain. Edit,
@@ -197,6 +200,16 @@ verification. The user will perform these smoke checks after integration:
     close during preparation/countdown/capture/playback, including while a save
     is pending. Failed shortcut registration must block unsafe run starts.
     Use the recording stop shortcut to avoid recording a controller mouse click.
+13. Check the screenshot-polish cases: collapsed recording/playback dialogs fit
+    at ordinary window sizes, Cancel is neutral, focus is blue, and the stop
+    shortcut stays visible while expanded options scroll. Check smaller windows
+    and increased text scaling. In the library, a single absolute anchor followed
+    by relative movement should show a meaningful count trace; keyboard-only
+    recordings should show an input summary. Rename using Save and Cancel,
+    including a failed save. In the editor, compare the selected movement with
+    recording context and select a single incomplete event: its wait must be
+    immediately editable without a misleading zero-duration field. The controller
+    clock should remain readable as its digits change.
 
 ## Deterministic verification
 
