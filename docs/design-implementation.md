@@ -54,3 +54,28 @@ Use automated fake-engine/temporary-storage tests, builds, and non-visible resou
 checks. Do not launch the recorder or display native test windows. Full visual and
 real-input smoke testing remains with the user. Reports and commits stay local;
 no GitHub publication or push is part of this task.
+
+## Implemented and verified
+
+Integrated editor, library/workflow services, and shell were independently reviewed;
+all actionable findings were fixed before their final approval. Final verification
+on 2026-09-20:
+
+- Full x64 Debug and Release solution builds pass. The existing MSB3851 Windows
+  SDK target-version mismatch warning remains unchanged.
+- Each configuration passes 280 managed tests and 48 native fake-input tests.
+- An isolated diagnostic loads the actual compiled editor and constructs the
+  actual main window using fake engines and a temporary library, without showing
+  or activating it. The main HWND is verified invisible. Light/dark resource and
+  visual-tree loading checks cover the main window, library, editor and controller.
+- Self-contained Release publish is refreshed and checked against build hashes,
+  including compiled XAML resources. No push or GitHub update was performed.
+
+These checks do not establish pixel fidelity, full production startup, live target
+focus, screen-reader interaction or real recording/playback behaviour. Those remain
+the user's manual smoke test. No recorder was launched or real input captured/sent.
+
+Current boundaries: appearance and emergency-shortcut selections are session-local;
+use the recording stop hotkey to avoid capturing a controller click. Preview uses
+captured timing. Relative motion and standalone trailing waits retain the existing
+format limitations. Native caption affordances remain Windows-controlled.
