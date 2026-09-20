@@ -130,7 +130,9 @@ public class DesignedShellTests
     public void NativeInfiniteLoopDoesNotInventAnIterationCount()
     {
         var state = RunControllerPresentation.ForPlayback(new(PlaybackPhase.Playing, 0, 0, TimeSpan.Zero, TimeSpan.FromSeconds(4), RepeatUntilStopped: true), false);
-        Assert.AreEqual("Elapsed · until stopped", state.Detail);
+        Assert.AreEqual("Repeating until stopped", state.Detail);
+        Assert.AreEqual("00:04.0", state.Clock);
+        Assert.IsFalse(state.Detail.Contains("repeat 0", StringComparison.OrdinalIgnoreCase));
         Assert.IsTrue(state.CanStop);
     }
 

@@ -6,13 +6,13 @@ internal sealed record RunControllerPresentation(string State, string Clock, str
     bool Recording = false, bool Countdown = false, bool CanStop = true)
 {
     public static RunControllerPresentation RecordingCountdown(double seconds) => new("Switch to your app",
-        Math.Ceiling(seconds).ToString("0"), "Recording starts after the countdown",
-        "Cancel at any time. No input is being recorded yet.", true, true);
+        Math.Ceiling(seconds).ToString("0"), "seconds until recording",
+        "No input is being recorded yet.", true, true);
 
     public static RunControllerPresentation ForRecording(bool capturing, bool finalizing, bool saving, TimeSpan elapsed, int count)
         => new(capturing ? "Recording" : finalizing ? "Finishing recording" : saving ? "Saving recording" : "Stopped",
             Elapsed(elapsed), $"{count:N0} raw events captured",
-            capturing ? "Keyboard & mouse · use Ctrl + W to stop without clicking"
+            capturing ? "Use Ctrl + W to stop without a pointer click."
                 : finalizing ? "Finishing the captured input" : saving ? "Saving to your local library" : "Recording has stopped",
             Recording: true, CanStop: capturing || finalizing);
 
@@ -31,13 +31,17 @@ internal sealed record RunControllerPresentation(string State, string Clock, str
             _ => throw new ArgumentOutOfRangeException(nameof(state))
         };
         var countdown = state.Phase == PlaybackPhase.Countdown;
-        var detail = countdown ? "Playback starts after the countdown"
+        var detail = countdown ? "seconds until playback"
             : state.Phase == PlaybackPhase.Idle ? "Playback has not started"
-            : state.RepeatUntilStopped ? "Elapsed · until stopped"
-            : state.CurrentRepeat > 0 ? $"Elapsed · repeat {state.CurrentRepeat} of {state.RepeatCount}"
-            : "Elapsed time";
-        var note = state.Error ?? (countdown ? "Real input will be sent to the focused app."
-            : state.IsActive ? "Real input · elapsed time, not completion progress"
+            : state.Phase == PlaybackPhase.Stopping ? "Waiting for playback to stop"
+            : state.RepeatUntilStopped ? (state.IsActive ? "Repeating until stopped" : "Repeat until stopped")
+            : state.CurrentRepeat > 0 && state.RepeatCount > 1 ? $"Repeat {state.CurrentRepeat} of {state.RepeatCount}"
+            : "";
+        var note = state.Error ?? (countdown ? "No input yet. Playback uses the focused app."
+            : state.Phase == PlaybackPhase.Playing ? "Sending input to the focused app."
+            : state.Phase == PlaybackPhase.BetweenRepeats ? "Waiting for the next repeat."
+            : state.Phase == PlaybackPhase.Stopping ? "Input may continue until playback stops."
+            : saving ? "Saving to your local library"
             : "No playback is running");
         return new(title, countdown ? Math.Ceiling(state.CountdownRemaining.TotalSeconds).ToString("0") : Elapsed(state.Elapsed),
             detail, note, Countdown: countdown, CanStop: state.IsActive);

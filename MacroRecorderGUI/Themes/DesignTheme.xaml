@@ -2,6 +2,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
+            <x:Double x:Key="MacroButtonHoverOpacity">0.97</x:Double>
+            <x:Double x:Key="MacroButtonPressedOpacity">0.94</x:Double>
             <SolidColorBrush x:Key="MacroPaperBrush" Color="#FFFFFF"/>
             <SolidColorBrush x:Key="MacroSurfaceBrush" Color="#F6F7F8"/>
             <SolidColorBrush x:Key="MacroSurface2Brush" Color="#EEF0F3"/>
@@ -30,6 +32,8 @@
             <SolidColorBrush x:Key="MacroScrollTextBrush" Color="#487B59"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Default">
+            <x:Double x:Key="MacroButtonHoverOpacity">0.97</x:Double>
+            <x:Double x:Key="MacroButtonPressedOpacity">0.94</x:Double>
             <SolidColorBrush x:Key="MacroPaperBrush" Color="#222B38"/>
             <SolidColorBrush x:Key="MacroSurfaceBrush" Color="#1D2531"/>
             <SolidColorBrush x:Key="MacroSurface2Brush" Color="#303B4A"/>
@@ -41,7 +45,7 @@
             <SolidColorBrush x:Key="MacroSoftBrush" Color="#2A3C5C"/>
             <SolidColorBrush x:Key="MacroGreenBrush" Color="#92CFB4"/>
             <SolidColorBrush x:Key="MacroRedBrush" Color="#D66675"/>
-            <SolidColorBrush x:Key="MacroRedTextBrush" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="MacroRedTextBrush" Color="#24141A"/>
             <SolidColorBrush x:Key="MacroAmberBrush" Color="#E5C285"/>
             <SolidColorBrush x:Key="MacroRailBrush" Color="#141C27"/>
             <SolidColorBrush x:Key="MacroRailTextBrush" Color="#C1CCDA"/>
@@ -58,6 +62,8 @@
             <SolidColorBrush x:Key="MacroScrollTextBrush" Color="#ABD0B4"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
+            <x:Double x:Key="MacroButtonHoverOpacity">1</x:Double>
+            <x:Double x:Key="MacroButtonPressedOpacity">1</x:Double>
             <SolidColorBrush x:Key="MacroPaperBrush" Color="{ThemeResource SystemColorWindowColor}"/>
             <SolidColorBrush x:Key="MacroSurfaceBrush" Color="{ThemeResource SystemColorWindowColor}"/>
             <SolidColorBrush x:Key="MacroSurface2Brush" Color="{ThemeResource SystemColorButtonFaceColor}"/>
@@ -89,10 +95,10 @@
     <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI</FontFamily>
     <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
-    <Thickness x:Key="ContentDialogPadding">27</Thickness>
+    <Thickness x:Key="ContentDialogPadding">24</Thickness>
     <Thickness x:Key="ContentDialogBorderWidth">1</Thickness>
-    <x:Double x:Key="ContentDialogMinWidth">360</x:Double>
-    <x:Double x:Key="ContentDialogMaxWidth">480</x:Double>
+    <x:Double x:Key="ContentDialogMinWidth">320</x:Double>
+    <x:Double x:Key="ContentDialogMaxWidth">560</x:Double>
     <Style x:Key="MacroButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="13"/>
@@ -116,14 +122,27 @@
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="ButtonFace.Opacity" Value="0.82"/></VisualState.Setters></VisualState>
-                                <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="ButtonFace.Opacity" Value="0.65"/></VisualState.Setters></VisualState>
-                                <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="ButtonRoot.Opacity" Value="0.4"/></VisualState.Setters></VisualState>
+                                <VisualState x:Name="PointerOver"><VisualState.Setters>
+                                    <Setter Target="ButtonFace.Opacity" Value="{ThemeResource MacroButtonHoverOpacity}"/>
+                                    <Setter Target="InteractionOutline.Visibility" Value="Visible"/>
+                                </VisualState.Setters></VisualState>
+                                <VisualState x:Name="Pressed"><VisualState.Setters>
+                                    <Setter Target="ButtonFace.Opacity" Value="{ThemeResource MacroButtonPressedOpacity}"/>
+                                    <Setter Target="InteractionOutline.Visibility" Value="Visible"/>
+                                    <Setter Target="InteractionOutline.BorderThickness" Value="2"/>
+                                </VisualState.Setters></VisualState>
+                                <VisualState x:Name="Disabled"><VisualState.Setters>
+                                    <Setter Target="ButtonFace.Background" Value="{ThemeResource ButtonBackgroundDisabled}"/>
+                                    <Setter Target="ButtonFace.BorderBrush" Value="{ThemeResource ButtonBorderBrushDisabled}"/>
+                                    <Setter Target="ButtonContent.Foreground" Value="{ThemeResource ButtonForegroundDisabled}"/>
+                                </VisualState.Setters></VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                         <Border x:Name="ButtonFace" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"/>
-                        <ContentPresenter Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                        <Border x:Name="InteractionOutline" Visibility="Collapsed" Margin="2" BorderThickness="1"
+                            BorderBrush="{TemplateBinding Foreground}" CornerRadius="5" IsHitTestVisible="False"/>
+                        <ContentPresenter x:Name="ButtonContent" Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                             Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}" FontFamily="{TemplateBinding FontFamily}"
                             FontWeight="{TemplateBinding FontWeight}" AutomationProperties.AccessibilityView="Raw"/>
@@ -144,6 +163,8 @@
         <Setter Property="Foreground" Value="{ThemeResource MacroPaperBrush}"/>
     </Style>
     <Style x:Key="MacroStopButtonStyle" TargetType="Button" BasedOn="{StaticResource MacroButtonStyle}">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="42"/>
         <Setter Property="Background" Value="{ThemeResource MacroRedBrush}"/>
         <Setter Property="BorderBrush" Value="{ThemeResource MacroRedBrush}"/>
         <Setter Property="Foreground" Value="{ThemeResource MacroRedTextBrush}"/>
@@ -173,6 +194,27 @@
     <Style x:Key="MacroCaptionStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="Foreground" Value="{ThemeResource MacroMutedBrush}"/>
+    </Style>
+    <Style x:Key="MacroDialogLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{ThemeResource MacroInkBrush}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="MacroDialogNoteStyle" TargetType="TextBlock" BasedOn="{StaticResource MacroDialogLabelStyle}">
+        <Setter Property="Foreground" Value="{ThemeResource MacroMutedBrush}"/>
+    </Style>
+    <Style x:Key="MacroDialogRowStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{ThemeResource MacroLineBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+    <Style x:Key="MacroDialogButtonStyle" TargetType="Button" BasedOn="{StaticResource MacroButtonStyle}">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+    <Style x:Key="MacroDialogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource MacroDialogButtonStyle}">
+        <Setter Property="Background" Value="{ThemeResource MacroBlueBrush}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource MacroBlueBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource MacroBlueTextBrush}"/>
     </Style>
     <Style TargetType="TextBox">
         <Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="13"/>
@@ -222,8 +264,8 @@
         <Setter Property="Foreground" Value="{ThemeResource MacroInkBrush}"/>
         <Setter Property="BorderBrush" Value="{ThemeResource MacroLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="12"/>
-        <Setter Property="PrimaryButtonStyle" Value="{StaticResource MacroPrimaryButtonStyle}"/>
-        <Setter Property="CloseButtonStyle" Value="{StaticResource MacroButtonStyle}"/>
-        <Setter Property="SecondaryButtonStyle" Value="{StaticResource MacroButtonStyle}"/>
+        <Setter Property="PrimaryButtonStyle" Value="{StaticResource MacroDialogPrimaryButtonStyle}"/>
+        <Setter Property="CloseButtonStyle" Value="{StaticResource MacroDialogButtonStyle}"/>
+        <Setter Property="SecondaryButtonStyle" Value="{StaticResource MacroDialogButtonStyle}"/>
     </Style>
 </ResourceDictionary>

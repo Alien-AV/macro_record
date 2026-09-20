@@ -13,6 +13,7 @@ public sealed partial class RunController : Window
     private DesktopThemeMonitor? _themeMonitor;
     private bool _closed;
     private bool _allowClose;
+    private bool _recording;
     public event EventHandler? StopRequested;
 
     public RunController(ElementTheme theme, string name, string shortcut)
@@ -36,7 +37,7 @@ public sealed partial class RunController : Window
             presenter.IsMinimizable = false;
         }
         var dpi = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96d;
-        AppWindow.Resize(new SizeInt32((int)(450 * dpi), (int)(340 * dpi)));
+        AppWindow.Resize(new SizeInt32((int)(480 * dpi), (int)(380 * dpi)));
         var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
         AppWindow.Move(new PointInt32(workArea.X + workArea.Width - AppWindow.Size.Width - (int)(24 * dpi), workArea.Y + (int)(24 * dpi)));
         AppWindow.Closing += Window_Closing;
@@ -50,10 +51,17 @@ public sealed partial class RunController : Window
     {
         if (_closed) return;
         StateLabel.Text = state.State; ElapsedLabel.Text = state.Clock; DetailLabel.Text = state.Detail; RunNote.Text = state.Note;
+        ClockCaption.Text = state.Countdown ? "Starts in" : "Elapsed";
+        DetailLabel.Visibility = string.IsNullOrEmpty(state.Detail) ? Visibility.Collapsed : Visibility.Visible;
         StopLabel.Text = state.Countdown ? "Cancel" : state.Recording ? "Stop recording" : "Stop playback";
         StopButton.IsEnabled = state.CanStop;
         ShortcutLabel.Text = shortcut;
-        var color = DesignResources.Brush(ControllerRoot, state.Recording ? "MacroRedBrush" : "MacroAmberBrush");
+        _recording = state.Recording;
+        UpdateStateBrushes();
+    }
+    private void UpdateStateBrushes()
+    {
+        var color = DesignResources.Brush(ControllerRoot, _recording ? "MacroRedBrush" : "MacroAmberBrush");
         StateLabel.Foreground = color; StateDot.Fill = color;
     }
     public void Finish()
@@ -76,7 +84,9 @@ public sealed partial class RunController : Window
         if (_closed || _themeMonitor is null || ControllerRoot is null) return;
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (_closed || _themeMonitor is null || !AppWindowTitleBar.IsCustomizationSupported()) return;
+            if (_closed || _themeMonitor is null) return;
+            UpdateStateBrushes();
+            if (!AppWindowTitleBar.IsCustomizationSupported()) return;
             var colors = TitleBarPalette.ForTheme(ControllerRoot.ActualTheme == ElementTheme.Dark,
                 _themeMonitor.HighContrast, OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000));
             var bar = AppWindow.TitleBar;

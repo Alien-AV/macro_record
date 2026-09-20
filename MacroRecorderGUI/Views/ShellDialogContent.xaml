@@ -1,0 +1,39 @@
+<UserControl x:Class="MacroRecorderGUI.Views.ShellDialogContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Spacing="12">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Width="38" Height="38" CornerRadius="10" Background="{ThemeResource MacroSoftBrush}">
+                    <FontIcon x:Name="DialogIcon" FontSize="19" Foreground="{ThemeResource MacroBlueBrush}"/>
+                </Border>
+                <TextBlock x:Name="Heading" Grid.Column="1" FontSize="22" FontWeight="SemiBold"
+                    Foreground="{ThemeResource MacroInkBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </Grid>
+            <TextBlock x:Name="Description" Style="{StaticResource MacroDialogNoteStyle}"/>
+        </StackPanel>
+        <ScrollViewer x:Name="FieldsScrollViewer" Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" ZoomMode="Disabled"
+            Padding="0,2,24,4" IsTabStop="False">
+            <StackPanel x:Name="FieldsPanel" Spacing="12"/>
+        </ScrollViewer>
+        <StackPanel x:Name="Footer" Grid.Row="2" Spacing="12" Visibility="Collapsed">
+            <Border x:Name="SafetyPanel" Visibility="Collapsed" Padding="12" CornerRadius="6"
+                Background="{ThemeResource MacroSurfaceBrush}" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1">
+                <StackPanel Spacing="5">
+                    <TextBlock x:Name="SafetyShortcut" FontSize="14" FontWeight="SemiBold"
+                        Foreground="{ThemeResource MacroInkBrush}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="SafetyNote" Style="{StaticResource MacroDialogNoteStyle}" Visibility="Collapsed"/>
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="ValidationError" FontSize="14" Foreground="{ThemeResource MacroRedBrush}"
+                TextWrapping="Wrap" Visibility="Collapsed" AutomationProperties.LiveSetting="Assertive"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
