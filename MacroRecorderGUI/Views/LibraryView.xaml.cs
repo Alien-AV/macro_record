@@ -24,7 +24,12 @@ public sealed partial class LibraryView : UserControl
     public event EventHandler<LibraryCard>? OpenRequested;
     public Func<LibraryCard, string, Task>? RenameAsync { get; set; }
     public event EventHandler<LibraryCard>? ExportRequested;
-    public LibraryView() => InitializeComponent();
+    public LibraryView()
+    {
+        InitializeComponent();
+        IsTabStop = false;
+        ClickAwayFocus.Attach(this, this);
+    }
     public void SetCards(IReadOnlyList<LibraryCard> cards) { _cards = cards; Filter(); }
     private void Search_Changed(object sender, TextChangedEventArgs e) { if (Cards is not null) Filter(); }
     private void Filter()
@@ -67,7 +72,10 @@ public sealed partial class LibraryView : UserControl
         actions.Children.Add(cancel); actions.Children.Add(save);
         var body = new StackPanel { Spacing = 12 };
         body.Children.Add(name); body.Children.Add(error); body.Children.Add(actions);
-        var flyout = new Flyout { Content = body, Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom };
+        var focusSurface = new UserControl { Content = body, IsTabStop = false };
+        body.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        ClickAwayFocus.Attach(focusSurface, focusSurface);
+        var flyout = new Flyout { Content = focusSurface, Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom };
         flyout.Closing += (_, args) => args.Cancel = !draft.Cancel();
         flyout.Opened += (_, _) => { name.Focus(FocusState.Programmatic); name.SelectAll(); };
         cancel.Click += (_, _) => flyout.Hide();

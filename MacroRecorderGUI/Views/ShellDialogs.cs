@@ -36,6 +36,7 @@ internal sealed class ShellDialogs(FrameworkElement owner)
     {
         var dialog = new ContentDialog { XamlRoot = owner.XamlRoot, RequestedTheme = owner.RequestedTheme,
             Content = body, PrimaryButtonText = action, CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.None };
+        ClickAwayFocus.Attach(dialog, body);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(dialog, body.Title);
         return dialog;
     }

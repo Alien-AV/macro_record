@@ -16,36 +16,9 @@ public sealed partial class MacroTabContent
     private string[] _heldLabels = [];
     private CoordinateSpace _previewInitialSpace;
 
-    private void Wait_LostFocus(object sender, RoutedEventArgs e)
-    {
-        if (!_sync && !_dragging && _drafts.IsEdited(WaitInput)) Wait_Click(sender, e);
-    }
-    private void Wait_KeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key != VirtualKey.Enter) return;
-        Wait_Click(sender, e); e.Handled = true;
-    }
-    private void Duration_LostFocus(object sender, RoutedEventArgs e)
-    {
-        if (!_sync && !_dragging && _drafts.IsEdited(DurationInput)) Duration_Click(sender, e);
-    }
-    private void Duration_KeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key != VirtualKey.Enter) return;
-        Duration_Click(sender, e); e.Handled = true;
-    }
-    private void Destination_LostFocus(object sender, RoutedEventArgs e)
-    {
-        if (!_sync && !_dragging && (_drafts.IsEdited(DestinationX) || _drafts.IsEdited(DestinationY))) Destination_Click(sender, e);
-    }
-    private void Destination_KeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key != VirtualKey.Enter) return;
-        Destination_Click(sender, e); e.Handled = true;
-    }
-
     public void StepPreview()
     {
+        if (!TryCommitPendingEdits()) return;
         if (!IsPreviewMode) IsPreviewMode = true;
         if (_preview is not null) SeekPreview(_preview.NextActionTime(_previewPosition.Time));
     }

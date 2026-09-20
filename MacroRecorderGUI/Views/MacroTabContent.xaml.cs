@@ -29,6 +29,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private InputEvent? _rawEvent;
     private readonly RawEventRows _rawRows = [];
     private readonly InspectorDrafts<Control> _drafts = new();
+    private ActionFieldEdits? _actionEdits;
+    private bool _populatingActionFields, _committingFields;
+    private InputEvent[] _inspectorSelection = [];
     private RecordedAction? Selected => ActionsList.SelectedItem as RecordedAction;
     private IReadOnlyList<PathSample> _display = [];
     private IReadOnlyList<PathSample> _selectedDisplay = [];
@@ -59,6 +62,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         set
         {
             if (_isPreviewMode == value) return;
+            if (value && !TryCommitPendingEdits()) return;
             StopPreview(); CancelDrag(); _isPreviewMode = value;
             if (value)
             {
@@ -77,6 +81,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     public MacroTabContent()
     {
         InitializeComponent();
+        IsTabStop = false;
+        ClickAwayFocus.Attach(this, this);
         DataContextChanged += Context_Changed;
         _refreshTimer.Tick += Refresh_Tick;
         _previewTimer.Tick += Preview_Tick;
@@ -93,6 +99,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         Detach();
         if (_disposed || DataContext is not MacroViewModel macro) return;
         _macro = macro; _editor = macro.Editor;
+        _actionEdits = new ActionFieldEdits(macro);
         _presentation = new EditorPresentation(_editor);
         _editor.Invalidated += Editor_Invalidated;
         ActionsList.ItemsSource = _editor.Projection.Actions;
@@ -108,6 +115,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _rawRows.Close(); _drafts.Clear();
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
+        _actionEdits = null; _inspectorSelection = [];
         _preview = null; _previewFrame = null; _pathAction = null;
         _timelineSegments = []; _heldLabels = []; _previewInitialSpace = CoordinateSpace.Unknown;
         Timeline.Children.Clear(); Timeline.ColumnDefinitions.Clear(); HeldInputs.ItemsSource = null;
@@ -163,21 +171,26 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Actions_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_sync || _editor is null) return;
-        // Preserve an explicit user's selection even if capture invalidated the old projection.
-        if (_editor.IsDirty && _macro is not null)
+        if (_sync || _committingFields || _editor is null) return;
+        var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(a => a.First).ToArray();
+        var committed = CommitActionFields(refresh: false);
+        if (!committed) anchors = _inspectorSelection;
+        // Commit against the old inspector identity before adopting the requested selection.
+        if (_macro is not null)
         {
-            var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(a => a.First).ToArray();
             _sync = true;
-            _editor.Refresh(); ActionsList.SelectedItems.Clear();
-            foreach (var anchor in anchors)
-                if (_editor.Projection.ActionAt(_macro.Events.IndexOf(anchor)) is { } current && !ActionsList.SelectedItems.Contains(current)) ActionsList.SelectedItems.Add(current);
-            _sync = false;
+            try
+            {
+                _editor.Refresh(); ActionsList.SelectedItems.Clear();
+                foreach (var anchor in anchors)
+                    if (_editor.Projection.ActionAt(_macro.Events.IndexOf(anchor)) is { } current && !ActionsList.SelectedItems.Contains(current)) ActionsList.SelectedItems.Add(current);
+            }
+            finally { _sync = false; }
         }
         StopPreview(); CancelDrag();
-        _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
+        if (committed) _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
         if (Selected is { } a) _previewPosition.SeekTime(a.StartTime + a.Wait, _editor.Projection.TotalTime);
-        UpdateInspector(resetDrafts: true); UpdateSelectionScope(); DrawPath();
+        RefreshEditor();
     }
     private void UpdateSelectionScope()
     {
@@ -192,13 +205,31 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         }
     }
     // WinUI TextChanging is synchronous; TextChanged is asynchronous and cannot use population suppression.
-    private void Draft_Changing(TextBox sender, TextBoxTextChangingEventArgs e) => _drafts.Changing(sender);
+    private void Draft_Changing(TextBox sender, TextBoxTextChangingEventArgs e)
+    {
+        if (ActionFieldFor(sender) is { } field)
+        {
+            if (!_populatingActionFields) _actionEdits?.Change(field, sender.Text);
+        }
+        else _drafts.Changing(sender);
+    }
     private void CheckDraft_Changed(object sender, RoutedEventArgs e) => _drafts.Changing((CheckBox)sender);
     private void Field(CheckBox field, bool value) => _drafts.Populate(field, () => field.IsChecked = value);
-    private void Field(TextBox field, string text) => _drafts.Populate(field, () => field.Text = text);
+    private void Field(TextBox field, string text)
+    {
+        if (ActionFieldFor(field) is { } actionField)
+        {
+            _populatingActionFields = true;
+            try { field.Text = _actionEdits?.Text(actionField, text) ?? text; }
+            finally { _populatingActionFields = false; }
+        }
+        else _drafts.Populate(field, () => field.Text = text);
+    }
     private void UpdateInspector(bool resetDrafts = false)
     {
         var a = Selected;
+        _actionEdits?.Select(a, resetDrafts);
+        _inspectorSelection = ActionsList.SelectedItems.OfType<RecordedAction>().Select(action => action.First).ToArray();
         _drafts.Select(a?.First, resetDrafts);
         ActionFields.IsEnabled = a is not null;
         ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
@@ -239,21 +270,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
 
     private void RunEdit(Action operation, string message, bool resetDrafts = true)
     {
+        if (!TryCommitPendingEdits()) return;
         try { StopPreview(); operation(); RefreshEditor(resetDrafts); Status = message; }
         catch (Exception error) when (error is ArgumentException or OverflowException or FormatException)
         { Status = error.Message; RefreshEditor(); }
     }
-    private void Wait_Click(object sender, RoutedEventArgs e)
-    {
-        if (Selected is { } a) RunEdit(() => _editor!.SetWait(a, checked((ulong)TimeText.ParseSeconds(WaitInput.Text))), "Wait changed; internal duration is unchanged.");
-    }
-    private void Duration_Click(object sender, RoutedEventArgs e)
-    {
-        if (Selected is { } a) RunEdit(() => _editor!.SetDuration(a, TimeText.ParseSeconds(DurationInput.Text)), "Duration changed; event count and order are preserved.");
-    }
     private void Destination_Click(object sender, RoutedEventArgs e)
     {
-        if (Selected is { } a) RunEdit(() => _editor!.SetDestination(a, int.Parse(DestinationX.Text, CultureInfo.InvariantCulture), int.Parse(DestinationY.Text, CultureInfo.InvariantCulture)), "Destination changed; following movement remains connected.");
+        CommitActionFields(ActionField.DestinationX);
     }
     private void Convert_Click(object sender, RoutedEventArgs e)
     {
@@ -263,7 +287,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     public bool Undo()
     {
-        if (_editor is null) return false;
+        if (_editor is null || !TryCommitPendingEdits()) return false;
         StopPreview(); var undone = _editor.Undo(); RefreshEditor(resetDrafts: true);
         Status = undone ? "Edit undone; later captured events retained." : "Nothing safe to undo.";
         return undone;
@@ -304,6 +328,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void RawToggle_Click(object sender, RoutedEventArgs e) => SetRawOpen(!_rawOpen);
     private void SetRawOpen(bool open)
     {
+        if (!TryCommitPendingEdits()) return;
         if (_editor?.IsDirty == true) RefreshEditor();
         _rawOpen = open;
         RawContent.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
@@ -557,6 +582,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     public void TogglePreview()
     {
+        if (!TryCommitPendingEdits()) return;
         if (!IsPreviewMode) IsPreviewMode = true;
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
         if (_editor is null || _editor.Projection.TotalTime == 0) return;
@@ -587,7 +613,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (IsPreviewMode || _editor is null || _editor.IsDirty || !e.GetCurrentPoint(PathCanvas).Properties.IsLeftButtonPressed) return;
+        if (IsPreviewMode || _editor is null || !e.GetCurrentPoint(PathCanvas).Properties.IsLeftButtonPressed) return;
+        // This handler runs before the parent background handler and before pointer capture.
+        if (!TryCommitPendingEdits()) { e.Handled = true; return; }
+        ClickAwayFocus.LeaveTextInput(this, this);
+        if (_editor.IsDirty) return;
         var point = e.GetCurrentPoint(PathCanvas).Position;
         if (_handle is not null && Math.Abs(point.X - Canvas.GetLeft(_handle) - 9) < 14 && Math.Abs(point.Y - Canvas.GetTop(_handle) - 9) < 14)
         { StopPreview(); _dragging = PathCanvas.CapturePointer(e.Pointer); e.Handled = true; return; }
@@ -612,7 +642,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void Canvas_PointerCanceled(object sender, PointerRoutedEventArgs e) { if (_dragging) { CancelDrag(); UpdateInspector(); DrawPath(); } }
     private void CancelDrag()
     {
-        if (_dragging) { _drafts.Remove(DestinationX); _drafts.Remove(DestinationY); }
+        if (_dragging) _actionEdits?.CancelDestination();
         _dragging = false; PathCanvas?.ReleasePointerCaptures();
     }
     private void Samples_Changed(object sender, RoutedEventArgs e) => DrawPath();

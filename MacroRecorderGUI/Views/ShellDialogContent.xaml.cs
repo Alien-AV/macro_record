@@ -5,7 +5,12 @@ namespace MacroRecorderGUI.Views;
 
 public sealed partial class ShellDialogContent : UserControl
 {
-    public ShellDialogContent() => InitializeComponent();
+    public ShellDialogContent()
+    {
+        InitializeComponent();
+        IsTabStop = false;
+        ClickAwayFocus.Attach(this, this);
+    }
 
     internal StackPanel Fields => FieldsPanel;
     internal string Title => Heading.Text;

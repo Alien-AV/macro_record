@@ -59,6 +59,7 @@ public sealed partial class MainWindow : Window
         ViewModel.SetEmergencyStopAvailability(false, "The emergency stop shortcut has not registered yet.");
         _registerGlobalHotkeys = registerGlobalHotkeys;
         InitializeComponent();
+        ClickAwayFocus.Attach(RootGrid, FocusSurface);
         _constructed = true;
         RootGrid.DataContext = ViewModel;
         _themeMonitor = new DesktopThemeMonitor(AppWindow.Id, QueueTitleBarUpdate);
@@ -220,6 +221,7 @@ public sealed partial class MainWindow : Window
     private async Task OperationAsync(Func<Task> action)
     {
         if (_busy || _closed || _closing || RunActive) return;
+        if (ActiveEditor?.TryCommitPendingEdits() == false) return;
         _busy = true; RefreshShell();
         try { await action(); }
         catch (OperationCanceledException) when (_closed || _closing) { }
@@ -228,6 +230,7 @@ public sealed partial class MainWindow : Window
     }
     private async Task SaveActiveAsync()
     {
+        if (ActiveEditor?.TryCommitPendingEdits() == false) throw new InvalidOperationException(ActiveEditor.Status);
         if (ViewModel.ActiveMacro is { IsDirty: true } macro && (macro.ChangeVersion > 0 || macro.SavedAt is not null))
             await ViewModel.SaveRecordingAsync(macro);
     }
@@ -361,6 +364,7 @@ public sealed partial class MainWindow : Window
     }
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
+        if (ActiveEditor?.TryCommitPendingEdits() == false) return;
         if (RunActive || _busy || ActiveEditor is not { } editor) return;
         _feedback.Clear(); editor.IsPreviewMode = true; editor.TogglePreview(); RefreshShell();
     }
@@ -599,6 +603,7 @@ public sealed partial class MainWindow : Window
         if (_allowClose) return;
         args.Cancel = true;
         if (_closing) return;
+        if (ActiveEditor?.TryCommitPendingEdits() == false) return;
         _closing = true;
         try
         {
