@@ -36,3 +36,29 @@ and invisible diagnostic windows only. Never delete real user recordings, launch
 a visible app, capture real input or inject playback during verification. Check
 the combined Debug/Release solution, persistence and exported-file compatibility,
 then refresh and verify the published executable and its resources.
+
+## Combined regression and manual checks
+
+Automated combined verification must exercise a versioned recording through save,
+delete, restore, export, and re-import. Its origin boundaries and untouched bytes
+must survive, and restoring the original library ID must retain playback options.
+Appending capture to an imported legacy recording must not remove its earlier
+events or later capture boundaries. Explicit origin adoption, editing, undo, and
+recovery must retain a coherent document. Preview never sends setup input.
+
+The following are user-run smoke checks, not permission to launch the app during
+development:
+
+- Select several library cards, use Ctrl/Shift and Select all visible, narrow the
+  search, and verify the count and delete operation cover only visible selections.
+  Restore a batch through Undo and through Local trash after restarting.
+- Confirm normal clicks still open recordings and imported/exported source files
+  remain untouched. Check narrow layouts, keyboard access, and partial failures.
+- Confirm both windows say Macro Recorder and show the original icon, without
+  changing the dark/light title-bar treatment.
+- Capture a small pointer gesture: no synthetic positioning action should appear.
+  Compare playback from its recorded start versus the pointer position chosen
+  during countdown. Repeat must not drift from pass to pass.
+- Open a legacy macro: its events remain unchanged until explicit origin adoption.
+  Verify adoption/undo/recovery, appended captures, negative monitor coordinates,
+  and helpful rejection of destinations outside the applicable screen frame.
