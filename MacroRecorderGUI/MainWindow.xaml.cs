@@ -319,7 +319,7 @@ public sealed partial class MainWindow : Window
                 if (name is not null) { active.Name = name; await ViewModel.SaveRecordingAsync(active); }
             });
             Item("Export .macro…", ExportActiveAsync);
-            Item("Record into this recording…", () => PrepareRecordingAsync(intoExisting: true));
+            Item("Record into this recording…", () => StartRecordingAsync(intoExisting: true, fromHotkey: false));
             Item("Close recording", async () => { await ViewModel.CloseRecordingAsync(active); ShowEditor(); });
         }
         if (ViewModel.MacroTabs.Count > 1)
@@ -357,16 +357,18 @@ public sealed partial class MainWindow : Window
         _playbackOptions = choice.Options with { RepeatUntilStopped = choice.Loop };
     });
 
-    private async void NewRecording_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => PrepareRecordingAsync(false));
-    private async Task PrepareRecordingAsync(bool intoExisting)
+    private async void NewRecording_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => StartRecordingAsync(false, false));
+    internal static async Task<RecordingChoices?> PrepareRecordingChoicesAsync(MainWindowViewModel viewModel, RunLease run,
+        bool intoExisting, bool fromHotkey, ulong? overrideDelay, Func<string, Task<RecordingChoices?>> showDialog)
     {
-        await ViewModel.InitializeLibraryAsync();
-        ThrowIfClosing();
-        var choice = await Dialogs.RecordAsync(intoExisting ? ViewModel.ActiveMacro?.Name ?? "Untitled recording" : ViewModel.NewRecordingName(), intoExisting, _overrideRecordingDelay);
-        if (choice is null) return;
-        await StartRecordingAsync(choice, intoExisting, fromHotkey: false);
+        await run.PrepareAsync(viewModel.InitializeLibraryAsync);
+        var name = intoExisting ? viewModel.ActiveMacro?.Name ?? "Untitled recording" : viewModel.NewRecordingName();
+        if (fromHotkey) return new(name, 3, false, overrideDelay);
+        RecordingChoices? choice = null;
+        await run.PrepareAsync(async () => { choice = await showDialog(name); });
+        return choice;
     }
-    private async Task StartRecordingAsync(RecordingChoices choice, bool intoExisting, bool fromHotkey)
+    private async Task StartRecordingAsync(bool intoExisting, bool fromHotkey)
     {
         if (!ViewModel.CanRecord || RunActive || _globalHotkeys?.EmergencyStop is null)
         { SetMessage("An emergency stop shortcut must be registered before recording."); return; }
@@ -377,6 +379,10 @@ public sealed partial class MainWindow : Window
         _preparingRun = true; RefreshShell();
         try
         {
+            // Both entry points own a lease before library loading or the recording dialog can await.
+            var choice = await PrepareRecordingChoicesAsync(ViewModel, cancellation, intoExisting, fromHotkey,
+                _overrideRecordingDelay, name => Dialogs.RecordAsync(name, intoExisting, _overrideRecordingDelay));
+            if (choice is null) { FinishController(cancellation); return; }
             await cancellation.PrepareAsync(SaveActiveAsync);
             if (!intoExisting) await cancellation.PrepareAsync(async () => { await ViewModel.CreateDraftAsync(choice.Name); });
             else if (ViewModel.ActiveMacro is { } existing) existing.Name = choice.Name;
@@ -452,6 +458,7 @@ public sealed partial class MainWindow : Window
         {
             _runLifetime.Cancel();
             _recordCountdown?.Cancel();
+            if (_preparingRun) _dialogs?.Dismiss();
             var recording = ViewModel.RecordingMacro;
             if (ViewModel.IsRecording || ViewModel.IsFinalizingRecording) await ViewModel.StopRecordingAsync(_overrideRecordingDelay);
             if (_closed) return;
@@ -518,12 +525,7 @@ public sealed partial class MainWindow : Window
         {
             _globalHotkeys = new GlobalHotkeys(WinRT.Interop.WindowNative.GetWindowHandle(this));
             var recorded = _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control,
-                async () => await OperationAsync(async () =>
-                {
-                    await ViewModel.InitializeLibraryAsync();
-                    ThrowIfClosing();
-                    await StartRecordingAsync(new(ViewModel.NewRecordingName(), 3, false, _overrideRecordingDelay), false, true);
-                }));
+                async () => await OperationAsync(() => StartRecordingAsync(false, true)));
             var stopped = _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control, async () => await StopRunAsync());
             var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async () => await OperationAsync(async () =>
             {
