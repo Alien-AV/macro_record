@@ -414,6 +414,8 @@ public sealed class DirectRunControlsTests
         Assert.AreEqual("CharacterEllipsis", (string?)Control("StatusText").Attribute("TextTrimming"));
         Assert.AreEqual("Wrap", (string?)Control("PlaybackSettingsSummary").Attribute("TextWrapping"));
         var shell = File.ReadAllText(Path.Combine(root, "MainWindow.xaml.cs"));
+        StringAssert.Contains(shell, "PlaybackSettingsSummary.Visibility = preview ? Visibility.Collapsed : Visibility.Visible");
+        StringAssert.Contains(shell, "PlaybackSafetyNote.Text = preview ? \"Preview: original timing · no input\"");
         StringAssert.Contains(shell, "async () => await OperationAsync(() => StartRecordingAsync(false, true))");
         StringAssert.Contains(shell, "async () => await OperationAsync(PreparePlaybackAsync)");
         StringAssert.Contains(shell, "PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0 && _preferences.IsLoaded");

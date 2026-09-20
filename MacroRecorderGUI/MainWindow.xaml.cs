@@ -180,6 +180,7 @@ public sealed partial class MainWindow : Window
         Library.IsEnabled = !_busy && !RunActive;
         var playback = _runPlaybackOptions ?? (macro is null ? new PlaybackOptions() : _preferences.PlaybackFor(macro.RecordingId));
         PlaybackSettings.Visibility = _libraryVisible || macro is null ? Visibility.Collapsed : Visibility.Visible;
+        PlaybackSettingsSummary.Visibility = preview ? Visibility.Collapsed : Visibility.Visible;
         PlaybackSettingsSummary.Text = RunSettingsPresentation.PlaybackSummary(_preferences.IsLoaded, playback);
         PlaybackSettingsSummary.Foreground = Resource(_preferences.IsLoaded && playback.RepeatUntilStopped ? "MacroRedBrush" : "MacroInkBrush");
         PlaybackSafetyNote.Text = preview ? "Preview: original timing · no input" : "Play sends real keyboard and mouse input";

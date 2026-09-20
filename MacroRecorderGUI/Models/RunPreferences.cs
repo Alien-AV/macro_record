@@ -78,7 +78,8 @@ internal sealed class RunPreferenceStore(string? path = null) : IRunPreferenceSt
             var root = json.RootElement;
             ValidateObject(root);
             if (root.GetProperty("Schema").GetInt32() != 1)
-                throw new InvalidDataException("This run preferences version is not supported.");
+                return new(new(), new Dictionary<Guid, PlaybackOptions>(),
+                    "Run preferences version is not supported; using safe defaults (1× · Once · 3s delay). Apply options to save the supported version.");
             var warnings = new List<string>();
             var recording = new RecordingOptions();
             if (root.TryGetProperty("Recording", out var record))

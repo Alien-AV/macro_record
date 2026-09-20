@@ -177,6 +177,49 @@ public sealed class RunPreferencesTests
     }
 
     [TestMethod]
+    [DataRow(0)]
+    [DataRow(2)]
+    [DataRow(999)]
+    public async Task UnsupportedSchemaLoadsSafeDefaultsAndAllowsExplicitRepair(int schema)
+    {
+        var id = Guid.NewGuid();
+        var original = JsonSerializer.Serialize(new
+        {
+            Schema = schema,
+            Recording = new { CountdownSeconds = 0, OverrideDelay = 99 },
+            Playback = new Dictionary<Guid, object>
+            {
+                [id] = new { Speed = 4, RepeatCount = 1, CountdownSeconds = 0, RepeatUntilStopped = true }
+            }
+        });
+        await File.WriteAllTextAsync(PreferencePath, original);
+        var prefs = Preferences();
+        await prefs.InitializeAsync();
+        Assert.IsTrue(prefs.IsLoaded, "An unsupported version must not leave direct controls waiting for preferences forever.");
+        Assert.AreEqual(new RecordingOptions(), prefs.Recording);
+        Assert.AreEqual(new PlaybackOptions(), prefs.PlaybackFor(id));
+        Assert.IsNotNull(prefs.Warning);
+        StringAssert.Contains(prefs.Warning, "version is not supported");
+        using var lifetime = new ShellRunLifetime();
+        var cancelled = lifetime.Begin();
+        await DirectRunPreparation.EditPlaybackOptionsAsync(prefs, cancelled, id, _ => Task.FromResult<PlaybackOptions?>(null));
+        lifetime.Complete(cancelled);
+        Assert.AreEqual(original, await File.ReadAllTextAsync(PreferencePath), "Loading or cancelling options must not rewrite an unsupported file.");
+        Assert.IsNotNull(prefs.Warning);
+        await DirectRunPreparation.EditPlaybackOptionsAsync(prefs, lifetime.Begin(), id,
+            options => Task.FromResult<PlaybackOptions?>(options with { Speed = 2 }));
+        Assert.IsNull(prefs.Warning);
+        var reloaded = Preferences();
+        await reloaded.InitializeAsync();
+        Assert.IsTrue(reloaded.IsLoaded);
+        Assert.IsNull(reloaded.Warning);
+        Assert.AreEqual(new PlaybackOptions { Speed = 2 }, reloaded.PlaybackFor(id));
+        Assert.AreEqual(new RecordingOptions(), reloaded.Recording);
+        using var repaired = JsonDocument.Parse(await File.ReadAllTextAsync(PreferencePath));
+        Assert.AreEqual(1, repaired.RootElement.GetProperty("Schema").GetInt32());
+    }
+
+    [TestMethod]
     public async Task DuplicateRecordingIdCannotEnableInfinitePlayback()
     {
         var id = Guid.NewGuid();
