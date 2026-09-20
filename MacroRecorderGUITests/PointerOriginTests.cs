@@ -367,12 +367,130 @@ public sealed class PointerOriginTests
         Assert.AreEqual(new System.Numerics.BigInteger(125), macro.Editor.Projection.TotalTime);
     }
 
+    [TestMethod]
+    public void PreviewShowsMetadataPositionBeforeStationaryClickWithoutInventingAnAction()
+    {
+        using var macro = new MacroViewModel("Stationary", new FakePlaybackEngine());
+        macro.AddCaptureOrigin(new(-100, 200));
+        macro.AddEvent(new MouseEvent(0, 0, MouseActionTypeFlags.LeftDown) { RelativePosition = true, TimeSinceLastEvent = 100 });
+        macro.AddEvent(new MouseEvent(0, 0, MouseActionTypeFlags.LeftUp) { RelativePosition = true, TimeSinceLastEvent = 50 });
+        macro.Editor.Refresh(); var projection = macro.Editor.Projection;
+        var preview = new MacroRecorderGUI.Editor.VisualPreview(macro.Events, projection);
+        var waiting = preview.Seek(50);
+        Assert.IsTrue(waiting.Waiting); Assert.IsEmpty(waiting.HeldButtons);
+        Assert.AreEqual((-100d, 200d), (waiting.Pointer!.Value.Position!.Value.X, waiting.Pointer.Value.Position.Value.Y));
+        Assert.IsNotNull(projection.BoundsFor(MacroRecorderGUI.Editor.CoordinateSpace.AbsoluteDesktop));
+        Assert.AreEqual(1, projection.Actions.Count); Assert.AreEqual(2, projection.ProcessedCount);
+        Assert.HasCount(1, preview.Seek(100).HeldButtons);
+    }
+
+    [TestMethod]
+    public void PreviewAccountsForSetupWaitsAcrossSegmentsWithoutHoldingAnOldPointer()
+    {
+        var wire = SerializeEvents.SerializeEventsToByteArray([Move(1, 2, true), Move(3, 4, true)]);
+        var document = new RecordingDocument { IsExtended = true, Events = wire,
+            Origins = [new(0, new(100, 200), 50), new(1, new(-400, -500), 70)] };
+        using var macro = Macro(document.Write()); macro.Editor.Refresh();
+        var preview = new MacroRecorderGUI.Editor.VisualPreview(macro.Events, macro.Editor.Projection);
+        Assert.IsNull(preview.Seek(49).Pointer);
+        Assert.AreEqual(100d, preview.Seek(50).Pointer!.Value.Position!.Value.X);
+        Assert.AreEqual(1d, preview.Seek(75).Pointer!.Value.Position!.Value.X);
+        Assert.AreEqual(-400d, preview.Seek(145).Pointer!.Value.Position!.Value.X);
+        Assert.AreEqual(3d, preview.Seek(170).Pointer!.Value.Position!.Value.X);
+        Assert.AreEqual(new System.Numerics.BigInteger(170), macro.Editor.Projection.TotalTime);
+        Assert.AreEqual(new System.Numerics.BigInteger(170), preview.Segments().Aggregate(System.Numerics.BigInteger.Zero, (sum, s) => sum + s.End - s.Start));
+    }
+
+    [TestMethod]
+    public async Task AdoptedPrimaryFrameIsPreservedAndNeverReinterpretedAsVirtualDesktop()
+    {
+        var original = SerializeEvents.SerializeEventsToByteArray([Move(100, 200, desktop: false), Move(7, 8, true)]);
+        using var macro = Macro(original); macro.AdoptFirstPositionAsOrigin();
+        macro.Editor.Refresh();
+        Assert.AreEqual(MacroRecorderGUI.Editor.CoordinateSpace.AbsolutePrimary, macro.Editor.Projection.PointerAt(25)!.Value.Position!.Value.Space);
+        CollectionAssert.AreEqual(original, RecordingDocument.Read(macro.SnapshotBytes()).ExportLegacy());
+        var engine = new FakePlaybackEngine(); var pointer = new FakePointerEnvironment { Position = new(-500, 100) };
+        var workflow = new PlaybackWorkflow(engine, Task.Delay, pointer);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => workflow.PlayAsync(macro.Events, Options(PlaybackPointerOrigin.CurrentPointer), macro.PointerOrigins));
+        Assert.AreEqual(0, engine.Starts);
+        await workflow.PlayAsync(macro.Events, Options(), macro.PointerOrigins);
+        CollectionAssert.AreEqual(original, SerializeEvents.SerializeEventsToByteArray(engine.PlayedEvents));
+        Assert.IsTrue(macro.Editor.Undo()); CollectionAssert.AreEqual(original, macro.SnapshotBytes());
+    }
+
     private sealed class DeferredOriginsViewModel(FakeRecordingTransport transport)
         : MainWindowViewModel(new RecordEngine(transport), new FakePlaybackEngine(), new RunTestLibrary(), new FakePointerEnvironment())
     {
         private readonly Queue<Action> _queue = [];
         protected override void InvokeDispatcher(Action action) => _queue.Enqueue(action);
         public void Deliver() { while (_queue.TryDequeue(out var action)) action(); }
+    }
+
+    [TestMethod]
+    public async Task NestedMetadataUnknownFieldsSurviveInputMutationReindexCopyAndLibraryReload()
+    {
+        var directory = Directory.CreateTempSubdirectory("macro-origin-extensions-");
+        try
+        {
+            var unknown = System.Text.Json.JsonDocument.Parse("{\"numbers\":[1,2],\"future\":true}").RootElement.Clone();
+            var position = new PointerPosition(40, 50) { Extensions = new() { ["FuturePosition"] = unknown } };
+            var boundary = new PointerOriginBoundary(1, position) { Extensions = new() { ["FutureBoundary"] = unknown } };
+            var document = new RecordingDocument { IsExtended = true, Events = SerializeEvents.SerializeEventsToByteArray([Move(1, 2), Move(3, 4)]),
+                Origins = [boundary], Extensions = new() { ["FutureRoot"] = unknown } };
+            using var macro = Macro(document.Write());
+            macro.AddEvent(new KeyboardEvent(VirtualKey.B, false));
+            macro.Editor.Execute("Insert before segment", () => macro.Events.Insert(0, Move(5, 6)));
+            macro.AddCaptureOrigin(new(90, 100)); macro.AddEvent(Move(7, 8, true));
+            var bytes = macro.SnapshotBytes(); var now = DateTimeOffset.UtcNow;
+            var store = new RecordingLibraryStore(directory.FullName);
+            var record = new StoredRecording(RecordingLibraryStore.Describe(macro.RecordingId, macro.Name, false, now, now, bytes), bytes);
+            await store.SaveAsync(record);
+            using var reloaded = Macro((await store.LoadAsync(macro.RecordingId)).MacroBytes);
+            var result = RecordingDocument.Read(reloaded.SnapshotBytes());
+            Assert.AreEqual(2, result.Origins[0].EventIndex);
+            Assert.AreEqual(unknown.GetRawText(), result.Extensions!["FutureRoot"].GetRawText());
+            Assert.AreEqual(unknown.GetRawText(), result.Origins[0].Extensions!["FutureBoundary"].GetRawText());
+            Assert.AreEqual(unknown.GetRawText(), result.Origins[0].Position!.Extensions!["FuturePosition"].GetRawText());
+            var copied = result.Origins[0] with { Position = result.Origins[0].Position! with { X = 70 } };
+            var again = RecordingDocument.Read((result with { Origins = [copied, result.Origins[1]] }).Write());
+            Assert.AreEqual(unknown.GetRawText(), again.Origins[0].Extensions!["FutureBoundary"].GetRawText());
+            Assert.AreEqual(unknown.GetRawText(), again.Origins[0].Position!.Extensions!["FuturePosition"].GetRawText());
+        }
+        finally { directory.Delete(recursive: true); }
+    }
+
+    [TestMethod]
+    public void OneAbsoluteMoveRendersFromItsMetadataOriginInEditorAndThumbnailWithoutAddingRawInput()
+    {
+        using var macro = new MacroViewModel("One move", new FakePlaybackEngine());
+        macro.AddCaptureOrigin(new(10, 20)); macro.AddEvent(Move(110, 120));
+        var bytes = macro.SnapshotBytes(); macro.Editor.Refresh(); var projection = macro.Editor.Projection;
+        Assert.HasCount(1, macro.Events); Assert.HasCount(1, projection.Samples); Assert.HasCount(1, projection.Actions);
+        Assert.AreEqual(0, projection.Actions[0].Start); Assert.AreEqual(0, projection.Samples[0].Index);
+        var presenter = new MacroRecorderGUI.Editor.EditorPresentation(macro.Editor);
+        Assert.IsTrue(presenter.TryGetFrame(projection.Actions[0], out var frame)); Assert.IsTrue(frame.HasSelectedPath);
+        CollectionAssert.AreEqual(new[] { (10d, 20d), (110d, 120d) }, frame.SelectedSamples.Select(s => (s.Position!.Value.X, s.Position.Value.Y)).ToArray());
+        var thumbnail = MacroRecorderGUI.Views.LibraryThumbnail.Create(projection.RenderSamples, macro.Events);
+        Assert.IsTrue(thumbnail.HasTrace); Assert.HasCount(2, thumbnail.Samples);
+        StringAssert.Contains(thumbnail.InputSummary, "1 mouse event");
+        CollectionAssert.AreEqual(bytes, macro.SnapshotBytes());
+    }
+
+    [TestMethod]
+    public void MetadataRenderAnchorsNeverConnectCountsOrDifferentCaptureSegments()
+    {
+        using var macro = new MacroViewModel("Separate", new FakePlaybackEngine());
+        macro.AddCaptureOrigin(new(10, 20)); macro.AddEvent(Move(4, 5, true)); macro.AddEvent(Move(6, 7, true));
+        macro.AddCaptureOrigin(new(100, 200)); macro.AddEvent(Move(110, 220)); macro.Editor.Refresh();
+        var projection = macro.Editor.Projection;
+        var presenter = new MacroRecorderGUI.Editor.EditorPresentation(macro.Editor);
+        Assert.IsTrue(presenter.TryGetFrame(projection.Actions[0], out var counts));
+        Assert.IsTrue(counts.SelectedSamples.All(s => s.Position!.Value.Space == MacroRecorderGUI.Editor.CoordinateSpace.RelativeCounts));
+        Assert.IsTrue(presenter.TryGetFrame(projection.Actions[1], out var pixels));
+        Assert.IsTrue(pixels.HasSelectedPath); Assert.HasCount(2, pixels.SelectedSamples);
+        Assert.AreEqual(100d, pixels.SelectedSamples[0].Position!.Value.X);
+        Assert.AreNotEqual(projection.RenderSamples[2].Segment, pixels.SelectedSamples[0].Segment);
+        Assert.HasCount(3, projection.Samples); Assert.AreEqual(2, projection.Actions[1].Start);
     }
 
     private sealed class TrackingEngine : IPlaybackEngine

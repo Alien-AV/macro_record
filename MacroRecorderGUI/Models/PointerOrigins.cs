@@ -3,23 +3,28 @@ using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using Google.Protobuf;
 using ProtobufGenerated;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MacroRecorderGUI.Models;
 
 public enum PlaybackPointerOrigin { RecordedStartingPoint, CurrentPointer }
 public enum PointerCoordinateFrame { PhysicalScreenPixels = 1 }
-public sealed record PointerPosition(int X, int Y, PointerCoordinateFrame Frame = PointerCoordinateFrame.PhysicalScreenPixels);
+public sealed record PointerPosition(int X, int Y, PointerCoordinateFrame Frame = PointerCoordinateFrame.PhysicalScreenPixels)
+{
+    [JsonExtensionData] public Dictionary<string, JsonElement>? Extensions { get; init; }
+}
 public sealed record PointerOriginBoundary(int EventIndex, PointerPosition? Position, ulong DelayMicroseconds = 0, string? AdoptedEvent = null)
 {
+    [JsonExtensionData] public Dictionary<string, JsonElement>? Extensions { get; init; }
     internal ProtobufInputEvent SetupEvent()
     {
-        var input = AdoptedEvent is null ? new ProtobufInputEvent { MouseEvent = new() { ActionType = 1 } }
+        var input = AdoptedEvent is null ? new ProtobufInputEvent { MouseEvent = new() { ActionType = 1, MappedToVirtualDesktop = true } }
             : ProtobufInputEvent.Parser.ParseFrom(Convert.FromBase64String(AdoptedEvent));
         if (input.MouseEvent is not { RelativePosition: false, ActionType: 1, WheelRotation: 0 })
             throw new InvalidDataException("An adopted pointer origin must contain only an absolute Move.");
         input.TimeSinceLastEvent = DelayMicroseconds;
         input.MouseEvent.X = Position!.X; input.MouseEvent.Y = Position.Y;
-        input.MouseEvent.MappedToVirtualDesktop = true;
         return input;
     }
 }
@@ -100,6 +105,7 @@ internal static class PointerPlayback
         }
         var desktop = environment.GetBounds(true);
         var primary = events.OfType<MouseEvent>().Any(m => !m.RelativePosition && !m.MappedToVirtualDesktop && (m.ActionType & MouseActionTypeFlags.Move) != 0)
+            || origins.Any(origin => origin.AdoptedEvent is not null && !origin.SetupEvent().MouseEvent.MappedToVirtualDesktop)
             ? environment.GetBounds(false) : default;
         var result = new List<InputEvent>(events.Length + origins.Count);
         var boundary = 0;
@@ -108,8 +114,9 @@ internal static class PointerPlayback
             while (boundary < origins.Count && origins[boundary].EventIndex == index)
             {
                 var origin = origins[boundary++];
-                var point = Translate(origin.Position!.X, origin.Position.Y, desktop);
-                var setup = new MouseEvent(origin.SetupEvent()) { X = point.X, Y = point.Y };
+                var setup = new MouseEvent(origin.SetupEvent());
+                var point = Translate(origin.Position!.X, origin.Position.Y, setup.MappedToVirtualDesktop ? desktop : primary);
+                setup.X = point.X; setup.Y = point.Y;
                 result.Add(setup);
             }
             if (index == events.Length) break;

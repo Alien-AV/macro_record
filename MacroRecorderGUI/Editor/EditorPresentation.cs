@@ -20,7 +20,7 @@ public sealed class EditorPresentation(ActionEditor editor)
 {
     private PathFrame? _frame;
     private RecordedAction? _frameSelection;
-    private int _frameCount = -1;
+    private long _frameRevision = -1;
     private CoordinateSpace? _frameSpace;
 
     public string InspectorWarning(RecordedAction? selected)
@@ -49,16 +49,18 @@ public sealed class EditorPresentation(ActionEditor editor)
         // Never let those passive handlers replace the projection or consume stale action ranges.
         if (editor.IsDirty || selected is not null && !editor.Projection.IsCurrent(selected)) return false;
         var projection = editor.Projection;
-        if (_frame is not null && ReferenceEquals(_frameSelection, selected) && _frameCount == projection.ProcessedCount && _frameSpace == displaySpace)
+        if (_frame is not null && ReferenceEquals(_frameSelection, selected) && _frameRevision == projection.RenderRevision && _frameSpace == displaySpace)
         { frame = _frame; return true; }
         var destination = selected is null ? null : projection.Samples[selected.End - 1].Position;
         var space = displaySpace ?? destination?.Space ?? CoordinateSpace.Unknown;
-        var overview = PathDisplay.Decimate(projection.Samples, 0, projection.Samples.Count);
-        var includeAnchor = selected is { Start: > 0 } && !projection.Samples[selected.Start].StartsSegment
-            && projection.Samples[selected.Start - 1].Position is not null;
+        var samples = projection.RenderSamples;
+        var overview = PathDisplay.Decimate(samples, 0, samples.Count);
+        var first = selected is null ? 0 : projection.RenderIndexFor(selected.Start);
+        var includeAnchor = selected is not null && first > 0 && !samples[first].StartsSegment && samples[first - 1].Position is not null;
+        var start = first - (includeAnchor ? 1 : 0);
         var detail = selected is not { MovementCount: > 0 } ? []
-            : PathDisplay.Decimate(projection.Samples, selected.Start - (includeAnchor ? 1 : 0),
-                selected.Count + (includeAnchor ? 1 : 0), 512, selected.MovementEdgeFor(space));
+            : PathDisplay.Decimate(samples, start, projection.RenderIndexFor(selected.End - 1) - start + 1,
+                512, selected.MovementEdgeFor(space) is { } edge ? projection.RenderIndexFor(edge) : null);
         var landmarks = projection.MouseLandmarks;
         var visible = new HashSet<RecordedAction>();
         var count = Math.Min(256, landmarks.Count);
@@ -70,7 +72,7 @@ public sealed class EditorPresentation(ActionEditor editor)
         }
         if (selected is { Kind: ActionKind.Drag }) visible.Add(selected);
         frame = new(overview, detail, space, projection.BoundsFor(space), selected is null ? "Select an action." : editor.GeometryBlockReason(selected), destination, visible.ToArray(), selected?.Kind);
-        _frame = frame; _frameSelection = selected; _frameCount = projection.ProcessedCount; _frameSpace = displaySpace;
+        _frame = frame; _frameSelection = selected; _frameRevision = projection.RenderRevision; _frameSpace = displaySpace;
         return true;
     }
 }

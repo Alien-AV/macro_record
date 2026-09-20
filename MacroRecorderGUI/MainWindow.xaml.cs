@@ -273,7 +273,7 @@ public sealed partial class MainWindow : Window
                             while (boundary < snapshot.Origins.Count && snapshot.Origins[boundary].EventIndex == i) projection.BeginPointerSegment(snapshot.Origins[boundary++]);
                             if (i < events.Count) projection.Append(events[i]);
                         }
-                        return (Thumbnail: LibraryThumbnail.Create(projection.Samples, events),
+                        return (Thumbnail: LibraryThumbnail.Create(projection.RenderSamples, events),
                             Summary: $"{projection.Actions.Count:N0} {(projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(projection.TotalTime)}");
                     });
                     if (_closed || _closing || version != _libraryRefreshVersion) return;

@@ -15,6 +15,11 @@ public sealed class ActionProjection
     public const ulong MovementPause = 250_000;
     public ObservableCollection<RecordedAction> Actions { get; } = [];
     public List<PathSample> Samples { get; } = [];
+    public List<PathSample> RenderSamples { get; } = [];
+    private readonly List<int> _renderIndices = [];
+    public int RenderIndexFor(int eventIndex) => _renderIndices[eventIndex];
+    public long RenderRevision { get; private set; }
+    private readonly List<PathSample> _originSamples = [];
     public List<RecordedAction> MouseLandmarks { get; } = [];
     public BigInteger TotalTime { get; private set; }
     public int ProcessedCount => Samples.Count;
@@ -40,17 +45,25 @@ public sealed class ActionProjection
 
     public void BeginPointerSegment(PointerOriginBoundary origin)
     {
+        if (_active is { } active) { UpdateKeyLabels(active); active.Notify(); _active = null; }
         TotalTime += origin.DelayMicroseconds;
         _position = origin.Position is { Frame: PointerCoordinateFrame.PhysicalScreenPixels } point
-            ? new PathPosition(point.X, point.Y, CoordinateSpace.AbsoluteDesktop) : null;
+            ? new PathPosition(point.X, point.Y, origin.AdoptedEvent is not null && !origin.SetupEvent().MouseEvent.MappedToVirtualDesktop
+                ? CoordinateSpace.AbsolutePrimary : CoordinateSpace.AbsoluteDesktop) : null;
         _segment++;
+        var marker = new PathSample(origin.EventIndex - 1, TotalTime, _position, true, _segment);
+        _originSamples.Add(marker); RenderSamples.Add(marker); RenderRevision++;
+        if (_position is { } position)
+            _bounds[position.Space] = _bounds.TryGetValue(position.Space, out var bounds) ? bounds.Include(position)
+                : new(position.X, position.Y, position.X, position.Y);
         _originSegmentPending = true;
         _previousMouse = null;
     }
 
     public void Reset()
     {
-        Actions.Clear(); Samples.Clear(); MouseLandmarks.Clear(); _keys.Clear(); _chord.Clear();
+        Actions.Clear(); Samples.Clear(); _originSamples.Clear(); RenderSamples.Clear(); _renderIndices.Clear(); RenderRevision++;
+        MouseLandmarks.Clear(); _keys.Clear(); _chord.Clear();
         TotalTime = 0; _buttons = 0; _active = null; _position = null; _previousMouse = null; _segment = 0;
         _bounds.Clear(); IncompleteActionCount = 0; HasRelativeMovement = false; _anomalous = false;
         _originSegmentPending = false;
@@ -61,13 +74,17 @@ public sealed class ActionProjection
         var index = Samples.Count;
         var timeBefore = TotalTime;
         TotalTime += input.TimeSinceLastEvent;
-        var startsSegment = _originSegmentPending;
+        var followsOrigin = _originSegmentPending;
+        var startsSegment = followsOrigin;
+        var renderStartsSegment = false;
         _originSegmentPending = false;
         if (input is MouseEvent mouse && HasMove(mouse))
         {
             var space = Space(mouse);
-            startsSegment |= _position is null || _position.Value.Space != space;
-            if (startsSegment) _segment++;
+            var changesFrame = _position is null || _position.Value.Space != space;
+            startsSegment |= changesFrame;
+            renderStartsSegment = changesFrame;
+            if (changesFrame) _segment++;
             if (space == CoordinateSpace.RelativeCounts)
             {
                 var previous = startsSegment ? new PathPosition(0, 0, space) : _position!.Value;
@@ -80,6 +97,9 @@ public sealed class ActionProjection
                 : new(position.X, position.Y, position.X, position.Y);
         }
         Samples.Add(new(index, TotalTime, _position, startsSegment, _segment));
+        var previousRender = RenderSamples.Count == 0 ? (PathSample?)null : RenderSamples[^1];
+        var renderSample = Samples[^1] with { StartsSegment = followsOrigin ? renderStartsSegment : startsSegment };
+        _renderIndices.Add(RenderSamples.Count); RenderSamples.Add(renderSample); RenderRevision++;
 
         var neutral = _keys.Count == 0 && _buttons == 0;
         var continuation = CanContinue(input);
@@ -114,7 +134,7 @@ public sealed class ActionProjection
         }
         else if (input is MouseEvent m)
         {
-            if (HasMove(m)) action.ObserveMovement(index > 0 ? Samples[index - 1] : null, Samples[index]);
+            if (HasMove(m)) action.ObserveMovement(previousRender, renderSample);
             var down = DownButton(m); var up = UpButton(m);
             _anomalous |= (down & _buttons) != 0 || (up & ~(_buttons | down)) != 0;
             _buttons |= down;
@@ -220,6 +240,22 @@ public sealed class ActionProjection
             else high = mid - 1;
         }
         return result < 0 ? null : Samples[result];
+    }
+
+    public PathSample? PointerAt(BigInteger time)
+    {
+        var input = SampleAt(time);
+        var low = 0; var high = _originSamples.Count - 1; var result = -1;
+        while (low <= high)
+        {
+            var mid = low + (high - low) / 2;
+            if (_originSamples[mid].Time <= time) { result = mid; low = mid + 1; }
+            else high = mid - 1;
+        }
+        if (result < 0) return input;
+        var origin = _originSamples[result];
+        return input is null || origin.Time > input.Value.Time
+            || origin.Time == input.Value.Time && origin.Index >= input.Value.Index ? origin : input;
     }
 
     public static bool HasMove(MouseEvent m) => (m.ActionType & MouseActionTypeFlags.Move) != 0;

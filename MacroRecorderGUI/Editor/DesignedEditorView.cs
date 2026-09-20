@@ -81,7 +81,7 @@ public sealed partial class MacroTabContent
                 Background = BrushResource(segment.Waiting ? "WaitTrack" : "Track"),
                 BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(3)
             };
-            var name = segment.Waiting ? $"Wait before action {segment.FirstAction + 1}"
+            var name = segment.Setup ? "Pointer setup wait" : segment.Waiting ? $"Wait before action {segment.FirstAction + 1}"
                 : segment.FirstAction == segment.LastAction ? $"Action {segment.FirstAction + 1} · {_editor.Projection.Actions[segment.FirstAction].Name}"
                 : $"Actions {segment.FirstAction + 1}–{segment.LastAction + 1}";
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, name);

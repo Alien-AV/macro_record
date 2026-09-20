@@ -7,7 +7,7 @@ namespace MacroRecorderGUI.Editor;
 public sealed record PreviewFrame(RecordedAction? Current, RecordedAction? Next, bool Waiting,
     PathSample? Pointer, IReadOnlyList<uint> HeldKeys, IReadOnlyList<string> HeldButtons);
 
-public readonly record struct PreviewSegment(BigInteger Start, BigInteger End, bool Waiting, int FirstAction, int LastAction);
+public readonly record struct PreviewSegment(BigInteger Start, BigInteger End, bool Waiting, int FirstAction, int LastAction, bool Setup = false);
 
 /// <summary>Reads recorded transitions only. It has no connection to playback or native input.</summary>
 public sealed class VisualPreview(IList<InputEvent> events, ActionProjection projection)
@@ -49,7 +49,7 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
         var index = Math.Min(low, actions.Count - 1);
         var current = index < 0 ? null : actions[index];
         var waiting = current is not null && time < current.StartTime + current.Wait;
-        return new(current, index + 1 < actions.Count ? actions[index + 1] : null, waiting, sample,
+        return new(current, index + 1 < actions.Count ? actions[index + 1] : null, waiting, projection.PointerAt(time),
             _keys.OrderBy(k => k).ToArray(), _buttons.OrderBy(b => b, StringComparer.Ordinal).ToArray());
     }
 
@@ -76,15 +76,19 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
         var actions = projection.Actions;
         // Large recordings use contiguous groups; no time is dropped to fit the display.
         var groupSize = Math.Max(1, (actions.Count + maximum / 2 - 1) / (maximum / 2));
+        BigInteger through = 0;
         for (var i = 0; i < actions.Count; i += groupSize)
         {
             var last = Math.Min(i + groupSize, actions.Count) - 1;
             var a = actions[i];
+            if (a.StartTime > through) result.Add(new(through, a.StartTime, true, i, i, Setup: true));
             if (groupSize == 1 && a.Wait > 0)
                 result.Add(new(a.StartTime, a.StartTime + a.Wait, true, i, i));
             var start = groupSize == 1 ? a.StartTime + a.Wait : a.StartTime;
             result.Add(new(start, actions[last].EndTime, false, i, last));
+            through = actions[last].EndTime;
         }
+        if (projection.TotalTime > through) result.Add(new(through, projection.TotalTime, true, Math.Max(0, actions.Count - 1), Math.Max(0, actions.Count - 1), Setup: true));
         return result;
     }
 }

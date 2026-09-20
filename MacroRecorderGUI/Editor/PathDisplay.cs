@@ -52,7 +52,7 @@ public static class PathDisplay
         foreach (var index in indices)
         {
             var sample = samples[index];
-            if (result.Count > 0 && result[^1].Index == sample.Index) continue;
+            if (result.Count > 0 && result[^1] == sample) continue;
             // Never connect points across an omitted coordinate-space boundary.
             if (result.Count > 0)
             {
