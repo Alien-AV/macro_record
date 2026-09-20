@@ -100,7 +100,7 @@ public sealed class ActionProjection
         }
         else if (input is MouseEvent m)
         {
-            if (HasMove(m)) action.MovementCount++;
+            if (HasMove(m)) action.ObserveMovement(index > 0 ? Samples[index - 1] : null, Samples[index]);
             var down = DownButton(m); var up = UpButton(m);
             _anomalous |= (down & _buttons) != 0 || (up & ~(_buttons | down)) != 0;
             _buttons |= down;

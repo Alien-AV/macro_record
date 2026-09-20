@@ -260,6 +260,104 @@ public class EditorSelectionClarityTests
     }
 
     [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(false, true)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public void SparseMotionSurvivesDisplaySamplingForMovesAndDrags(bool drag, bool relative)
+    {
+        var events = new List<InputEvent> { Mouse(0, relative: relative) };
+        if (drag) events.Add(Mouse(999, MouseActionTypeFlags.LeftDown));
+        for (var i = 0; i < 1201; i++)
+            events.Add(Mouse(i == 1199 ? 100 : relative && i == 1200 ? -100 : 0, relative: relative));
+        if (drag) events.Add(Mouse(999, MouseActionTypeFlags.LeftUp));
+        using var macro = Macro(events.ToArray());
+        var before = Bytes(macro);
+        var action = macro.Editor.Projection.Actions[^1];
+        var frame = Frame(macro, action);
+        var edge = action.MovementEdgeFor(frame.Space);
+        Assert.IsNotNull(edge);
+        Assert.IsTrue(frame.HasSelectedPath);
+        Assert.AreEqual(drag ? "Selected drag" : "Selected movement", frame.SelectionLabel);
+        Assert.IsTrue(frame.SelectedSamples.Count <= 512);
+        var from = frame.SelectedSamples.Single(sample => sample.Index == edge - 1);
+        var to = frame.SelectedSamples.Single(sample => sample.Index == edge);
+        Assert.AreEqual(from.Segment, to.Segment);
+        Assert.AreNotEqual(from.Position, to.Position);
+        Assert.IsFalse(to.StartsSegment);
+        Assert.AreEqual(macro.Editor.Projection.Samples[edge!.Value - 1].Position, from.Position);
+        Assert.AreEqual(macro.Editor.Projection.Samples[edge.Value].Position, to.Position);
+        AssertBytes(before, macro);
+    }
+
+    [TestMethod]
+    public void MixedActionRetainsIndependentMotionEdgesPerCoordinateFrame()
+    {
+        var events = new List<InputEvent> { new KeyboardEvent(VirtualKey.Control, false), Mouse(0), Mouse(100) };
+        events.AddRange(Enumerable.Range(0, 600).Select(_ => Mouse(100)));
+        events.AddRange([Mouse(0, relative: true), Mouse(7, relative: true), Mouse(-7, relative: true)]);
+        events.AddRange(Enumerable.Range(0, 600).Select(_ => Mouse(0, relative: true)));
+        events.Add(new KeyboardEvent(VirtualKey.Control, true));
+        using var macro = Macro(events.ToArray());
+        var action = macro.Editor.Projection.Actions.Single();
+        var presentation = new EditorPresentation(macro.Editor);
+        foreach (var space in new[] { CoordinateSpace.AbsoluteDesktop, CoordinateSpace.RelativeCounts })
+        {
+            Assert.IsTrue(presentation.TryGetFrame(action, out var frame, space));
+            Assert.IsTrue(frame.HasSelectedPath);
+            var edge = action.MovementEdgeFor(space)!.Value;
+            Assert.IsTrue(frame.SelectedSamples.Any(sample => sample.Index == edge - 1));
+            Assert.IsTrue(frame.SelectedSamples.Any(sample => sample.Index == edge));
+            Assert.IsTrue(frame.SelectedSamples.Count <= 512);
+            foreach (var pair in frame.SelectedSamples.Zip(frame.SelectedSamples.Skip(1)))
+                if (pair.First.Segment != pair.Second.Segment) Assert.IsTrue(pair.Second.StartsSegment);
+        }
+        Assert.IsNull(action.MovementEdgeFor(CoordinateSpace.AbsolutePrimary));
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void CompleteMovementShowsGlobalIncompleteInputWarningUntilTheOtherActionCompletes(bool drag)
+    {
+        using var macro = drag ? Macro(Mouse(0), Mouse(999, MouseActionTypeFlags.LeftDown), Mouse(100), Mouse(999, MouseActionTypeFlags.LeftUp))
+            : Macro(Mouse(0), Mouse(100));
+        var editor = macro.Editor;
+        var presentation = new EditorPresentation(editor);
+        var action = editor.Projection.Actions[^1];
+        var refresh = presentation.Refresh(action, [action]);
+        Assert.IsTrue(action.Complete);
+        Assert.AreEqual("", presentation.InspectorWarning(action));
+        macro.AddEvent(new KeyboardEvent(VirtualKey.Control, false));
+        refresh = presentation.Refresh(action, refresh.Selection);
+        Assert.AreSame(action, refresh.Selection[0]);
+        Assert.IsTrue(action.Complete, "The warning concerns another action, not the selected movement.");
+        var warning = presentation.InspectorWarning(action);
+        Assert.AreEqual(editor.GeometryBlockReason(action), warning);
+        StringAssert.Contains(warning, "Incomplete");
+        StringAssert.Contains(warning, "Inspect the raw input");
+        Assert.AreEqual("Incomplete sequence · see exact input", presentation.InspectorWarning(editor.Projection.Actions[^1]));
+        macro.AddEvent(new KeyboardEvent(VirtualKey.Control, true));
+        presentation.Refresh(action, refresh.Selection);
+        Assert.AreEqual("", presentation.InspectorWarning(action));
+        Assert.IsNull(editor.GeometryBlockReason(action));
+        Assert.AreEqual("", presentation.InspectorWarning(editor.Projection.Actions[^1]), "Generic key guidance stays in help.");
+    }
+
+    [TestMethod]
+    public void MovementSafetyWarningsRemainVisibleButStationaryGuidanceStaysInHelp()
+    {
+        using var macro = Macro(Mouse(10, relative: true), Mouse(20, relative: true),
+            Mouse(999, MouseActionTypeFlags.LeftDown), Mouse(999, MouseActionTypeFlags.LeftUp));
+        var presentation = new EditorPresentation(macro.Editor);
+        var actions = macro.Editor.Projection.Actions;
+        Assert.AreEqual(macro.Editor.GeometryBlockReason(actions[0]), presentation.InspectorWarning(actions[0]));
+        StringAssert.Contains(presentation.InspectorWarning(actions[0]), "device counts");
+        Assert.AreEqual("", presentation.InspectorWarning(actions[1]));
+        Assert.AreEqual("", presentation.InspectorWarning(null));
+    }
+
+    [TestMethod]
     [DataRow(719d, true)]
     [DataRow(899d, true)]
     [DataRow(900d, false)]

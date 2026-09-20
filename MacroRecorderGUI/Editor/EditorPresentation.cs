@@ -23,6 +23,13 @@ public sealed class EditorPresentation(ActionEditor editor)
     private int _frameCount = -1;
     private CoordinateSpace? _frameSpace;
 
+    public string InspectorWarning(RecordedAction? selected)
+    {
+        if (selected is null || editor.IsDirty || !editor.Projection.IsCurrent(selected)) return "";
+        if (!selected.Complete) return "Incomplete sequence · see exact input";
+        return selected.Kind is ActionKind.Move or ActionKind.Drag ? editor.GeometryBlockReason(selected) ?? "" : "";
+    }
+
     public PresentationRefresh Refresh(RecordedAction? primary, IReadOnlyList<RecordedAction> selection)
     {
         var processed = editor.Refresh();
@@ -50,7 +57,8 @@ public sealed class EditorPresentation(ActionEditor editor)
         var includeAnchor = selected is { Start: > 0 } && !projection.Samples[selected.Start].StartsSegment
             && projection.Samples[selected.Start - 1].Position is not null;
         var detail = selected is not { MovementCount: > 0 } ? []
-            : PathDisplay.Decimate(projection.Samples, selected.Start - (includeAnchor ? 1 : 0), selected.Count + (includeAnchor ? 1 : 0), 512);
+            : PathDisplay.Decimate(projection.Samples, selected.Start - (includeAnchor ? 1 : 0),
+                selected.Count + (includeAnchor ? 1 : 0), 512, selected.MovementEdgeFor(space));
         var landmarks = projection.MouseLandmarks;
         var visible = new HashSet<RecordedAction>();
         var count = Math.Min(256, landmarks.Count);

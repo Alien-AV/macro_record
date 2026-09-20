@@ -135,7 +135,11 @@ public class EditorPresentationTests
         var presentation = new EditorPresentation(macro.Editor); var refresh = presentation.Refresh(null, []);
         Assert.IsTrue(presentation.TryGetFrame(refresh.Selection[0], out var frame));
         Assert.IsFalse(frame.Overview.Any(p => p.Index == 1199));
-        Assert.IsFalse(frame.SelectedSamples.Any(p => p.Index == 1199));
+        Assert.IsTrue(frame.SelectedSamples.Any(p => p.Index == 1198));
+        Assert.IsTrue(frame.SelectedSamples.Any(p => p.Index == 1199));
+        Assert.IsTrue(frame.HasSelectedPath);
+        Assert.AreEqual("Selected movement", frame.SelectionLabel);
+        Assert.IsTrue(frame.SelectedSamples.Count <= 512);
         Assert.AreEqual(new PathBounds(10, -100000, 100000, 10), frame.Bounds);
         var cursor = macro.Editor.Projection.SampleAt(1200)!.Value.Position!.Value;
         var mapped = PathViewport.Fit(frame.Bounds!.Value, 400, 300).Map(cursor);
@@ -144,6 +148,8 @@ public class EditorPresentationTests
         refresh = presentation.Refresh(refresh.Selection[0], refresh.Selection);
         Assert.IsTrue(presentation.TryGetFrame(refresh.Selection[0], out frame));
         Assert.AreEqual(new PathBounds(10, 10, 10, 10), frame.Bounds);
+        Assert.IsFalse(frame.HasSelectedPath);
+        Assert.IsNull(refresh.Selection[0].MovementEdgeFor(CoordinateSpace.AbsoluteDesktop));
     }
 
     [TestMethod]

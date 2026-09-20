@@ -210,9 +210,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
         InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact wait: {TimeText.Seconds(a.Wait)}s · execution: {TimeText.Seconds(a.Duration)}s";
-        ActionWarning.Text = a is { Complete: false } ? "Incomplete sequence · see exact input" : "";
-        ActionWarning.Visibility = a is { Complete: false } ? Visibility.Visible : Visibility.Collapsed;
-        ToolTipService.SetToolTip(ActionWarning, a?.WarningExplanation);
+        ActionWarning.Text = _presentation?.InspectorWarning(a) ?? "";
+        ActionWarning.Visibility = ActionWarning.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ToolTipService.SetToolTip(ActionWarning, a is { Complete: false } ? a.WarningExplanation : ActionWarning.Text);
         var path = a is not null && a.Kind is not (ActionKind.Keys or ActionKind.Scroll);
         EditorPathHost.Visibility = path || a is null ? Visibility.Visible : Visibility.Collapsed;
         InputVisual.Visibility = a is not null && !path ? Visibility.Visible : Visibility.Collapsed;

@@ -16,6 +16,19 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public InputEvent First { get; } = first;
     public int Count { get; internal set; }
     public int MovementCount { get; internal set; }
+    private Dictionary<CoordinateSpace, int>? _movementEdges;
+    public int? MovementEdgeFor(CoordinateSpace space) =>
+        _movementEdges is not null && _movementEdges.TryGetValue(space, out var end) ? end : null;
+
+    internal void ObserveMovement(PathSample? previous, PathSample current)
+    {
+        MovementCount++;
+        if (previous is not { } before || before.Position is not { } from || current.Position is not { } to
+            || current.StartsSegment || before.Segment != current.Segment || from.Space != to.Space
+            || from.X == to.X && from.Y == to.Y) return;
+        // Keep one genuine adjacent pair per frame, even when display sampling omits an excursion.
+        (_movementEdges ??= []).TryAdd(to.Space, current.Index);
+    }
     public int End => Start + Count;
     public ActionKind Kind { get; internal set; }
     public bool Complete { get; internal set; }
