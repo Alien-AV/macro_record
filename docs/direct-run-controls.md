@@ -44,3 +44,20 @@ The user smoke test should check direct Record/Play and their keyboard shortcuts
 options Apply/Cancel without execution; persistent settings for two different
 recordings; visible until-stopped state; countdown Stop; and the distinct visual
 Preview action. Check narrow layout and keyboard access to the options controls.
+
+## Integrated verification (2026-09-20)
+
+The implementation and follow-up fixes were independently reviewed before integration.
+Both Debug and Release full x64 solution builds pass, with the existing MSB3851 SDK
+target mismatch warning. Each configuration passes 422 managed and 48 native tests.
+
+A separate hidden diagnostic constructs the real compiled main window with fake
+engines and temporary recording/preferences stores, overrides production startup,
+and never registers hotkeys or activates a window. Light/dark layout checks at
+1328, 900 and 640 pixels verify the visible until-stopped summary fits its layout
+slots even beside a long status message. The HWND remains invisible. This is not
+a pixel-fidelity, focus, actual countdown or real-input smoke test.
+
+Self-contained Release publish was refreshed and its executable, managed/native
+runtime files, resource index and eight compiled XAML files were hash-checked
+against the build. Reports remain local; nothing was pushed to GitHub.
