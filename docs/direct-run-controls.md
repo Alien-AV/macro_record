@@ -24,6 +24,11 @@ including preference/library loading and saves. Stop or close prevents a pending
 continuation from creating a controller or beginning capture/playback. The selected
 recording and run settings must remain consistent across preparation awaits.
 
+Preferences live in `%LOCALAPPDATA%/MacroRecorder/run-preferences.json`, separate
+from the recording library. Playback preferences use the library recording ID;
+renaming preserves them, while a newly imported copy gets its own defaults.
+Exporting `.macro` does not include these local run preferences.
+
 Preferences do not alter macro events, recorded timing or the `.macro` wire format.
 Existing recordings without preferences default to speed 1, one repetition and a
 three-second countdown. Invalid or unreadable preference data must not silently
