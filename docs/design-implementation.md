@@ -78,19 +78,25 @@ no GitHub publication or push is part of this task.
 
 ## Implemented and verified
 
-Integrated editor, library/workflow services, and shell were independently reviewed;
-all actionable findings were fixed before their final approval. Final verification
-on 2026-09-20:
+Integrated editor, library/workflow services, shell, and screenshot-driven polish
+were independently reviewed. All actionable findings were fixed before final
+approval, including sparse movement lost by display sampling, a hidden geometry
+safety warning, and cancellation during initial library loading. Final verification
+on 2026-09-20 after the polish integration:
 
 - Full x64 Debug and Release solution builds pass. The existing MSB3851 Windows
   SDK target-version mismatch warning remains unchanged.
-- Each configuration passes 280 managed tests and 48 native fake-input tests.
-- An isolated diagnostic loads the actual compiled editor and constructs the
-  actual main window using fake engines and a temporary library, without showing
-  or activating it. The main HWND is verified invisible. Light/dark resource and
-  visual-tree loading checks cover the main window, library, editor and controller.
+- Each configuration passes 350 managed tests and 48 native fake-input tests.
+- An isolated diagnostic loads production application resources but overrides
+  production startup. The compiled editor exercises mixed-input selections and
+  preview at widths 1100, 700 and 420 in light/dark themes. Populated library cards
+  cover movement and keyboard fallback. The compiled dialog is measured with
+  overflowing fields at 488x600 and 280x400; its safety footer stays in bounds and
+  its scrollbar gutter is checked. Main window construction uses fake engines,
+  a temporary library and no global hotkeys; main/controller HWNDs are verified
+  invisible. No window is shown or activated.
 - Self-contained Release publish is refreshed and checked against build hashes,
-  including compiled XAML resources. No push or GitHub update was performed.
+  including all eight compiled XAML resources. No push or GitHub update was performed.
 
 These checks do not establish pixel fidelity, full production startup, live target
 focus, screen-reader interaction or real recording/playback behaviour. Those remain
