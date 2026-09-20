@@ -28,7 +28,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private BigInteger _previewStart;
     private InputEvent? _rawEvent;
     private readonly RawEventRows _rawRows = [];
-    private readonly InspectorDrafts<Control> _drafts = new();
+    private readonly InspectorDrafts<Control> _rawDrafts = new();
     private ActionFieldEdits? _actionEdits;
     private bool _populatingActionFields, _committingFields;
     private InputEvent[] _inspectorSelection = [];
@@ -112,7 +112,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is not null) _editor.Invalidated -= Editor_Invalidated;
         _sync = true;
         ActionsList.ItemsSource = null; RawList.ItemsSource = null;
-        _rawRows.Close(); _drafts.Clear();
+        _rawRows.Close(); _rawDrafts.Clear();
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
         _actionEdits = null; _inspectorSelection = [];
@@ -212,10 +212,10 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         {
             if (!_populatingActionFields) _actionEdits?.Change(field, sender.Text);
         }
-        else _drafts.Changing(sender);
+        else _rawDrafts.Changing(sender);
     }
-    private void CheckDraft_Changed(object sender, RoutedEventArgs e) => _drafts.Changing((CheckBox)sender);
-    private void Field(CheckBox field, bool value) => _drafts.Populate(field, () => field.IsChecked = value);
+    private void CheckDraft_Changed(object sender, RoutedEventArgs e) => _rawDrafts.Changing((CheckBox)sender);
+    private void Field(CheckBox field, bool value) => _rawDrafts.Populate(field, () => field.IsChecked = value);
     private void Field(TextBox field, string text)
     {
         if (ActionFieldFor(field) is { } actionField)
@@ -224,14 +224,14 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             try { field.Text = _actionEdits?.Text(actionField, text) ?? text; }
             finally { _populatingActionFields = false; }
         }
-        else _drafts.Populate(field, () => field.Text = text);
+        else _rawDrafts.Populate(field, () => field.Text = text);
     }
     private void UpdateInspector(bool resetDrafts = false)
     {
         var a = Selected;
         _actionEdits?.Select(a, resetDrafts);
         _inspectorSelection = ActionsList.SelectedItems.OfType<RecordedAction>().Select(action => action.First).ToArray();
-        _drafts.Select(a?.First, resetDrafts);
+        if (resetDrafts) _rawDrafts.Clear();
         ActionFields.IsEnabled = a is not null;
         ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
         SelectedTitle.Text = a?.Name ?? "Select an action";
@@ -337,7 +337,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (open) PopulateRaw(enterRaw: _editor?.RawSelection != true);
         else
         {
-            _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null;
+            _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null; _rawDrafts.Clear();
             _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
             UpdateSelectionScope();
         }
@@ -374,13 +374,10 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void LoadRaw()
     {
-        var previous = _rawEvent;
         _rawEvent = (RawList.SelectedItem as RawEventRow)?.Input; RawApply.IsEnabled = _rawEvent is not null;
-        if (!ReferenceEquals(previous, _rawEvent))
-        {
-            foreach (var field in new[] { RawRelative, RawDesktop, RawKeyUp }) _drafts.Remove(field);
-            foreach (var field in new[] { RawDelay, RawX, RawY, RawFlags, RawData, RawKey }) _drafts.Remove(field);
-        }
+        // Projection regrouping can change an action's first input without changing
+        // the exact raw event being edited. Only that event owns these drafts.
+        _rawDrafts.Select(_rawEvent);
         if (_rawEvent is null) return;
         Field(RawDelay, _rawEvent.TimeSinceLastEvent.ToString(CultureInfo.InvariantCulture));
         RawMouseFields.Visibility = _rawEvent is MouseEvent ? Visibility.Visible : Visibility.Collapsed;

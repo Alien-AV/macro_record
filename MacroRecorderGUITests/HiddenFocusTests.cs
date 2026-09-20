@@ -155,6 +155,7 @@ public sealed class HiddenFocusTests
             Assert.AreEqual(2, actions.SelectedItems.Count);
             Assert.AreEqual(1, selectionChanges, "Ordinary multi-selection must not be cleared and rebuilt, which resets the keyboard selection anchor.");
 
+            CheckRawDraftSurvivesMovementMerge(editor, macro);
             CheckPointerPolicy();
             Assert.IsFalse(IsWindowVisible(hwnd));
         }
@@ -163,6 +164,37 @@ public sealed class HiddenFocusTests
             typeof(MainWindow).GetField("_allowClose", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(window, true);
             window.Close();
         }
+    }
+
+    private static void CheckRawDraftSurvivesMovementMerge(MacroTabContent editor, MacroViewModel macro)
+    {
+        var input = (MouseEvent)macro.Events[2];
+        var actions = Field<ListView>(editor, "ActionsList");
+        actions.SelectedItem = macro.Editor.Projection.Actions[1];
+        Call(editor, "SetRawOpen", true);
+        var rawList = Field<ListView>(editor, "RawList");
+        var delay = Field<TextBox>(editor, "RawDelay"); var x = Field<TextBox>(editor, "RawX"); var y = Field<TextBox>(editor, "RawY");
+        var desktop = Field<CheckBox>(editor, "RawDesktop");
+        Assert.AreSame(input, Field<InputEvent>(editor, "_rawEvent"));
+        delay.Text = "999999"; x.Text = "999"; y.Text = "unfinished"; desktop.IsChecked = false;
+        Field<TextBox>(editor, "WaitInput").Text = "0.000010";
+        Assert.IsTrue(editor.TryCommitPendingEdits());
+        Assert.AreEqual(1, macro.Editor.Projection.Actions.Count, "The second movement must merge with the first.");
+        Assert.AreSame(input, Field<InputEvent>(editor, "_rawEvent"));
+        Assert.IsTrue(macro.Editor.RawSelection);
+        CollectionAssert.AreEqual(new InputEvent[] { input }, macro.SelectedEvents.ToArray());
+        CollectionAssert.AreEqual(new InputEvent[] { input }, rawList.SelectedItems.Cast<MacroRecorderGUI.Editor.RawEventRow>().Select(row => row.Input).ToArray());
+        Assert.AreEqual("999999", delay.Text, "A group merge must not replace the draft owned by this exact raw event.");
+        Assert.AreEqual("999", x.Text); Assert.AreEqual("unfinished", y.Text); Assert.AreEqual(false, desktop.IsChecked);
+        Assert.AreEqual(10UL, input.TimeSinceLastEvent); Assert.AreEqual(50, input.X); Assert.IsTrue(input.MappedToVirtualDesktop);
+
+        Call(editor, "RawApply_Click", editor, new RoutedEventArgs());
+        Assert.AreEqual(10UL, input.TimeSinceLastEvent, "Invalid raw Apply must not partially commit the delay.");
+        Assert.AreEqual("unfinished", y.Text); Assert.IsFalse(string.IsNullOrEmpty(editor.Status));
+        y.Text = "77";
+        Call(editor, "RawApply_Click", editor, new RoutedEventArgs());
+        Assert.AreEqual(999999UL, input.TimeSinceLastEvent); Assert.AreEqual(999, input.X); Assert.AreEqual(77, input.Y);
+        Assert.IsFalse(input.MappedToVirtualDesktop);
     }
 
     private static void CheckPointerPolicy()
