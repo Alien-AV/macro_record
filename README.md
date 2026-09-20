@@ -57,8 +57,8 @@ Playback owns one cancellable session. Short native looping macros have a minimu
 ## Recording workspace
 
 The library, two-column action editor, visual preview, and compact run controller
-follow the original polished design. Preview stays inside the app; **Play in other
-apps** sends real input. Exact raw events and microsecond timing remain available
+follow the original polished design. Preview stays inside the app; **Play** sends
+real input to other applications after its countdown. Exact raw events and microsecond timing remain available
 behind the simplified action list. Relative mouse traces are device counts, not
 reconstructed screen positions.
 
@@ -68,13 +68,20 @@ up to 64 MB; `.macro` import/export keeps the existing protobuf format. Unsaved
 changes and failures are shown explicitly, and navigation/close waits for saves.
 An untouched initial document is not saved as an empty library entry.
 
-Ctrl+Q starts recording, Ctrl+W stops it, and Ctrl+E opens playback preparation.
+Record and Ctrl+Q start a new automatically named recording after the configured
+countdown. Play and Ctrl+E start the selected recording using its saved settings.
+Neither requires a setup dialog. Adjacent options controls change settings without
+starting a run: recording defaults are shared, while playback speed, repeat and
+countdown are remembered per recording across app restarts. The playback summary
+shows the active settings, including repeat-until-stopped. Preview retains the
+original captured timing and never sends input. Ctrl+W stops recording.
 Emergency stop defaults to Ctrl+R; Settings offers alternate registered shortcuts
 for the current session. A registered emergency shortcut is required before
 recording/playback starts. Use the recording stop shortcut to avoid capturing
 a controller mouse click.
 
-See `docs/action-editor.md` for editing semantics and manual smoke checks, and
+See `docs/direct-run-controls.md` for direct-run behavior and safety,
+`docs/action-editor.md` for editing semantics and manual smoke checks, and
 `docs/design-implementation.md` for the visual specification and verification scope.
 
 ## Unpackaged distribution

@@ -9,7 +9,7 @@ framework; the approved appearance uses intentionally styled controls.
 - Narrow dark navigation rail with a recording-library entry and bottom-aligned
   appearance/settings commands.
 - A compact breadcrumb and recording heading, truthful save status, Undo, and
-  New recording. Preserve native caption buttons, dragging and resizing; match
+  Record. Preserve native caption buttons, dragging and resizing; match
   the title bar to the active theme.
 - A two-column editor: readable action sequence on the left; selected action,
   pointer path or input visualization, timing/position fields, and expandable
@@ -17,8 +17,10 @@ framework; the approved appearance uses intentionally styled controls.
 - Searchable library cards with real names, summaries and path thumbnails.
 - A separate visual-preview mode with current/next action, a scrubber and
   action timeline. Preview never records or sends input.
-- Explicit recording/playback dialogs and a compact run controller with state,
-  elapsed time and Stop. Playback is clearly identified as controlling other apps.
+- Direct Record and Play actions with remembered settings, adjacent options
+  controls, and a compact run controller with state, elapsed time and Stop.
+  Playback is clearly identified as controlling other apps. Options Apply/Cancel
+  never starts a run; the cancellable countdown replaces obligatory preparation.
 - Light/dark palettes, restrained borders, rounded controls, Segoe typography,
   and the spacing/hierarchy of the approved HTML. High contrast and keyboard
   focus must remain usable rather than being forced into a fixed palette.
@@ -57,7 +59,7 @@ no GitHub publication or push is part of this task.
 
 ## Screenshot-driven polish acceptance
 
-- Recording/playback dialogs give normal settings sufficient room, reserve a
+- Recording/playback options dialogs give normal settings sufficient room, reserve a
   scrollbar gutter when needed, and keep the stop shortcut discoverable. Primary
   actions use blue; Cancel is neutral. Focus and high-contrast states remain clear.
 - Library thumbnails represent meaningful recorded movement rather than only an

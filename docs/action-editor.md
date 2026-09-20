@@ -31,7 +31,7 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   sets **each** selected delay and therefore changes internal duration too.
 - The navigation rail opens the recording library, appearance and settings.
   The heading exposes recording/file commands and Undo; the transport separates
-  visual Preview from Play in other apps. Recording options include the optional
+  visual Preview from Play, which sends input to other apps. Recording options include the optional
   post-capture raw-delay override. It changes each original event delay, not the
   total action duration. Advanced raw editing remains accessible from the detail
   pane. The original recording shortcuts are retained and displayed explicitly.
@@ -153,7 +153,7 @@ verification. The user will perform these smoke checks after integration:
 2. Resize through wide, medium and narrow layouts, including short windows and
    increased text/display scaling. Reach every field/button using Tab, including
    Stop and the emergency shortcut, and scroll the action/raw lists. Confirm
-   Play in other apps remains distinct from Preview. Import a known macro;
+   Play remains distinct from the visual-only Preview. Import a known macro;
    check the heading, sequential group numbers, short times and exact
    values/counts in Exact captured input. Export without editing
    and compare the decoded events.
@@ -200,7 +200,7 @@ verification. The user will perform these smoke checks after integration:
     close during preparation/countdown/capture/playback, including while a save
     is pending. Failed shortcut registration must block unsafe run starts.
     Use the recording stop shortcut to avoid recording a controller mouse click.
-13. Check the screenshot-polish cases: collapsed recording/playback dialogs fit
+13. Check the screenshot-polish cases: collapsed recording/playback options dialogs fit
     at ordinary window sizes, Cancel is neutral, focus is blue, and the stop
     shortcut stays visible while expanded options scroll. Check smaller windows
     and increased text scaling. In the library, a single absolute anchor followed
@@ -210,6 +210,12 @@ verification. The user will perform these smoke checks after integration:
     recording context and select a single incomplete event: its wait must be
     immediately editable without a misleading zero-duration field. The controller
     clock should remain readable as its digits change.
+14. Record and Ctrl+Q should begin the configured countdown without a naming form.
+    Play and Ctrl+E should start playback preparation without a confirmation form.
+    Options Apply/Cancel must never start either operation. Give two recordings
+    different playback settings, switch between them, and restart the app: each
+    must retain its own visible speed, repeat and delay. Confirm the until-stopped
+    mode is conspicuous and emergency stop still cancels preparation/countdown.
 
 ## Deterministic verification
 
