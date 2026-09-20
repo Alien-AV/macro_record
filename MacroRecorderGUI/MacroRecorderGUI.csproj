@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="mouse.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\Common\protobuf\csharp\Events.cs" Link="Generated\Events.cs" />
     <Compile Include="..\Common\StatusEnum.cs" Link="Common\StatusEnum.cs" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 <Window x:Class="MacroRecorderGUI.Views.RunController"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Macro">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Macro Recorder">
     <Grid x:Name="ControllerRoot" Background="{ThemeResource MacroPaperBrush}" Padding="24" RowSpacing="16"
         ActualThemeChanged="Root_ThemeChanged" Loaded="Root_Loaded">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>

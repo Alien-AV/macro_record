@@ -42,7 +42,8 @@ public sealed class HiddenFocusTests
     public async Task HiddenControlsCommitBeforeCommandsAndPreserveDraftsAndSelection()
     {
         using var process = Process.Start(new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "MacroRecorderGUITests.exe"), "--hidden-focus-check")
-        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })!;
+        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
+            WorkingDirectory = Path.GetTempPath() })!;
         var output = process.StandardOutput.ReadToEndAsync(); var errors = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30)); }
         catch { if (!process.HasExited) process.Kill(); throw; }
@@ -100,6 +101,7 @@ public sealed class HiddenFocusTests
         try
         {
             Assert.IsFalse(IsWindowVisible(hwnd));
+            WindowBrandingTests.CheckHiddenWindows(window);
             typeof(MainWindow).GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(window, true);
             var root = Field<Grid>(window, "RootGrid");
             root.Measure(new Windows.Foundation.Size(1200, 800));

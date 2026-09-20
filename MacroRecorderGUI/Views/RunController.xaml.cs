@@ -19,6 +19,7 @@ public sealed partial class RunController : Window
     public RunController(ElementTheme theme, string name, string shortcut)
     {
         InitializeComponent();
+        WindowIcon.Apply(AppWindow);
         StopButton.AddHandler(UIElement.PointerPressedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, args) =>
         {
             // Minimize controller input in capture. Raw input can arrive before this UI event.

@@ -59,6 +59,7 @@ public sealed partial class MainWindow : Window
         ViewModel.SetEmergencyStopAvailability(false, "The emergency stop shortcut has not registered yet.");
         _registerGlobalHotkeys = registerGlobalHotkeys;
         InitializeComponent();
+        WindowIcon.Apply(AppWindow);
         ClickAwayFocus.Attach(RootGrid, FocusSurface);
         _constructed = true;
         RootGrid.DataContext = ViewModel;
