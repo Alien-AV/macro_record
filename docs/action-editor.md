@@ -20,6 +20,13 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   total, count, and order. A zero-duration action distributes a new duration
   evenly across its internal intervals. A single event has no internal duration.
   Overflowing per-event results are rejected before any mutation.
+- Wait, execution duration and destination fields apply on Enter or leaving the
+  field, including clicking blank space. X/Y form one edit, so moving between
+  those two fields does not apply a half-entered destination. Commands commit
+  these drafts before save, navigation or playback snapshots. Invalid drafts
+  retain their text and explanation and block commands or selection changes
+  that would otherwise discard them. Exact raw-input editing still requires
+  its explicit Apply command; dialog options and rename still require Apply/Save.
 - Action rows are numbered by group, with intent names, icons and concise
   incomplete warnings. Raw event counts, coordinate representation and original
   indices are available in row tooltips and Exact captured input. The macro heading shows
@@ -94,9 +101,10 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   Visual refreshes are batched to 100 ms. A redraw before a pending refresh defers
   until current selection references are restored under the refresh guard. Closed raw
   drilldowns retain no rows; open ones reuse rows during capture. Typed inspector
-  drafts survive capture refreshes and Add mouse/key commands while the same
-  first input remains selected. Applied edits reset drafts; choosing a different
-  action resets them too. Raw drafts survive when their event remains selected.
+  drafts survive capture refreshes. Auto-applying fields retain their original
+  input identity and commit before action selection changes or Add commands;
+  they cannot be applied to a newly selected action instead. Explicit raw drafts
+  survive Add commands and other auto-applied edits while their event remains selected.
   Draft tracking uses synchronous
   [WinUI TextChanging](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.textbox.textchanging?view=windows-app-sdk-1.8),
   so programmatic field population cannot become an asynchronous false draft.
@@ -166,7 +174,10 @@ verification. The user will perform these smoke checks after integration:
    change. Leave preview for the editor/library and confirm it stops. Do not
    use real Playback for this check.
 5. Change wait and duration independently, including zero duration and six
-   decimal places. Verify exact raw totals and unchanged event count/order; Undo.
+   decimal places. Use Enter, Tab and a click on blank space to apply. Verify
+   exact raw totals and unchanged event count/order; Undo. Enter invalid text,
+   then try selecting another action or starting Preview: the draft and its
+   explanation should remain, and the command should wait for correction.
 6. For a complete, consistently absolute macro, enter destination coordinates
    and drag the outlined handle. Verify the inherited click position, connected
    following path, and unchanged following destination. Repeat before a
@@ -184,8 +195,9 @@ verification. The user will perform these smoke checks after integration:
 9. Record a dense stream while typing an unapplied timing/raw draft and while
    selecting raw rows. The draft and raw subset must survive appends. Collapse
    Exact captured input and verify capture remains responsive. Then stop recording.
-   With an unapplied Delay or raw-field draft, use Add mouse and Add keyboard
-   while the same first input remains selected; verify drafts still survive.
+   With an unapplied raw-field draft, use Add mouse and Add keyboard
+   while the same first input remains selected; verify the raw draft survives.
+   Valid auto-applying timing drafts should commit before those commands.
 10. Edit, append a recording, and Undo: later capture input must remain. Edit,
     then load/replace/clear externally or apply recording auto-delay: stale undo
     must be unavailable. Confirm clear-before-recording session rollover still
