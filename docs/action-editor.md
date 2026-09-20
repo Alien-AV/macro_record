@@ -29,14 +29,12 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   decimal places, giving exact microsecond precision. Advanced raw delays expose
   the original unsigned microsecond values. Bulk raw delay editing explicitly
   sets **each** selected delay and therefore changes internal duration too.
-- The toolbar has Record, Stop, Play and Abort; Play visibly says Real input.
-  Compact widths retain the command labels and real-input cue. File holds
-  New/Load/Save; the gear opens recording and playback options (clear before
-  capture, loop, and raw delay override). Defaults exist before the flyout opens:
-  clear before capture on, loop and delay override off, override delay 5000µs.
-  The optional override retains its existing session-bound
-  auto-delay behavior. It applies a per-event delay after recording, not a total
-  action duration.
+- The navigation rail opens the recording library, appearance and settings.
+  The heading exposes recording/file commands and Undo; the transport separates
+  visual Preview from Play in other apps. Recording options include the optional
+  post-capture raw-delay override. It changes each original event delay, not the
+  total action duration. Advanced raw editing remains accessible from the detail
+  pane. The original recording shortcuts are retained and displayed explicitly.
 - Undo includes timing, geometry, conversion, raw edits, add/remove, and editor
   Clear all. It retains later capture appends. External replacement, deletion,
   reordering, or property changes invalidate history. Applicable recording
@@ -129,13 +127,15 @@ light over dark app content. This is an explicit compatibility limitation:
 even when customization support reports true. No custom chrome or undocumented
 Windows 10 API is used.
 
-The workspace uses the actual scroll viewport height. At wide sizes the action
-list, flexible preview canvas and inspector are alongside one another. At medium
-widths the inspector moves below; at narrow widths all three stack. Short windows
-scroll the complete panels. The preview's slider, button and clock have automatic
-rows below a flexible canvas. Inspector position fields appear only when edits
-are safe; otherwise a reason is shown. Delay and Duration keep separate Apply
-buttons and exact values; technical conversion and raw details live in Advanced.
+The approved design uses a two-column editor: a compact action sequence on the
+left and selected-action details with an integrated path on the right. Narrow
+windows stack these panels; short windows keep content scrollable. A separate
+preview view contains the path, current/next action, held input, segmented
+timeline and scrubber. Its transport never calls the real playback engine.
+Position fields appear only when edits are safe; otherwise a reason is shown.
+Wait-before and duration retain independent exact values. There is no synthetic
+standalone wait input: waits remain delays on recorded events, and a trailing
+wait with no next event is not representable in the existing file format.
 
 ## User smoke checks after integration
 
@@ -149,18 +149,19 @@ verification. The user will perform these smoke checks after integration:
    On Windows 10, expect the documented system-color title-bar limitation.
 2. Resize through wide, medium and narrow layouts, including short windows and
    increased text/display scaling. Reach every field/button using Tab, including
-   Stop and Abort, and scroll the action/raw lists. Confirm Play's Real input
-   cue is always visible. Reach the preview transport by scrolling short windows.
-   Load a known macro via File; check the macro heading, sequential group
-   numbers, short times and exact values/counts in Advanced. Save without editing
+   Stop and the emergency shortcut, and scroll the action/raw lists. Confirm
+   Play in other apps remains distinct from Preview. Import a known macro;
+   check the heading, sequential group numbers, short times and exact
+   values/counts in Advanced. Export without editing
    and compare the decoded events.
 3. Select moves, clicks, drags, scroll groups, a Ctrl+S chord, and an incomplete
    sequence. Check warning explanations, path highlights, open start circles,
    end diamonds, direction cues, circle/square landmarks, dashed drags, and
    exact raw drilldown. A long Shift/Ctrl-assisted mouse gesture should stay compact.
 4. Use Preview and scrub with both pointer and arrow keys through waits, zero-time events, relative segments,
-   clicks, and drags. Only the preview dot should move. Switch tabs/close a tab
-   during preview and confirm it stops. Do not use real Playback for this check.
+   clicks, and drags. Only the virtual pointer and held-input display should
+   change. Leave preview for the editor/library and confirm it stops. Do not
+   use real Playback for this check.
 5. Change wait and duration independently, including zero duration and six
    decimal places. Verify exact raw totals and unchanged event count/order; Undo.
 6. For a complete, consistently absolute macro, enter destination coordinates
@@ -186,12 +187,16 @@ verification. The user will perform these smoke checks after integration:
     then load/replace/clear externally or apply recording auto-delay: stale undo
     must be unavailable. Confirm clear-before-recording session rollover still
     delivers new-session events to the correct macro.
-11. Before ever opening Options, verify clear-before-capture defaults still
-    apply. Then use the gear flyout to exercise clear-before-capture, loop and
-    optional after-recording per-event override. Exercise macro tabs, reorder,
-    Add mouse/key event from the list, multi-select Delete, Clear all/Undo, and
-    File's New/Load/Save commands.
-    Close the window during preview/capture and check normal shutdown.
+11. Exercise the library's create/import/open/rename/export flows and save-state
+    feedback. Relaunch to check persistence. Test a save failure without losing
+    the open document, then retry. An untouched startup placeholder must not
+    accumulate as saved library entries.
+12. Test recording and playback countdown cancellation, finite repetitions and
+    speed choices on a safe target application. Stop using the displayed global
+    shortcut; confirm the run controller never steals target focus. Stop and
+    close during preparation/countdown/capture/playback, including while a save
+    is pending. Failed shortcut registration must block unsafe run starts.
+    Use the recording stop shortcut to avoid recording a controller mouse click.
 
 ## Deterministic verification
 

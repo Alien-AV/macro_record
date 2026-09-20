@@ -52,7 +52,30 @@ These tests are noninteractive: native playback tests use fake injection sinks a
 
 The native test project compiles the production C++ model/playback sources into its executable, so owning C++ objects stay within one static CRT. Its DLL reference is build-only: ABI tests load that DLL explicitly and pass only borrowed byte buffers and scalar values. Debug selects Debug vcpkg libraries and `/MTd`; Release selects Release libraries and `/MT`. To verify Debug compilation without executing a Debug test process, build the solution with `/p:Configuration=Debug /p:Platform=x64`.
 
-Playback owns one cancellable session. Short looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility; completion/abort releases keys and buttons held by that session. Looping uses the event snapshot captured when playback starts, even if the selected tab or macro is edited. Unchecking Loop finishes the current pass; Abort interrupts it immediately. Physical modifier interference during playback remains a separate limitation.
+Playback owns one cancellable session. Short native looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility; completion/abort releases keys and buttons held by that session. Playback uses a cloned event snapshot, including speed-adjusted delays, so the saved recording is not modified. Finite repeats and repeat-until-stopped share the cancellable countdown and emergency stop. Physical modifier interference during playback remains a separate limitation.
+
+## Recording workspace
+
+The library, two-column action editor, visual preview, and compact run controller
+follow the original polished design. Preview stays inside the app; **Play in other
+apps** sends real input. Exact raw events and microsecond timing remain available
+behind the simplified action list. Relative mouse traces are device counts, not
+reconstructed screen positions.
+
+Named recordings and drafts are stored under `%LOCALAPPDATA%/MacroRecorder/Recordings`
+with atomic writes and a previous-copy recovery file. The library accepts macros
+up to 64 MB; `.macro` import/export keeps the existing protobuf format. Unsaved
+changes and failures are shown explicitly, and navigation/close waits for saves.
+An untouched initial document is not saved as an empty library entry.
+
+Ctrl+Q starts recording, Ctrl+W stops it, and Ctrl+E opens playback preparation.
+Emergency stop defaults to Ctrl+R; Settings offers alternate registered shortcuts
+for the current session. A registered emergency shortcut is required before
+recording/playback starts. Use the recording stop shortcut to avoid capturing
+a controller mouse click.
+
+See `docs/action-editor.md` for editing semantics and manual smoke checks, and
+`docs/design-implementation.md` for the visual specification and verification scope.
 
 ## Unpackaged distribution
 
