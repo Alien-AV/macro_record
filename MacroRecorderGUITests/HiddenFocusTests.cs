@@ -16,7 +16,7 @@ using Microsoft.UI.Xaml.Controls;
 namespace MacroRecorderGUITests;
 
 [TestClass]
-public sealed class HiddenFocusTests
+public sealed partial class HiddenFocusTests
 {
     [TestMethod]
     public void ShellShortcutsAreWiredOnTheOutermostClickAwayFocusSurface()
@@ -88,6 +88,7 @@ public sealed class HiddenFocusTests
 
     private static async Task CheckControls()
     {
+        await CheckLibraryControls();
         var engine = new FakePlaybackEngine(); var store = new RunTestLibrary();
         using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
         var macro = vm.ActiveMacro!;

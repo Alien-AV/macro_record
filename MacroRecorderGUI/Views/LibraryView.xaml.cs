@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using Microsoft.UI.Xaml.Input;
 using Windows.Foundation;
 using Windows.System;
 
@@ -10,9 +11,12 @@ namespace MacroRecorderGUI.Views;
 
 public sealed record LibraryCard(object Key, string Name, string Summary, string LastOpened, LibraryThumbnail Thumbnail)
 {
+    public bool IsDeleted { get; init; }
     public string AccessibleName => $"{Name}, {Summary}, {LastOpened}, {Thumbnail.Label}, {Thumbnail.InputSummary}";
     public string TraceLabel => Thumbnail.Label;
     public string RenameLabel => $"Rename {Name}";
+    public string OptionsLabel => $"Options for {Name}";
+    public Visibility RenameVisibility => IsDeleted ? Visibility.Collapsed : Visibility.Visible;
     public double ArtHeight => Thumbnail.HasTrace ? 132 : 88;
     public Visibility TraceVisibility => Thumbnail.HasTrace ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InputVisibility => Thumbnail.HasTrace ? Visibility.Collapsed : Visibility.Visible;
@@ -21,6 +25,12 @@ public sealed record LibraryCard(object Key, string Name, string Summary, string
 public sealed partial class LibraryView : UserControl
 {
     private IReadOnlyList<LibraryCard> _cards = [];
+    private IReadOnlyList<LibraryCard> _trashCards = [];
+    private bool _filtering;
+    public bool ShowingTrash => TrashToggle.IsChecked == true;
+    public event EventHandler<IReadOnlyList<LibraryCard>>? DeleteRequested;
+    public event EventHandler<IReadOnlyList<LibraryCard>>? RestoreRequested;
+    public event EventHandler? UndoDeleteRequested;
     public event EventHandler<LibraryCard>? OpenRequested;
     public Func<LibraryCard, string, Task>? RenameAsync { get; set; }
     public event EventHandler<LibraryCard>? ExportRequested;
@@ -31,19 +41,92 @@ public sealed partial class LibraryView : UserControl
         ClickAwayFocus.Attach(this, this);
     }
     public void SetCards(IReadOnlyList<LibraryCard> cards) { _cards = cards; Filter(); }
-    private void Search_Changed(object sender, TextChangedEventArgs e) { if (Cards is not null) Filter(); }
+    public void SetTrashCards(IReadOnlyList<LibraryCard> cards) { _trashCards = cards; Filter(); }
+    public void SetUndoDeleteCount(int count)
+    {
+        UndoDeleteButton.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        UndoDeleteButton.Content = $"Undo delete ({count})";
+    }
+    public void SetOperationMessage(string message)
+    {
+        OperationMessage.Text = message;
+        OperationMessage.Visibility = string.IsNullOrEmpty(message) ? Visibility.Collapsed : Visibility.Visible;
+    }
+    private void Search_Changing(TextBox sender, TextBoxTextChangingEventArgs e) { if (Cards is not null) Filter(); }
     private void Filter()
     {
         var query = SearchBox.Text.Trim();
-        var visible = _cards.Where(card => card.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
-        Cards.ItemsSource = visible;
-        CountLabel.Text = $"{_cards.Count} {(_cards.Count == 1 ? "recording" : "recordings")}";
+        var source = ShowingTrash ? _trashCards : _cards;
+        var selected = Cards.SelectedItems.Cast<LibraryCard>().Select(card => card.Key).ToHashSet();
+        var visible = source.Where(card => card.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        _filtering = true;
+        try
+        {
+            Cards.ItemsSource = visible;
+            foreach (var card in visible.Where(card => selected.Contains(card.Key))) Cards.SelectedItems.Add(card);
+        }
+        finally { _filtering = false; }
+        CountLabel.Text = $"{visible.Length} of {source.Count} {(ShowingTrash ? "in trash" : "recordings")}";
         EmptyState.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        EmptyTitle.Text = _cards.Count == 0 ? "Your library starts here" : "No matching recordings";
-        EmptyDescription.Text = _cards.Count == 0 ? "Record a task or import an existing .macro file." : "Try another name.";
-        RecordingHint.Visibility = _cards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyTitle.Text = source.Count == 0 ? (ShowingTrash ? "Local trash is empty" : "Your library starts here") : "No matching recordings";
+        EmptyDescription.Text = source.Count == 0 ? (ShowingTrash ? "Deleted recordings can be restored here." : "Record a task or import an existing .macro file.") : "Try another name.";
+        RecordingHint.Visibility = !ShowingTrash && _cards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateSelection();
     }
-    private void Cards_ItemClick(object sender, ItemClickEventArgs e) => OpenRequested?.Invoke(this, (LibraryCard)e.ClickedItem);
+    private void Cards_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (!ShowingTrash && SelectToggle.IsChecked != true) OpenRequested?.Invoke(this, (LibraryCard)e.ClickedItem);
+    }
+    private void Select_Changed(object sender, RoutedEventArgs e)
+    {
+        if (Cards is null) return;
+        var selecting = SelectToggle.IsChecked == true;
+        if (Cards.SelectedItems.Count > 0) Cards.SelectedItems.Clear();
+        Cards.SelectionMode = selecting ? ListViewSelectionMode.Extended : ListViewSelectionMode.None;
+        Cards.IsItemClickEnabled = !selecting && !ShowingTrash;
+        SelectionToolbar.Visibility = selecting ? Visibility.Visible : Visibility.Collapsed;
+        UpdateSelection();
+    }
+    private void Trash_Changed(object sender, RoutedEventArgs e)
+    {
+        if (Cards is null) return;
+        if (Cards.SelectedItems.Count > 0) Cards.SelectedItems.Clear();
+        Cards.IsItemClickEnabled = SelectToggle.IsChecked != true && !ShowingTrash;
+        TrashDescription.Visibility = ShowingTrash ? Visibility.Visible : Visibility.Collapsed;
+        LibraryHeading.Text = ShowingTrash ? "Local trash" : "Your recordings";
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(Cards, ShowingTrash ? "Deleted recordings" : "Recordings");
+        Filter();
+    }
+    private void Cards_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_filtering) UpdateSelection(); }
+    private void UpdateSelection()
+    {
+        var count = Cards.SelectedItems.Count;
+        SelectionCount.Text = $"{count} selected · {Cards.Items.Count} visible";
+        BatchActionButton.Content = ShowingTrash ? "Restore selected" : "Delete selected";
+        BatchActionButton.IsEnabled = count > 0;
+        SelectAllButton.IsEnabled = Cards.Items.Count > 0;
+        ClearSelectionButton.IsEnabled = count > 0;
+    }
+    private void SelectAll_Click(object sender, RoutedEventArgs e) => Cards.SelectAll();
+    private void ClearSelection_Click(object sender, RoutedEventArgs e) => Cards.SelectedItems.Clear();
+    private void UndoDelete_Click(object sender, RoutedEventArgs e) => UndoDeleteRequested?.Invoke(this, EventArgs.Empty);
+    private void BatchAction_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = Cards.SelectedItems.Cast<LibraryCard>().ToArray();
+        if (selected.Length == 0) return;
+        if (ShowingTrash) RestoreRequested?.Invoke(this, selected);
+        else DeleteRequested?.Invoke(this, selected);
+    }
+    private void Cards_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Handled || SelectToggle.IsChecked != true) return;
+        for (var source = e.OriginalSource as DependencyObject; source is not null && source != Cards; source = VisualTreeHelper.GetParent(source))
+            if (source is TextBox or PasswordBox or RichEditBox or NumberBox) return;
+        if (e.Key == VirtualKey.Delete && !ShowingTrash) { BatchAction_Click(sender, e); e.Handled = true; }
+        else if (e.Key == VirtualKey.Escape) { Cards.SelectedItems.Clear(); e.Handled = true; }
+        else if (e.Key == VirtualKey.A && (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+            & Windows.UI.Core.CoreVirtualKeyStates.Down) != 0) { Cards.SelectAll(); e.Handled = true; }
+    }
     private void CardOptions_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { DataContext: LibraryCard card } button) return;
@@ -54,8 +137,13 @@ public sealed partial class LibraryView : UserControl
             item.Click += (_, _) => action();
             menu.Items.Add(item);
         }
-        Add("Open recording", () => OpenRequested?.Invoke(this, card));
-        Add("Export .macro…", () => ExportRequested?.Invoke(this, card));
+        if (card.IsDeleted) Add("Restore recording", () => RestoreRequested?.Invoke(this, [card]));
+        else
+        {
+            Add("Open recording", () => OpenRequested?.Invoke(this, card));
+            Add("Export .macro…", () => ExportRequested?.Invoke(this, card));
+            Add("Delete recording", () => DeleteRequested?.Invoke(this, [card]));
+        }
         menu.ShowAt(button);
     }
     private void Rename_Click(object sender, RoutedEventArgs e)
@@ -109,6 +197,7 @@ public sealed partial class LibraryView : UserControl
     {
         if (Cards is null) return;
         var narrow = width < 600;
+        LibraryActions.Orientation = SelectionActions.Orientation = narrow ? Orientation.Vertical : Orientation.Horizontal;
         LibraryLayout.Padding = narrow ? new Thickness(18, 22, 18, 22) : new Thickness(30, 27, 30, 27);
         Grid.SetRow(SearchHost, narrow ? 1 : 0); Grid.SetColumn(SearchHost, narrow ? 0 : 1);
         Grid.SetColumnSpan(SearchHost, narrow ? 2 : 1);

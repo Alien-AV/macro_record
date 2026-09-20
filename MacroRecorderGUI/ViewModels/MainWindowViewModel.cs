@@ -63,7 +63,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     internal async Task PlayMacroAsync(MacroViewModel macro, PlaybackOptions? options)
     {
-        if (_disposed || _shuttingDown) return;
+        if (_disposed || _shuttingDown || IsRecordingUnavailable(macro.RecordingId)) return;
         if (!EmergencyStopAvailable || IsRecording || IsFinalizingRecording)
         {
             StatusMessageRequested?.Invoke(this, EmergencyStopAvailable
@@ -242,6 +242,12 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     public void CloseTab(MacroViewModel macro)
     {
+        if (IsRecordingUnavailable(macro.RecordingId)) return;
+        CloseTabCore(macro);
+    }
+
+    private void CloseTabCore(MacroViewModel macro)
+    {
         var removedIndex = MacroTabs.IndexOf(macro);
         if (removedIndex < 0)
         {
@@ -326,7 +332,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     internal bool StartRecording(MacroViewModel macro, bool fromHotkey, bool clear)
     {
-        if (!CanRecord || !MacroTabs.Contains(macro)) return false;
+        if (!CanRecord || !MacroTabs.Contains(macro) || IsRecordingUnavailable(macro.RecordingId)) return false;
         if (clear) macro.Clear();
         var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision), RegisteredRecordingStops);
         return StartRecordingSession(session);

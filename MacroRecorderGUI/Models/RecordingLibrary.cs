@@ -27,14 +27,19 @@ public interface IRecordingLibraryStore
 }
 
 /// <summary>One atomic document per recording; its payload is the unchanged .macro wire format.</summary>
-public sealed class RecordingLibraryStore : IRecordingLibraryStore
+public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRecordingTrashStore
 {
     public const int MaximumMacroBytes = 64 * 1024 * 1024;
     private readonly string _directory;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _gate;
     public static string DefaultDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MacroRecorder", "Recordings");
 
-    public RecordingLibraryStore(string? directory = null) => _directory = Path.GetFullPath(directory ?? DefaultDirectory);
+    public RecordingLibraryStore(string? directory = null)
+    {
+        _directory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory ?? DefaultDirectory));
+        _gate = Gates.GetOrAdd(_directory, _ => new(1, 1));
+    }
 
     public async Task<RecordingLibraryRead> ListAsync(CancellationToken cancellationToken = default)
     {
@@ -53,6 +58,7 @@ public sealed class RecordingLibraryStore : IRecordingLibraryStore
                 items.Add(record.Metadata);
                 if (record.Recovered) warnings.Add($"Recovered {record.Metadata.Name} from its previous saved copy. Save it to repair the current copy.");
             }
+            catch (RecordingDeletedException) { }
             catch (Exception error) when (error is not OperationCanceledException)
             {
                 warnings.Add($"Could not read recording {name}: {error.Message}");
@@ -66,6 +72,7 @@ public sealed class RecordingLibraryStore : IRecordingLibraryStore
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ThrowIfDeleted(id);
             var path = RecordPath(id);
             try { return await ReadAsync(path, id, cancellationToken).ConfigureAwait(false); }
             catch (Exception primaryError) when (primaryError is not OperationCanceledException)
@@ -87,6 +94,7 @@ public sealed class RecordingLibraryStore : IRecordingLibraryStore
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ThrowIfDeleted(recording.Metadata.Id);
             Directory.CreateDirectory(_directory);
             var path = RecordPath(recording.Metadata.Id);
             // A corrupt current file must not replace the only healthy recovery copy.
@@ -111,6 +119,11 @@ public sealed class RecordingLibraryStore : IRecordingLibraryStore
     {
         if (new FileInfo(path).Length > MaximumMacroBytes * 2L) throw new InvalidDataException("The recording exceeds the library size limit.");
         var bytes = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+        return ReadDocument(bytes, id);
+    }
+
+    private static StoredRecording ReadDocument(byte[] bytes, Guid id)
+    {
         var document = JsonSerializer.Deserialize<LibraryDocument>(bytes) ?? throw new InvalidDataException("Missing recording document.");
         if (document.Schema != 1 || document.Metadata?.Id != id || document.MacroBytes is null
             || document.Sha256 != Convert.ToHexString(SHA256.HashData(document.MacroBytes)))

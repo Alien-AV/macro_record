@@ -69,6 +69,7 @@ public partial class MainWindowViewModel
         try
         {
             EnsureLibraryWritable();
+            EnsureRecordingAvailable(id);
             var macro = MacroTabs.FirstOrDefault(item => item.RecordingId == id);
             if (macro is not null && (HasRecordingDrain(macro) || ReferenceEquals(PlayingMacro, macro)))
                 throw new InvalidOperationException("Stop this recording before renaming it.");
@@ -104,21 +105,23 @@ public partial class MainWindowViewModel
     public async Task<MacroViewModel> OpenRecordingAsync(Guid id)
     {
         EnsureLibraryWritable();
-        if (MacroTabs.FirstOrDefault(macro => macro.RecordingId == id) is { } existing)
+        await _libraryGate.WaitAsync();
+        try
         {
-            SelectedTabIndex = MacroTabs.IndexOf(existing);
-            return existing;
+            EnsureLibraryWritable();
+            EnsureRecordingAvailable(id);
+            if (MacroTabs.FirstOrDefault(macro => macro.RecordingId == id) is { } existing)
+            {
+                SelectedTabIndex = MacroTabs.IndexOf(existing);
+                return existing;
+            }
+            var record = await _libraryStore.LoadAsync(id);
+            EnsureLibraryWritable();
+            var result = AddNewTab();
+            result.Restore(record);
+            return result;
         }
-        var record = await _libraryStore.LoadAsync(id);
-        EnsureLibraryWritable();
-        if (MacroTabs.FirstOrDefault(macro => macro.RecordingId == id) is { } opened)
-        {
-            SelectedTabIndex = MacroTabs.IndexOf(opened);
-            return opened;
-        }
-        var result = AddNewTab();
-        result.Restore(record);
-        return result;
+        finally { _libraryGate.Release(); }
     }
 
     public async Task<MacroViewModel> ImportRecordingAsync(string path)
@@ -147,21 +150,28 @@ public partial class MainWindowViewModel
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            var version = macro.ChangeVersion;
-            macro.BeginSave();
-            var bytes = macro.SnapshotBytes();
-            var metadata = RecordingLibraryStore.Describe(macro.RecordingId, macro.Name, macro.IsDraft,
-                macro.CreatedAt, DateTimeOffset.UtcNow, bytes);
-            await _libraryStore.SaveAsync(new(metadata, bytes), cancellationToken);
-            macro.Saved(version, metadata.UpdatedAt);
-            var previous = _library.FirstOrDefault(item => item.Id == metadata.Id);
-            if (previous is not null) _library.Remove(previous);
-            _library.Insert(0, metadata);
+            EnsureRecordingAvailable(macro.RecordingId);
+            if (!MacroTabs.Contains(macro)) throw new InvalidOperationException("This recording is no longer open. Open it again before saving.");
+            await SaveRecordingCoreAsync(macro, cancellationToken);
             LibraryError = null;
             OnPropertyChanged(nameof(LibraryError));
         }
         catch (Exception error) { macro.SaveFailed(error); ReportLibraryError(error); throw; }
         finally { _libraryGate.Release(); }
+    }
+
+    private async Task SaveRecordingCoreAsync(MacroViewModel macro, CancellationToken cancellationToken = default)
+    {
+        var version = macro.ChangeVersion;
+        macro.BeginSave();
+        var bytes = macro.SnapshotBytes();
+        var metadata = RecordingLibraryStore.Describe(macro.RecordingId, macro.Name, macro.IsDraft,
+            macro.CreatedAt, DateTimeOffset.UtcNow, bytes);
+        await _libraryStore.SaveAsync(new(metadata, bytes), cancellationToken);
+        macro.Saved(version, metadata.UpdatedAt);
+        var previous = _library.FirstOrDefault(item => item.Id == metadata.Id);
+        if (previous is not null) _library.Remove(previous);
+        _library.Insert(0, metadata);
     }
 
     public async Task FlushLibraryAsync()
@@ -179,11 +189,13 @@ public partial class MainWindowViewModel
 
     public async Task CloseRecordingAsync(MacroViewModel macro)
     {
+        EnsureRecordingAvailable(macro.RecordingId);
         if (HasRecordingDrain(macro))
             throw new InvalidOperationException("Stop recording before closing its document.");
         if (ReferenceEquals(PlayingMacro, macro)) AbortPlayback();
         if (ReferenceEquals(PlayingMacro, macro)) throw new InvalidOperationException("Playback could not be stopped.");
         if (macro.IsDirty && (macro.ChangeVersion != 0 || macro.SavedAt is not null)) await SaveRecordingAsync(macro);
+        EnsureRecordingAvailable(macro.RecordingId);
         if (macro.IsDirty && (macro.ChangeVersion != 0 || macro.SavedAt is not null))
             throw new InvalidOperationException("This recording changed while saving. It remains open; save again before closing.");
         if (ReferenceEquals(PlayingMacro, macro) || HasRecordingDrain(macro))

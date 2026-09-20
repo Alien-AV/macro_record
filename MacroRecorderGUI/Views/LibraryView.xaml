@@ -8,7 +8,7 @@
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel x:Name="RecentHeading" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                    <TextBlock Text="Your recordings" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}"/>
+                    <TextBlock x:Name="LibraryHeading" Text="Your recordings" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}"/>
                     <TextBlock x:Name="CountLabel" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Border x:Name="SearchHost" Grid.Column="1" Width="220" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" CornerRadius="6" Background="{ThemeResource MacroPaperBrush}">
@@ -16,11 +16,32 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{ThemeResource MacroMutedBrush}" Margin="11,0,0,0"/>
                         <TextBox x:Name="SearchBox" Grid.Column="1" PlaceholderText="Find a recording" FontSize="12" BorderThickness="0" Background="Transparent"
-                            TextChanged="Search_Changed" AutomationProperties.Name="Find a recording"/>
+                            TextChanging="Search_Changing" AutomationProperties.Name="Find a recording"/>
                     </Grid>
                 </Border>
             </Grid>
+            <StackPanel Spacing="10">
+                <StackPanel x:Name="LibraryActions" Orientation="Horizontal" Spacing="8">
+                    <ToggleButton x:Name="TrashToggle" Content="Local trash" Checked="Trash_Changed" Unchecked="Trash_Changed" AutomationProperties.Name="Show local recording trash"/>
+                    <ToggleButton x:Name="SelectToggle" Content="Select recordings" Checked="Select_Changed" Unchecked="Select_Changed"/>
+                    <Button x:Name="UndoDeleteButton" Content="Undo delete" Visibility="Collapsed" Click="UndoDelete_Click" AutomationProperties.Name="Restore the last deleted batch"/>
+                </StackPanel>
+                <TextBlock x:Name="TrashDescription" Text="Deleted recordings stay in local trash until you restore them, including after restarting. Imported and exported files are untouched."
+                    Visibility="Collapsed" TextWrapping="Wrap" Foreground="{ThemeResource MacroMutedBrush}"/>
+                <StackPanel x:Name="SelectionToolbar" Spacing="8" Visibility="Collapsed">
+                    <TextBlock x:Name="SelectionCount" AutomationProperties.LiveSetting="Polite" Foreground="{ThemeResource MacroInkBrush}"/>
+                    <StackPanel x:Name="SelectionActions" Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="SelectAllButton" Content="Select all visible" Click="SelectAll_Click"/>
+                        <Button x:Name="ClearSelectionButton" Content="Clear selection" Click="ClearSelection_Click"/>
+                        <Button x:Name="BatchActionButton" Content="Delete selected" Click="BatchAction_Click" IsEnabled="False"/>
+                    </StackPanel>
+                    <TextBlock Text="Use Ctrl to toggle a selection and Shift to select a range. Ctrl+A selects visible results; Escape clears selection."
+                        TextWrapping="Wrap" Foreground="{ThemeResource MacroMutedBrush}" FontSize="12"/>
+                </StackPanel>
+                <TextBlock x:Name="OperationMessage" Visibility="Collapsed" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Foreground="{ThemeResource MacroInkBrush}"/>
+            </StackPanel>
             <GridView x:Name="Cards" Margin="-10,0" SelectionMode="None" IsItemClickEnabled="True" ItemClick="Cards_ItemClick"
+                SelectionChanged="Cards_SelectionChanged" KeyDown="Cards_KeyDown" AutomationProperties.Name="Recordings"
                 HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled">
                 <GridView.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="300"/></ItemsPanelTemplate></GridView.ItemsPanel>
@@ -54,8 +75,8 @@
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding LastOpened}" ToolTipService.ToolTip="{Binding LastOpened}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
                                         <Button Grid.Column="1" Content="Rename" FontSize="12" Style="{StaticResource MacroTextButtonStyle}" Padding="7,4" MinHeight="28"
-                                            AutomationProperties.Name="{Binding RenameLabel}" Click="Rename_Click"/>
-                                        <Button Grid.Column="2" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="28" AutomationProperties.Name="Recording options" Click="CardOptions_Click">
+                                            Visibility="{Binding RenameVisibility}" AutomationProperties.Name="{Binding RenameLabel}" Click="Rename_Click"/>
+                                        <Button Grid.Column="2" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="28" AutomationProperties.Name="{Binding OptionsLabel}" Click="CardOptions_Click">
                                             <FontIcon Glyph="&#xE712;" FontSize="14"/>
                                         </Button>
                                     </Grid>

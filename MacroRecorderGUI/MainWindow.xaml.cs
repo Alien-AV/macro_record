@@ -70,6 +70,9 @@ public sealed partial class MainWindow : Window
         Library.OpenRequested += Library_OpenRequested;
         Library.RenameAsync = RenameLibraryCardAsync;
         Library.ExportRequested += Library_ExportRequested;
+        Library.DeleteRequested += Library_DeleteRequested;
+        Library.RestoreRequested += Library_RestoreRequested;
+        Library.UndoDeleteRequested += Library_UndoDeleteRequested;
         Activated += MainWindow_Activated;
         AppWindow.Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
@@ -275,7 +278,15 @@ public sealed partial class MainWindow : Window
             }
             cards.Add(new LibraryCard(item.Id, item.Name, summary, $"Saved {item.UpdatedAt.ToLocalTime():g}", thumbnail));
         }
-        if (!_closed && version == _libraryRefreshVersion) Library.SetCards(cards);
+        if (_closed || _closing || version != _libraryRefreshVersion) return;
+        Library.SetCards(cards);
+        await ViewModel.RefreshTrashAsync();
+        if (_closed || _closing || version != _libraryRefreshVersion) return;
+        Library.SetTrashCards(ViewModel.Trash.Select(item => new LibraryCard(item.Metadata.Id, item.Metadata.Name,
+            item.Metadata.Summary, $"Deleted {item.DeletedAt.ToLocalTime():g}", new([], "In local trash", "Restore to open this recording"))
+            { IsDeleted = true }).ToArray());
+        Library.SetUndoDeleteCount(ViewModel.LastDeleted.Count);
+        if (ViewModel.TrashWarnings.Count > 0) Library.SetOperationMessage(string.Join(" ", ViewModel.TrashWarnings));
     }
     private async void Library_Click(object sender, RoutedEventArgs e) => await OperationAsync(ShowLibraryAsync);
     private async void Library_OpenRequested(object? sender, LibraryCard card) => await OperationAsync(async () =>
