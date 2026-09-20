@@ -54,13 +54,15 @@ public sealed partial class MacroViewModel : ViewModelBase, IDisposable
     public Task PlayMacro()
     {
         if (_playMacro is not null) return _playMacro(this);
-        return Events.Count == 0 ? Task.CompletedTask : _playbackEngine.PlaybackEventsAsync(Events.ToArray());
+        return Events.Count == 0 && PointerOrigins.Count == 0 ? Task.CompletedTask : new PlaybackWorkflow(_playbackEngine).PlayAsync(Events,
+            new PlaybackOptions { Countdown = TimeSpan.Zero }, PointerOrigins);
     }
 
     public void Clear()
     {
         ContentRevision++;
         Events.Clear();
+        RestoreOriginState(new() { Events = [] });
         SelectedEvents.Clear();
         ContentReplaced?.Invoke(this, EventArgs.Empty);
     }

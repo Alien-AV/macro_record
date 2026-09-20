@@ -31,17 +31,21 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     }
 
     public MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine, IRecordingLibraryStore? libraryStore = null)
+        : this(recordEngine, playbackEngine, libraryStore, new WindowsPointerEnvironment()) { }
+
+    internal MainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine, IRecordingLibraryStore? libraryStore, IPointerEnvironment pointer)
     {
         _uiContext = SynchronizationContext.Current;
         _libraryStore = libraryStore ?? new RecordingLibraryStore();
         Library = new ReadOnlyObservableCollection<RecordingLibraryItem>(_library);
         RecordEngine = recordEngine;
         PlaybackEngine = playbackEngine;
-        _playbackWorkflow = new PlaybackWorkflow(playbackEngine);
+        _playbackWorkflow = new PlaybackWorkflow(playbackEngine, Task.Delay, pointer);
         _playbackWorkflow.StateChanged += PlaybackStateChanged;
         RecordEngine.RecordStatus += RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent += RecordEngineOnRecordedEvent;
         RecordEngine.RecordingEnded += RecordEngineOnRecordingEnded;
+        RecordEngine.RecordingStarted += RecordEngineOnRecordingStarted;
         MacroTabs = new ObservableCollection<MacroViewModel>
         {
             new("macro0", PlaybackEngine, PlayMacroAsync)
@@ -75,17 +79,17 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
             StatusMessageRequested?.Invoke(this, "Playback is already running. Abort it before starting another macro.");
             return;
         }
-        if (macro.Events.Count == 0 || !MacroTabs.Contains(macro)) return;
+        if (macro.Events.Count == 0 && macro.PointerOrigins.Count == 0 || !MacroTabs.Contains(macro)) return;
         var version = ++_playbackVersion;
         _playingMacro = macro;
-        _usingPlaybackWorkflow = options is not null;
+        _usingPlaybackWorkflow = options is not null || macro.HasOriginMetadata;
         OnPropertyChanged(nameof(PlayingMacro));
         string? completionMessage = null;
         try
         {
-            var completion = options is null
+            var completion = !_usingPlaybackWorkflow
                 ? PlaybackEngine.PlaybackEventsAsync(macro.Events.ToArray(), LoopPlayback)
-                : _playbackWorkflow.PlayAsync(macro.Events, options);
+                : _playbackWorkflow.PlayAsync(macro.Events, options ?? new PlaybackOptions { Countdown = TimeSpan.Zero, RepeatUntilStopped = LoopPlayback }, macro.PointerOrigins);
             _playbackCompletion = completion;
             StatusMessageRequested?.Invoke(this, $"Playing {macro.Name}");
             await completion;
@@ -173,6 +177,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
         RecordEngine.RecordStatus -= RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
         RecordEngine.RecordingEnded -= RecordEngineOnRecordingEnded;
+        RecordEngine.RecordingStarted -= RecordEngineOnRecordingStarted;
         RecordEngine.Dispose();
         foreach (var macro in MacroTabs) { macro.ContentReplaced -= MacroContentReplaced; macro.Dispose(); }
         _pendingRecordingDelays.Clear();
@@ -303,6 +308,14 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     {
         InvokeDispatcher(() =>
             StatusMessageRequested?.Invoke(this, $"Status reported: \"{e.StatusCode}\"."));
+    }
+
+    private void RecordEngineOnRecordingStarted(RecordingSession session, PointerPosition? origin)
+    {
+        InvokeDispatcher(() =>
+        {
+            if (session.Context is RecordingTarget target && IsCurrentTarget(target)) target.Macro.AddCaptureOrigin(origin);
+        });
     }
 
     private void RecordEngineOnRecordedEvent(object? sender, RecordEngine.RecordEventsEventArgs e)

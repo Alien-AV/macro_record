@@ -24,7 +24,7 @@ public sealed class RunPreferencesTests
         var second = Guid.NewGuid();
         var prefs = Preferences();
         var recording = new RecordingOptions { CountdownSeconds = 8, OverrideDelay = 12345 };
-        var finite = new PlaybackOptions { Speed = 1.5, RepeatCount = 9, Countdown = TimeSpan.FromSeconds(6) };
+        var finite = new PlaybackOptions { Speed = 1.5, RepeatCount = 9, Countdown = TimeSpan.FromSeconds(6), PointerOrigin = PlaybackPointerOrigin.CurrentPointer };
         var infinite = new PlaybackOptions { Speed = 0.25, RepeatCount = 4, Countdown = TimeSpan.Zero, RepeatUntilStopped = true };
         await prefs.SaveRecordingAsync(recording, default);
         await prefs.SavePlaybackAsync(first, finite, default);
@@ -83,6 +83,8 @@ public sealed class RunPreferencesTests
 
     [TestMethod]
     [DataRow("""{"RepeatCount":0}""")]
+    [DataRow("""{"PointerOrigin":2}""")]
+    [DataRow("""{"PointerOrigin":"CurrentPointer"}""")]
     [DataRow("""{"RepeatCount":-2}""")]
     [DataRow("""{"RepeatCount":1001}""")]
     [DataRow("""{"Speed":0}""")]

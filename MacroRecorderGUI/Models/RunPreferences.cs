@@ -108,7 +108,8 @@ internal sealed class RunPreferenceStore(string? path = null) : IRunPreferenceSt
                         if (options.RepeatUntilStopped && (options.Speed is null || options.RepeatCount is null || options.CountdownSeconds is null))
                             throw new JsonException();
                         var value = new PlaybackOptions { Speed = options.Speed ?? 1, RepeatCount = options.RepeatCount ?? 1,
-                            Countdown = TimeSpan.FromSeconds(options.CountdownSeconds ?? 3), RepeatUntilStopped = options.RepeatUntilStopped };
+                            Countdown = TimeSpan.FromSeconds(options.CountdownSeconds ?? 3), RepeatUntilStopped = options.RepeatUntilStopped,
+                            PointerOrigin = options.PointerOrigin };
                         value.Validate();
                         if (value.RepeatCount is < 1 or > 1000) throw new JsonException();
                         playback.Add(id, value);
@@ -141,7 +142,7 @@ internal sealed class RunPreferenceStore(string? path = null) : IRunPreferenceSt
             options.Validate();
         }
         var document = new { Schema = 1, preferences.Recording, Playback = preferences.Playback.ToDictionary(pair => pair.Key,
-            pair => new PlaybackPreference(pair.Value.Speed, pair.Value.RepeatCount, pair.Value.Countdown.TotalSeconds, pair.Value.RepeatUntilStopped)) };
+            pair => new PlaybackPreference(pair.Value.Speed, pair.Value.RepeatCount, pair.Value.Countdown.TotalSeconds, pair.Value.RepeatUntilStopped, pair.Value.PointerOrigin)) };
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         await AtomicFile.WriteAsync(_path, JsonSerializer.SerializeToUtf8Bytes(document), cancellationToken: cancellationToken);
     }
@@ -154,5 +155,6 @@ internal sealed class RunPreferenceStore(string? path = null) : IRunPreferenceSt
         foreach (var property in value.EnumerateObject())
             if (!names.Add(property.Name)) throw new JsonException("Duplicate preference field.");
     }
-    private sealed record PlaybackPreference(double? Speed, int? RepeatCount, double? CountdownSeconds, bool RepeatUntilStopped);
+    private sealed record PlaybackPreference(double? Speed, int? RepeatCount, double? CountdownSeconds, bool RepeatUntilStopped,
+        PlaybackPointerOrigin PointerOrigin = PlaybackPointerOrigin.RecordedStartingPoint);
 }

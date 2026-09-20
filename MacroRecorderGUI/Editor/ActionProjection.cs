@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Numerics;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
+using MacroRecorderGUI.Models;
 using Windows.System;
 
 namespace MacroRecorderGUI.Editor;
@@ -35,12 +36,24 @@ public sealed class ActionProjection
     private BigInteger _wheelTotal;
     private int _segment;
     private bool _anomalous;
+    private bool _originSegmentPending;
+
+    public void BeginPointerSegment(PointerOriginBoundary origin)
+    {
+        TotalTime += origin.DelayMicroseconds;
+        _position = origin.Position is { Frame: PointerCoordinateFrame.PhysicalScreenPixels } point
+            ? new PathPosition(point.X, point.Y, CoordinateSpace.AbsoluteDesktop) : null;
+        _segment++;
+        _originSegmentPending = true;
+        _previousMouse = null;
+    }
 
     public void Reset()
     {
         Actions.Clear(); Samples.Clear(); MouseLandmarks.Clear(); _keys.Clear(); _chord.Clear();
         TotalTime = 0; _buttons = 0; _active = null; _position = null; _previousMouse = null; _segment = 0;
         _bounds.Clear(); IncompleteActionCount = 0; HasRelativeMovement = false; _anomalous = false;
+        _originSegmentPending = false;
     }
 
     public void Append(InputEvent input)
@@ -48,11 +61,12 @@ public sealed class ActionProjection
         var index = Samples.Count;
         var timeBefore = TotalTime;
         TotalTime += input.TimeSinceLastEvent;
-        var startsSegment = false;
+        var startsSegment = _originSegmentPending;
+        _originSegmentPending = false;
         if (input is MouseEvent mouse && HasMove(mouse))
         {
             var space = Space(mouse);
-            startsSegment = _position is null || _position.Value.Space != space;
+            startsSegment |= _position is null || _position.Value.Space != space;
             if (startsSegment) _segment++;
             if (space == CoordinateSpace.RelativeCounts)
             {

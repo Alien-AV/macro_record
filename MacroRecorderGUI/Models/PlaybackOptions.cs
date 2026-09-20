@@ -7,9 +7,11 @@ public sealed record PlaybackOptions
     /// <summary>Use one native looping session; RepeatCount is ignored.</summary>
     public bool RepeatUntilStopped { get; init; }
     public double Speed { get; init; } = 1;
+    public PlaybackPointerOrigin PointerOrigin { get; init; } = PlaybackPointerOrigin.RecordedStartingPoint;
 
     internal void Validate()
     {
+        if (!Enum.IsDefined(PointerOrigin)) throw new ArgumentOutOfRangeException(nameof(PointerOrigin), "Choose a supported pointer origin.");
         if (Countdown < TimeSpan.Zero || Countdown > TimeSpan.FromMinutes(1))
             throw new ArgumentOutOfRangeException(nameof(Countdown), "Countdown must be between zero and 60 seconds.");
         if (!RepeatUntilStopped && RepeatCount is < 1 or > 1000)

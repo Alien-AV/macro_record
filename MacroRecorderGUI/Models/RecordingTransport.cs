@@ -14,7 +14,7 @@ public enum RecordingBoundary : uint
 public interface IRecordingTransport : IDisposable
 {
     event Action<ulong, ProtobufInputEvent>? Input;
-    event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys>? Boundary;
+    event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys, PointerPosition?>? Boundary;
     event Action<StatusCode>? Status;
     void Start(ulong sessionId, RecordingStopGestures stopGestures);
     void Stop(ulong sessionId, RecordingStopCommand? command);

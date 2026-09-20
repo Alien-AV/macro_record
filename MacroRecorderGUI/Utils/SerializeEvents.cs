@@ -16,7 +16,7 @@ public static class SerializeEvents
 
     internal static IEnumerable<InputEvent> DeserializeEventsFromByteArray(byte[] serializedEvents)
     {
-        var deserializedEvents = ProtobufInputEventList.Parser.ParseFrom(serializedEvents);
+        var deserializedEvents = RecordingDocument.Read(serializedEvents).ParseEvents();
         return deserializedEvents.InputEvents.Select(InputEvent.CreateInputEvent);
     }
 }

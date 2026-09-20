@@ -19,6 +19,7 @@ public sealed class RecordingCapture : IDisposable
     }
 
     public event Action<RecordingSession, ProtobufInputEvent>? Input;
+    public event Action<RecordingSession, PointerPosition?>? Started;
     public event Action<RecordingSession, Exception?>? Ended;
 
     public bool IsRecording
@@ -100,7 +101,7 @@ public sealed class RecordingCapture : IDisposable
         }
     }
 
-    private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys)
+    private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys, PointerPosition? origin)
     {
         lock (_gate)
         {
@@ -111,7 +112,9 @@ public sealed class RecordingCapture : IDisposable
 
             if (boundary == RecordingBoundary.Started)
             {
-                state.Filter ??= state.Session.Begin(heldKeys, idleReleasedKeys);
+                if (state.Filter is not null) return;
+                state.Filter = state.Session.Begin(heldKeys, idleReleasedKeys);
+                Started?.Invoke(state.Session, origin);
                 return;
             }
 

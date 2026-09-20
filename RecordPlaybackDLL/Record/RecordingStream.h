@@ -9,6 +9,7 @@
 namespace record_playback { namespace capture {
 enum class Boundary : uint32_t { Started = 1, Stopped = 2, Failed = 3 };
 enum HeldKeys : uint32_t { Q = 1, Control = 2, LeftControl = 4, RightControl = 8 };
+struct PointerOrigin { int32_t x = 0; int32_t y = 0; bool valid = false; };
 
 inline WORD sided_key(const RAWKEYBOARD& data) {
     if (data.VKey == VK_CONTROL) return (data.Flags & RI_KEY_E0) ? VK_RCONTROL : VK_LCONTROL;
@@ -23,6 +24,7 @@ struct Packet {
     Boundary boundary{};
     uint32_t held_keys = 0;
     uint32_t idle_released_keys = 0;
+    PointerOrigin origin{};
 };
 
 // Capture-thread state only. Idle input updates chord state/release bits, not an event log.
@@ -44,14 +46,14 @@ public:
         }
         else held_ |= bit;
     }
-    bool start(uint64_t session, uint32_t stop_gestures = NoStopGesture) {
+    bool start(uint64_t session, uint32_t stop_gestures = NoStopGesture, PointerOrigin origin = {}) {
         if (!session || session_) {
             sink_({session, nullptr, Boundary::Failed});
             return false;
         }
         session_ = session;
         stop_chord_.start(stop_gestures, physical_keys_);
-        sink_({session_, nullptr, Boundary::Started, held_, idle_released_});
+        sink_({session_, nullptr, Boundary::Started, held_, idle_released_, origin});
         idle_released_ = 0;
         return true;
     }

@@ -13,7 +13,7 @@ class RecordEngine {
 public:
     using status_callback_t = void(*)(RecordPlaybackDLLEnums::StatusCode);
     using record_events_callback_t = void(*)(std::unique_ptr<Event>, uint64_t);
-    using boundary_callback_t = void(*)(uint64_t, capture::Boundary, uint32_t, uint32_t);
+    using boundary_callback_t = void(*)(uint64_t, capture::Boundary, uint32_t, uint32_t, capture::PointerOrigin);
 
     RecordEngine(record_events_callback_t, status_callback_t, boundary_callback_t);
     ~RecordEngine();
@@ -56,6 +56,5 @@ private:
     void handle_keyboard_event(const RAWKEYBOARD&);
     void handle_mouse_event(const RAWMOUSE&);
     void process_recorded_event(std::unique_ptr<Event>);
-    void fake_mouse_event_for_initial_pos();
 };
 }

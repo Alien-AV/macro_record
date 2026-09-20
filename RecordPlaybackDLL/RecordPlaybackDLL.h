@@ -19,8 +19,8 @@ extern "C" {
 	using iac_dll_status_cb_t = void(*)(RecordPlaybackDLLEnums::StatusCode status_code);
 	// Borrowed buffer, valid only until the callback returns. Consumers must copy.
 	using iac_dll_record_event_cb_t = void(*)(const unsigned char buffer[], int buf_size, uint64_t session_id);
-	using iac_dll_record_boundary_cb_t = void(*)(uint64_t session_id, uint32_t boundary, uint32_t held_keys, uint32_t idle_released_keys);
-	RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t, iac_dll_status_cb_t, iac_dll_record_boundary_cb_t) noexcept;
+	using iac_dll_record_boundary_cb_t = void(*)(uint64_t session_id, uint32_t boundary, uint32_t held_keys, uint32_t idle_released_keys, int32_t origin_x, int32_t origin_y, uint32_t origin_valid);
+	RECORD_PLAYBACK_DLL_API bool iac_dll_init_v2(iac_dll_record_event_cb_t, iac_dll_status_cb_t, iac_dll_record_boundary_cb_t) noexcept;
 	
     RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures) noexcept;
     RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) noexcept;

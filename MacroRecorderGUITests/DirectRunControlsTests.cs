@@ -418,7 +418,7 @@ public sealed class DirectRunControlsTests
         StringAssert.Contains(shell, "PlaybackSafetyNote.Text = preview ? \"Preview: original timing · no input\"");
         StringAssert.Contains(shell, "async _ => await OperationAsync(() => StartRecordingAsync(false, true))");
         StringAssert.Contains(shell, "async _ => await OperationAsync(PreparePlaybackAsync)");
-        StringAssert.Contains(shell, "PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0 && _preferences.IsLoaded");
+        StringAssert.Contains(shell, "PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro is not null && (macro.Events.Count > 0 || macro.PointerOrigins.Count > 0) && _preferences.IsLoaded");
         StringAssert.Contains(shell, "if (!_preferences.IsLoaded) { SetMessage(\"Playback options are loading.");
         StringAssert.Contains(shell, "New empty recording");
         StringAssert.Contains(shell, "Record into this recording…");
@@ -437,8 +437,8 @@ public sealed class DirectRunControlsTests
     {
         var loop = new PlaybackOptions { RepeatUntilStopped = true };
         Assert.AreEqual("Loading playback options…", RunSettingsPresentation.PlaybackSummary(false, loop));
-        Assert.AreEqual("1× · Once · 3s delay", RunSettingsPresentation.PlaybackSummary(true, new()));
-        Assert.AreEqual("1× · Until stopped · 3s delay", RunSettingsPresentation.PlaybackSummary(true, loop));
+        Assert.AreEqual("1× · Once · 3s delay · Recorded starting point", RunSettingsPresentation.PlaybackSummary(true, new()));
+        Assert.AreEqual("1× · Until stopped · 3s delay · Recorded starting point", RunSettingsPresentation.PlaybackSummary(true, loop));
         var countdown = RunControllerPresentation.ForPlayback(new(PlaybackPhase.Countdown, 0, 0,
             TimeSpan.FromSeconds(3), TimeSpan.Zero, RepeatUntilStopped: true), false);
         StringAssert.Contains(countdown.Detail, "Until stopped");

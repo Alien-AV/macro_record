@@ -109,9 +109,10 @@ void RecordEngine::advance_boundaries(HWND hwnd) {
     if (drained) {
         commands_.pop_front();
         if (command.kind == WM_START_RECORD) {
-            if (stream_.start(command.session, command.gestures)) {
+            POINT position{};
+            const bool valid = GetPhysicalCursorPos(&position) != FALSE;
+            if (stream_.start(command.session, command.gestures, {position.x, position.y, valid})) {
                 time_of_last_event_ = std::chrono::steady_clock::now();
-                fake_mouse_event_for_initial_pos();
             }
         } else {
             stream_.stop(command.session, command.gestures, command.cutoff);
@@ -140,7 +141,7 @@ void RecordEngine::collect() {
             queue_.pop();
         }
         if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
-        else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys);
+        else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys, packet.origin);
     }
 }
 
@@ -180,18 +181,6 @@ void RecordEngine::handle_mouse_event(const RAWMOUSE& data) {
 
 void RecordEngine::process_recorded_event(std::unique_ptr<Event> event) {
     stream_.input(std::move(event), static_cast<DWORD>(GetMessageTime()));
-}
-
-void RecordEngine::fake_mouse_event_for_initial_pos() {
-    POINT initial_mouse_position{};
-    if (!GetPhysicalCursorPos(&initial_mouse_position)) return;
-    auto event = std::make_unique<MouseEvent>();
-    event->time_since_last_event = std::chrono::microseconds(0);
-    event->x = initial_mouse_position.x;
-    event->y = initial_mouse_position.y;
-    event->ActionType = MouseEvent::ActionTypeFlags::Move;
-    event->mappedToVirtualDesktop = true;
-    process_recorded_event(std::move(event));
 }
 
 RecordEngine::RecordEngine(record_events_callback_t input, status_callback_t status, boundary_callback_t boundary)

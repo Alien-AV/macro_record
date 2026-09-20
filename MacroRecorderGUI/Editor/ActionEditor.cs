@@ -4,6 +4,7 @@ using System.Numerics;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.ViewModels;
 using ProtobufGenerated;
+using MacroRecorderGUI.Utils;
 
 namespace MacroRecorderGUI.Editor;
 
@@ -16,6 +17,7 @@ public sealed class ActionEditor : IDisposable
     private readonly Dictionary<RecordedAction, int> _selectedActionCounts = [];
     private long _selectionRevision = -1;
     private bool _mutating, _reset = true, _disposed;
+    private int _projectedOrigins;
     public ActionProjection Projection { get; } = new();
     public bool IsDirty { get; private set; } = true;
     public bool CanUndo => _undo.Count > 0;
@@ -27,6 +29,7 @@ public sealed class ActionEditor : IDisposable
         _macro = macro;
         macro.Events.CollectionChanged += CollectionChanged;
         macro.ContentReplaced += ContentReplaced;
+        macro.OriginsChanged += OriginsChanged;
         foreach (var input in macro.Events) Observe(input);
     }
 
@@ -34,9 +37,16 @@ public sealed class ActionEditor : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (!IsDirty) return 0;
-        if (_reset) Projection.Reset();
+        if (_reset) { Projection.Reset(); _projectedOrigins = 0; }
         var previousCount = Projection.ProcessedCount;
-        for (var i = Projection.ProcessedCount; i < _macro.Events.Count; i++) Projection.Append(_macro.Events[i]);
+        var origins = _macro.PointerOrigins;
+        var nextOrigin = _projectedOrigins;
+        for (var i = Projection.ProcessedCount; i <= _macro.Events.Count; i++)
+        {
+            while (nextOrigin < origins.Count && origins[nextOrigin].EventIndex == i) Projection.BeginPointerSegment(origins[nextOrigin++]);
+            if (i < _macro.Events.Count) Projection.Append(_macro.Events[i]);
+        }
+        _projectedOrigins = nextOrigin;
         Projection.FlushNotifications();
         IsDirty = false; _reset = false;
         return Projection.ProcessedCount - previousCount;
@@ -136,6 +146,8 @@ public sealed class ActionEditor : IDisposable
         // Passive presentation queries never refresh or throw on a stale selection.
         if (IsDirty || !Projection.IsCurrent(action)) return "The recording changed. Refresh the selection before editing geometry.";
         if (action.Kind is not (ActionKind.Move or ActionKind.Drag)) return "Select a complete move or drag. Stationary actions inherit the preceding position.";
+        if (_macro.PointerOrigins.Count > 1 || _macro.PointerOrigins.Any(origin => origin.EventIndex > 0))
+            return "This recording contains separate capture segments. Geometry edits cannot connect their pointer origins; edit raw input within a segment instead.";
         if (action.Kind == ActionKind.Drag && Projection.Samples[action.Start].Position is null)
             return "The drag starts at an unknown position. An absolute movement anchor is required before the button press.";
         if (Projection.IncompleteActionCount > 0) return "Incomplete or anomalous input sequences prevent safe geometric edits. Inspect the raw input first.";
@@ -152,7 +164,8 @@ public sealed class ActionEditor : IDisposable
         var moves = _macro.Events.Skip(action.Start).Take(action.Count).OfType<MouseEvent>().Where(ActionProjection.HasMove).ToArray();
         var dx = (long)x - moves[^1].X; var dy = (long)y - moves[^1].Y;
         var changes = new List<(MouseEvent Event, int X, int Y)>();
-        var anchored = action.Start > 0 && Projection.Samples[action.Start - 1].Position is not null;
+        var anchored = action.Start > 0 && Projection.Samples[action.Start - 1].Position is not null
+            || action.Start == 0 && _macro.PointerOrigins.FirstOrDefault()?.Position is not null;
         for (var i = 0; i < moves.Length; i++)
         {
             var weight = moves.Length == 1 ? 1d : anchored ? (i + 1d) / moves.Length : (double)i / (moves.Length - 1);
@@ -182,6 +195,8 @@ public sealed class ActionEditor : IDisposable
 
     public void ConvertAnchoredEstimate()
     {
+        if (_macro.PointerOrigins.Count != 0)
+            throw new ArgumentException("Starting-point metadata does not define a device-count-to-pixel scale. This recording keeps raw counts; edit raw input instead of converting across capture origins.");
         // Validate the entire conversion first; never clamp or half-convert overflowing input.
         var changes = new List<(MouseEvent Event, int X, int Y)>();
         long x = 0, y = 0; var anchored = false;
@@ -214,6 +229,7 @@ public sealed class ActionEditor : IDisposable
         var before = _macro.Events.ToArray();
         var selection = _macro.SelectedEvents.ToArray();
         var rawSelection = RawSelection;
+        var origins = _macro.OriginState;
         var values = before.ToDictionary(e => e, e => e.OriginalProtobufInputEvent.Clone());
         _mutating = true;
         try { mutation(); }
@@ -221,8 +237,8 @@ public sealed class ActionEditor : IDisposable
         var after = _macro.Events.ToArray();
         var patches = before.Where(e => !values[e].Equals(e.OriginalProtobufInputEvent))
             .Select(e => new Patch(e, values[e], e.OriginalProtobufInputEvent.Clone())).ToArray();
-        if (patches.Length == 0 && before.SequenceEqual(after)) return;
-        _undo.Add(new(description, before, after, patches, selection, rawSelection));
+        if (patches.Length == 0 && before.SequenceEqual(after) && origins == _macro.OriginState) return;
+        _undo.Add(new(description, before, after, patches, selection, rawSelection, origins, _macro.OriginState));
         // Bound retained raw references as well as command count on large recordings.
         while (_undo.Count > 1 && (_undo.Count > 30 || _undo.Sum(e => (long)e.Before.Length + e.After.Length) > 1_000_000)) _undo.RemoveAt(0);
         Invalidated?.Invoke(this, EventArgs.Empty);
@@ -237,6 +253,13 @@ public sealed class ActionEditor : IDisposable
         { _undo.Clear(); Invalidated?.Invoke(this, EventArgs.Empty); return false; }
         _undo.RemoveAt(_undo.Count - 1);
         var appended = _macro.Events.Skip(edit.After.Length).ToArray();
+        var appendedOrigins = _macro.PointerOrigins.Skip(edit.OriginsAfter.Origins.Length)
+            .Select(origin => origin with { EventIndex = Math.Max(0, origin.EventIndex + edit.Before.Length - edit.After.Length) }).ToArray();
+        var restoredOrigins = edit.OriginsBefore with
+        {
+            IsExtended = edit.OriginsBefore.IsExtended || appendedOrigins.Length > 0,
+            Origins = [.. edit.OriginsBefore.Origins, .. appendedOrigins]
+        };
         _mutating = true;
         try
         {
@@ -249,6 +272,7 @@ public sealed class ActionEditor : IDisposable
             var currentEvents = _macro.Events.ToHashSet();
             _macro.ReplaceSelection(edit.Selection.Where(currentEvents.Contains));
             RawSelection = edit.RawSelection;
+            _macro.RestoreOriginState(restoredOrigins);
         }
         finally { _mutating = false; MarkDirty(reset: true); }
         Invalidated?.Invoke(this, EventArgs.Empty);
@@ -290,6 +314,7 @@ public sealed class ActionEditor : IDisposable
         if (!_mutating) _undo.Clear();
         MarkDirty(reset: true);
     }
+    private void OriginsChanged(object? sender, EventArgs args) => MarkDirty(reset: true);
     private void CollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         var append = args.Action == NotifyCollectionChangedAction.Add && args.NewStartingIndex + args.NewItems!.Count == _macro.Events.Count;
@@ -316,9 +341,11 @@ public sealed class ActionEditor : IDisposable
         _disposed = true;
         _macro.Events.CollectionChanged -= CollectionChanged;
         _macro.ContentReplaced -= ContentReplaced;
+        _macro.OriginsChanged -= OriginsChanged;
         foreach (var e in _observed.ToArray()) Unobserve(e);
         _undo.Clear(); Invalidated = null;
     }
     private sealed record Patch(InputEvent Event, ProtobufInputEvent Before, ProtobufInputEvent After);
-    private sealed record Edit(string Description, InputEvent[] Before, InputEvent[] After, Patch[] Patches, InputEvent[] Selection, bool RawSelection);
+    private sealed record Edit(string Description, InputEvent[] Before, InputEvent[] After, Patch[] Patches, InputEvent[] Selection, bool RawSelection,
+        RecordingDocument OriginsBefore, RecordingDocument OriginsAfter);
 }

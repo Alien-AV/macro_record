@@ -1,9 +1,45 @@
 #include "pch.h"
 #include "../RecordPlaybackDLL/Record/RecordingStream.h"
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
+#include "../Common/protobuf/cpp/Events.pb.h"
 #include <deque>
 
 using namespace record_playback::capture;
+
+TEST(RecordingBoundary, LegacyProtobufReaderRejectsVersionedMacroEnvelope) {
+    const std::string envelope("\0MACRO2\n{\"Version\":2}", 21);
+    protobufGenerated::ProtobufInputEventList wire;
+    EXPECT_FALSE(wire.ParseFromString(envelope));
+}
+
+TEST(RecordingBoundary, OriginsAreMetadataOnEachOrderedBoundaryNeverSyntheticActions) {
+    std::vector<Packet> packets;
+    Stream stream([&](Packet packet) { packets.push_back(std::move(packet)); });
+    stream.key(VK_LCONTROL, false);
+    stream.key('Q', false);
+    ASSERT_TRUE(stream.start(1, NoStopGesture, {-500, -100, true}));
+    stream.stop(1);
+    ASSERT_TRUE(stream.start(2, NoStopGesture, {900, 200, true}));
+    stream.stop(2);
+    ASSERT_EQ(4u, packets.size());
+    EXPECT_EQ(1u, packets[0].session);
+    EXPECT_EQ(Q | LeftControl, packets[0].held_keys);
+    EXPECT_TRUE(packets[0].origin.valid);
+    EXPECT_EQ(-500, packets[0].origin.x);
+    EXPECT_EQ(-100, packets[0].origin.y);
+    EXPECT_EQ(2u, packets[2].session);
+    EXPECT_EQ(900, packets[2].origin.x);
+    for (const auto& packet : packets) EXPECT_EQ(nullptr, packet.event);
+}
+
+TEST(RecordingBoundary, MissingOriginIsExplicitAndCannotLeakFromEarlierSession) {
+    std::vector<Packet> packets;
+    Stream stream([&](Packet packet) { packets.push_back(std::move(packet)); });
+    ASSERT_TRUE(stream.start(1, NoStopGesture, {44, 55, true})); stream.stop(1);
+    ASSERT_TRUE(stream.start(2));
+    EXPECT_FALSE(packets.back().origin.valid);
+    EXPECT_EQ(0, packets.back().origin.x);
+}
 
 namespace {
 std::unique_ptr<Event> key_event(WORD key, bool up) {

@@ -15,12 +15,13 @@ internal sealed class FakeRecordEngine : IRecordEngine
     public event RecordEngine.RecordEventsEventHandler? RecordedEvent { add => _engine.RecordedEvent += value; remove => _engine.RecordedEvent -= value; }
     public event RecordEngine.RecordStatusEventHandler? RecordStatus { add => _engine.RecordStatus += value; remove => _engine.RecordStatus -= value; }
     public event Action<RecordingSession, Exception?>? RecordingEnded { add => _engine.RecordingEnded += value; remove => _engine.RecordingEnded -= value; }
+    public event Action<RecordingSession, PointerPosition?>? RecordingStarted { add => _engine.RecordingStarted += value; remove => _engine.RecordingStarted -= value; }
     public void PushStatus(RecordPlaybackDLLEnums.StatusCode status) => _transport.PushStatus(status);
     public bool StartRecord(RecordingSession session)
     {
         if (!_engine.StartRecord(session)) return false;
         _session = session;
-        _transport.Begin(session);
+        _transport.Begin(session, origin: new(0, 0));
         return true;
     }
 
@@ -108,7 +109,7 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 internal sealed class FakeMainWindowViewModel : MainWindowViewModel
 {
     public FakeMainWindowViewModel(IRecordEngine recordEngine, IPlaybackEngine playbackEngine)
-        : base(recordEngine, playbackEngine)
+        : base(recordEngine, playbackEngine, null, new FakePointerEnvironment())
     {
     }
 
@@ -145,7 +146,8 @@ public class MainFlowTest
 
         await viewModel.StopRecordingAsync();
         await viewModel.ActiveMacro!.PlayMacro();
-        var actualPlaybackEvents = playbackEngine.PlayedEvents
+        Assert.AreEqual(new PointerPosition(0, 0), viewModel.ActiveMacro.PointerOrigins.Single().Position);
+        var actualPlaybackEvents = playbackEngine.PlayedEvents.Skip(1)
             .Select(inputEvent => inputEvent.OriginalProtobufInputEvent)
             .ToList();
 

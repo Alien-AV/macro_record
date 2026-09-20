@@ -29,11 +29,11 @@ void convert_cpp_event_to_c_and_call_callback(const std::unique_ptr<Event> event
 	c_callback_for_record_event_reporting(bytes->data(), static_cast<int>(bytes->size()), session_id);
 }
 
-void convert_record_boundary(uint64_t session, record_playback::capture::Boundary boundary, uint32_t keys, uint32_t idle_released_keys) {
-	if (c_callback_for_record_boundary) c_callback_for_record_boundary(session, static_cast<uint32_t>(boundary), keys, idle_released_keys);
+void convert_record_boundary(uint64_t session, record_playback::capture::Boundary boundary, uint32_t keys, uint32_t idle_released_keys, record_playback::capture::PointerOrigin origin) {
+	if (c_callback_for_record_boundary) c_callback_for_record_boundary(session, static_cast<uint32_t>(boundary), keys, idle_released_keys, origin.x, origin.y, origin.valid ? 1u : 0u);
 }
 
-RECORD_PLAYBACK_DLL_API bool iac_dll_init(iac_dll_record_event_cb_t event_record_cb, iac_dll_status_cb_t status_cb, iac_dll_record_boundary_cb_t boundary_cb) noexcept {
+RECORD_PLAYBACK_DLL_API bool iac_dll_init_v2(iac_dll_record_event_cb_t event_record_cb, iac_dll_status_cb_t status_cb, iac_dll_record_boundary_cb_t boundary_cb) noexcept {
 	if (record_engine_singleton || !event_record_cb || !boundary_cb) return false;
 	c_callback_for_record_event_reporting = event_record_cb;
 	c_callback_for_status_reporting = status_cb;

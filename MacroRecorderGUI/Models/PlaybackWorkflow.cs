@@ -9,6 +9,7 @@ public sealed class PlaybackWorkflow
     private readonly IPlaybackEngine _engine;
     private readonly object _gate = new();
     private readonly Func<TimeSpan, CancellationToken, Task> _delay;
+    private readonly IPointerEnvironment _pointer;
     private Session? _active;
     private PlaybackState _state = PlaybackState.Idle;
     public PlaybackState State
@@ -19,26 +20,34 @@ public sealed class PlaybackWorkflow
     public bool IsActive { get { lock (_gate) return _active is not null; } }
 
     public PlaybackWorkflow(IPlaybackEngine engine) : this(engine, Task.Delay) { }
-    internal PlaybackWorkflow(IPlaybackEngine engine, Func<TimeSpan, CancellationToken, Task> delay)
-    { _engine = engine; _delay = delay; }
+    internal PlaybackWorkflow(IPlaybackEngine engine, Func<TimeSpan, CancellationToken, Task> delay, IPointerEnvironment? pointer = null)
+    { _engine = engine; _delay = delay; _pointer = pointer ?? new WindowsPointerEnvironment(); }
 
-    public Task PlayAsync(IEnumerable<InputEvent> events, PlaybackOptions options)
+    public Task PlayAsync(IEnumerable<InputEvent> events, PlaybackOptions options, IReadOnlyList<PointerOriginBoundary>? origins = null)
     {
         options.Validate();
         var snapshot = events.Select(input => InputEvent.CreateInputEvent(input.OriginalProtobufInputEvent.Clone())).ToArray();
-        if (snapshot.Length == 0) throw new InvalidOperationException("The recording has no captured input.");
+        var originSnapshot = origins?.ToArray() ?? [];
+        if (snapshot.Length == 0 && originSnapshot.Length == 0) throw new InvalidOperationException("The recording has no captured input.");
+        PointerPlayback.Validate(originSnapshot, snapshot.Length, options.PointerOrigin);
         foreach (var input in snapshot)
         {
             var scaled = decimal.Round(input.TimeSinceLastEvent / (decimal)options.Speed, 0, MidpointRounding.AwayFromZero);
             if (scaled > long.MaxValue) throw new ArgumentOutOfRangeException(nameof(options), "A scaled delay is too large to play.");
             input.TimeSinceLastEvent = (ulong)scaled;
         }
+        originSnapshot = originSnapshot.Select(origin =>
+        {
+            var scaled = decimal.Round(origin.DelayMicroseconds / (decimal)options.Speed, 0, MidpointRounding.AwayFromZero);
+            if (scaled > long.MaxValue) throw new ArgumentOutOfRangeException(nameof(options), "A setup delay is too large to play.");
+            return origin with { DelayMicroseconds = (ulong)scaled };
+        }).ToArray();
         lock (_gate)
         {
             if (_active is not null) throw new InvalidOperationException("Playback is already running.");
             var session = new Session(options);
             _active = session;
-            _ = RunAsync(session, snapshot);
+            _ = RunAsync(session, snapshot, originSnapshot);
             return session.Completion.Task;
         }
     }
@@ -83,7 +92,7 @@ public sealed class PlaybackWorkflow
         }
     }
 
-    private async Task RunAsync(Session session, InputEvent[] snapshot)
+    private async Task RunAsync(Session session, InputEvent[] snapshot, PointerOriginBoundary[] origins)
     {
         try
         {
@@ -104,6 +113,11 @@ public sealed class PlaybackWorkflow
             lock (_gate)
             {
                 if (!Owns(session)) return;
+                token.ThrowIfCancellationRequested();
+                // Choose once, after countdown, while ownership prevents an abort/start race.
+                snapshot = PointerPlayback.Prepare(snapshot, origins, session.Options.PointerOrigin, _pointer);
+                if (!Owns(session)) return;
+                token.ThrowIfCancellationRequested();
                 session.Clock.Start();
             }
             var nativeRuns = session.Options.RepeatUntilStopped ? 1 : session.Options.RepeatCount;

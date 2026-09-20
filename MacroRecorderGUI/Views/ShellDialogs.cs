@@ -1,5 +1,6 @@
 using System.Globalization;
 using MacroRecorderGUI.Models;
+using MacroRecorderGUI.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -114,7 +115,7 @@ internal sealed class ShellDialogs(FrameworkElement owner)
         return await ShowAsync(dialog) == ContentDialogResult.Primary ? mode.SelectedIndex == 1 : null;
     }
 
-    public async Task<PlaybackOptions?> PlaybackOptionsAsync(PlaybackOptions options, string name, string stopShortcut)
+    public async Task<PlaybackOptions?> PlaybackOptionsAsync(PlaybackOptions options, string name, string stopShortcut, MacroViewModel? macro = null)
     {
         var content = Body("Playback options", "\uE916",
             "Saved for this recording. Play sends real keyboard and mouse input. Preview keeps the captured timing and sends no input.");
@@ -124,6 +125,27 @@ internal sealed class ShellDialogs(FrameworkElement owner)
         recordingName.TextTrimming = TextTrimming.CharacterEllipsis;
         ToolTipService.SetToolTip(recordingName, name);
         Row(body, "Recording", recordingName);
+        var originMode = new ComboBox { MinWidth = 190 };
+        originMode.Items.Add("Recorded starting point"); originMode.Items.Add("Current pointer");
+        originMode.SelectedIndex = (int)options.PointerOrigin;
+        Row(body, "Pointer origin", originMode);
+        body.Children.Add(Note("Current pointer is sampled after countdown, when playback starts. Every repeat uses that same origin. Relative movements remain device counts; absolute positions keep their screen coordinate frame."));
+        if (macro is { HasOriginMetadata: true })
+            body.Children.Add(Note($"{macro.PointerOrigins.Count} capture origin boundaries. Default .macro export preserves this metadata and requires a current player; older players reject it. Use explicit legacy export to materialize recorded setup moves."));
+        else body.Children.Add(Note("Legacy recording: Recorded starting point preserves every stored event. No first event is assumed to be synthetic. Current pointer requires explicit starting-point adoption below."));
+        CheckBox? adopt = null, recover = null;
+        if (macro?.OriginAdoptionDescription() is { } description)
+        {
+            body.Children.Add(Note(description));
+            adopt = new CheckBox { Content = new TextBlock { Text = "Use first position as origin (remove raw event 1)", TextWrapping = TextWrapping.Wrap } };
+            body.Children.Add(adopt);
+        }
+        if (macro?.CanRecoverBeforeOriginAdoption == true)
+        {
+            body.Children.Add(Note("Recovery replaces input and origin metadata with the saved pre-adoption copy, including discarding later edits and appended captures. Undo remains available."));
+            recover = new CheckBox { Content = new TextBlock { Text = "Recover the complete pre-adoption copy", TextWrapping = TextWrapping.Wrap } };
+            body.Children.Add(recover);
+        }
         var speed = new NumberBox { Value = options.Speed, Minimum = 0.1, Maximum = 10, SmallChange = 0.25, Width = 110, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact };
         Row(body, "Speed (×)", speed);
         var repeat = new NumberBox { Value = options.RepeatCount, Minimum = 1, Maximum = 1000, SmallChange = 1, Width = 110, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact };
@@ -141,9 +163,15 @@ internal sealed class ShellDialogs(FrameworkElement owner)
             if (loopBox.IsChecked != true && (!double.IsFinite(repeat.Value) || repeat.Value != Math.Truncate(repeat.Value)))
                 throw new ArgumentException("Enter a whole repeat count.");
             if (!double.IsFinite(countdown.Value)) throw new ArgumentException("Enter a valid countdown.");
+            var selectedOrigin = recover?.IsChecked == true ? PlaybackPointerOrigin.RecordedStartingPoint : (PlaybackPointerOrigin)originMode.SelectedIndex;
+            if (macro is not null && adopt?.IsChecked != true && recover?.IsChecked != true)
+            {
+                try { PointerPlayback.Validate(macro.PointerOrigins, macro.Events.Count, selectedOrigin); }
+                catch (InvalidOperationException error) { throw new ArgumentException(error.Message); }
+            }
             var result = new PlaybackOptions { Speed = speed.Value,
                 RepeatCount = loopBox.IsChecked == true ? options.RepeatCount : checked((int)repeat.Value),
-                Countdown = TimeSpan.FromSeconds(countdown.Value), RepeatUntilStopped = loopBox.IsChecked == true };
+                Countdown = TimeSpan.FromSeconds(countdown.Value), RepeatUntilStopped = loopBox.IsChecked == true, PointerOrigin = selectedOrigin };
             result.Validate();
             return result;
         }
@@ -155,7 +183,17 @@ internal sealed class ShellDialogs(FrameworkElement owner)
             { args.Cancel = true; content.ShowError(error.Message); }
         };
         if (await ShowAsync(dialog) != ContentDialogResult.Primary) return null;
-        return ReadOptions();
+        var chosen = ReadOptions();
+        if (adopt?.IsChecked == true) macro!.AdoptFirstPositionAsOrigin();
+        if (recover?.IsChecked == true) macro!.RecoverBeforeOriginAdoption();
+        return chosen;
+    }
+
+    public async Task<bool> ConfirmLegacyExportAsync()
+    {
+        var body = Body("Export legacy .macro", "\uE783", "Create a copy for older players using Recorded starting point.");
+        body.Fields.Children.Add(Note("Each capture origin becomes an ordinary absolute Move at its recorded position, with its setup delay preserved. True input and raw counts are unchanged. The exported copy loses origin metadata, Current pointer support, and adoption recovery; the library recording stays intact."));
+        return await ShowAsync(Dialog(body, "Export legacy copy")) == ContentDialogResult.Primary;
     }
 
     public async Task<string?> RenameAsync(string name)

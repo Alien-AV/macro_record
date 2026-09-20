@@ -10,7 +10,7 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void InputCallback(nint buffer, int bufferSize, ulong sessionId);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys);
+    private delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys, int originX, int originY, uint originValid);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void StatusCallback(StatusCode status);
 
@@ -22,14 +22,15 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     public NativeRecordingTransport()
     {
         _inputCallback = OnInput;
-        _boundaryCallback = (id, boundary, heldKeys, idleReleasedKeys) => Boundary?.Invoke(id, boundary, heldKeys, idleReleasedKeys);
+        _boundaryCallback = (id, boundary, heldKeys, idleReleasedKeys, x, y, valid) => Boundary?.Invoke(id, boundary, heldKeys, idleReleasedKeys,
+            valid == 1 ? new PointerPosition(x, y) : null);
         _statusCallback = status => Status?.Invoke(status);
         if (!DllInit(_inputCallback, _statusCallback, _boundaryCallback))
             throw new InvalidOperationException("The native capture thread could not initialize.");
     }
 
     public event Action<ulong, ProtobufInputEvent>? Input;
-    public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys>? Boundary;
+    public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys, PointerPosition?>? Boundary;
     public event Action<StatusCode>? Status;
 
     public void Start(ulong sessionId, RecordingStopGestures stopGestures)
@@ -69,7 +70,7 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
         GC.KeepAlive(_statusCallback);
     }
 
-    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init_v2", CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
     [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]

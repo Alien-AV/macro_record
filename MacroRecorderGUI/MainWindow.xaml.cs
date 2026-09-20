@@ -196,7 +196,7 @@ public sealed partial class MainWindow : Window
         PreviewLabel.Text = preview ? ActiveEditor?.IsPreviewPlaying == true ? "Pause" : "Play preview" : "Preview";
         PreviewIcon.Glyph = ActiveEditor?.IsPreviewPlaying == true ? "\uE769" : "\uE768";
         PlayButton.Visibility = _libraryVisible || preview || RunActive ? Visibility.Collapsed : Visibility.Visible;
-        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro?.Events.Count > 0 && _preferences.IsLoaded;
+        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro is not null && (macro.Events.Count > 0 || macro.PointerOrigins.Count > 0) && _preferences.IsLoaded;
         PlaybackOptionsButton.Visibility = PlayButton.Visibility;
         PlaybackOptionsButton.IsEnabled = !_busy && !RunActive && macro is not null;
         ToolTipService.SetToolTip(PlayButton, $"Play (Ctrl+E) sends real input to the focused app. {PlaybackSettingsSummary.Text}. Emergency stop: {EmergencyShortcut}.");
@@ -261,12 +261,18 @@ public sealed partial class MainWindow : Window
             {
                 try
                 {
-                    var events = await ViewModel.LoadRecordingSnapshotAsync(item.Id);
+                    var snapshot = await ViewModel.LoadRecordingPreviewAsync(item.Id);
+                    var events = snapshot.Events;
                     if (_closed || _closing || version != _libraryRefreshVersion) return;
                     var preview = await Task.Run(() =>
                     {
                         var projection = new ActionProjection();
-                        foreach (var input in events) projection.Append(input);
+                        var boundary = 0;
+                        for (var i = 0; i <= events.Count; i++)
+                        {
+                            while (boundary < snapshot.Origins.Count && snapshot.Origins[boundary].EventIndex == i) projection.BeginPointerSegment(snapshot.Origins[boundary++]);
+                            if (i < events.Count) projection.Append(events[i]);
+                        }
                         return (Thumbnail: LibraryThumbnail.Create(projection.Samples, events),
                             Summary: $"{projection.Actions.Count:N0} {(projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(projection.TotalTime)}");
                     });
@@ -353,6 +359,14 @@ public sealed partial class MainWindow : Window
                 if (name is not null) { active.Name = name; await ViewModel.SaveRecordingAsync(active); }
             });
             Item("Export .macro…", ExportActiveAsync);
+            if (active.HasOriginMetadata) Item("Export legacy .macro…", async () =>
+            {
+                if (!await Dialogs.ConfirmLegacyExportAsync()) return;
+                var path = await FileOperations.PickExportPathAsync(active.Name, AppWindow.Id);
+                if (path is null) return;
+                await ViewModel.ExportLegacyRecordingAsync(active, path);
+                SetMessage($"Exported legacy copy of {active.Name} with recorded setup moves");
+            });
             Item("Record into this recording…", () => StartRecordingAsync(intoExisting: true, fromHotkey: false));
             Item("Close recording", async () => { await ViewModel.CloseRecordingAsync(active); ShowEditor(); });
         }
@@ -402,7 +416,8 @@ public sealed partial class MainWindow : Window
         var id = macro.RecordingId;
         var name = macro.Name;
         await EditOptionsAsync(lease => DirectRunPreparation.EditPlaybackOptionsAsync(_preferences, lease, id,
-            options => Dialogs.PlaybackOptionsAsync(options, name, EmergencyShortcut)));
+            options => Dialogs.PlaybackOptionsAsync(options, name, EmergencyShortcut, macro)));
+        await SaveActiveAsync();
     });
 
     private async void Record_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => StartRecordingAsync(false, false));
@@ -449,7 +464,7 @@ public sealed partial class MainWindow : Window
     {
         if (!_preferences.IsLoaded) { SetMessage("Playback options are loading. Try Play when they are shown."); return; }
         if (!ViewModel.CanPlay || RunActive) return;
-        if (ViewModel.ActiveMacro is not { } macro || macro.Events.Count == 0) return;
+        if (ViewModel.ActiveMacro is not { } macro || macro.Events.Count == 0 && macro.PointerOrigins.Count == 0) return;
         if (_globalHotkeys?.EmergencyStop is null) { SetMessage("An emergency stop shortcut must be registered before playback."); return; }
         var run = _runLifetime.Begin();
         _isRecordingRun = false;

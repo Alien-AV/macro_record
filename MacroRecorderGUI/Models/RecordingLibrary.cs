@@ -26,7 +26,7 @@ public interface IRecordingLibraryStore
     Task SaveAsync(StoredRecording recording, CancellationToken cancellationToken = default);
 }
 
-/// <summary>One atomic document per recording; its payload is the unchanged .macro wire format.</summary>
+/// <summary>One atomic document per recording; MacroBytes is an opaque versioned or legacy recording payload.</summary>
 public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRecordingTrashStore
 {
     public const int MaximumMacroBytes = 64 * 1024 * 1024;
@@ -137,7 +137,8 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
     {
         if (bytes.Length > MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
         var events = SerializeEvents.DeserializeEventsFromByteArray(bytes).ToArray();
-        var duration = events.Aggregate(BigInteger.Zero, (total, input) => total + input.TimeSinceLastEvent);
+        var duration = events.Aggregate(BigInteger.Zero, (total, input) => total + input.TimeSinceLastEvent)
+            + RecordingDocument.Read(bytes).Origins.Aggregate(BigInteger.Zero, (total, origin) => total + origin.DelayMicroseconds);
         return new(id, name, isDraft, created, updated, events.Length, duration.ToString(System.Globalization.CultureInfo.InvariantCulture),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.KeyboardEvent),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.MouseEvent));
