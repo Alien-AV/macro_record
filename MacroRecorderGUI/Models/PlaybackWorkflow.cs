@@ -3,7 +3,7 @@ using MacroRecorderGUI.Event;
 
 namespace MacroRecorderGUI.Models;
 
-/// <summary>Owns a cancellable finite run while the existing engine owns each native session.</summary>
+/// <summary>Owns cancellable playback while the existing engine owns each native session.</summary>
 public sealed class PlaybackWorkflow
 {
     private readonly IPlaybackEngine _engine;
@@ -106,18 +106,19 @@ public sealed class PlaybackWorkflow
                 if (!Owns(session)) return;
                 session.Clock.Start();
             }
-            for (var repeat = 1; repeat <= session.Options.RepeatCount; repeat++)
+            var nativeRuns = session.Options.RepeatUntilStopped ? 1 : session.Options.RepeatCount;
+            for (var repeat = 1; repeat <= nativeRuns; repeat++)
             {
                 Task native;
                 lock (_gate)
                 {
                     if (!Owns(session)) return;
                     token.ThrowIfCancellationRequested();
-                    session.Repeat = repeat;
+                    session.Repeat = session.Options.RepeatUntilStopped ? 0 : repeat;
                     Publish(session, PlaybackPhase.Playing);
                     if (!Owns(session)) return; // A state subscriber may request an abort.
                     session.StartingNative = true;
-                    try { native = _engine.PlaybackEventsAsync(snapshot, loop: false); }
+                    try { native = _engine.PlaybackEventsAsync(snapshot, loop: session.Options.RepeatUntilStopped); }
                     finally { session.StartingNative = false; }
                     if (!Owns(session)) return;
                     session.NativeTask = native;
@@ -136,7 +137,7 @@ public sealed class PlaybackWorkflow
                     if (!Owns(session)) return;
                     session.NativeTask = null;
                     token.ThrowIfCancellationRequested();
-                    if (repeat == session.Options.RepeatCount)
+                    if (repeat == nativeRuns)
                     {
                         Finish(session, PlaybackPhase.Completed);
                         return;
@@ -169,7 +170,8 @@ public sealed class PlaybackWorkflow
     private void Publish(Session session, PlaybackPhase phase, string? error = null, TimeSpan remaining = default)
     {
         if (!Owns(session)) return;
-        _state = new(phase, session.Repeat, session.Options.RepeatCount, remaining, session.Clock.Elapsed, error);
+        _state = new(phase, session.Repeat, session.Options.RepeatUntilStopped ? 0 : session.Options.RepeatCount,
+            remaining, session.Clock.Elapsed, error, session.Options.RepeatUntilStopped);
         StateChanged?.Invoke(_state);
     }
     private void Finish(Session session, PlaybackPhase phase, Exception? error = null)
@@ -177,7 +179,8 @@ public sealed class PlaybackWorkflow
         if (!Owns(session)) return;
         session.Clock.Stop();
         _active = null;
-        _state = new(phase, session.Repeat, session.Options.RepeatCount, TimeSpan.Zero, session.Clock.Elapsed, error?.Message);
+        _state = new(phase, session.Repeat, session.Options.RepeatUntilStopped ? 0 : session.Options.RepeatCount,
+            TimeSpan.Zero, session.Clock.Elapsed, error?.Message, session.Options.RepeatUntilStopped);
         if (error is not null) session.Completion.TrySetException(error);
         else if (phase == PlaybackPhase.Cancelled) session.Completion.TrySetCanceled();
         else session.Completion.TrySetResult();

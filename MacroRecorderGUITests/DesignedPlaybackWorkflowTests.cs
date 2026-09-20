@@ -14,7 +14,9 @@ public sealed class DesignedPlaybackWorkflowTests
     private static PlaybackOptions Options(int repeats = 1, double speed = 1) => new() { Countdown = TimeSpan.Zero, RepeatCount = repeats, Speed = speed };
 
     [TestMethod]
-    public async Task CountdownCancellationNeverStartsNativePlayback()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task CountdownCancellationNeverStartsNativePlayback(bool repeatUntilStopped)
     {
         var engine = new ControlledEngine();
         var delayStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -23,9 +25,10 @@ public sealed class DesignedPlaybackWorkflowTests
             delayStarted.TrySetResult();
             return Task.Delay(Timeout.InfiniteTimeSpan, token);
         });
-        var task = workflow.PlayAsync(Inputs(), new());
+        var task = workflow.PlayAsync(Inputs(), new() { RepeatUntilStopped = repeatUntilStopped });
         await delayStarted.Task;
         Assert.AreEqual(PlaybackPhase.Countdown, workflow.State.Phase);
+        Assert.AreEqual(repeatUntilStopped, workflow.State.RepeatUntilStopped);
         workflow.Abort();
         await Assert.ThrowsAsync<OperationCanceledException>(() => task);
         Assert.AreEqual(0, engine.Starts.Count);
@@ -71,11 +74,13 @@ public sealed class DesignedPlaybackWorkflowTests
     }
 
     [TestMethod]
-    public async Task NativeFaultCannotStartAnotherRepeat()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task NativeFaultCannotStartAnotherRepeat(bool repeatUntilStopped)
     {
         var engine = new ControlledEngine();
         var workflow = new PlaybackWorkflow(engine);
-        var task = workflow.PlayAsync(Inputs(), Options(5));
+        var task = workflow.PlayAsync(Inputs(), Options(5) with { RepeatUntilStopped = repeatUntilStopped });
         engine.Completions[0].TrySetException(new InvalidOperationException("injection failed"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
         Assert.AreEqual(1, engine.Starts.Count);
@@ -85,11 +90,13 @@ public sealed class DesignedPlaybackWorkflowTests
     }
 
     [TestMethod]
-    public async Task ActiveAbortRetainsOwnershipWhenInteropFailsAndCanBeRetried()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task ActiveAbortRetainsOwnershipWhenInteropFailsAndCanBeRetried(bool repeatUntilStopped)
     {
         var engine = new ControlledEngine { AbortError = new InvalidOperationException("abort interop failed") };
         var workflow = new PlaybackWorkflow(engine);
-        var task = workflow.PlayAsync(Inputs(), Options(5));
+        var task = workflow.PlayAsync(Inputs(), Options(5) with { RepeatUntilStopped = repeatUntilStopped });
         Assert.Throws<InvalidOperationException>(workflow.Abort);
         Assert.IsTrue(workflow.IsActive);
         Assert.AreEqual(PlaybackPhase.Stopping, workflow.State.Phase);
@@ -280,6 +287,52 @@ public sealed class DesignedPlaybackWorkflowTests
         await Assert.ThrowsAsync<OperationCanceledException>(() => task);
         engine.Completions[0].TrySetResult();
         Assert.AreEqual(1, engine.Starts.Count);
+    }
+
+    [TestMethod]
+    public async Task RepeatUntilStoppedUsesOneScaledSnapshotAndAbortsOneNativeLoop()
+    {
+        var engine = new ControlledEngine();
+        var workflow = new PlaybackWorkflow(engine);
+        var states = new List<PlaybackState>();
+        workflow.StateChanged += states.Add;
+        var inputs = Inputs();
+        var before = SerializeEvents.SerializeEventsToByteArray(inputs);
+        var task = workflow.PlayAsync(inputs, Options(5, 2) with { RepeatUntilStopped = true });
+        Assert.AreEqual(1, engine.Starts.Count);
+        Assert.IsTrue(engine.Loops.Single());
+        CollectionAssert.AreEqual(before, SerializeEvents.SerializeEventsToByteArray(inputs));
+        inputs[0].TimeSinceLastEvent = 999999;
+        Assert.AreEqual(501ul, engine.Starts[0][0].TimeSinceLastEvent);
+        Assert.AreEqual(1000000ul, engine.Starts[0][1].TimeSinceLastEvent);
+        Assert.IsTrue(workflow.State.RepeatUntilStopped);
+        Assert.AreEqual(0, workflow.State.CurrentRepeat);
+        Assert.AreEqual(0, workflow.State.RepeatCount);
+        Assert.IsTrue(workflow.IsActive);
+        Assert.IsFalse(task.IsCompleted);
+        workflow.Abort();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => task);
+        engine.Completions[0].TrySetResult();
+        Assert.AreEqual(1, engine.Aborts);
+        Assert.AreEqual(1, engine.Starts.Count);
+        Assert.AreEqual(PlaybackPhase.Cancelled, workflow.State.Phase);
+        Assert.IsTrue(states.All(state => state.RepeatUntilStopped && state.CurrentRepeat == 0 && state.RepeatCount == 0));
+        Assert.IsFalse(states.Any(state => state.Phase == PlaybackPhase.BetweenRepeats));
+    }
+
+    [TestMethod]
+    public async Task LoopingNativeCompletionDoesNotStartAnotherSession()
+    {
+        var engine = new ControlledEngine();
+        var workflow = new PlaybackWorkflow(engine);
+        var task = workflow.PlayAsync(Inputs(), Options(0) with { RepeatUntilStopped = true });
+        engine.Completions.Single().TrySetResult();
+        await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual(1, engine.Starts.Count);
+        Assert.IsTrue(engine.Loops.Single());
+        Assert.AreEqual(PlaybackPhase.Completed, workflow.State.Phase);
+        Assert.IsTrue(workflow.State.RepeatUntilStopped);
+        Assert.AreEqual(0, workflow.State.CurrentRepeat);
     }
 
     private sealed class ControlledEngine : IPlaybackEngine

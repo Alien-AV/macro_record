@@ -212,7 +212,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
             }
             if (_usingPlaybackWorkflow)
             {
-                StatusMessageRequested?.Invoke(this, "Finite playback options cannot be changed during a run.");
+                StatusMessageRequested?.Invoke(this, "Playback options cannot be changed during a run.");
                 return;
             }
 
