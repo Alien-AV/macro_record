@@ -55,6 +55,27 @@ checks. Do not launch the recorder or display native test windows. Full visual a
 real-input smoke testing remains with the user. Reports and commits stay local;
 no GitHub publication or push is part of this task.
 
+## Screenshot-driven polish acceptance
+
+- Recording/playback dialogs give normal settings sufficient room, reserve a
+  scrollbar gutter when needed, and keep the stop shortcut discoverable. Primary
+  actions use blue; Cancel is neutral. Focus and high-contrast states remain clear.
+- Library thumbnails represent meaningful recorded movement rather than only an
+  initial positioning sample. Coordinate frames remain separate and accurately
+  labelled; recordings without a useful path get an honest input summary.
+- New recordings have useful distinct default names. Renaming is discoverable,
+  cancellable, and uses the existing persistence/error-handling workflow. Existing
+  recording names are not rewritten. Onboarding copy belongs to the empty library.
+- The inspector distinguishes selected movement from contextual movement. An
+  action without movement must not appear to own an unrelated trace.
+- Wait-before and action duration are labelled separately and relevant timing
+  fields are immediately available. Single-event actions do not expose an
+  irrelevant disabled duration. Exact microsecond editing and Undo are preserved.
+- Secondary text is readable; detailed technical explanations are progressively
+  disclosed without hiding safety warnings. Event labels use correct plurals.
+- The run controller has a legible steady-width timer, concise truthful state,
+  and prominent Stop. It does not invent playback progress or iteration counts.
+
 ## Implemented and verified
 
 Integrated editor, library/workflow services, and shell were independently reviewed;
