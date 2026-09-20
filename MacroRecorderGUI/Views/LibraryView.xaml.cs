@@ -4,26 +4,25 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.Foundation;
+using Windows.System;
 
 namespace MacroRecorderGUI.Views;
 
-public sealed record LibraryCard(object Key, string Name, string Summary, string LastOpened, IReadOnlyList<PathSample> Samples, string? ThumbnailError = null)
+public sealed record LibraryCard(object Key, string Name, string Summary, string LastOpened, LibraryThumbnail Thumbnail)
 {
-    public string AccessibleName => $"{Name}, {Summary}, {LastOpened}";
-    public string TraceLabel => ThumbnailError ?? (Samples.FirstOrDefault(s => s.Position is not null).Position?.Space switch
-    {
-        CoordinateSpace.RelativeCounts => "Relative device counts · starting position unknown",
-        CoordinateSpace.AbsoluteDesktop => "Recorded path · virtual desktop pixels",
-        CoordinateSpace.AbsolutePrimary => "Recorded path · primary screen pixels",
-        _ => "Keyboard / raw input · no pointer path"
-    });
+    public string AccessibleName => $"{Name}, {Summary}, {LastOpened}, {Thumbnail.Label}, {Thumbnail.InputSummary}";
+    public string TraceLabel => Thumbnail.Label;
+    public string RenameLabel => $"Rename {Name}";
+    public double ArtHeight => Thumbnail.HasTrace ? 132 : 88;
+    public Visibility TraceVisibility => Thumbnail.HasTrace ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility InputVisibility => Thumbnail.HasTrace ? Visibility.Collapsed : Visibility.Visible;
 }
 
 public sealed partial class LibraryView : UserControl
 {
     private IReadOnlyList<LibraryCard> _cards = [];
     public event EventHandler<LibraryCard>? OpenRequested;
-    public event EventHandler<LibraryCard>? RenameRequested;
+    public Func<LibraryCard, string, Task>? RenameAsync { get; set; }
     public event EventHandler<LibraryCard>? ExportRequested;
     public LibraryView() => InitializeComponent();
     public void SetCards(IReadOnlyList<LibraryCard> cards) { _cards = cards; Filter(); }
@@ -37,6 +36,7 @@ public sealed partial class LibraryView : UserControl
         EmptyState.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         EmptyTitle.Text = _cards.Count == 0 ? "Your library starts here" : "No matching recordings";
         EmptyDescription.Text = _cards.Count == 0 ? "Record a task or import an existing .macro file." : "Try another name.";
+        RecordingHint.Visibility = _cards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
     private void Cards_ItemClick(object sender, ItemClickEventArgs e) => OpenRequested?.Invoke(this, (LibraryCard)e.ClickedItem);
     private void CardOptions_Click(object sender, RoutedEventArgs e)
@@ -50,9 +50,50 @@ public sealed partial class LibraryView : UserControl
             menu.Items.Add(item);
         }
         Add("Open recording", () => OpenRequested?.Invoke(this, card));
-        Add("Rename…", () => RenameRequested?.Invoke(this, card));
         Add("Export .macro…", () => ExportRequested?.Invoke(this, card));
         menu.ShowAt(button);
+    }
+    private void Rename_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: LibraryCard card } button || RenameAsync is not { } rename) return;
+        var draft = new LibraryRenameDraft(card.Name);
+        var name = new TextBox { Header = "Recording name", Text = card.Name, MaxLength = 200, MinWidth = 220, MaxWidth = 320 };
+        var error = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 320,
+            Foreground = DesignResources.Brush(this, "MacroRedBrush"), Visibility = Visibility.Collapsed };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetLiveSetting(error, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
+        var save = new Button { Content = "Save", Style = (Style)Application.Current.Resources["MacroPrimaryButtonStyle"] };
+        var cancel = new Button { Content = "Cancel" };
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
+        actions.Children.Add(cancel); actions.Children.Add(save);
+        var body = new StackPanel { Spacing = 12 };
+        body.Children.Add(name); body.Children.Add(error); body.Children.Add(actions);
+        var flyout = new Flyout { Content = body, Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom };
+        flyout.Closing += (_, args) => args.Cancel = !draft.Cancel();
+        flyout.Opened += (_, _) => { name.Focus(FocusState.Programmatic); name.SelectAll(); };
+        cancel.Click += (_, _) => flyout.Hide();
+        async Task SaveAsync()
+        {
+            if (draft.IsSaving || draft.IsClosed) return;
+            draft.Name = name.Text;
+            name.IsEnabled = save.IsEnabled = cancel.IsEnabled = false;
+            save.Content = "Saving…";
+            if (await draft.SaveAsync(value => rename(card, value))) flyout.Hide();
+            else
+            {
+                error.Text = draft.Error ?? "Could not save the name. Try again.";
+                error.Visibility = Visibility.Visible;
+                name.IsEnabled = save.IsEnabled = cancel.IsEnabled = true;
+                save.Content = "Save";
+                name.Focus(FocusState.Programmatic);
+            }
+        }
+        save.Click += async (_, _) => await SaveAsync();
+        name.KeyDown += async (_, args) =>
+        {
+            if (args.Key == VirtualKey.Enter) { args.Handled = true; await SaveAsync(); }
+            else if (args.Key == VirtualKey.Escape) { args.Handled = true; flyout.Hide(); }
+        };
+        flyout.ShowAt(button);
     }
     private void View_SizeChanged(object sender, SizeChangedEventArgs e)
         => ResizeCards(e.NewSize.Width);
@@ -87,13 +128,15 @@ public sealed partial class LibraryView : UserControl
     {
         canvas.Children.Clear();
         if (canvas.DataContext is not LibraryCard card || canvas.ActualWidth < 1 || canvas.ActualHeight < 1) return;
-        // Each coordinate frame and capture segment stays separate. A thumbnail never implies a screen origin.
-        var first = card.Samples.FirstOrDefault(s => s.Position is not null);
-        if (first.Position is not { } origin) return;
-        var samples = card.Samples.Where(s => s.Position?.Space == origin.Space).ToArray();
+        if (!card.Thumbnail.HasTrace) return;
+        var samples = card.Thumbnail.Samples;
+        var origin = samples[0].Position!.Value;
         var bounds = new PathBounds(origin.X, origin.Y, origin.X, origin.Y);
         foreach (var sample in samples) bounds = bounds.Include(sample.Position!.Value);
-        var viewport = PathViewport.Fit(bounds, canvas.ActualWidth, canvas.ActualHeight);
+        var spanX = bounds.MaxX - bounds.MinX; var spanY = bounds.MaxY - bounds.MinY;
+        var scale = Math.Min(Math.Max(1, canvas.ActualWidth - 16) / Math.Max(1, spanX), Math.Max(1, canvas.ActualHeight - 16) / Math.Max(1, spanY));
+        var viewport = new PathViewport(bounds.MinX, bounds.MinY, scale,
+            (canvas.ActualWidth - spanX * scale) / 2, (canvas.ActualHeight - spanY * scale) / 2);
         var geometry = new PathGeometry();
         PathFigure? figure = null; PolyLineSegment? segment = null;
         var previousSegment = -1;

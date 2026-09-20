@@ -37,20 +37,25 @@
                     <DataTemplate>
                         <Border CornerRadius="9" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" Background="{ThemeResource MacroPaperBrush}">
                             <Grid>
-                                <Grid.RowDefinitions><RowDefinition Height="140"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                <Border Background="{ThemeResource MacroCardArtBrush}" CornerRadius="8,8,0,0">
-                                    <Grid Margin="26,20">
-                                        <Canvas x:Name="ThumbnailCanvas" Loaded="Thumbnail_Loaded" SizeChanged="Thumbnail_SizeChanged" IsHitTestVisible="False"/>
-                                        <TextBlock Text="{Binding TraceLabel}" FontSize="10" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Bottom" Margin="0,0,0,-14"/>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Border Height="{Binding ArtHeight}" Background="{ThemeResource MacroCardArtBrush}" CornerRadius="8,8,0,0">
+                                    <Grid Margin="18,12" RowSpacing="6">
+                                        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                        <Canvas x:Name="ThumbnailCanvas" Visibility="{Binding TraceVisibility}" Loaded="Thumbnail_Loaded" SizeChanged="Thumbnail_SizeChanged" IsHitTestVisible="False"/>
+                                        <TextBlock Text="{Binding Thumbnail.InputSummary}" Visibility="{Binding InputVisibility}" FontSize="13" FontWeight="SemiBold"
+                                            Foreground="{ThemeResource MacroInkBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Row="1" Text="{Binding TraceLabel}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap"/>
                                     </Grid>
                                 </Border>
                                 <StackPanel Grid.Row="1" Padding="18,19" Spacing="7">
-                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Name}" ToolTipService.ToolTip="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Summary}" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
                                     <Grid Margin="0,12,0,0">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding LastOpened}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="1" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="24" AutomationProperties.Name="Recording options" Click="CardOptions_Click">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding LastOpened}" ToolTipService.ToolTip="{Binding LastOpened}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Content="Rename" FontSize="12" Style="{StaticResource MacroTextButtonStyle}" Padding="7,4" MinHeight="28"
+                                            AutomationProperties.Name="{Binding RenameLabel}" Click="Rename_Click"/>
+                                        <Button Grid.Column="2" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="28" AutomationProperties.Name="Recording options" Click="CardOptions_Click">
                                             <FontIcon Glyph="&#xE712;" FontSize="14"/>
                                         </Button>
                                     </Grid>
@@ -64,7 +69,7 @@
                 <TextBlock x:Name="EmptyTitle" Text="Your library starts here" FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextAlignment="Center"/>
                 <TextBlock x:Name="EmptyDescription" Text="Record a task or import an existing .macro file." FontSize="13" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
             </StackPanel>
-            <Border BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="0,1,0,0" Padding="0,28,0,0" Margin="0,4,0,0">
+            <Border x:Name="RecordingHint" Visibility="Collapsed" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="0,1,0,0" Padding="0,28,0,0" Margin="0,4,0,0">
                 <StackPanel Orientation="Horizontal" Spacing="14">
                     <Border Background="{ThemeResource MacroKeyboardBrush}" CornerRadius="8" Width="33" Height="33">
                         <FontIcon Glyph="&#xE765;" FontSize="16" Foreground="{ThemeResource MacroKeyboardTextBrush}"/>

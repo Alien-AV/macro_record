@@ -19,7 +19,7 @@ namespace MacroRecorderGUI;
 public sealed partial class MainWindow : Window
 {
     private readonly Dictionary<MacroViewModel, MacroTabContent> _editors = [];
-    private readonly Dictionary<Guid, (DateTimeOffset Updated, IReadOnlyList<PathSample> Samples, string Summary)> _thumbnails = [];
+    private readonly Dictionary<Guid, (DateTimeOffset Updated, LibraryThumbnail Thumbnail, string Summary)> _thumbnails = [];
     private readonly DispatcherTimer _runTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly ShellRunLifetime _runLifetime = new();
     private readonly bool _registerGlobalHotkeys;
@@ -61,7 +61,7 @@ public sealed partial class MainWindow : Window
         ViewModel.StatusMessageRequested += ViewModel_StatusMessageRequested;
         ViewModel.MacroTabs.CollectionChanged += Macros_Changed;
         Library.OpenRequested += Library_OpenRequested;
-        Library.RenameRequested += Library_RenameRequested;
+        Library.RenameAsync = RenameLibraryCardAsync;
         Library.ExportRequested += Library_ExportRequested;
         Activated += MainWindow_Activated;
         AppWindow.Closing += MainWindow_Closing;
@@ -165,6 +165,7 @@ public sealed partial class MainWindow : Window
         NewRecordingButton.IsEnabled = !_busy && !RunActive && ViewModel.CanRecord;
         DocumentButton.IsEnabled = !_busy && !RunActive;
         EditorHost.IsEnabled = !_busy && !RunActive;
+        Library.IsEnabled = !_busy && !RunActive;
         SpeedButton.Visibility = RepeatButton.Visibility = _libraryVisible ? Visibility.Collapsed : Visibility.Visible;
         SpeedButton.IsEnabled = RepeatButton.IsEnabled = !_busy && !RunActive;
         SpeedLabel.Text = $"{_playbackOptions.Speed:0.##}× {(preview ? "playback" : "speed")}";
@@ -183,7 +184,7 @@ public sealed partial class MainWindow : Window
         StatusDot.Fill = Resource(preview ? "MacroBlueBrush" : ViewModel.IsRecording ? "MacroRedBrush" : "MacroMutedBrush");
         StatusText.Text = RunActive ? _preparingRun ? (_isRecordingRun ? "Preparing recording…" : "Preparing playback…") : ViewModel.IsRecording ? "Recording" : "Run in progress"
             : macro?.SaveState == RecordingSaveState.Failed ? $"Save failed: {macro.SaveError}"
-            : _feedback.Text ?? (preview ? "Preview only" : _libraryVisible ? $"{ViewModel.Library.Count} saved recordings" : "Stopped");
+            : _feedback.Text ?? (preview ? "Preview only" : _libraryVisible ? $"{ViewModel.Library.Count} saved {(ViewModel.Library.Count == 1 ? "recording" : "recordings")}" : "Stopped");
         ToolTipService.SetToolTip(StatusText, StatusText.Text);
         SummaryText.Text = _libraryVisible ? "Local recordings · original .macro format" : ActiveEditor?.Summary ?? "";
         RefreshController();
@@ -226,11 +227,10 @@ public sealed partial class MainWindow : Window
         foreach (var item in ViewModel.Library.ToArray())
         {
             if (_closed || _closing || version != _libraryRefreshVersion) return;
-            IReadOnlyList<PathSample> samples;
-            string? thumbnailError = null;
+            LibraryThumbnail thumbnail;
             var summary = item.Summary;
             if (_thumbnails.TryGetValue(item.Id, out var cached) && cached.Updated == item.UpdatedAt)
-            { samples = cached.Samples; summary = cached.Summary; }
+            { thumbnail = cached.Thumbnail; summary = cached.Summary; }
             else
             {
                 try
@@ -241,16 +241,16 @@ public sealed partial class MainWindow : Window
                     {
                         var projection = new ActionProjection();
                         foreach (var input in events) projection.Append(input);
-                        return (Samples: PathDisplay.Decimate(projection.Samples, 0, projection.Samples.Count, 160),
-                            Summary: $"{projection.Actions.Count:N0} actions · {TimeText.Human(projection.TotalTime)}");
+                        return (Thumbnail: LibraryThumbnail.Create(projection.Samples, events),
+                            Summary: $"{projection.Actions.Count:N0} {(projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(projection.TotalTime)}");
                     });
                     if (_closed || _closing || version != _libraryRefreshVersion) return;
-                    samples = preview.Samples; summary = preview.Summary;
-                    _thumbnails[item.Id] = (item.UpdatedAt, samples, summary);
+                    thumbnail = preview.Thumbnail; summary = preview.Summary;
+                    _thumbnails[item.Id] = (item.UpdatedAt, thumbnail, summary);
                 }
-                catch (Exception error) { samples = []; thumbnailError = "Path unavailable · could not read recording"; SetMessage($"Could not load thumbnail for {item.Name}: {error.Message}"); }
+                catch (Exception error) { thumbnail = new([], "Could not read recording", "Preview unavailable"); SetMessage($"Could not load thumbnail for {item.Name}: {error.Message}"); }
             }
-            cards.Add(new LibraryCard(item.Id, item.Name, summary, $"Saved {item.UpdatedAt.ToLocalTime():g}", samples, thumbnailError));
+            cards.Add(new LibraryCard(item.Id, item.Name, summary, $"Saved {item.UpdatedAt.ToLocalTime():g}", thumbnail));
         }
         if (!_closed && version == _libraryRefreshVersion) Library.SetCards(cards);
     }
@@ -259,14 +259,18 @@ public sealed partial class MainWindow : Window
     {
         await SaveActiveAsync(); await ViewModel.OpenRecordingAsync((Guid)card.Key); ShowEditor();
     });
-    private async void Library_RenameRequested(object? sender, LibraryCard card) => await OperationAsync(async () =>
+    private async Task RenameLibraryCardAsync(LibraryCard card, string name)
     {
-        var name = await Dialogs.RenameAsync(card.Name);
-        if (name is null) return;
-        await SaveActiveAsync();
-        var macro = await ViewModel.OpenRecordingAsync((Guid)card.Key);
-        macro.Name = name; await ViewModel.SaveRecordingAsync(macro); await RefreshLibraryAsync();
-    });
+        if (_busy || RunActive) throw new InvalidOperationException("Wait for the current operation to finish before renaming.");
+        ThrowIfClosing();
+        _busy = true;
+        try
+        {
+            await ViewModel.RenameRecordingAsync((Guid)card.Key, name);
+            await RefreshLibraryAsync();
+        }
+        finally { _busy = false; RefreshShell(); }
+    }
     private async void Library_ExportRequested(object? sender, LibraryCard card) => await OperationAsync(async () =>
     {
         var path = await FileOperations.PickExportPathAsync(card.Name, AppWindow.Id);
@@ -303,7 +307,7 @@ public sealed partial class MainWindow : Window
             item.Click += async (_, _) => await OperationAsync(action);
             DocumentMenu.Items.Add(item);
         }
-        Item("New empty recording", async () => { await SaveActiveAsync(); await ViewModel.CreateDraftAsync("Untitled recording"); ShowEditor(); });
+        Item("New empty recording", async () => { await SaveActiveAsync(); await ViewModel.CreateDraftAsync(); ShowEditor(); });
         Item("Import .macro…", ImportAsync);
         if (ViewModel.ActiveMacro is { } active)
         {
@@ -356,7 +360,9 @@ public sealed partial class MainWindow : Window
     private async void NewRecording_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => PrepareRecordingAsync(false));
     private async Task PrepareRecordingAsync(bool intoExisting)
     {
-        var choice = await Dialogs.RecordAsync(intoExisting ? ViewModel.ActiveMacro?.Name ?? "Untitled recording" : "New recording", intoExisting, _overrideRecordingDelay);
+        await ViewModel.InitializeLibraryAsync();
+        ThrowIfClosing();
+        var choice = await Dialogs.RecordAsync(intoExisting ? ViewModel.ActiveMacro?.Name ?? "Untitled recording" : ViewModel.NewRecordingName(), intoExisting, _overrideRecordingDelay);
         if (choice is null) return;
         await StartRecordingAsync(choice, intoExisting, fromHotkey: false);
     }
@@ -512,7 +518,12 @@ public sealed partial class MainWindow : Window
         {
             _globalHotkeys = new GlobalHotkeys(WinRT.Interop.WindowNative.GetWindowHandle(this));
             var recorded = _globalHotkeys.AddHotKey(VirtualKey.Q, HotKeyModifiers.Control,
-                async () => await OperationAsync(() => StartRecordingAsync(new("New recording", 3, false, _overrideRecordingDelay), false, true)));
+                async () => await OperationAsync(async () =>
+                {
+                    await ViewModel.InitializeLibraryAsync();
+                    ThrowIfClosing();
+                    await StartRecordingAsync(new(ViewModel.NewRecordingName(), 3, false, _overrideRecordingDelay), false, true);
+                }));
             var stopped = _globalHotkeys.AddHotKey(VirtualKey.W, HotKeyModifiers.Control, async () => await StopRunAsync());
             var played = _globalHotkeys.AddHotKey(VirtualKey.E, HotKeyModifiers.Control, async () => await OperationAsync(async () =>
             {

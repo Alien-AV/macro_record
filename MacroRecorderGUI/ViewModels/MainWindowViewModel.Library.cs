@@ -45,13 +45,59 @@ public partial class MainWindowViewModel
         finally { _libraryGate.Release(); }
     }
 
-    public async Task<MacroViewModel> CreateDraftAsync(string name = "Untitled recording")
+    public string NewRecordingName(DateTimeOffset? localTime = null) => RecordingNames.NewDefault(localTime ?? DateTimeOffset.Now,
+        Library.Select(item => item.Name).Concat(MacroTabs.Select(macro => macro.Name)));
+
+    public async Task<MacroViewModel> CreateDraftAsync(string? name = null)
     {
         EnsureLibraryWritable();
+        await InitializeLibraryAsync();
+        EnsureLibraryWritable();
+        var draftName = name is null ? NewRecordingName() : RecordingNames.Validate(name);
         var macro = AddNewTab();
-        macro.Name = name;
+        macro.Name = draftName;
         await SaveRecordingAsync(macro);
         return macro;
+    }
+
+    public async Task RenameRecordingAsync(Guid id, string name)
+    {
+        EnsureLibraryWritable();
+        name = RecordingNames.Validate(name);
+        await _libraryGate.WaitAsync();
+        try
+        {
+            EnsureLibraryWritable();
+            var macro = MacroTabs.FirstOrDefault(item => item.RecordingId == id);
+            if (macro is not null && (HasRecordingDrain(macro) || ReferenceEquals(PlayingMacro, macro)))
+                throw new InvalidOperationException("Stop this recording before renaming it.");
+            var stored = macro is null ? await _libraryStore.LoadAsync(id) : null;
+            EnsureLibraryWritable();
+            var previousName = macro?.Name ?? stored!.Metadata.Name;
+            if (name == previousName) return;
+            var version = macro?.ChangeVersion ?? 0;
+            var bytes = macro?.SnapshotBytes() ?? stored!.MacroBytes;
+            var metadata = RecordingLibraryStore.Describe(id, name, macro?.IsDraft ?? stored!.Metadata.IsDraft,
+                macro?.CreatedAt ?? stored!.Metadata.CreatedAt, DateTimeOffset.UtcNow, bytes);
+            await _libraryStore.SaveAsync(new(metadata, bytes));
+            // Publish the name only after persistence succeeds. A newer document edit must remain dirty.
+            if (macro is not null)
+            {
+                if (macro.Name == previousName)
+                {
+                    macro.Name = name;
+                    version++;
+                }
+                macro.Saved(version, metadata.UpdatedAt);
+            }
+            var previous = _library.FirstOrDefault(item => item.Id == id);
+            if (previous is not null) _library.Remove(previous);
+            _library.Insert(0, metadata);
+            LibraryError = null;
+            OnPropertyChanged(nameof(LibraryError));
+        }
+        catch (Exception error) { ReportLibraryError(error); throw; }
+        finally { _libraryGate.Release(); }
     }
 
     public async Task<MacroViewModel> OpenRecordingAsync(Guid id)

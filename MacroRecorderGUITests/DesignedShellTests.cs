@@ -137,16 +137,17 @@ public class DesignedShellTests
     }
 
     [TestMethod]
-    public void MixedCoordinateThumbnailDescribesItsFirstDrawnFrame()
+    public void MixedCoordinateThumbnailDescribesItsRepresentativeMovementFrame()
     {
         var card = new LibraryCard(Guid.NewGuid(), "Mixed capture", "", "",
-        [
+        LibraryThumbnail.Create([
             new(0, 0, new(100, 200, CoordinateSpace.AbsoluteDesktop), true, 1),
-            new(1, 1, new(3, 4, CoordinateSpace.RelativeCounts), true, 2)
-        ]);
-        StringAssert.Contains(card.TraceLabel, "virtual desktop pixels");
-        Assert.IsFalse(card.TraceLabel.Contains("Relative"));
-        var relativeFirst = card with { Samples = card.Samples.Reverse().ToArray() };
-        StringAssert.Contains(relativeFirst.TraceLabel, "starting position unknown");
+            new(1, 1, new(3, 4, CoordinateSpace.RelativeCounts), true, 2),
+            new(2, 2, new(9, 8, CoordinateSpace.RelativeCounts), false, 2)
+        ], []));
+        StringAssert.Contains(card.TraceLabel, "Relative device counts");
+        StringAssert.Contains(card.TraceLabel, "starting position unknown");
+        Assert.IsFalse(card.TraceLabel.Contains("pixels"));
+        Assert.IsTrue(card.Thumbnail.Samples.All(sample => sample.Segment == 2));
     }
 }
