@@ -11,6 +11,13 @@ namespace MacroRecorderGUI.Views;
 
 public sealed record LibraryCard(object Key, string Name, string Summary, string LastOpened, LibraryThumbnail Thumbnail)
 {
+    public static string DescribeTiming(ActionProjection projection)
+    {
+        var timing = $"{EditorText.Count(projection.Actions.Count, "action")} · {TimeText.Human(projection.TotalTime)}";
+        var waits = projection.Actions.Count(action => action.Kind == ActionKind.Wait);
+        return waits == 0 ? timing : $"{EditorText.Count(waits, "conditional wait")} · duration varies · {timing} recorded timing";
+    }
+
     public bool IsDeleted { get; init; }
     public string AccessibleName => $"{Name}, {Summary}, {LastOpened}, {Thumbnail.Label}, {Thumbnail.InputSummary}";
     public string TraceLabel => Thumbnail.Label;

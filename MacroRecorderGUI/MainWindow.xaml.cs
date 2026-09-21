@@ -274,7 +274,7 @@ public sealed partial class MainWindow : Window
                             if (i < events.Count) projection.Append(events[i]);
                         }
                         return (Thumbnail: LibraryThumbnail.Create(projection.RenderSamples, events),
-                            Summary: $"{projection.Actions.Count:N0} {(projection.Actions.Count == 1 ? "action" : "actions")} · {TimeText.Human(projection.TotalTime)}");
+                            Summary: LibraryCard.DescribeTiming(projection));
                     });
                     if (_closed || _closing || version != _libraryRefreshVersion) return;
                     thumbnail = preview.Thumbnail; summary = preview.Summary;

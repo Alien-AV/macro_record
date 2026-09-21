@@ -248,11 +248,6 @@ public sealed partial class HiddenFocusTests
         finally { observer.Response.TrySetResult(new(ObservationState.Match, "late")); host.Content = previous; }
     }
 
-    private sealed class ImmediateWaitObserver : IWaitObserver
-    {
-        public ValueTask<WaitObservation> ObserveAsync(WaitCondition condition, CancellationToken token) =>
-            ValueTask.FromResult(new WaitObservation(ObservationState.Match, "queued fake success"));
-    }
     private sealed class QueuedWaitContext : SynchronizationContext
     {
         public readonly TaskCompletionSource Posted = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -265,11 +260,16 @@ public sealed partial class HiddenFocusTests
         foreach (var edit in new[] { false, true })
         {
             var condition = ConditionalWaitTests.Condition(); condition.StableForUs = 0;
-            using var fields = new WaitConditionEditor(condition, new WaitRunner(new ImmediateWaitObserver()));
+            var observer = new HiddenWaitObserver();
+            using var fields = new WaitConditionEditor(condition, new WaitRunner(observer));
             var queue = new QueuedWaitContext(); var previous = SynchronizationContext.Current;
             Task test;
             try { SynchronizationContext.SetSynchronizationContext(queue); test = fields.TestAsync(); }
             finally { SynchronizationContext.SetSynchronizationContext(previous); }
+            Assert.IsFalse(test.IsCompleted);
+            // Completion is impossible until TestAsync has suspended and captured
+            // the queued context, regardless of thread-pool scheduling speed.
+            observer.Response.SetResult(new(ObservationState.Match, "queued fake success"));
             // Deliberately hold UI dispatch until the fake success and its progress
             // are queued, then invalidate both before either may publish.
             Assert.IsTrue(queue.Posted.Task.Wait(TimeSpan.FromSeconds(2)));

@@ -70,7 +70,7 @@
                                 </Border>
                                 <StackPanel Grid.Row="1" Padding="18,19" Spacing="7">
                                     <TextBlock Text="{Binding Name}" ToolTipService.ToolTip="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Summary}" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Summary}" ToolTipService.ToolTip="{Binding Summary}" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
                                     <Grid Margin="0,12,0,0">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding LastOpened}" ToolTipService.ToolTip="{Binding LastOpened}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>

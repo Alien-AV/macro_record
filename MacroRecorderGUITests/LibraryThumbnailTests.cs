@@ -1,8 +1,10 @@
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Editor;
 using MacroRecorderGUI.Event;
+using MacroRecorderGUI.Models;
 using MacroRecorderGUI.Utils;
 using MacroRecorderGUI.Views;
+using MacroRecorderGUI.ViewModels;
 using Windows.System;
 
 namespace MacroRecorderGUITests;
@@ -123,5 +125,40 @@ public sealed class LibraryThumbnailTests
         Assert.AreEqual("1 keyboard event · 2 mouse events", result.InputSummary);
         Assert.AreEqual("No input recorded", Project().InputSummary);
         Assert.IsFalse(Project().HasTrace);
+    }
+
+    [TestMethod]
+    [DataRow(0, "1 action · 125ms")]
+    [DataRow(1, "1 conditional wait · duration varies · 2 actions · 250ms recorded timing")]
+    [DataRow(2, "2 conditional waits · duration varies · 3 actions · 375ms recorded timing")]
+    public async Task ActiveCardTimingPreservesWaitCountsAndUnknownDurationAfterReload(int count, string expected)
+    {
+        var temporary = Directory.CreateTempSubdirectory("macro-wait-card-timing-");
+        try
+        {
+            using var vm = new MainWindowViewModel(new FakeRecordEngine(), new FakePlaybackEngine(), new RecordingLibraryStore(temporary.FullName));
+            var macro = await vm.CreateDraftAsync("Wait card");
+            var move = Move(20, 30); move.TimeSinceLastEvent = 125_000; macro.AddEvent(move);
+            for (var i = 0; i < count; i++) macro.AddEvent(new WaitConditionEvent(ConditionalWaitTests.Condition()) { TimeSinceLastEvent = 125_000 });
+            await vm.SaveRecordingAsync(macro);
+            await Check(vm);
+            using var reloaded = new MainWindowViewModel(new FakeRecordEngine(), new FakePlaybackEngine(), new RecordingLibraryStore(temporary.FullName));
+            await reloaded.InitializeLibraryAsync(); await Check(reloaded);
+
+            async Task Check(MainWindowViewModel model)
+            {
+                var snapshot = await model.LoadRecordingPreviewAsync(macro.RecordingId);
+                var projection = new ActionProjection();
+                foreach (var input in snapshot.Events) projection.Append(input);
+                var summary = LibraryCard.DescribeTiming(projection);
+                Assert.AreEqual(expected, summary);
+                Assert.AreEqual(count, model.Library.Single(item => item.Id == macro.RecordingId).ConditionalWaitCount);
+                var card = new LibraryCard(macro.RecordingId, macro.Name, summary, "Saved", LibraryThumbnail.Create(projection.RenderSamples, snapshot.Events));
+                StringAssert.Contains(card.AccessibleName, expected);
+                Assert.IsFalse(summary.Contains("30s"), "Timeouts must not be presented as recorded timing.");
+                Assert.IsFalse(summary.Contains("(s)"));
+            }
+        }
+        finally { temporary.Delete(recursive: true); }
     }
 }
