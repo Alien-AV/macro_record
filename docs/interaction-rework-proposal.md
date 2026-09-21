@@ -1,8 +1,9 @@
 # Interaction rework proposal
 
-Status: proposed, not approved for broad implementation. The selection, stop-chord,
-and scroll-access regressions are separately approved fixes. Conditional waits are
-approved for implementation, beginning with window/pixel conditions.
+Status: full proposal approved for implementation on 2026-09-21. Delivery and
+verification are tracked in ux-rework-delivery.md. The selection, stop-chord,
+scroll-access, and first window/pixel wait implementation were completed at
+37e358d; this pass implements the broader interaction model below.
 
 ## Why the current workflow feels awkward
 
