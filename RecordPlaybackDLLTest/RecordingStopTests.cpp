@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "RecordingTestSink.h"
 #include "../RecordPlaybackDLL/Record/RecordingStream.h"
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
 #include "../RecordPlaybackDLL/Common/MouseEvent.h"
@@ -19,7 +20,7 @@ void press(Stream& stream, WORD key, bool up = false, int delay = 1, DWORD time 
 
 TEST(RecordingStop, HotkeyBeforeRawTriggerDoesNotPublishFreshControl) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_LCONTROL);
     stream.stop(1, ControlW, 1);
@@ -31,7 +32,7 @@ TEST(RecordingStop, HotkeyBeforeRawTriggerDoesNotPublishFreshControl) {
 TEST(RecordingStop, RawTriggerAndRepeatsNeedActualHotkeyProvenance) {
     for (bool hotkey : {false, true}) for (WORD ctrl : {VK_CONTROL, VK_LCONTROL, VK_RCONTROL}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, ControlW);
         press(stream, 'A', false, 3);
         press(stream, 'A', true, 5);
@@ -55,7 +56,7 @@ TEST(RecordingStop, RawTriggerAndRepeatsNeedActualHotkeyProvenance) {
 
 TEST(RecordingStop, OrdinaryStopFlushesFreshIncompleteModifierWithoutTrigger) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW | ControlR);
     press(stream, VK_CONTROL, false, 987654);
     ASSERT_EQ(1u, received.size());
@@ -67,7 +68,7 @@ TEST(RecordingStop, OrdinaryStopFlushesFreshIncompleteModifierWithoutTrigger) {
 
 TEST(RecordingStop, LegitimateTapAndShortcutStayExactBeforeFreshStopPrefix) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_CONTROL, false, 100);
     press(stream, VK_CONTROL, true, 200);
@@ -84,7 +85,7 @@ TEST(RecordingStop, LegitimateTapAndShortcutStayExactBeforeFreshStopPrefix) {
 
 TEST(RecordingStop, UsedModifierAndMouseDragStayTruthfullyIncomplete) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_LCONTROL, false, 10);
     auto mouse = std::make_unique<MouseEvent>(-8, 22, MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_MOVE, 0, true, true);
@@ -105,7 +106,7 @@ TEST(RecordingStop, EmergencyVariantsRequireCurrentRegistrationAndMatchingComman
     for (auto gesture : {ControlR, ControlAltF12, ControlShiftF12})
     for (bool registered : {false, true}) for (bool hotkey : {false, true}) for (bool reversed : {false, true}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, registered ? gesture : ControlW);
         const WORD extra = gesture == ControlAltF12 ? VK_RMENU : VK_RSHIFT;
         const bool multi = gesture != ControlR;
@@ -121,7 +122,7 @@ TEST(RecordingStop, EmergencyVariantsRequireCurrentRegistrationAndMatchingComman
 TEST(RecordingStop, EmergencyCommandCanConfirmPrefixWithoutRawTrigger) {
     for (auto gesture : {ControlR, ControlAltF12, ControlShiftF12}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, gesture);
         press(stream, VK_LCONTROL);
         stream.stop(1, gesture, 1);
@@ -132,7 +133,7 @@ TEST(RecordingStop, EmergencyCommandCanConfirmPrefixWithoutRawTrigger) {
 TEST(RecordingStop, ExtraModifiersAndPreHeldTriggerDoNotBecomeStopPrefixes) {
     for (WORD earlier : std::array<WORD, 4>{VK_LSHIFT, VK_LMENU, VK_LWIN, 'W'}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, ControlW);
         press(stream, earlier);
         press(stream, VK_LCONTROL);
@@ -144,7 +145,7 @@ TEST(RecordingStop, ExtraModifiersAndPreHeldTriggerDoNotBecomeStopPrefixes) {
 
 TEST(RecordingStop, BothControlSidesAndTheirRepeatsCanBelongToFreshCommand) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_LCONTROL);
     press(stream, VK_RCONTROL);
@@ -156,7 +157,7 @@ TEST(RecordingStop, BothControlSidesAndTheirRepeatsCanBelongToFreshCommand) {
 
 TEST(RecordingStop, HeldAtStartAndItsRepeatsAreNotFreshCommandModifiers) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.key(VK_LCONTROL, false);
     stream.start(1, ControlW);
     press(stream, VK_LCONTROL, false, 37);
@@ -168,7 +169,7 @@ TEST(RecordingStop, HeldAtStartAndItsRepeatsAreNotFreshCommandModifiers) {
 TEST(RecordingStop, BufferPressurePreservesRepeatsUnlessCommandIsConfirmed) {
     for (bool confirmed : {false, true}) {
     std::vector<std::unique_ptr<Event>> received;
-    StopChord filter([&](std::unique_ptr<Event> event) { received.push_back(std::move(event)); });
+    StopChord filter(collect_events([&](std::unique_ptr<Event> event) { received.push_back(std::move(event)); }));
     filter.start(ControlW, {});
     for (size_t i = 0; i < PendingInput::capacity * 4; ++i) {
         auto event = std::make_unique<KeyboardEvent>();
@@ -194,7 +195,7 @@ TEST(RecordingStop, OrdinaryStopPreservesUnknownEventPayloadAndOwnershipBehindCa
         void playback() const override { ADD_FAILURE() << "Must not inject input"; }
     };
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_CONTROL);
     press(stream, 'W');
@@ -211,7 +212,7 @@ TEST(RecordingStop, OrdinaryStopPreservesUnknownEventPayloadAndOwnershipBehindCa
 
 TEST(RecordingStop, LateTriggerAfterHotkeyCutoffStaysIdleAndCannotDrainNextSession) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_LCONTROL, false, 10, 10);
     std::deque<DWORD> raw{12};
@@ -236,7 +237,7 @@ TEST(RecordingStop, LateTriggerAfterHotkeyCutoffStaysIdleAndCannotDrainNextSessi
 
 TEST(RecordingStop, CommandCannotClaimAPrefixNewerThanItsOriginalMessageTime) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     press(stream, VK_CONTROL, false, 10, 101);
     stream.stop(1, ControlW, 100);

@@ -1,10 +1,12 @@
 #pragma once
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <functional>
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 
@@ -12,6 +14,25 @@ namespace record_playback { namespace capture {
 class PendingInputError : public std::runtime_error {
 public:
     PendingInputError() : std::runtime_error("Could not retain provisional recording input") {}
+};
+
+// Shared by provisional input, the delivery FIFO and the collector's current
+// batch. Transferring ownership must not create another independent disk budget.
+class PendingBudget {
+public:
+    static constexpr size_t max_bytes = 64 * 1024 * 1024;
+    explicit PendingBudget(size_t limit = max_bytes) : limit_((std::min)(limit, max_bytes)) {}
+    void reserve(size_t bytes) {
+        auto used = used_.load();
+        do {
+            if (bytes > limit_ - used) throw PendingInputError();
+        } while (!used_.compare_exchange_weak(used, used + bytes));
+    }
+    void release(size_t bytes) { used_.fetch_sub(bytes); }
+    size_t used() const { return used_.load(); }
+private:
+    const size_t limit_;
+    std::atomic<size_t> used_{0};
 };
 
 // Private capture storage, never a macro file. One delete-on-close handle and a
@@ -78,13 +99,33 @@ public:
     static constexpr size_t capacity = 256;
     // Exhaustion fails the capture explicitly; it never publishes command keys
     // or silently drops motion to make room. At 8 kHz this holds minutes of input.
-    static constexpr size_t max_bytes = 64 * 1024 * 1024;
+    static constexpr size_t max_bytes = PendingBudget::max_bytes;
     explicit PendingInput(Factory factory = [] { return std::make_unique<TemporaryPendingStorage>(); },
-        size_t max_events = max_bytes / sizeof(Stored)) : factory_(std::move(factory)), max_events_(max_events) {}
+        size_t max_events = max_bytes / sizeof(Stored), std::shared_ptr<PendingBudget> budget = std::make_shared<PendingBudget>())
+        : factory_(std::move(factory)), max_events_((std::min)(max_events, max_bytes / sizeof(Stored))), budget_(std::move(budget)) {}
+    ~PendingInput() { clear(); }
+    PendingInput(PendingInput&& other) noexcept
+        : factory_(std::move(other.factory_)), max_events_(other.max_events_), budget_(std::move(other.budget_)),
+          reserved_(std::exchange(other.reserved_, 0)), storage_(std::move(other.storage_)),
+          memory_(std::move(other.memory_)), memory_count_(std::exchange(other.memory_count_, 0)),
+          stored_count_(std::exchange(other.stored_count_, 0)) {}
+    PendingInput& operator=(PendingInput&& other) noexcept {
+        if (this == &other) return *this;
+        clear();
+        factory_ = std::move(other.factory_); max_events_ = other.max_events_;
+        budget_ = std::move(other.budget_); reserved_ = std::exchange(other.reserved_, 0);
+        storage_ = std::move(other.storage_); memory_ = std::move(other.memory_);
+        memory_count_ = std::exchange(other.memory_count_, 0);
+        stored_count_ = std::exchange(other.stored_count_, 0);
+        return *this;
+    }
+    PendingInput fresh() const { return PendingInput(factory_, max_events_, budget_); }
     size_t memory_count() const { return memory_count_; }
     bool empty() const { return !memory_count_ && !stored_count_; }
     void append(std::unique_ptr<Event> event, bool command_key) {
         if (stored_count_ + memory_count_ >= max_events_) throw PendingInputError();
+        budget_->reserve(sizeof(Stored));
+        reserved_ += sizeof(Stored);
         if (memory_count_ == capacity) spill();
         memory_[memory_count_++] = {std::move(event), command_key};
     }
@@ -118,6 +159,7 @@ public:
         for (size_t i = 0; i < memory_count_; ++i) memory_[i].event.reset();
         memory_count_ = stored_count_ = 0;
         storage_.reset();
+        if (reserved_) budget_->release(std::exchange(reserved_, 0));
     }
 private:
     static Stored snapshot(const Entry& entry) {
@@ -159,8 +201,16 @@ private:
     }
     Factory factory_;
     size_t max_events_;
+    std::shared_ptr<PendingBudget> budget_;
+    size_t reserved_ = 0;
     std::unique_ptr<PendingStorage> storage_;
     std::array<Entry, capacity> memory_{};
     size_t memory_count_ = 0, stored_count_ = 0;
+};
+
+struct CapturedInput {
+    std::unique_ptr<Event> event;
+    std::unique_ptr<PendingInput> pending;
+    bool omit_command = false;
 };
 }}

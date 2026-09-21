@@ -25,14 +25,19 @@ struct Packet {
     uint32_t held_keys = 0;
     uint32_t idle_released_keys = 0;
     PointerOrigin origin{};
+    std::unique_ptr<PendingInput> pending;
+    bool omit_command = false;
 };
 
 // Capture-thread state only. Idle input updates chord state/release bits, not an event log.
 class Stream {
 public:
     using Sink = std::function<void(Packet)>;
-    explicit Stream(Sink sink, PendingInput pending = PendingInput()) : sink_(std::move(sink)), stop_chord_([this](std::unique_ptr<Event> event) {
-        sink_({session_, std::move(event)});
+    explicit Stream(Sink sink, PendingInput pending = PendingInput()) : sink_(std::move(sink)), stop_chord_([this](CapturedInput input) {
+        Packet packet{session_, std::move(input.event)};
+        packet.pending = std::move(input.pending);
+        packet.omit_command = input.omit_command;
+        sink_(std::move(packet));
     }, std::move(pending)) {}
     uint64_t session() const { return session_; }
     uint32_t held_keys() const { return held_; }
@@ -61,7 +66,8 @@ public:
         }
         session_ = session;
         stop_chord_.start(stop_gestures, physical_keys_, physical_buttons_);
-        sink_({session_, nullptr, Boundary::Started, held_, idle_released_, origin});
+        try { sink_({session_, nullptr, Boundary::Started, held_, idle_released_, origin}); }
+        catch (const PendingInputError&) { fail(); return false; }
         idle_released_ = 0;
         return true;
     }
@@ -78,10 +84,12 @@ public:
         if (session_ != session) return;
         try { stop_chord_.finish(gesture, cutoff); }
         catch (const PendingInputError&) { fail(); return; }
+        try { sink_({session, nullptr, Boundary::Stopped}); }
+        catch (const PendingInputError&) { fail(); return; }
         session_ = 0;
         idle_released_ = 0;
-        sink_({session, nullptr, Boundary::Stopped});
     }
+    void fail(uint64_t session) { if (session && session_ == session) fail(); }
 private:
     void fail() {
         const auto session = session_;

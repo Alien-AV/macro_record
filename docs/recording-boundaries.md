@@ -35,36 +35,59 @@ it is still held when recording stops; no release is invented. A different,
 unregistered, stale-session or older-timestamp command cannot claim the candidate.
 There is no time-based guess about how long a command chord takes.
 
-### Provisional storage and failure
+### Capture delivery, storage and failure
 
 The capture filter holds at most 256 event objects in RAM. Longer candidates spill
 in full 256-record batches to one uniquely named temporary file per candidate.
 This preserves every high-rate sample and exact keyboard/mouse payload; there is
-no movement coalescing or per-sample file write. The collector FIFO also caps its
-queued packets at 256 and applies backpressure during replay. Already-published
-input is never edited or retrospectively trimmed.
+no movement coalescing or per-sample file write. When a prefix resolves, the source
+transfers its owning batch to the collector without reading the spool or invoking
+callbacks. Raw input continues to be timestamped at the production adapter while
+the collector reads and delivers that batch independently.
+
+The FIFO appends incoming native events to its unconsumed tail in the same bounded,
+batched storage. Reads and callbacks run outside its lock. There is no per-event
+callback backpressure on successful capture, even when a long Ctrl-motion prefix
+becomes genuine through release or typing. This prevents callback replay time from
+stretching the next raw event's delay and bunching subsequent queued input. The
+production adapter and clock are shared with the fake-source pipeline regression.
+The FIFO caps normal metadata entries at 256, plus one reserved failure slot.
+Already-published input is never edited or retrospectively trimmed.
 
 Spilling is necessary because an ordinary stop or later modified interaction must
 be able to recover the exact prefix, whereas a confirmed command must omit only
 its keys. Publishing either interpretation early is irreversible at the callback
 boundary. Unlimited RAM would grow with mouse polling rate and how long Ctrl is
-held. The temporary spool instead caps provisional record storage at 64 MiB
-(including the current in-memory record batch), sufficient for minutes at 8 kHz,
-while keeping RAM fixed. At the cap, or on file creation/write/seek/read failure,
+held. One atomic 64 MiB budget covers all provisional, queued and collector-owned
+record storage, including in-memory record batches. Moving a batch does not reset
+its budget or allocate a second independent allowance. Each batch holds at most
+256 event objects in RAM; the FIFO's metadata bound also limits the number of
+resident batches and handles. At the cap, or on file creation/write/seek/read failure,
 the session ends with an explicit Failed boundary. Its partial accepted input can
 remain visible, but it cannot be reported as a successful complete capture. No
 command keys are flushed as an overflow fallback and no samples are silently
 dropped from a successful capture.
 
-The spool contains only the unresolved candidate, in the current user's temporary
-directory. It is exclusively opened with Windows delete-on-close before any input
-is written. Normal stop, confirmed stop, cancellation by genuine input, failure,
-restart and destruction all close it; the OS also closes the handle on process
+Spools contain only undelivered capture data, in the current user's temporary
+directory. Each is exclusively opened with Windows delete-on-close before input
+is written. A resolved spool stays owned by its FIFO packet or collector until
+delivery finishes; its source can already be capturing a later session. Normal
+and confirmed stop completion, failure/discard and destruction close the storage.
+Shutdown ends the source, drains the collector, then joins it before releasing
+callbacks. The OS also closes the handles on process
 termination. Spool paths and contents are not saved to the library or macro format.
 Creation failure removes the reserved empty filename. Deletion is ordinary file
 deletion, not a secure-erasure guarantee against disk forensics or power failure.
 Tests verify unique names, denied concurrent opens, batched writes, exact replay,
 resource limits, and the absence of files after all normal/error cleanup paths.
+
+Started, data and Stopped remain ordered in one FIFO. A collector-side read or
+delay-overflow error closes that batch, reports Failed for its owning session,
+and posts a session-scoped error command to the source thread. Collector callbacks
+never mutate Stream state. Stale data or success for the failed/ended session are
+suppressed, including after a newer Started. The source rejects an old error
+command if a newer session is active. Failure metadata is independent of the
+data-byte budget, so exhausting that budget cannot swallow the failure marker.
 
 ## Native ordering
 
@@ -132,24 +155,32 @@ its remaining events cannot migrate to another tab.
 - The OS registration/message plumbing is build-checked but not exercised by these
   tests. Native tests use constructed raw structures and fake queue/state sinks;
   managed tests use the real session-aware RecordEngine with a fake transport and
-  deferred UI queue. They create no windows, register no Raw Input devices, and
-  inject no keyboard or mouse input.
+  deferred UI queue. Capture tests register no Raw Input devices and inject no
+  keyboard or mouse input; compiled WinUI checks use hidden controls and fake engines.
 - Capture regression tests include 262,145-sample motion, interleaved repeats,
   both command/raw delivery orders, timestamp wrap, real temporary-file lifecycle,
   injected storage faults and checked delay overflow. Managed capture tests verify
   that a failure after readiness faults its session and cannot affect a restart.
+- Pipeline tests feed constructed Raw Input through the production adapter and
+  clock. An 8 kHz fake source keeps exact 125-microsecond intervals while 75-microsecond
+  callbacks replay a long resolved prefix. A separately paused collector also
+  verifies concurrent source progress and FIFO-lock ownership. Further tests cover
+  rollover, collector faults, stale success/data, shared quota exhaustion, reserved
+  error markers and shutdown/discard of transferred storage.
 
 Run the Release solution build with `VCPKG_MAX_CONCURRENCY=4`, then
 `x64\Release\RecordPlaybackDLLTest.exe` and
 `dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Release -p:Platform=x64`.
 
-Stop-motion verification (2026-09-20): full x64 Debug and Release solution builds
-pass with VS18 MSBuild; each configuration passes 82 native and 522 managed tests,
-none skipped. The existing MSB3851 native/managed Windows SDK mismatch warning
-remains. Verification used fake input, temporary files and hidden compiled WinUI
-controls only. Physical Raw Input/hotkey delivery and live-device throughput were
-not exercised. Provisional input is delivered after resolution; a large resolved
-candidate can delay capture-thread processing while the collector drains it.
+Verification uses VS18 MSBuild, fake input, temporary files and hidden compiled
+WinUI controls only. Physical Raw Input/hotkey delivery and live-device throughput
+are not exercised. Disk I/O remains batched on the source; individual filesystem
+stalls and OS scheduling are outside the deterministic callback-drain regression.
+
+Pipeline verification (2026-09-21): full x64 Debug and Release solution builds
+pass with VS18 MSBuild and VCPKG_MAX_CONCURRENCY=4. Each configuration passes
+89 native and 522 managed tests, none skipped. The existing MSB3851 mismatch
+between native and managed Windows SDK targets remains the only build warning.
 
 Ordering references: [GetMessage](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-getmessage),
 [Raw Input](https://learn.microsoft.com/windows/win32/inputdev/about-raw-input), and

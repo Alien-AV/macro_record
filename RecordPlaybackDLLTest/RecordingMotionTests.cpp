@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "RecordingTestSink.h"
 #include "../RecordPlaybackDLL/Record/RecordingStream.h"
 #include <deque>
 #include <limits>
@@ -41,7 +42,7 @@ TEST(RecordingMotion, ConfirmedGesturesRetainLongInterleavingsBeforeAndAfterTrig
     for (auto gesture : {ControlW, ControlR, ControlAltF12, ControlShiftF12})
     for (bool trigger : {false, true}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, gesture);
         key(stream, VK_LCONTROL, false, 7);
         constexpr int samples = 8193;
@@ -68,7 +69,7 @@ TEST(RecordingMotion, ConfirmedGesturesRetainLongInterleavingsBeforeAndAfterTrig
 TEST(RecordingMotion, LongCandidateRequiresSuccessfulMatchingRegisteredSessionAndTimestamp) {
     for (int scenario = 0; scenario < 6; ++scenario) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(5, scenario == 1 ? NoStopGesture : ControlW | ControlR);
         key(stream, VK_RCONTROL, false, 17, 100);
         for (int i = 0; i < 4097; ++i) stream.input(motion(i, i + 31), 100);
@@ -98,7 +99,7 @@ TEST(RecordingMotion, ModifiedButtonsWheelsAndTypingCancelLongCandidateAndRetain
         MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSEEVENTF_WHEEL, MOUSEEVENTF_HWHEEL, 0};
     for (bool after_trigger : {false, true}) for (auto interaction : interactions) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, ControlW);
         key(stream, VK_CONTROL, false, 17);
         for (int i = 0; i < 1025; ++i) stream.input(motion(i, 31), 1);
@@ -126,7 +127,7 @@ TEST(RecordingMotion, HeldButtonsIncludingIdleDragPreventFreshModifierClaim) {
     for (bool idle : {false, true}) for (USHORT button : {RI_MOUSE_LEFT_BUTTON_DOWN, RI_MOUSE_RIGHT_BUTTON_DOWN,
         RI_MOUSE_MIDDLE_BUTTON_DOWN, RI_MOUSE_BUTTON_4_DOWN, RI_MOUSE_BUTTON_5_DOWN}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         if (idle) stream.mouse(button);
         stream.start(1, ControlW);
         if (!idle) {
@@ -146,7 +147,7 @@ TEST(RecordingMotion, HeldButtonsIncludingIdleDragPreventFreshModifierClaim) {
 
 TEST(RecordingMotion, ReleasedIdleButtonsDoNotContaminateNextSessionAndHeldKeysStayGenuine) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.mouse(RI_MOUSE_BUTTON_5_DOWN);
     stream.mouse(RI_MOUSE_BUTTON_5_UP);
     stream.key(VK_RCONTROL, false);
@@ -169,7 +170,7 @@ TEST(RecordingMotion, ReleasedIdleButtonsDoNotContaminateNextSessionAndHeldKeysS
 
 TEST(RecordingMotion, ReleaseThenRepressIsANewInteractionNotACommandRepeat) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     key(stream, VK_CONTROL);
     stream.input(motion(), 1);
@@ -182,7 +183,7 @@ TEST(RecordingMotion, ReleaseThenRepressIsANewInteractionNotACommandRepeat) {
 
 TEST(RecordingMotion, TickWrapAndFiniteQueueDrainRetainAllMotionBeforeHotkeyCutoff) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     key(stream, VK_CONTROL, false, 7, 0xfffffff0);
     std::deque<DWORD> raw(2049, 0xfffffffe);
@@ -212,7 +213,7 @@ TEST(RecordingMotion, UnknownPayloadCancelsMatchedCandidateWithoutLosingOwnershi
         void playback() const override { ADD_FAILURE() << "Must not inject input"; }
     };
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     key(stream, VK_CONTROL);
     for (int i = 0; i < 513; ++i) stream.input(motion(i), 1);
@@ -230,7 +231,7 @@ TEST(RecordingMotion, UnknownPayloadCancelsMatchedCandidateWithoutLosingOwnershi
 
 TEST(RecordingMotion, LongModifierTapCancelsThenFreshStopPrefixHasIndependentTiming) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     key(stream, VK_CONTROL, false, 7);
     for (int i = 0; i < 513; ++i) stream.input(motion(i), 1);
@@ -248,7 +249,7 @@ TEST(RecordingMotion, LongModifierTapCancelsThenFreshStopPrefixHasIndependentTim
 TEST(RecordingMotion, TimelyCommandStillOwnsLaterRepeatsAndReleasesOfTheSamePress) {
     for (bool trigger : {false, true}) {
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+        Stream stream(collect_packets(received));
         stream.start(1, ControlW);
         key(stream, VK_CONTROL, false, 7, 100);
         stream.input(motion(0, 11), 100);

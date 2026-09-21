@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "RecordingTestSink.h"
 #include "../RecordPlaybackDLL/Record/RecordingStream.h"
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
 #include "../Common/protobuf/cpp/Events.pb.h"
@@ -14,7 +15,7 @@ TEST(RecordingBoundary, LegacyProtobufReaderRejectsVersionedMacroEnvelope) {
 
 TEST(RecordingBoundary, OriginsAreMetadataOnEachOrderedBoundaryNeverSyntheticActions) {
     std::vector<Packet> packets;
-    Stream stream([&](Packet packet) { packets.push_back(std::move(packet)); });
+    Stream stream(collect_packets(packets));
     stream.key(VK_LCONTROL, false);
     stream.key('Q', false);
     ASSERT_TRUE(stream.start(1, NoStopGesture, {-500, -100, true}));
@@ -34,7 +35,7 @@ TEST(RecordingBoundary, OriginsAreMetadataOnEachOrderedBoundaryNeverSyntheticAct
 
 TEST(RecordingBoundary, MissingOriginIsExplicitAndCannotLeakFromEarlierSession) {
     std::vector<Packet> packets;
-    Stream stream([&](Packet packet) { packets.push_back(std::move(packet)); });
+    Stream stream(collect_packets(packets));
     ASSERT_TRUE(stream.start(1, NoStopGesture, {44, 55, true})); stream.stop(1);
     ASSERT_TRUE(stream.start(2));
     EXPECT_FALSE(packets.back().origin.valid);
@@ -53,7 +54,7 @@ struct RawKey { DWORD time; WORD key; bool up; };
 
 TEST(RecordingBoundary, OrderedStreamKeepsTailAndReadinessSeparateAcrossRapidSessions) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.key(VK_LCONTROL, false);
     stream.key('Q', false);
     ASSERT_TRUE(stream.start(1));
@@ -81,7 +82,7 @@ TEST(RecordingBoundary, OrderedStreamKeepsTailAndReadinessSeparateAcrossRapidSes
 
 TEST(RecordingBoundary, QueuedReleaseAfterCutoffDoesNotEraseHeldReadinessState) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     std::deque<RawKey> raw{{9, VK_LCONTROL, false}, {10, 'Q', false}, {12, 'Q', true}};
     const auto peek = [&](DWORD& time) { if (raw.empty()) return false; time = raw.front().time; return true; };
     const auto consume = [&] { auto key = raw.front(); raw.pop_front(); stream.key(key.key, key.up); };
@@ -96,7 +97,7 @@ TEST(RecordingBoundary, QueuedReleaseAfterCutoffDoesNotEraseHeldReadinessState) 
 
 TEST(RecordingBoundary, ReleaseBeforeReadinessAndNextPressRetainTheirRawOrder) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     std::deque<RawKey> raw{{8, 'Q', false}, {9, 'Q', true}, {11, 'Q', false}};
     ASSERT_TRUE(drain_prefix(10,
         [&](DWORD& time) { if (raw.empty()) return false; time = raw.front().time; return true; },
@@ -152,7 +153,7 @@ TEST(RecordingBoundary, GenericRawControlGetsSideFromExtendedFlagAndSidesDrainIn
 
 TEST(RecordingBoundary, IdleInputIsNotRetainedAndOrdinaryZeroDelayEventIsNotABoundary) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.input(key_event('A', false));
     EXPECT_TRUE(received.empty());
     stream.start(1);
@@ -164,7 +165,7 @@ TEST(RecordingBoundary, IdleInputIsNotRetainedAndOrdinaryZeroDelayEventIsNotABou
 
 TEST(RecordingBoundary, IdleReleasesSurviveRepressBeforeRolloverAndAreScopedToThatGap) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.key('Q', false);
     stream.key(VK_LCONTROL, false);
     stream.key(VK_RCONTROL, false);
@@ -188,7 +189,7 @@ TEST(RecordingBoundary, IdleReleasesSurviveRepressBeforeRolloverAndAreScopedToTh
 
 TEST(RecordingBoundary, IdleReleaseWithoutRepressIsReportedAlongsideEmptyHeldState) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.key('Q', false);
     stream.key(VK_RCONTROL, false);
     stream.start(1);

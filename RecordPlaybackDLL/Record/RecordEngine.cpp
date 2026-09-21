@@ -1,8 +1,5 @@
 #include "../stdafx.h"
 #include "RecordEngine.h"
-#include "../Common/KeyboardEvent.h"
-#include "../Common/MouseEvent.h"
-#include "../Common/MouseTranslation.h"
 #include <vector>
 
 namespace record_playback {
@@ -43,10 +40,13 @@ void RecordEngine::read_input(HRAWINPUT handle) {
     std::vector<BYTE> bytes(size);
     if (GetRawInputData(handle, RID_INPUT, bytes.data(), &size, sizeof(RAWINPUTHEADER)) != size) return;
     const auto raw = reinterpret_cast<const RAWINPUT*>(bytes.data());
-    if (raw->header.dwType == RIM_TYPEKEYBOARD) handle_keyboard_event(raw->data.keyboard);
+    const auto time = static_cast<DWORD>(GetMessageTime());
+    if (raw->header.dwType == RIM_TYPEKEYBOARD) pipeline_.keyboard(raw->data.keyboard, time);
     else if (raw->header.dwType == RIM_TYPEMOUSE) {
-        stream_.mouse(raw->data.mouse.usButtonFlags);
-        if (stream_.session()) handle_mouse_event(raw->data.mouse);
+        const auto& data = raw->data.mouse;
+        const auto bounds = pipeline_.session() && (data.usFlags & MOUSE_MOVE_ABSOLUTE)
+            ? mouse::physical_desktop_bounds((data.usFlags & MOUSE_VIRTUAL_DESKTOP) != 0) : mouse::DesktopBounds{};
+        pipeline_.mouse(data, bounds, time);
     }
 }
 
@@ -81,7 +81,9 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
             if (!PeekMessage(&message, nullptr, WM_START_RECORD, WM_SHUTDOWN_RECORD, PM_REMOVE)) continue;
         } else if (GetMessage(&message, nullptr, 0, 0) <= 0) break;
         if (message.message == WM_SHUTDOWN_RECORD || message.message == WM_QUIT) break;
-        if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
+        if (message.message == WM_FAILED_RECORD) {
+            pipeline_.fail(static_cast<uint64_t>(message.wParam));
+        } else if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
             const auto payload = static_cast<uint64_t>(message.lParam);
             const auto gestures = static_cast<uint32_t>(payload);
             const auto cutoff = message.message == WM_STOP_RECORD && gestures
@@ -92,7 +94,7 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
             DispatchMessage(&message);
         }
     }
-    if (stream_.session()) stream_.stop(stream_.session());
+    if (pipeline_.session()) pipeline_.stop(pipeline_.session());
     unregister_raw_input_stuff();
     DestroyWindow(hwnd);
 }
@@ -114,85 +116,27 @@ void RecordEngine::advance_boundaries(HWND hwnd) {
         if (command.kind == WM_START_RECORD) {
             POINT position{};
             const bool valid = GetPhysicalCursorPos(&position) != FALSE;
-            if (stream_.start(command.session, command.gestures, {position.x, position.y, valid})) {
-                time_of_last_event_ = std::chrono::steady_clock::now();
-            }
+            pipeline_.start(command.session, command.gestures, {position.x, position.y, valid});
         } else {
-            stream_.stop(command.session, command.gestures, command.cutoff);
+            pipeline_.stop(command.session, command.gestures, command.cutoff);
         }
     }
     // At most 256 raw messages per turn. The fixed cutoff excludes future input,
     // so a sustained device stream cannot continually extend the prefix to drain.
 }
 
-void RecordEngine::enqueue(capture::Packet packet) {
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex_);
-        // A resolved disk-backed candidate can contain far more events than
-        // RAM. Backpressure keeps replay into the collector bounded as well.
-        queue_changed_.wait(lock, [this] { return queue_.size() < 256; });
-        queue_.push(std::move(packet));
-    }
-    queue_changed_.notify_all();
-}
-
 void RecordEngine::collect() {
-    for (;;) {
-        capture::Packet packet;
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
-            queue_changed_.wait(lock, [&] { return collector_closing_ || !queue_.empty(); });
-            if (queue_.empty()) return;
-            packet = std::move(queue_.front());
-            queue_.pop();
-        }
-        queue_changed_.notify_all();
-        if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
-        else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys, packet.origin);
-    }
-}
-
-std::chrono::microseconds RecordEngine::get_time_since_last_event() {
-    const auto now = std::chrono::steady_clock::now();
-    const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - time_of_last_event_);
-    time_of_last_event_ = now;
-    return elapsed;
-}
-
-void RecordEngine::handle_keyboard_event(const RAWKEYBOARD& data) {
-    if (data.VKey == 255) return;
-    const auto key = capture::sided_key(data);
-    const auto up = (data.Flags & RI_KEY_BREAK) != 0;
-    stream_.key(key, up);
-    if (!stream_.session()) return;
-    auto event = std::make_unique<KeyboardEvent>();
-    event->time_since_last_event = get_time_since_last_event();
-    event->virtualKeyCode = key;
-    event->keyUp = up;
-    process_recorded_event(std::move(event));
-}
-
-void RecordEngine::handle_mouse_event(const RAWMOUSE& data) {
-    const auto bounds = (data.usFlags & MOUSE_MOVE_ABSOLUTE)
-        ? mouse::physical_desktop_bounds((data.usFlags & MOUSE_VIRTUAL_DESKTOP) != 0) : mouse::DesktopBounds{};
-    auto actions = mouse::translate_raw_mouse(data, bounds, std::chrono::microseconds(0));
-    if (actions.empty()) return;
-    actions.front().delay = get_time_since_last_event();
-    for (const auto& action : actions) {
-        auto mouse_event = std::make_unique<MouseEvent>(action.x, action.y, action.flags,
-            action.data, action.virtual_desktop, action.relative);
-        mouse_event->time_since_last_event = action.delay;
-        process_recorded_event(std::move(mouse_event));
-    }
-}
-
-void RecordEngine::process_recorded_event(std::unique_ptr<Event> event) {
-    stream_.input(std::move(event), static_cast<DWORD>(GetMessageTime()));
+    while (pipeline_.collect_one(true)) {}
 }
 
 RecordEngine::RecordEngine(record_events_callback_t input, status_callback_t status, boundary_callback_t boundary)
     : record_events_callback_(input), status_callback_(status), boundary_callback_(boundary),
-      stream_([this](capture::Packet packet) { enqueue(std::move(packet)); }) {
+      pipeline_([this](capture::Packet packet) {
+          if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
+          else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys, packet.origin);
+      }, [this](uint64_t session) {
+          PostThreadMessage(window_thread_id_, WM_FAILED_RECORD, static_cast<WPARAM>(session), 0);
+      }) {
     std::promise<bool> initialized;
     auto readiness = initialized.get_future();
     collector_thread_ = std::thread(&RecordEngine::collect, this);
@@ -201,8 +145,7 @@ RecordEngine::RecordEngine(record_events_callback_t input, status_callback_t sta
         ready_ = readiness.get();
     } catch (...) {
         if (window_thread_.joinable()) window_thread_.join();
-        { std::lock_guard<std::mutex> lock(queue_mutex_); collector_closing_ = true; }
-        queue_changed_.notify_one();
+        pipeline_.close();
         collector_thread_.join();
         throw;
     }
@@ -211,11 +154,7 @@ RecordEngine::RecordEngine(record_events_callback_t input, status_callback_t sta
 RecordEngine::~RecordEngine() {
     if (ready_) PostThreadMessage(window_thread_id_, WM_SHUTDOWN_RECORD, 0, 0);
     if (window_thread_.joinable()) window_thread_.join();
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        collector_closing_ = true;
-    }
-    queue_changed_.notify_one();
+    pipeline_.close();
     if (collector_thread_.joinable()) collector_thread_.join();
 }
 

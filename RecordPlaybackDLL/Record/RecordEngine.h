@@ -1,11 +1,8 @@
 #pragma once
-#include <condition_variable>
 #include <deque>
 #include <future>
-#include <mutex>
-#include <queue>
 #include <thread>
-#include "RecordingStream.h"
+#include "RecordingPipeline.h"
 #include "../../Common/StatusEnum.cs"
 
 namespace record_playback {
@@ -26,19 +23,15 @@ public:
 private:
     static constexpr UINT WM_START_RECORD = WM_APP + 1;
     static constexpr UINT WM_STOP_RECORD = WM_APP + 2;
+    static constexpr UINT WM_FAILED_RECORD = WM_APP + 3;
     static constexpr UINT WM_SHUTDOWN_RECORD = WM_APP + 4;
     struct Command { UINT kind; uint64_t session; DWORD cutoff; uint32_t gestures; };
 
     record_events_callback_t record_events_callback_;
     status_callback_t status_callback_;
     boundary_callback_t boundary_callback_;
-    std::mutex queue_mutex_;
-    std::condition_variable queue_changed_;
-    std::queue<capture::Packet> queue_;
-    bool collector_closing_ = false;
-    capture::Stream stream_;
+    capture::Pipeline pipeline_;
     std::deque<Command> commands_;
-    std::chrono::steady_clock::time_point time_of_last_event_{};
     std::thread window_thread_;
     std::thread collector_thread_;
     DWORD window_thread_id_ = 0;
@@ -50,11 +43,6 @@ private:
     void window_main(std::promise<bool>);
     void advance_boundaries(HWND);
     void collect();
-    void enqueue(capture::Packet);
     void read_input(HRAWINPUT);
-    std::chrono::microseconds get_time_since_last_event();
-    void handle_keyboard_event(const RAWKEYBOARD&);
-    void handle_mouse_event(const RAWMOUSE&);
-    void process_recorded_event(std::unique_ptr<Event>);
 };
 }

@@ -40,7 +40,7 @@ inline uint32_t mouse_buttons(uint32_t held, DWORD flags, DWORD data) {
 class StopChord {
 public:
     using Keys = std::array<bool, 256>;
-    using Sink = std::function<void(std::unique_ptr<Event>)>;
+    using Sink = std::function<void(CapturedInput)>;
     explicit StopChord(Sink sink, PendingInput pending = PendingInput())
         : sink_(std::move(sink)), pending_(std::move(pending)) {}
     void start(uint32_t gestures, const Keys& held, uint32_t buttons = 0) {
@@ -101,7 +101,7 @@ public:
             }
         }
         flush(false);
-        sink_(std::move(event));
+        sink_({std::move(event)});
     }
     void finish(uint32_t gesture, DWORD cutoff) {
         const auto mods = gesture_modifiers(gesture);
@@ -138,8 +138,13 @@ private:
     }
     void flush(bool omit_command) {
         if (pending_.empty()) return;
-        pending_.drain(omit_command, sink_);
+        auto next = pending_.fresh();
+        auto resolved = std::make_unique<PendingInput>(std::move(pending_));
+        pending_ = std::move(next);
         clear();
+        // The capture thread transfers ownership only. File reads and callbacks
+        // belong to the collector, regardless of how large this prefix became.
+        sink_({nullptr, std::move(resolved), omit_command});
     }
     Sink sink_;
     Keys down_{};

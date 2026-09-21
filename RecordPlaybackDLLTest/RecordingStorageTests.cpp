@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "RecordingTestSink.h"
 #include "../RecordPlaybackDLL/Record/RecordingStream.h"
 #include <limits>
 
@@ -68,7 +69,7 @@ TEST(RecordingStorage, BatchedUniquePrivateFilesAreDeletedOnConfirmationCancella
         StorageStats stats;
         std::vector<Packet> received;
         {
-            Stream stream([&](Packet packet) { received.push_back(std::move(packet)); }, PendingInput(storage_factory(stats)));
+            Stream stream(collect_packets(received), PendingInput(storage_factory(stats)));
             stream.start(1, ControlW);
             ctrl(stream);
             for (size_t i = 1; i < PendingInput::capacity; ++i) move(stream);
@@ -108,7 +109,7 @@ TEST(RecordingStorage, CreateWriteSeekReadFailuresEndCaptureExplicitlyAndCloseBe
     for (int failure = 0; failure < 4; ++failure) {
         StorageStats stats;
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); }, PendingInput(storage_factory(stats)));
+        Stream stream(collect_packets(received), PendingInput(storage_factory(stats)));
         stream.start(1, ControlW);
         ctrl(stream);
         stats.fail_create = failure == 0;
@@ -145,7 +146,7 @@ TEST(RecordingStorage, ExplicitByteBudgetFailsWithoutPublishingCandidateOrRetain
     StorageStats stats;
     std::vector<Packet> received;
     constexpr size_t limit = PendingInput::capacity * 2 + 1;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); }, PendingInput(storage_factory(stats), limit));
+    Stream stream(collect_packets(received), PendingInput(storage_factory(stats), limit));
     stream.start(1, ControlW);
     ctrl(stream);
     for (size_t i = 1; i < limit; ++i) move(stream);
@@ -165,7 +166,7 @@ TEST(RecordingStorage, DelayCarryChecksOverflowInMemoryAndAfterSpillWithoutWrapp
     for (bool spill : {false, true}) for (bool overflow : {false, true}) {
         StorageStats stats;
         std::vector<Packet> received;
-        Stream stream([&](Packet packet) { received.push_back(std::move(packet)); }, PendingInput(storage_factory(stats)));
+        Stream stream(collect_packets(received), PendingInput(storage_factory(stats)));
         stream.start(1, ControlW);
         ctrl(stream, (std::numeric_limits<int64_t>::max)() - 1);
         ctrl(stream, 1);
@@ -186,7 +187,7 @@ TEST(RecordingStorage, DelayCarryChecksOverflowInMemoryAndAfterSpillWithoutWrapp
 
 TEST(RecordingStorage, RemovedModifierDelaySumItselfCannotOverflow) {
     std::vector<Packet> received;
-    Stream stream([&](Packet packet) { received.push_back(std::move(packet)); });
+    Stream stream(collect_packets(received));
     stream.start(1, ControlW);
     ctrl(stream, (std::numeric_limits<int64_t>::max)());
     ctrl(stream, 1);
@@ -199,7 +200,7 @@ TEST(RecordingStorage, QuarterMillionSamplesStayMemoryBoundedAndReplayWithoutCoa
     StorageStats stats;
     size_t received = 0;
     int64_t duration = 0;
-    StopChord filter([&](std::unique_ptr<Event> event) {
+    StopChord filter(collect_events([&](std::unique_ptr<Event> event) {
         const auto mouse = dynamic_cast<MouseEvent*>(event.get());
         ASSERT_NE(nullptr, mouse);
         EXPECT_EQ(static_cast<LONG>(received), mouse->x);
@@ -208,7 +209,7 @@ TEST(RecordingStorage, QuarterMillionSamplesStayMemoryBoundedAndReplayWithoutCoa
         EXPECT_EQ(std::chrono::microseconds(received ? 11 : 18), mouse->time_since_last_event);
         duration += mouse->time_since_last_event.count();
         ++received;
-    }, PendingInput(storage_factory(stats)));
+    }), PendingInput(storage_factory(stats)));
     filter.start(ControlW, {});
     auto control = std::make_unique<KeyboardEvent>();
     control->virtualKeyCode = VK_LCONTROL;
