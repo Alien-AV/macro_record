@@ -61,8 +61,8 @@ internal sealed class WaitEvaluator(WaitCondition condition)
 internal sealed class WaitRunner(IWaitObserver observer)
 {
     internal static WaitRunner Desktop { get; } = new(new WindowPixelObserver(new WindowsWaitDesktop()));
-    // A blocked provider retains this permit until it actually returns. Cancellation
-    // never starts replacement observations alongside a stuck call.
+    // The permit covers a whole run, including its last observation and callback
+    // teardown. Neither a stuck read nor stuck cancellation can accumulate workers.
     private readonly SemaphoreSlim _observationSlot = new(1, 1);
 
     public async Task<WaitOutcome> RunAsync(WaitCondition source, TimeSpan remaining, CancellationToken cancellationToken,
@@ -80,18 +80,21 @@ internal sealed class WaitRunner(IWaitObserver observer)
         var clock = Stopwatch.StartNew();
         var evaluator = new WaitEvaluator(condition);
         var last = "No observation available";
+        var ownsSlot = false;
+        Task pendingObservation = Task.CompletedTask;
         try
         {
+            await _observationSlot.WaitAsync(deadline.Token).ConfigureAwait(false);
+            ownsSlot = true;
             while (true)
             {
-                await _observationSlot.WaitAsync(deadline.Token).ConfigureAwait(false);
                 var started = clock.Elapsed;
                 var observationTask = Task.Run(async () =>
                 {
                     try { return await observer.ObserveAsync(condition.Clone(), observerToken).ConfigureAwait(false); }
                     catch (Exception error) { return new WaitObservation(ObservationState.Error, error.Message); }
-                    finally { _observationSlot.Release(); }
                 });
+                pendingObservation = observationTask;
                 var sample = await observationTask.WaitAsync(deadline.Token).ConfigureAwait(false);
                 deadline.Token.ThrowIfCancellationRequested();
                 var elapsed = clock.Elapsed;
@@ -108,7 +111,12 @@ internal sealed class WaitRunner(IWaitObserver observer)
         { return new(false, $"Condition timed out. Last observation: {last}"); }
         finally
         {
-            _ = observerCancel.CancelAsync().ContinueWith(task => { _ = task.Exception; observerCancel.Dispose(); },
+            _ = Task.WhenAll(pendingObservation, observerCancel.CancelAsync()).ContinueWith(task =>
+                {
+                    _ = task.Exception;
+                    observerCancel.Dispose();
+                    if (ownsSlot) _observationSlot.Release();
+                },
                 CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }

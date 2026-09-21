@@ -14,22 +14,115 @@ public sealed class WaitPlaybackTests
         public ulong Index;
         public int Starts, Resolves;
         public NativeWaitRequest Request;
+        public bool TimeoutBeforeRequest, TimeoutAfterSuccess, FailTerminalQuery;
+        public int ActiveQueries;
         public PlaybackResult Start(byte[] events, bool loop, out ulong sessionId)
         {
             Result = PlaybackResult.Running; Starts++; sessionId = ++Id;
             Request = new() { Occurrence = 7, EventIndex = Index, RemainingUs = 1_000_000 };
             return Result;
         }
-        public PlaybackResult Poll(ulong id) => Result;
+        public PlaybackResult Poll(ulong id) => TimeoutBeforeRequest ? Result = PlaybackResult.WaitTimedOut : Result;
         public PlaybackResult Abort(ulong id) => Result = PlaybackResult.Cancelled;
         public PlaybackResult SetLoop(ulong id, bool loop) => Result;
-        public PlaybackResult WaitRequest(ulong id, out NativeWaitRequest request) { request = Request; return Result; }
+        public PlaybackResult WaitRequest(ulong id, out NativeWaitRequest request)
+        {
+            if (Result == PlaybackResult.Running) ActiveQueries++;
+            else if (FailTerminalQuery) throw new InvalidOperationException("fake diagnostic query failure");
+            request = Request; return Result;
+        }
         public PlaybackResult ResolveWait(ulong id, ulong occurrence, bool satisfied)
         {
             Assert.AreEqual(Id, id); Assert.AreEqual(Request.Occurrence, occurrence);
             Resolves++; Result = satisfied ? PlaybackResult.Finished : PlaybackResult.WaitFailed;
+            if (satisfied && TimeoutAfterSuccess)
+            {
+                Request = new() { Occurrence = Request.Occurrence + 1, EventIndex = Request.EventIndex + 1 };
+                Result = PlaybackResult.WaitTimedOut;
+            }
             return PlaybackResult.Running;
         }
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task RunPermitRemainsHeldAfterObservationReturnsUntilCancellationCallbackFinishes(bool abort)
+    {
+        using var release = new ManualResetEventSlim();
+        using var cancel = new CancellationTokenSource();
+        var observing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var returned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<WaitObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var runner = new WaitRunner(new Observer(async (condition, token) =>
+        {
+            Interlocked.Increment(ref calls);
+            token.Register(() => { callbackStarted.TrySetResult(); release.Wait(); callbackFinished.TrySetResult(); });
+            observing.TrySetResult();
+            try { return await response.Task; }
+            finally { returned.TrySetResult(); }
+        }));
+        try
+        {
+            var first = runner.RunAsync(Wait().Condition, TimeSpan.FromSeconds(2), cancel.Token);
+            await observing.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            if (abort)
+            {
+                cancel.Cancel();
+                await Assert.ThrowsAsync<OperationCanceledException>(() => first.WaitAsync(TimeSpan.FromSeconds(2)));
+                await callbackStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+                response.SetResult(new(ObservationState.Match, "returned after abort"));
+            }
+            else
+            {
+                response.SetResult(new(ObservationState.Match, "success before blocked teardown"));
+                Assert.IsTrue((await first.WaitAsync(TimeSpan.FromSeconds(2))).Satisfied);
+                await callbackStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            }
+            await returned.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            for (var i = 0; i < 3; i++)
+                Assert.IsFalse((await runner.RunAsync(Wait().Condition, TimeSpan.FromMilliseconds(30), default).WaitAsync(TimeSpan.FromSeconds(2))).Satisfied);
+            Assert.AreEqual(1, calls, "Returned observations must not release the permit while cancellation callbacks remain blocked.");
+            release.Set(); await callbackFinished.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.IsTrue((await runner.RunAsync(Wait().Condition, TimeSpan.FromSeconds(2), default)).Satisfied);
+            Assert.AreEqual(2, calls);
+        }
+        finally { release.Set(); response.TrySetResult(new(ObservationState.Match, "released")); }
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task TerminalIdentityAttributesUnobservedTimeoutRatherThanPreviousWait(bool afterSuccess)
+    {
+        var native = new Native { Index = 1, TimeoutBeforeRequest = !afterSuccess, TimeoutAfterSuccess = afterSuccess };
+        var calls = 0;
+        using var engine = new PlaybackEngine(native, new Observer((condition, token) =>
+        { Interlocked.Increment(ref calls); return ValueTask.FromResult(new WaitObservation(ObservationState.Match, "prior success")); }));
+        var timed = Wait().Condition; timed.TimeoutUs = 1000; timed.Window.Target.Title = "Unobserved short wait";
+        var previous = Wait().Condition; previous.Window.Target.Title = "Previous successful wait";
+        var events = new List<InputEvent> { new MouseEvent(0, 0, MacroRecorderGUI.Common.MouseActionTypeFlags.Move) };
+        if (afterSuccess) events.Add(new WaitConditionEvent(previous));
+        events.Add(new WaitConditionEvent(timed));
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => engine.PlaybackEventsAsync(events).WaitAsync(TimeSpan.FromSeconds(2)));
+        StringAssert.Contains(error.Message, afterSuccess ? "event 3:" : "event 2:");
+        StringAssert.Contains(error.Message, "Unobserved short wait");
+        StringAssert.Contains(error.Message, "no observation received");
+        Assert.IsFalse(error.Message.Contains("Previous successful wait")); Assert.IsFalse(error.Message.Contains("prior success"));
+        Assert.AreEqual(afterSuccess ? 1 : 0, calls);
+        if (afterSuccess) Assert.IsTrue(native.ActiveQueries > 0); else Assert.AreEqual(0, native.ActiveQueries);
+    }
+
+    [TestMethod]
+    public async Task FailedTerminalIdentityQueryCompletesWithUnattributedError()
+    {
+        var native = new Native { TimeoutBeforeRequest = true, FailTerminalQuery = true };
+        using var engine = new PlaybackEngine(native, new Observer((condition, token) => throw new AssertFailedException("No observation expected")));
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => engine.PlaybackEventsAsync([Wait()]).WaitAsync(TimeSpan.FromSeconds(2)));
+        StringAssert.Contains(error.Message, "Terminal wait identity is unavailable"); Assert.IsFalse(error.Message.Contains("event 1"));
     }
 
     [TestMethod]

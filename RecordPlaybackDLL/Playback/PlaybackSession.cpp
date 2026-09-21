@@ -58,6 +58,7 @@ PlaybackResult PlaybackSession::start(std::vector<std::unique_ptr<Event>> events
 	loop_safe_ = loop_safe;
 	result_ = PlaybackResult::Running;
 	waiting_ = {};
+	failed_wait_ = {};
 	try {
 		worker_ = std::thread(&PlaybackSession::run, this, std::move(events));
 		id = ++generation_;
@@ -82,11 +83,13 @@ PlaybackResult PlaybackSession::wait_request(uint64_t id, PlaybackWaitRequest& r
 	if (!id || id != generation_) return PlaybackResult::StaleSession;
 	std::lock_guard<std::mutex> lock(wait_mutex_);
 	const auto now = Clock::now();
-	if (waiting_.occurrence && !cancelled_ && resolution_ == 0 && now < wait_deadline_) {
+	const auto result = result_.load();
+	if (result == PlaybackResult::WaitTimedOut || result == PlaybackResult::WaitFailed) request = failed_wait_;
+	else if (result == PlaybackResult::Running && waiting_.occurrence && !cancelled_ && resolution_ == 0 && now < wait_deadline_) {
 		request = waiting_;
 		request.remaining_us = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(wait_deadline_ - now).count());
 	}
-	return result_;
+	return result;
 }
 
 PlaybackResult PlaybackSession::resolve_wait(uint64_t id, uint64_t occurrence, bool satisfied) {
@@ -170,6 +173,7 @@ void PlaybackSession::run(std::vector<std::unique_ptr<Event>> events) noexcept {
 					wait_deadline_ = Clock::now() + std::chrono::microseconds(wait->condition.timeout_us());
 					resolution_ = 0;
 					wake_.wait_until(lock, wait_deadline_, [this] { return cancelled_.load() || resolution_ != 0; });
+					if (!cancelled_ && resolution_ != 1) failed_wait_ = { waiting_.occurrence, waiting_.event_index, 0 };
 					waiting_ = {};
 					if (cancelled_) break;
 					if (resolution_ != 1) { outcome = resolution_ == -1 ? PlaybackResult::WaitFailed : PlaybackResult::WaitTimedOut; break; }

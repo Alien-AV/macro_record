@@ -74,6 +74,33 @@ TEST(ConditionalWait, CancellationWakesNativeWaitAndRetainsSessionOwnership) {
     session.abort(other);
 }
 
+TEST(ConditionalWait, UnobservedOneMillisecondTimeoutRetainsTerminalIdentityOnlyForItsSession) {
+    PlaybackSession session([](const Event&) { return true; });
+    auto events = only_wait(1ms); events.insert(events.begin(), key_event(true));
+    uint64_t id; ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    ASSERT_EQ(PlaybackResult::WaitTimedOut, finished(session, id));
+    PlaybackWaitRequest terminal{};
+    EXPECT_EQ(PlaybackResult::WaitTimedOut, session.wait_request(id, terminal));
+    ASSERT_NE(0u, terminal.occurrence); EXPECT_EQ(1u, terminal.event_index); EXPECT_EQ(0u, terminal.remaining_us);
+    EXPECT_EQ(PlaybackResult::StaleWait, session.resolve_wait(id, terminal.occurrence, true));
+    uint64_t next; ASSERT_EQ(PlaybackResult::Running, session.start(only_wait(1ms), false, next));
+    EXPECT_EQ(PlaybackResult::StaleSession, session.wait_request(id, terminal)); EXPECT_EQ(0u, terminal.occurrence);
+    ASSERT_EQ(PlaybackResult::WaitTimedOut, finished(session, next));
+    EXPECT_EQ(PlaybackResult::WaitTimedOut, session.wait_request(next, terminal)); EXPECT_EQ(0u, terminal.event_index);
+}
+
+TEST(ConditionalWait, ObservedSuccessDoesNotHideSubsequentUnobservedTimeout) {
+    PlaybackSession session([](const Event&) { ADD_FAILURE() << "Wait-only input"; return true; });
+    auto events = only_wait(); events.push_back(wait_event(1ms));
+    uint64_t id; ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    const auto first = request(session, id); ASSERT_NE(0u, first.occurrence);
+    EXPECT_EQ(PlaybackResult::Running, session.resolve_wait(id, first.occurrence, true));
+    ASSERT_EQ(PlaybackResult::WaitTimedOut, finished(session, id));
+    PlaybackWaitRequest terminal{};
+    EXPECT_EQ(PlaybackResult::WaitTimedOut, session.wait_request(id, terminal));
+    EXPECT_GT(terminal.occurrence, first.occurrence); EXPECT_EQ(1u, terminal.event_index); EXPECT_EQ(0u, terminal.remaining_us);
+}
+
 TEST(ConditionalWait, OccurrencesChangeAcrossConsecutiveWaitsAndRepeats) {
     PlaybackSession session([](const Event&) { return true; }); auto events = only_wait(); events.push_back(wait_event());
     uint64_t id; ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), true, id));

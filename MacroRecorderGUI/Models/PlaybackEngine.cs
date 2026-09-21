@@ -225,13 +225,30 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         }
     }
 
-    private static void Complete(Session session, PlaybackResult result)
+    private void Complete(Session session, PlaybackResult result)
     {
         if (result == PlaybackResult.Finished) session.Completion.TrySetResult();
         else if (result == PlaybackResult.Cancelled) session.Completion.TrySetCanceled();
         else session.Completion.TrySetException(result is PlaybackResult.WaitFailed or PlaybackResult.WaitTimedOut
-            ? new InvalidOperationException(session.WaitFailure ?? $"Wait at event {session.WaitEventIndex + 1}: {PlaybackError(result).Message} {session.LastWait?.Condition}. Last observation: {session.LastWait?.Observation ?? "unavailable"}")
+            ? TerminalWaitError(session, result)
             : PlaybackError(result));
+    }
+
+    private Exception TerminalWaitError(Session session, PlaybackResult result)
+    {
+        try
+        {
+            if (_native is IPlaybackWaitNativeApi api && api.WaitRequest(session.Id, out var terminal) == result
+                && terminal.Occurrence != 0 && terminal.EventIndex < (ulong)session.Events.Length
+                && session.Events[(int)terminal.EventIndex] is WaitConditionEvent wait)
+            {
+                var observed = session.Occurrence == terminal.Occurrence && session.WaitEventIndex == terminal.EventIndex;
+                return new InvalidOperationException(observed && session.WaitFailure is { } failure ? failure
+                    : $"Wait at event {terminal.EventIndex + 1}: {PlaybackError(result).Message} {wait.Description}. Last observation: {(observed ? session.LastWait?.Observation : null) ?? "unavailable (no observation received)"}");
+            }
+        }
+        catch { /* A failed diagnostic query must not strand terminal completion. */ }
+        return new InvalidOperationException($"{PlaybackError(result).Message} Terminal wait identity is unavailable.");
     }
 
     private static Exception PlaybackError(PlaybackResult result) => new InvalidOperationException(result switch
