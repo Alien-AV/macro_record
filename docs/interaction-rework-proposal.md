@@ -41,11 +41,15 @@ selecting a card. An adjacent options control changes playback settings without
 starting execution. Keep a concise visible summary of repeats and countdown,
 especially repeat-until-stopped. Countdown and emergency Stop still apply.
 
-Use visible checkboxes for bulk selection. Successive normal clicks in explicit
-selection mode toggle items without modifier keys. Show a contextual selection
-count and Delete/Restore action. Clear selection must not run/open a recording.
-Keep selection scope explicit under search; do not silently delete hidden items.
-Restore remains available through Undo and Local trash.
+Use visible checkboxes for bulk selection, without requiring a separate Select
+recordings step. Checking the first item reveals the contextual count and
+Delete/Restore toolbar; each checkbox independently toggles its recording. Keep
+card-body opening and explicit Play separate from selection rather than silently
+changing their meaning when a batch exists. Escape clears the batch without
+opening or running anything. Keep selection scope explicit under search; do not
+silently delete hidden items. Restore remains available through Undo and Local
+trash. This removes a mode in the proposed rework; the currently approved bug fix
+retains explicit selection mode and makes its ordinary clicks work correctly.
 
 Offer a compact list view if a growing library makes large path cards wasteful.
 Thumbnails remain optional recognition aids, not the purpose of the library.
