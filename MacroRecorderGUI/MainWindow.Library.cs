@@ -6,6 +6,18 @@ namespace MacroRecorderGUI;
 
 public sealed partial class MainWindow
 {
+    private long _libraryPreferenceRevision = -1;
+    private bool _libraryPreferencesLoaded;
+
+    private void RefreshLibraryPlaybackPreferences(bool force = false)
+    {
+        if (_closed || _closing || !_constructed || !force && _libraryPreferenceRevision == _preferences.Revision
+            && _libraryPreferencesLoaded == _preferences.IsLoaded) return;
+        Library.RefreshPlaybackPreferences(_preferences);
+        _libraryPreferenceRevision = _preferences.Revision;
+        _libraryPreferencesLoaded = _preferences.IsLoaded;
+    }
+
     private async void Library_PlayRequested(object? sender, LibraryCard card)
         => await ExecuteLibraryCommandAsync((Guid)card.Key, playback: true, async (macro, options, lease) =>
         {

@@ -21,8 +21,10 @@ public sealed record LibraryCard(object Key, string Name, string Summary, string
     }
 
     public bool IsDeleted { get; init; }
-    public bool PreferencesLoaded { get; init; }
-    public PlaybackOptions Playback { get; init; } = new();
+    private bool _preferencesLoaded;
+    private PlaybackOptions _playback = new();
+    public bool PreferencesLoaded { get => _preferencesLoaded; init => _preferencesLoaded = value; }
+    public PlaybackOptions Playback { get => _playback; init => _playback = value; }
     public bool IsCompact { get; init; }
     public bool InlineActions { get; init; }
     private bool _isSelected;
@@ -32,6 +34,14 @@ public sealed record LibraryCard(object Key, string Name, string Summary, string
         set { if (_isSelected == value) return; _isSelected = value; PropertyChanged?.Invoke(this, new(nameof(IsSelected))); }
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+    internal void UpdatePlaybackPreferences(bool loaded, PlaybackOptions options)
+    {
+        if (_preferencesLoaded == loaded && _playback == options) return;
+        _preferencesLoaded = loaded;
+        _playback = options;
+        foreach (var property in new[] { nameof(PreferencesLoaded), nameof(Playback), nameof(PlaybackSummary), nameof(AccessibleName), nameof(PlayLabel) })
+            PropertyChanged?.Invoke(this, new(property));
+    }
     public string PlaybackSummary => RunSettingsPresentation.PlaybackSummary(PreferencesLoaded, Playback);
     public string AccessibleName => $"{Name}, {Summary}, {LastOpened}, {Thumbnail.Label}, {Thumbnail.InputSummary}"
         + (IsDeleted ? ", In local trash" : $", {PlaybackSummary}. Open to edit.");
@@ -77,6 +87,11 @@ public sealed partial class LibraryView : UserControl
     }
     public void SetCards(IReadOnlyList<LibraryCard> cards) { _cards = cards; Filter(); }
     public void SetTrashCards(IReadOnlyList<LibraryCard> cards) { _trashCards = cards; Filter(); }
+    internal void RefreshPlaybackPreferences(RunPreferences preferences)
+    {
+        foreach (var card in _cards.Concat(Cards.Items.Cast<LibraryCard>()))
+            if (!card.IsDeleted && card.Key is Guid id) card.UpdatePlaybackPreferences(preferences.IsLoaded, preferences.PlaybackFor(id));
+    }
     public void SetUndoDeleteCount(int count)
     {
         UndoDeleteButton.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;

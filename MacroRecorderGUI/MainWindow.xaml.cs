@@ -151,6 +151,7 @@ public sealed partial class MainWindow : Window
     private void RefreshShell()
     {
         if (_closed || !_constructed) return;
+        RefreshLibraryPlaybackPreferences();
         var macro = ViewModel.ActiveMacro;
         var preview = !_libraryVisible && ActiveEditor?.IsPreviewMode == true;
         var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping;
@@ -302,6 +303,7 @@ public sealed partial class MainWindow : Window
         }
         if (_closed || _closing || version != _libraryRefreshVersion) return;
         Library.SetCards(cards);
+        RefreshLibraryPlaybackPreferences(force: true);
         await ViewModel.RefreshTrashAsync();
         if (_closed || _closing || version != _libraryRefreshVersion) return;
         Library.SetTrashCards(ViewModel.Trash.Select(item => new LibraryCard(item.Metadata.Id, item.Metadata.Name,
@@ -549,6 +551,9 @@ public sealed partial class MainWindow : Window
         finally { _stopping = false; RefreshShell(); }
     }
     private async void RunTimer_Tick(object? sender, object e)
+        => await FinishExternallyStoppedRunAsync();
+
+    internal async Task FinishExternallyStoppedRunAsync()
     {
         if (_closed) return;
         ViewModel.RefreshWorkflowSummaries();
@@ -560,7 +565,7 @@ public sealed partial class MainWindow : Window
             if (_runMacro is { IsDirty: true } macro) await SaveRunAsync(macro);
         }
         catch (Exception error) { if (!_closed) SetMessage(error.Message); }
-        finally { FinishController(run); _stopping = false; }
+        finally { FinishController(run); _stopping = false; RefreshShell(); }
     }
     private void RefreshController()
     {

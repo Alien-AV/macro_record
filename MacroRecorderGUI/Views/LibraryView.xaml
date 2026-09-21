@@ -70,7 +70,7 @@
                                 </Border>
                                 <Grid Grid.Row="1" Padding="{Binding BodyPadding}" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                    <CheckBox x:Name="SelectionCheckBox" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Top"
+                                    <CheckBox x:Name="SelectionCheckBox" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Top" MinWidth="32"
                                         AutomationProperties.Name="{Binding SelectLabel}" Checked="Selection_Changed" Unchecked="Selection_Changed"/>
                                     <StackPanel Grid.Column="1" Spacing="5">
                                         <TextBlock Text="{Binding Name}" ToolTipService.ToolTip="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>

@@ -1,3 +1,6 @@
+using System.Reflection;
+using MacroRecorderGUI;
+using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 using MacroRecorderGUI.ViewModels;
 using MacroRecorderGUI.Views;
@@ -145,15 +148,28 @@ public sealed partial class HiddenFocusTests
             Call(library, "ResizeCards", 900d);
             Assert.AreEqual(Orientation.Horizontal, Field<StackPanel>(library, "LibraryActions").Orientation);
             Assert.IsTrue(cards.Items.Cast<LibraryCard>().All(card => card.ActionsRow == 1));
+            foreach (var dense in new[] { false, true })
+            {
+                compact.IsChecked = dense;
+                LayoutControl(library, 420, 800);
+                await Task.Delay(1);
+                var check = CardControl<CheckBox>(0, "SelectionCheckBox", 420);
+                var summary = CardControl<TextBlock>(0, "CardPlaybackSummary", 420);
+                var body = (Grid)VisualTreeHelper.GetParent(check);
+                Assert.AreEqual(32d, check.MinWidth);
+                Assert.IsTrue(check.ActualWidth <= 40, $"Contentless checkbox should stay compact, not reserve {check.ActualWidth}px.");
+                Assert.IsTrue(body.ColumnDefinitions[0].ActualWidth <= 40);
+                Assert.IsTrue(summary.ActualWidth >= 200, $"Narrow card text lost its width: {summary.ActualWidth}px.");
+            }
             Assert.IsFalse(IsWindowVisible(hwnd));
 
-            T CardControl<T>(int index, string name) where T : FrameworkElement
+            T CardControl<T>(int index, string name, double width = 1100) where T : FrameworkElement
             {
-                LayoutControl(library, 1100, 800);
+                LayoutControl(library, width, 800);
                 var container = (GridViewItem)cards.ContainerFromIndex(index);
                 Assert.IsNotNull(container, "Exercise a realized compiled card.");
                 container.ApplyTemplate();
-                LayoutControl(library, 1100, 800);
+                LayoutControl(library, width, 800);
                 var found = LibraryDescendants(container).OfType<T>().SingleOrDefault(element => element.Name == name);
                 Assert.IsNotNull(found, $"Missing {name}: " + string.Join(", ", LibraryDescendants(container).OfType<FrameworkElement>().Select(element => element.GetType().Name + ":" + element.Name)));
                 return found;
@@ -165,7 +181,197 @@ public sealed partial class HiddenFocusTests
                 .CreatePeerForElement(control).GetPattern(PatternInterface.Invoke)).Invoke();
         }
         finally { window?.Close(); temporary.Delete(recursive: true); }
+        await CheckLibraryPreferencePublication();
+        await CheckPreferenceCommitAfterWindowClose();
+        await CheckStoppedRunCommands();
     }
+
+    private static async Task CheckLibraryPreferencePublication()
+    {
+        foreach (var scenario in new[] { "document-failure", "committed-cancellation", "preference-failure", "preference-cancellation" })
+        {
+            var store = new RunTestLibrary();
+            var engine = new FakePlaybackEngine();
+            using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
+            var target = await vm.CreateDraftAsync("Requested");
+            target.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.A, false));
+            await vm.SaveRecordingAsync(target);
+            await vm.CreateDraftAsync("Other");
+            vm.SelectedTabIndex = vm.MacroTabs.IndexOf(target);
+            RunLease? optionLease = null;
+            var preferences = new RunPreferences(new MemoryRunPreferenceStore { BeforeSave = () =>
+            {
+                if (scenario == "preference-failure") throw new IOException("preference save unavailable");
+                if (scenario == "preference-cancellation") throw new OperationCanceledException();
+                if (scenario == "committed-cancellation") optionLease!.Cancel();
+                return Task.CompletedTask;
+            } });
+            await preferences.InitializeAsync();
+            var window = new MainWindow(vm, false, preferences);
+            SetLibraryShellField(window, "_initialized", true);
+            SetLibraryShellField(window, "_libraryVisible", true);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            try
+            {
+                var library = Field<LibraryView>(window, "Library");
+                library.SetCards(vm.Library.Select(item => new LibraryCard(item.Id, item.Name, item.Summary, "Saved", new([], "", ""))
+                    { PreferencesLoaded = true }).ToArray());
+                var search = Field<TextBox>(library, "SearchBox");
+                search.Text = "Requested";
+                Field<ToggleButton>(library, "CompactToggle").IsChecked = true;
+                Call(window, "RefreshShell");
+                var cards = Field<GridView>(library, "Cards");
+                cards.ItemsPanel = (ItemsPanelTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+                    "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><StackPanel/></ItemsPanelTemplate>");
+                LayoutControl(Field<Grid>(window, "RootGrid"), 1100, 800);
+                await Task.Delay(1);
+                var shown = (LibraryCard)cards.Items.Single();
+                shown.IsSelected = true;
+                Call(library, "UpdateSelection");
+                var before = shown.Playback;
+                var changed = new PlaybackOptions { RepeatUntilStopped = true, Countdown = TimeSpan.Zero, Speed = 2 };
+                store.BeforeSave = () => throw new IOException("document save unavailable");
+                var invoked = false;
+                await window.ExecuteLibraryCommandAsync(target.RecordingId, false, async (macro, _, lease) =>
+                {
+                    invoked = true;
+                    optionLease = lease;
+                    macro.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.B, false));
+                    await DirectRunPreparation.EditPlaybackOptionsAsync(preferences, lease, macro.RecordingId,
+                        _ => Task.FromResult<PlaybackOptions?>(changed));
+                    await (Task)Call(window, "SaveTargetAsync", macro)!;
+                });
+                var committed = scenario is "document-failure" or "committed-cancellation";
+                Assert.IsTrue(invoked);
+                Assert.AreEqual(committed ? 1L : 0L, preferences.Revision, scenario);
+                Assert.AreEqual(committed ? changed : before, preferences.PlaybackFor(target.RecordingId));
+                Assert.AreSame(shown, cards.Items.Single(), "Updating settings must not recreate the selected/focused card.");
+                Assert.AreEqual(preferences.PlaybackFor(target.RecordingId), shown.Playback, scenario);
+                Assert.AreEqual(RunSettingsPresentation.PlaybackSummary(true, shown.Playback), shown.PlaybackSummary);
+                var summary = LibraryDescendants((GridViewItem)cards.ContainerFromIndex(0)).OfType<TextBlock>()
+                    .Single(element => element.Name == "CardPlaybackSummary");
+                Assert.AreEqual(shown.PlaybackSummary, summary.Text, "The compiled visible label must follow the committed preference.");
+                StringAssert.Contains(shown.PlayLabel, shown.PlaybackSummary);
+                Assert.IsTrue(shown.IsSelected);
+                Assert.AreEqual("Requested", search.Text);
+                Assert.IsTrue(Field<ToggleButton>(library, "CompactToggle").IsChecked);
+                var feedback = Field<TextBlock>(library, "OperationMessage").Text;
+                StringAssert.Contains(feedback, scenario == "document-failure" ? "document save unavailable"
+                    : scenario == "preference-failure" ? "preference save unavailable" : "Playback options cancelled");
+                search.Text = "";
+                Assert.AreEqual(shown.Playback, cards.Items.Cast<LibraryCard>().Single(card => (Guid)card.Key == target.RecordingId).Playback,
+                    "Filtering later must retain the updated backing card settings.");
+                Assert.AreSame(target, vm.ActiveMacro);
+                Assert.AreEqual(0, engine.Starts);
+                Assert.IsNull(Field<RunController?>(window, "_controller"));
+                Assert.IsFalse(Field<bool>(window, "_mainHiddenForRun"));
+                Assert.IsFalse(IsWindowVisible(hwnd));
+            }
+            finally { SetLibraryShellField(window, "_allowClose", true); window.Close(); }
+        }
+    }
+
+    private static async Task CheckPreferenceCommitAfterWindowClose()
+    {
+        var store = new RunTestLibrary();
+        var engine = new FakePlaybackEngine();
+        using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
+        var target = await vm.CreateDraftAsync("Requested");
+        var blocked = new PreparationBlock();
+        var preferences = new RunPreferences(new MemoryRunPreferenceStore { BeforeSave = blocked.WaitAsync });
+        await preferences.InitializeAsync();
+        var window = new MainWindow(vm, false, preferences);
+        SetLibraryShellField(window, "_initialized", true);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        try
+        {
+            var library = Field<LibraryView>(window, "Library");
+            library.SetCards([new(target.RecordingId, target.Name, "", "Saved", new([], "", "")) { PreferencesLoaded = true }]);
+            var shown = (LibraryCard)Field<GridView>(library, "Cards").Items.Single();
+            var notifications = 0;
+            shown.PropertyChanged += (_, _) => notifications++;
+            var changed = new PlaybackOptions { RepeatUntilStopped = true, Countdown = TimeSpan.Zero };
+            var operation = window.ExecuteLibraryCommandAsync(target.RecordingId, false, (macro, _, lease) =>
+                DirectRunPreparation.EditPlaybackOptionsAsync(preferences, lease, macro.RecordingId,
+                    _ => Task.FromResult<PlaybackOptions?>(changed)));
+            await blocked.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            SetLibraryShellField(window, "_allowClose", true);
+            window.Close();
+            blocked.Release.SetResult();
+            await operation;
+            Assert.IsTrue(Field<bool>(window, "_closed"));
+            Assert.AreEqual(1L, preferences.Revision);
+            Assert.AreEqual(changed, preferences.PlaybackFor(target.RecordingId));
+            Assert.AreEqual(0, notifications, "A late commit must not update disposed card bindings.");
+            Assert.AreEqual(0, engine.Starts);
+            Assert.IsFalse(IsWindowVisible(hwnd));
+        }
+        finally
+        {
+            blocked.Release.TrySetResult();
+            if (!Field<bool>(window, "_closed")) { SetLibraryShellField(window, "_allowClose", true); window.Close(); }
+        }
+    }
+
+    private static async Task CheckStoppedRunCommands()
+    {
+        foreach (var fail in new[] { false, true })
+        {
+            var store = new RunTestLibrary();
+            var engine = new FakePlaybackEngine();
+            using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
+            var macro = vm.ActiveMacro!;
+            macro.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.A, false));
+            var preferences = new RunPreferences(new MemoryRunPreferenceStore());
+            await preferences.InitializeAsync();
+            var window = new MainWindow(vm, false, preferences);
+            SetLibraryShellField(window, "_initialized", true);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            var blocked = new PreparationBlock();
+            try
+            {
+                vm.SetEmergencyStopAvailability(true);
+                var run = Field<ShellRunLifetime>(window, "_runLifetime").Begin();
+                SetLibraryShellField(window, "_activeRun", run);
+                SetLibraryShellField(window, "_runMacro", macro);
+                SetLibraryShellField(window, "_isRecordingRun", true);
+                var timer = Field<DispatcherTimer>(window, "_runTimer");
+                // Model a run that has already ended. Never create/show its controller.
+                Assert.IsNull(Field<RunController?>(window, "_controller"));
+                Assert.IsFalse(Field<bool>(window, "_mainHiddenForRun"));
+                store.BeforeSave = async () =>
+                {
+                    await blocked.WaitAsync();
+                    if (fail) throw new IOException("final save unavailable");
+                };
+                timer.Start();
+                var completion = window.FinishExternallyStoppedRunAsync();
+                await blocked.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+                Assert.IsFalse(Field<ContentControl>(window, "EditorHost").IsEnabled);
+                Assert.IsFalse(Field<Button>(window, "RecordButton").IsEnabled);
+                blocked.Release.SetResult();
+                await completion;
+                Assert.IsFalse(timer.IsEnabled, "Completion stops the timer; controls must already be refreshed.");
+                Assert.IsFalse(Field<bool>(window, "_stopping"));
+                Assert.IsFalse(Field<bool>(window, "_savingRun"));
+                Assert.IsNull(Field<RunLease?>(window, "_activeRun"));
+                Assert.IsTrue(Field<ContentControl>(window, "EditorHost").IsEnabled);
+                Assert.IsTrue(Field<LibraryView>(window, "Library").IsEnabled);
+                foreach (var name in new[] { "RecordButton", "PlayButton", "RecordingOptionsButton", "PlaybackOptionsButton", "DocumentButton", "ImportButton" })
+                    Assert.IsTrue(Field<Button>(window, name).IsEnabled, name);
+                if (fail) StringAssert.Contains(Field<TextBlock>(window, "StatusText").Text, "final save unavailable");
+                Assert.AreEqual(0, engine.Starts);
+                Assert.IsFalse(vm.IsRecording);
+                Assert.IsNull(Field<RunController?>(window, "_controller"));
+                Assert.IsFalse(Field<bool>(window, "_mainHiddenForRun"));
+                Assert.IsFalse(IsWindowVisible(hwnd));
+            }
+            finally { blocked.Release.TrySetResult(); SetLibraryShellField(window, "_allowClose", true); window.Close(); }
+        }
+    }
+
+    private static void SetLibraryShellField(MainWindow window, string name, object? value)
+        => typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(window, value);
 
     private static IEnumerable<DependencyObject> LibraryDescendants(DependencyObject parent)
     {

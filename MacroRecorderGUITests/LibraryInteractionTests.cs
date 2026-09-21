@@ -170,6 +170,59 @@ public sealed class LibraryInteractionTests
         }
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task PreferenceRevisionIgnoresLoadsAndUncommittedWrites(bool cancellation)
+    {
+        var store = new MemoryRunPreferenceStore { BeforeSave = () => cancellation
+            ? Task.FromException(new OperationCanceledException()) : Task.FromException(new IOException("write failed")) };
+        var preferences = new RunPreferences(store);
+        await preferences.InitializeAsync();
+        Assert.AreEqual(0L, preferences.Revision);
+        var id = Guid.NewGuid();
+        var save = preferences.SavePlaybackAsync(id, new() { RepeatUntilStopped = true, Countdown = TimeSpan.Zero }, default);
+        if (cancellation) await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => save);
+        else await Assert.ThrowsExactlyAsync<IOException>(() => save);
+        Assert.AreEqual(0L, preferences.Revision);
+        Assert.AreEqual(new PlaybackOptions(), preferences.PlaybackFor(id));
+        Assert.HasCount(0, store.Data.Playback);
+    }
+
+    [TestMethod]
+    public async Task CancellationAfterCommittedPreferencesStillPublishesTheirRevision()
+    {
+        using var lifetime = new ShellRunLifetime();
+        var lease = lifetime.Begin();
+        var store = new MemoryRunPreferenceStore { BeforeSave = () => { lease.Cancel(); return Task.CompletedTask; } };
+        var preferences = new RunPreferences(store);
+        var id = Guid.NewGuid();
+        var chosen = new PlaybackOptions { RepeatUntilStopped = true, Countdown = TimeSpan.Zero };
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => DirectRunPreparation.EditPlaybackOptionsAsync(
+            preferences, lease, id, _ => Task.FromResult<PlaybackOptions?>(chosen)));
+        Assert.AreEqual(1L, preferences.Revision);
+        Assert.AreEqual(chosen, preferences.PlaybackFor(id));
+        Assert.AreEqual(chosen, store.Data.Playback[id]);
+    }
+
+    [TestMethod]
+    public void UpdatingCardPreferencesNotifiesReadoutsWithoutChangingSelection()
+    {
+        var card = new LibraryCard(Guid.NewGuid(), "Selected", "", "Saved", new([], "", "")) { IsSelected = true };
+        var changed = new List<string?>();
+        card.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+        var options = new PlaybackOptions { RepeatUntilStopped = true, Countdown = TimeSpan.Zero };
+        card.UpdatePlaybackPreferences(true, options);
+        CollectionAssert.AreEquivalent(new[] { "PreferencesLoaded", "Playback", "PlaybackSummary", "AccessibleName", "PlayLabel" }, changed);
+        Assert.IsTrue(card.IsSelected);
+        Assert.IsTrue(card.PreferencesLoaded);
+        StringAssert.Contains(card.PlaybackSummary, "Until stopped");
+        StringAssert.Contains(card.PlayLabel, "0s");
+        changed.Clear();
+        card.UpdatePlaybackPreferences(true, options with { });
+        Assert.HasCount(0, changed, "Repeated shell refreshes must not republish unchanged settings.");
+    }
+
     private static string SourceDirectory([CallerFilePath] string source = "") => Path.Combine(Path.GetDirectoryName(source)!, "..", "MacroRecorderGUI");
 
     private sealed class LibraryPreparationStore : IRecordingLibraryStore

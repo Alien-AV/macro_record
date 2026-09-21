@@ -17,6 +17,7 @@ internal sealed class RunPreferences(IRunPreferenceStore store)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private RunPreferenceData? _data;
+    public long Revision { get; private set; }
     public bool IsLoaded => _data is not null;
     public string? Warning => _data?.Warning;
     public RecordingOptions Recording => _data?.Recording ?? new();
@@ -59,6 +60,7 @@ internal sealed class RunPreferences(IRunPreferenceStore store)
             await store.SaveAsync(updated, cancellationToken);
             // A committed write is authoritative even if cancellation arrived after the atomic replace.
             _data = updated;
+            Revision++;
         }
         finally { _gate.Release(); }
     }
