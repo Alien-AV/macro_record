@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text.Json;
-using Google.Protobuf;
 using MacroRecorderGUI.Utils;
 
 namespace MacroRecorderGUI.Models;
@@ -87,7 +86,7 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
         {
             try { return (await ReadAsync(path + ".bak", id, cancellationToken).ConfigureAwait(false)) with { Recovered = true }; }
             catch (Exception backupError) when (backupError is not OperationCanceledException)
-            { throw new IOException("Neither saved copy can be read. The files have been retained.", new AggregateException(primaryError, backupError)); }
+            { throw new IOException($"Neither saved copy can be read. The files have been retained. Current copy: {primaryError.Message} Previous copy: {backupError.Message}", new AggregateException(primaryError, backupError)); }
         }
     }
 
@@ -138,9 +137,10 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
         DateTimeOffset updated, byte[] bytes)
     {
         if (bytes.Length > MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
-        var events = SerializeEvents.DeserializeEventsFromByteArray(bytes).ToArray();
+        var document = RecordingDocument.Read(bytes);
+        var events = document.ParseEvents().InputEvents.Select(Event.InputEvent.CreateInputEvent).ToArray();
         var duration = events.Aggregate(BigInteger.Zero, (total, input) => total + input.TimeSinceLastEvent)
-            + RecordingDocument.Read(bytes).Origins.Aggregate(BigInteger.Zero, (total, origin) => total + origin.DelayMicroseconds);
+            + document.Origins.Aggregate(BigInteger.Zero, (total, origin) => total + origin.DelayMicroseconds);
         return new(id, name, isDraft, created, updated, events.Length, duration.ToString(System.Globalization.CultureInfo.InvariantCulture),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.KeyboardEvent),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.MouseEvent))

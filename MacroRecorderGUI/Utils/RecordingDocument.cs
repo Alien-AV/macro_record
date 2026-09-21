@@ -26,14 +26,16 @@ internal sealed record RecordingDocument
         if (bytes.Length > RecordingLibraryStore.MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
         if (!bytes.AsSpan().StartsWith(Magic))
         {
-            _ = ProtobufInputEventList.Parser.ParseFrom(bytes);
+            ValidateWaits(ProtobufInputEventList.Parser.ParseFrom(bytes), version: 1);
             return new() { Events = bytes.ToArray() };
         }
         var document = JsonSerializer.Deserialize<RecordingDocument>(bytes.AsSpan(Magic.Length))
             ?? throw new InvalidDataException("Missing recording document.");
         if (document.Version is not (2 or 3) || document.Events is null || document.Origins is null)
             throw new InvalidDataException("This recording requires a different file-format version.");
-        var count = ProtobufInputEventList.Parser.ParseFrom(document.Events).InputEvents.Count;
+        var events = document.ParseEvents();
+        ValidateWaits(events, document.Version);
+        var count = events.InputEvents.Count;
         var previous = -1;
         foreach (var origin in document.Origins)
         {
@@ -49,7 +51,7 @@ internal sealed record RecordingDocument
 
     public byte[] Write()
     {
-        var hasWaits = ParseEvents().InputEvents.Any(input => input.WaitCondition is not null);
+        var hasWaits = ValidateWaits(ParseEvents());
         if (!hasWaits && !IsExtended && Origins.Length == 0 && BeforeOriginAdoption is null) return Events.ToArray();
         var json = JsonSerializer.SerializeToUtf8Bytes(hasWaits ? this with { Version = 3 } : this);
         var bytes = new byte[Magic.Length + json.Length];
@@ -59,6 +61,22 @@ internal sealed record RecordingDocument
     }
 
     public ProtobufInputEventList ParseEvents() => ProtobufInputEventList.Parser.ParseFrom(Events);
+
+    private static bool ValidateWaits(ProtobufInputEventList events, int version = 3)
+    {
+        var hasWaits = false;
+        for (var index = 0; index < events.InputEvents.Count; index++)
+        {
+            if (events.InputEvents[index].WaitCondition is not { } wait) continue;
+            if (version < 3)
+                throw new InvalidDataException($"Conditional wait at event {index + 1} requires file-format version 3. Raw protobuf and version-2 recordings cannot contain waits.");
+            try { WaitValidation.Validate(wait); }
+            catch (ArgumentException error)
+            { throw new InvalidDataException($"Invalid conditional wait at event {index + 1}: {error.Message}", error); }
+            hasWaits = true;
+        }
+        return hasWaits;
+    }
 
     public byte[] ExportLegacy()
     {
