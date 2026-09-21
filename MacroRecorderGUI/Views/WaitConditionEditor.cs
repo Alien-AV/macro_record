@@ -1,0 +1,195 @@
+using System.Globalization;
+using MacroRecorderGUI.Models;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Controls;
+using ProtobufGenerated;
+
+namespace MacroRecorderGUI.Views;
+
+/// <summary>Manual, draft-only fields. Observation starts only from Test condition.</summary>
+internal sealed class WaitConditionEditor : StackPanel, IDisposable
+{
+    private readonly WaitCondition _template;
+    private readonly WaitRunner _runner;
+    private bool _populating = true, _disposed;
+    private CancellationTokenSource? _test;
+    public bool IsDirty { get; private set; }
+    public event Action? Changed;
+    internal readonly ComboBox Source, Trigger, WindowRule, Coordinates, TitleRule;
+    internal readonly TextBox Executable, Class, Title, X, Y, Rgb, Tolerance, Dpi, Timeout, Stability, Poll;
+    internal readonly CheckBox IgnoreCase, Any, NotEqual;
+    internal readonly TextBlock Feedback = new() { TextWrapping = TextWrapping.Wrap, FontSize = 13 };
+    private readonly StackPanel _target = new() { Spacing = 8 }, _pixel = new() { Spacing = 8 };
+    private readonly Button _testButton = new() { Content = "Test condition · up to 5 s" };
+    private readonly TextBlock _help = new() { TextWrapping = TextWrapping.Wrap, FontSize = 13 };
+    private readonly TextBlock _sentence = new() { TextWrapping = TextWrapping.Wrap, FontSize = 14 };
+
+    public WaitConditionEditor(WaitCondition condition, WaitRunner? runner = null)
+    {
+        _template = condition.Clone();
+        _runner = runner ?? WaitRunner.Desktop;
+        Spacing = 10;
+        Source = Choice("Condition source", ["Window", "Pixel"], condition.Pixel is null ? 0 : 1);
+        Trigger = Choice("Trigger", ["Is true", "Becomes true", "Changes from starting value", "New matching window"], (int)condition.Trigger);
+        Children.Add(_sentence); Children.Add(Source);
+        WindowRule = Choice("Window condition", ["Exists", "Visible", "Foreground", "Absent"], (int)(condition.Window?.Test ?? WindowTest.Visible));
+        Coordinates = Choice("Pixel coordinates", ["Desktop physical pixels", "Window client physical pixels", "Window client logical offsets"], (int)(condition.Pixel?.Coordinates ?? PixelCoordinates.DesktopPhysical));
+        Children.Add(WindowRule); Children.Add(Coordinates);
+        var target = condition.Window?.Target ?? condition.Pixel?.Target ?? new WindowSelector();
+        Executable = Field("Full executable path (optional)", target.ExecutablePath);
+        Class = Field("Window class (optional)", target.WindowClass);
+        Title = Field("Window title (optional)", target.Title);
+        TitleRule = Choice("Title matching", ["Exact", "Contains"], (int)target.TitleMatch);
+        IgnoreCase = Check("Ignore title case", target.IgnoreTitleCase);
+        Any = Check("Allow any matching window", target.AnyMatch);
+        foreach (var control in new UIElement[] { Executable, Class, Title, TitleRule, IgnoreCase, Any }) _target.Children.Add(control);
+        Children.Add(_target);
+        var pixel = condition.Pixel;
+        X = Field("Pixel X", (pixel?.X ?? 0).ToString(CultureInfo.InvariantCulture));
+        Y = Field("Pixel Y", (pixel?.Y ?? 0).ToString(CultureInfo.InvariantCulture));
+        Rgb = Field("Expected RGB (six hex digits)", (pixel?.Rgb ?? 0).ToString("X6", CultureInfo.InvariantCulture));
+        Tolerance = Field("Maximum channel tolerance (0–255)", (pixel?.Tolerance ?? 0).ToString(CultureInfo.InvariantCulture));
+        NotEqual = Check("Color is not equal", pixel?.NotEqual ?? false);
+        Dpi = Field("Reference DPI for logical offsets", (pixel?.ReferenceDpi is > 0 ? pixel.ReferenceDpi : 96).ToString(CultureInfo.InvariantCulture));
+        foreach (var control in new UIElement[] { X, Y, Rgb, Tolerance, NotEqual }) _pixel.Children.Add(control);
+        Children.Add(_pixel);
+        Timeout = Field("Timeout · seconds (stop on failure)", (condition.TimeoutUs / 1_000_000m).ToString(CultureInfo.InvariantCulture));
+        Stability = Field("Stable for · milliseconds", (condition.StableForUs / 1000m).ToString(CultureInfo.InvariantCulture));
+        Poll = Field("Polling interval · milliseconds", (condition.PollIntervalUs / 1000m).ToString(CultureInfo.InvariantCulture));
+        Children.Add(Timeout); Children.Add(Stability);
+        var advanced = new StackPanel { Spacing = 8 };
+        advanced.Children.Add(Trigger); advanced.Children.Add(Poll); advanced.Children.Add(Dpi);
+        Children.Add(new Expander { Header = "Advanced observation", Content = advanced, HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch });
+        Children.Add(_help); Children.Add(_testButton); Children.Add(Feedback);
+        Source.SelectionChanged += (_, _) => UpdateFields(); Coordinates.SelectionChanged += (_, _) => UpdateFields(); Trigger.SelectionChanged += (_, _) => UpdateFields();
+        _testButton.Click += async (_, _) => await TestAsync();
+        UpdateFields(); _populating = false; UpdateSentence();
+    }
+
+    public WaitCondition Read()
+    {
+        var result = _template.Clone();
+        // Preserve unsupported imported versions: editing a field cannot silently upgrade semantics.
+        result.Trigger = (WaitTrigger)Trigger.SelectedIndex;
+        result.TimeoutUs = Duration(Timeout.Text, 1_000_000);
+        result.StableForUs = Duration(Stability.Text, 1000);
+        result.PollIntervalUs = Duration(Poll.Text, 1000);
+        var target = (result.Window?.Target ?? result.Pixel?.Target)?.Clone() ?? new WindowSelector();
+        target.ExecutablePath = Executable.Text; target.WindowClass = Class.Text; target.Title = Title.Text;
+        target.TitleMatch = (TitleMatch)TitleRule.SelectedIndex; target.IgnoreTitleCase = IgnoreCase.IsChecked == true; target.AnyMatch = Any.IsChecked == true;
+        if (Source.SelectedIndex == 0)
+        {
+            var window = result.Window?.Clone() ?? new WindowCondition(); window.Target = target; window.Test = (WindowTest)WindowRule.SelectedIndex;
+            result.Window = window;
+        }
+        else
+        {
+            var pixel = result.Pixel?.Clone() ?? new PixelCondition();
+            pixel.Coordinates = (PixelCoordinates)Coordinates.SelectedIndex;
+            pixel.Target = pixel.Coordinates == PixelCoordinates.DesktopPhysical ? null : target;
+            pixel.X = int.Parse(X.Text, CultureInfo.InvariantCulture); pixel.Y = int.Parse(Y.Text, CultureInfo.InvariantCulture);
+            if (result.Trigger != WaitTrigger.Changes)
+            {
+                var rgb = Rgb.Text.Trim().TrimStart('#');
+                if (rgb.Length != 6) throw new ArgumentException("RGB must contain exactly six hexadecimal digits.");
+                pixel.Rgb = uint.Parse(rgb, NumberStyles.HexNumber, CultureInfo.InvariantCulture); pixel.NotEqual = NotEqual.IsChecked == true;
+            }
+            pixel.Tolerance = uint.Parse(Tolerance.Text, CultureInfo.InvariantCulture);
+            if (pixel.Coordinates == PixelCoordinates.ClientLogical) pixel.ReferenceDpi = uint.Parse(Dpi.Text, CultureInfo.InvariantCulture);
+            result.Pixel = pixel;
+        }
+        WaitValidation.Validate(result);
+        return result;
+    }
+    public void ApplyStyles(Style field, Style button)
+    {
+        foreach (var text in new[] { Executable, Class, Title, X, Y, Rgb, Tolerance, Dpi, Timeout, Stability, Poll }) text.Style = field;
+        _testButton.Style = button;
+    }
+    public void Committed() { IsDirty = false; Feedback.Text = "Condition saved. Undo is available."; }
+    public void CancelTest()
+    {
+        if (_test is { } test)
+            _ = test.CancelAsync().ContinueWith(task => _ = task.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
+    internal async Task TestAsync()
+    {
+        if (_disposed) return;
+        if (_test is not null) { CancelTest(); return; }
+        try
+        {
+            var condition = Read();
+            using var cancel = new CancellationTokenSource(); _test = cancel;
+            _testButton.Content = "Cancel condition test";
+            Feedback.Text = "Testing this condition only…";
+            var duration = TimeSpan.FromMicroseconds(Math.Min(condition.TimeoutUs, 5_000_000));
+            var result = await _runner.RunAsync(condition, duration, cancel.Token, progress => DispatcherQueue.TryEnqueue(() =>
+            { if (!_disposed && ReferenceEquals(_test, cancel)) Feedback.Text = $"{progress.Remaining.TotalSeconds:0.0}s remaining · {progress.Observation}"; }));
+            if (!_disposed) Feedback.Text = (result.Satisfied ? "Satisfied. " : "Not satisfied. ") + result.Detail;
+        }
+        catch (OperationCanceledException) { if (!_disposed) Feedback.Text = "Condition test cancelled."; }
+        catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
+        { Feedback.Text = error.Message; }
+        finally { _test = null; _testButton.Content = "Test condition · up to 5 s"; }
+    }
+    private static ulong Duration(string text, decimal multiplier)
+    {
+        var value = decimal.Parse(text, NumberStyles.Number, CultureInfo.InvariantCulture) * multiplier;
+        if (value < 0 || value > ulong.MaxValue || value != decimal.Truncate(value)) throw new ArgumentException("Enter a nonnegative time with whole microsecond precision.");
+        return (ulong)value;
+    }
+    private void UpdateFields()
+    {
+        var pixel = Source.SelectedIndex == 1;
+        var triggerCount = pixel ? 3 : 4;
+        if (Trigger.Items.Count != triggerCount)
+        {
+            var selected = Trigger.SelectedIndex;
+            Trigger.ItemsSource = pixel ? new[] { "Is true", "Becomes true", "Changes from starting value" }
+                : new[] { "Is true", "Becomes true", "Changes from starting value", "New matching window" };
+            Trigger.SelectedIndex = selected < triggerCount ? selected : _populating ? -1 : 0;
+        }
+        _pixel.Visibility = Coordinates.Visibility = pixel ? Visibility.Visible : Visibility.Collapsed;
+        WindowRule.Visibility = pixel ? Visibility.Collapsed : Visibility.Visible;
+        _target.Visibility = !pixel || Coordinates.SelectedIndex != 0 ? Visibility.Visible : Visibility.Collapsed;
+        Any.Visibility = pixel ? Visibility.Collapsed : Visibility.Visible;
+        if (pixel && !_populating) Any.IsChecked = false;
+        Dpi.Visibility = pixel && Coordinates.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
+        Rgb.Visibility = NotEqual.Visibility = Trigger.SelectedIndex == (int)WaitTrigger.Changes ? Visibility.Collapsed : Visibility.Visible;
+        _help.Text = pixel ? "Samples one visible screen pixel. Covered or minimized client targets are unavailable. Logical offsets scale with DPI, not window size."
+            : "Specify at least one target field. Multiple matches need a narrower selector or Allow any matching window. Waiting does not focus the window.";
+        if (Trigger.SelectedIndex == (int)WaitTrigger.Changes)
+            _help.Text += pixel ? " Changes compares with the first valid runtime pixel, using the channel tolerance."
+                : " Changes requires Visible or Foreground and a single target; Exists and Absent are not supported for this trigger.";
+    }
+    private void Change()
+    {
+        if (_populating) return;
+        CancelTest(); IsDirty = true; Feedback.Text = "Unapplied condition changes"; UpdateSentence(); Changed?.Invoke();
+    }
+    private void UpdateSentence()
+    {
+        try { _sentence.Text = WaitValidation.Describe(Read()); }
+        catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
+        { _sentence.Text = "Complete the condition fields below. " + error.Message; }
+    }
+    private TextBox Field(string name, string value)
+    {
+        var field = new TextBox { Header = name, Text = value, MinWidth = 0, HorizontalAlignment = HorizontalAlignment.Stretch };
+        AutomationProperties.SetName(field, name); field.TextChanging += (_, _) => Change(); return field;
+    }
+    private ComboBox Choice(string name, string[] values, int selected)
+    {
+        var field = new ComboBox { Header = name, ItemsSource = values, SelectedIndex = selected, HorizontalAlignment = HorizontalAlignment.Stretch };
+        AutomationProperties.SetName(field, name); field.SelectionChanged += (_, _) => Change(); return field;
+    }
+    private CheckBox Check(string name, bool value)
+    {
+        var field = new CheckBox { Content = name, IsChecked = value };
+        field.Checked += (_, _) => Change(); field.Unchecked += (_, _) => Change(); return field;
+    }
+    public void Dispose() { _disposed = true; CancelTest(); }
+}

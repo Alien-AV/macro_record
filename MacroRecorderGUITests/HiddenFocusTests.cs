@@ -46,7 +46,12 @@ public sealed partial class HiddenFocusTests
             WorkingDirectory = Path.GetTempPath() })!;
         var output = process.StandardOutput.ReadToEndAsync(); var errors = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30)); }
-        catch { if (!process.HasExited) process.Kill(); throw; }
+        catch
+        {
+            if (!process.HasExited) process.Kill();
+            await process.WaitForExitAsync();
+            Assert.Fail("Hidden checks timed out. " + await output + await errors);
+        }
         Assert.AreEqual(0, process.ExitCode, await output + await errors);
     }
 
@@ -105,6 +110,7 @@ public sealed partial class HiddenFocusTests
         {
             Assert.IsFalse(IsWindowVisible(hwnd));
             WindowBrandingTests.CheckHiddenWindows(window);
+            await CheckWaitControls();
             typeof(MainWindow).GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(window, true);
             var root = Field<Grid>(window, "RootGrid");
             root.Measure(new Windows.Foundation.Size(1200, 800));

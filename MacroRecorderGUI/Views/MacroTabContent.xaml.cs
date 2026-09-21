@@ -68,6 +68,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             {
                 EditorPathHost.Content = null; PreviewPathHost.Content = PathPanel;
                 _previewPosition.SeekTime(0, _editor?.Projection.TotalTime ?? 0);
+                _preview?.ResetCheckpoints();
             }
             else { PreviewPathHost.Content = null; EditorPathHost.Content = PathPanel; }
             WorkspaceScroller.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
@@ -108,6 +109,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Detach()
     {
+        _conditionEditor?.Dispose(); _conditionEditor = null; _conditionOwner = null; WaitConditionHost.Content = null;
         StopPreview(); _refreshTimer.Stop(); CancelDrag();
         if (_editor is not null) _editor.Invalidated -= Editor_Invalidated;
         _sync = true;
@@ -122,7 +124,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _previewPosition.SeekTime(0, 0);
         PreviewStep.Text = "NO ACTIONS"; PreviewTitle.Text = "Empty recording";
         PreviewDescription.Text = "Record or add input to preview a sequence.";
-        PreviewNext.Text = "End of sequence"; PreviewClock.Text = "0ms / 0ms"; PreviewTiming.Text = "Original timing · 0 actions";
+        PreviewNext.Text = "End of sequence"; PreviewClock.Text = "0ms / 0ms"; PreviewTiming.Text = "Recorded timing · 0 actions";
         HeldNote.Text = "No recorded keys or buttons held";
         _rawOpen = false; RawContent.Visibility = Visibility.Collapsed; RawChevron.Glyph = "\uE76C";
         _display = []; _selectedDisplay = []; PathCanvas.Children.Clear();
@@ -162,6 +164,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         finally { _sync = false; }
         if (_editor.RawSelection && !_rawOpen) SetRawOpen(true);
         SummaryText.Text = $"{EditorText.Count(_editor.Projection.Actions.Count, "action")} · {TimeText.Human(_editor.Projection.TotalTime)}";
+        if (_macro.Events.OfType<WaitConditionEvent>().Count() is var waitCount && waitCount > 0)
+            SummaryText.Text += $" recorded timing + {EditorText.Count(waitCount, "conditional wait")}";
         EmptySequence.Visibility = _macro.Events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _previewPosition.RefreshDuration(_editor.Projection.TotalTime);
         _preview = new VisualPreview(_macro.Events, _editor.Projection);
@@ -173,7 +177,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_sync || _committingFields || _editor is null) return;
         var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(a => a.First).ToArray();
-        var committed = CommitActionFields(refresh: false);
+        var committed = CommitCondition() && CommitActionFields(refresh: false);
         if (!committed) anchors = _inspectorSelection;
         // Commit against the old inspector identity before adopting the requested selection.
         if (_macro is not null && (_editor.IsDirty || !committed
@@ -251,7 +255,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         CapturedKeys.ItemsSource = a?.KeyLabels ?? Array.Empty<string>();
         InputGlyph.Glyph = a?.Glyph ?? "\uE8A5";
         InputDetail.Text = a?.Detail ?? "";
-        if (a is null || _editor is null) { _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
+        if (a is null || _editor is null) { UpdateConditionInspector(null, resetDrafts); _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
         Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
         DurationFields.Visibility = a.CanEditDuration ? Visibility.Visible : Visibility.Collapsed;
         DurationColumn.Width = new GridLength(a.CanEditDuration ? 1 : 0, GridUnitType.Star);
@@ -267,6 +271,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         Field(DestinationY, end?.Y.ToString("0", CultureInfo.InvariantCulture) ?? "");
         ConversionPanel.Visibility = _editor.Projection.HasRelativeMovement ? Visibility.Visible : Visibility.Collapsed;
         if (_rawOpen) PopulateRaw();
+        UpdateConditionInspector(a, resetDrafts);
+        ResizeWorkspace();
     }
 
     private void RunEdit(Action operation, string message, bool resetDrafts = true)
@@ -403,7 +409,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
                 m.ActionType = uint.Parse(RawFlags.Text, CultureInfo.InvariantCulture); m.WheelRotation = uint.Parse(RawData.Text, CultureInfo.InvariantCulture);
                 m.RelativePosition = RawRelative.IsChecked == true; m.MappedToVirtualDesktop = RawDesktop.IsChecked == true;
             }
-            else { value.KeyboardEvent.VirtualKeyCode = uint.Parse(RawKey.Text, CultureInfo.InvariantCulture); value.KeyboardEvent.KeyUp = RawKeyUp.IsChecked == true; }
+            else if (value.KeyboardEvent is { } key) { key.VirtualKeyCode = uint.Parse(RawKey.Text, CultureInfo.InvariantCulture); key.KeyUp = RawKeyUp.IsChecked == true; }
             _editor!.EditRaw(input, value);
         }, "Raw event updated. Grouping may change; undo is available.");
     }
@@ -584,7 +590,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (!IsPreviewMode) IsPreviewMode = true;
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
         if (_editor is null || _editor.Projection.TotalTime == 0) return;
-        if (_previewPosition.Time >= _editor.Projection.TotalTime) _previewPosition.SeekTime(0, _editor.Projection.TotalTime);
+        if (_previewPosition.Time >= _editor.Projection.TotalTime) { _previewPosition.SeekTime(0, _editor.Projection.TotalTime); _preview?.ResetCheckpoints(); }
         _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start();
         UpdatePreviewFrame(); DrawPath();
         StateChanged?.Invoke(this, EventArgs.Empty);
@@ -594,6 +600,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is null) { StopPreview(); return; }
         _previewPosition.SeekTime(_previewStart + (BigInteger)_previewWatch.ElapsedTicks * 1_000_000 / Stopwatch.Frequency, _editor.Projection.TotalTime);
         UpdatePreviewFrame();
+        if (_preview?.Checkpoint(_previewPosition.Time) is { } checkpoint)
+        {
+            _previewPosition.SeekTime(checkpoint.StartTime + checkpoint.Wait, _editor.Projection.TotalTime);
+            StopPreview(); UpdatePreviewFrame();
+        }
         if (!ReferenceEquals(_pathAction, PreviewPathAction()) || _space != PreviewCoordinateSpace) DrawPath(); else UpdateCursor();
         if (_previewPosition.Time >= _editor.Projection.TotalTime) StopPreview();
     }
@@ -607,6 +618,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_sync || _editor is null) return;
         StopPreview(); _previewPosition.Scrub(e.NewValue, _editor.Projection.TotalTime);
+        _preview?.ResetCheckpoints();
         UpdatePreviewFrame(); DrawPath();
     }
     private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)

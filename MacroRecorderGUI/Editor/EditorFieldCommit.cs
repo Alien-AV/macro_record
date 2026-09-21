@@ -13,7 +13,7 @@ public sealed partial class MacroTabContent
         : ReferenceEquals(control, DestinationY) ? ActionField.DestinationY : null;
 
     /// <summary>Called before disabling, saving, navigating or snapshotting this editor.</summary>
-    public bool TryCommitPendingEdits() => CommitActionFields();
+    public bool TryCommitPendingEdits() => CommitCondition() && CommitActionFields();
 
     private bool CommitActionFields(ActionField? field = null, bool refresh = true)
     {

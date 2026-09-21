@@ -19,13 +19,19 @@ public sealed partial class MacroTabContent
     public void StepPreview()
     {
         if (!TryCommitPendingEdits()) return;
+        StopPreview();
         if (!IsPreviewMode) IsPreviewMode = true;
-        if (_preview is not null) SeekPreview(_preview.NextActionTime(_previewPosition.Time));
+        if (_preview is not null)
+        {
+            if (_preview.SimulateSatisfied(_previewPosition.Time)) { UpdatePreviewFrame(); DrawPath(); }
+            else SeekPreview(_preview.NextActionTime(_previewPosition.Time));
+        }
     }
     private void SeekPreview(BigInteger time)
     {
         StopPreview();
         if (_editor is null) return;
+        if (time < _previewPosition.Time) _preview?.ResetCheckpoints();
         _previewPosition.SeekTime(time, _editor.Projection.TotalTime);
         UpdatePreviewFrame(); DrawPath();
     }
@@ -35,11 +41,16 @@ public sealed partial class MacroTabContent
     private void UpdatePreviewFrame()
     {
         if (_preview is null || _editor is null || _editor.IsDirty) return;
+        if (_preview.Checkpoint(_previewPosition.Time) is { } stop)
+            _previewPosition.SeekTime(stop.StartTime + stop.Wait, _editor.Projection.TotalTime);
         _previewFrame = _preview.Seek(_previewPosition.Time);
         var a = _previewFrame.Current;
         PreviewStep.Text = a is null ? "NO ACTIONS" : $"ACTION {a.Number:D2} OF {_editor.Projection.Actions.Count}";
-        PreviewTitle.Text = a is null ? "Empty recording" : _previewFrame.Waiting ? "Wait before action" : a.Name;
-        PreviewDescription.Text = a is null ? "Record or add input to preview a sequence."
+        var checkpoint = _preview.Checkpoint(_previewPosition.Time);
+        SimulateCondition.Visibility = checkpoint is null ? Visibility.Collapsed : Visibility.Visible;
+        PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Wait before action" : a.Name;
+        PreviewDescription.Text = checkpoint is not null ? checkpoint.Description + " · No desktop observation. Choose Simulate satisfied to continue."
+            : a is null ? "Record or add input to preview a sequence."
             : _previewFrame.Waiting ? $"{TimeText.Human(a.StartTime + a.Wait - _previewPosition.Time)} until {a.Name}"
             : a.Description + (a.Complete ? "" : " · incomplete sequence");
         PreviewNext.Text = _previewFrame.Waiting && a is not null ? "Next · " + a.Name
@@ -47,7 +58,9 @@ public sealed partial class MacroTabContent
         var held = _previewFrame.HeldKeys.Select(ActionProjection.KeyName).Concat(_previewFrame.HeldButtons).ToArray();
         if (!_heldLabels.SequenceEqual(held)) { _heldLabels = held; HeldInputs.ItemsSource = held; }
         HeldNote.Text = held.Length == 0 ? "No recorded keys or buttons held" : "Held in the recorded stream";
-        PreviewTiming.Text = $"Original timing · {EditorText.Count(_editor.Projection.Actions.Count, "action")}";
+        PreviewTiming.Text = $"Recorded timing · {EditorText.Count(_editor.Projection.Actions.Count, "action")}";
+        if (_editor.Projection.Actions.Count(a => a.Kind == ActionKind.Wait) is var waits && waits > 0)
+            PreviewTiming.Text = $"Recorded timing + {EditorText.Count(waits, "conditional wait")}";
         for (var i = 0; i < _timelineSegments.Count; i++)
         {
             var segment = _timelineSegments[i];
@@ -86,7 +99,13 @@ public sealed partial class MacroTabContent
                 : $"Actions {segment.FirstAction + 1}–{segment.LastAction + 1}";
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, name);
             ToolTipService.SetToolTip(button, $"{name} · {TimeText.Seconds(segment.Start)}–{TimeText.Seconds(segment.End)} s");
-            button.Click += (_, _) => SeekPreview(segment.Start);
+            button.Click += (_, _) =>
+            {
+                StopPreview(); _preview?.ResetCheckpoints();
+                if (!segment.Setup) _preview?.SelectAction(segment.FirstAction);
+                _previewPosition.SeekTime(segment.Start, _editor.Projection.TotalTime);
+                UpdatePreviewFrame(); DrawPath();
+            };
             Grid.SetColumn(button, i); Timeline.Children.Add(button);
         }
         UpdatePreviewFrame();
@@ -148,7 +167,9 @@ public sealed partial class MacroTabContent
         ListPanel.Height = layout.ListHeight; InspectorPanel.Height = layout.InspectorHeight;
         ListPanel.BorderThickness = layout.Stacked ? new Thickness(0, 0, 0, 1) : new Thickness(0, 0, 1, 0);
         InspectorPanel.Padding = new Thickness(layout.Stacked ? 20 : 26, 22, layout.Stacked ? 20 : 26, 22);
-        DetailGrid.RowDefinitions[1].Height = new GridLength(Math.Max(240, layout.InspectorHeight - (_rawOpen ? 510 : 360)));
+        var wait = Selected?.Kind == ActionKind.Wait;
+        DetailGrid.RowDefinitions[1].MinHeight = wait ? 0 : 150;
+        DetailGrid.RowDefinitions[1].Height = new GridLength(wait ? 0 : Math.Max(240, layout.InspectorHeight - (_rawOpen ? 510 : 360)));
     }
     private void PreviewBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {

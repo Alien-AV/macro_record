@@ -42,6 +42,7 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public IReadOnlyList<string> KeyLabels { get; internal set; } = [];
     public string DisplayNumber => Number.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
     public string DisplayTime => Kind == ActionKind.Wait ? "Conditional" : TimeText.Human((BigInteger)Wait + Duration);
+    public string TimingLabel => Kind == ActionKind.Wait ? "duration varies" : "total";
     public string Title => $"{Number}. {Name}";
     public bool CanEditDuration => Count > 1;
     public string EventCountLabel => EditorText.Count(Count, "event");
