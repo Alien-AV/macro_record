@@ -1,7 +1,7 @@
 <UserControl x:Class="MacroRecorderGUI.Views.LibraryView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    SizeChanged="View_SizeChanged" ActualThemeChanged="View_ThemeChanged">
+    SizeChanged="View_SizeChanged" ActualThemeChanged="View_ThemeChanged" KeyDown="Library_KeyDown">
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="LibraryLayout" Padding="30,27" Spacing="23">
             <Grid ColumnSpacing="20" RowSpacing="12">
@@ -23,7 +23,7 @@
             <StackPanel Spacing="10">
                 <StackPanel x:Name="LibraryActions" Orientation="Horizontal" Spacing="8">
                     <ToggleButton x:Name="TrashToggle" Content="Local trash" Checked="Trash_Changed" Unchecked="Trash_Changed" AutomationProperties.Name="Show local recording trash"/>
-                    <ToggleButton x:Name="SelectToggle" Content="Select recordings" Checked="Select_Changed" Unchecked="Select_Changed"/>
+                    <ToggleButton x:Name="CompactToggle" Content="Compact list" Checked="Compact_Changed" Unchecked="Compact_Changed" AutomationProperties.Name="Use compact recording list"/>
                     <Button x:Name="UndoDeleteButton" Content="Undo delete" Visibility="Collapsed" Click="UndoDelete_Click" AutomationProperties.Name="Restore the last deleted batch"/>
                 </StackPanel>
                 <TextBlock x:Name="TrashDescription" Text="Deleted recordings stay in local trash until you restore them, including after restarting. Imported and exported files are untouched."
@@ -35,13 +35,12 @@
                         <Button x:Name="ClearSelectionButton" Content="Clear selection" Click="ClearSelection_Click"/>
                         <Button x:Name="BatchActionButton" Content="Delete selected" Click="BatchAction_Click" IsEnabled="False"/>
                     </StackPanel>
-                    <TextBlock Text="Click a card to select or deselect it. Use arrow keys to move and Space to toggle. Ctrl+A selects visible results; Escape clears selection."
-                        TextWrapping="Wrap" Foreground="{ThemeResource MacroMutedBrush}" FontSize="12"/>
                 </StackPanel>
+                <TextBlock x:Name="SelectionScope" TextWrapping="Wrap" Foreground="{ThemeResource MacroMutedBrush}" FontSize="12"/>
                 <TextBlock x:Name="OperationMessage" Visibility="Collapsed" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Foreground="{ThemeResource MacroInkBrush}"/>
             </StackPanel>
             <GridView x:Name="Cards" Margin="-10,0" SelectionMode="None" IsItemClickEnabled="True" ItemClick="Cards_ItemClick"
-                SelectionChanged="Cards_SelectionChanged" KeyDown="Cards_KeyDown" AutomationProperties.Name="Recordings" IsMultiSelectCheckBoxEnabled="True"
+                AutomationProperties.Name="Recordings" IsMultiSelectCheckBoxEnabled="False"
                 HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled">
                 <GridView.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="300"/></ItemsPanelTemplate></GridView.ItemsPanel>
@@ -58,8 +57,9 @@
                     <DataTemplate>
                         <Border CornerRadius="9" BorderBrush="{ThemeResource MacroLineBrush}" BorderThickness="1" Background="{ThemeResource MacroPaperBrush}">
                             <Grid>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                <Border Height="{Binding ArtHeight}" Background="{ThemeResource MacroCardArtBrush}" CornerRadius="8,8,0,0">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <Border Grid.ColumnSpan="2" Visibility="{Binding ArtVisibility}" Height="{Binding ArtHeight}" Background="{ThemeResource MacroCardArtBrush}" CornerRadius="8,8,0,0">
                                     <Grid Margin="18,12" RowSpacing="6">
                                         <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                         <Canvas x:Name="ThumbnailCanvas" Visibility="{Binding TraceVisibility}" Loaded="Thumbnail_Loaded" SizeChanged="Thumbnail_SizeChanged" IsHitTestVisible="False"/>
@@ -68,18 +68,31 @@
                                         <TextBlock Grid.Row="1" Text="{Binding TraceLabel}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextWrapping="Wrap"/>
                                     </Grid>
                                 </Border>
-                                <StackPanel Grid.Row="1" Padding="18,19" Spacing="7">
-                                    <TextBlock Text="{Binding Name}" ToolTipService.ToolTip="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Summary}" ToolTipService.ToolTip="{Binding Summary}" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
-                                    <Grid Margin="0,12,0,0">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding LastOpened}" ToolTipService.ToolTip="{Binding LastOpened}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource MacroMutedBrush}" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="1" Content="Rename" FontSize="12" Style="{StaticResource MacroTextButtonStyle}" Padding="7,4" MinHeight="28"
-                                            Visibility="{Binding RenameVisibility}" AutomationProperties.Name="{Binding RenameLabel}" Click="Rename_Click"/>
-                                        <Button Grid.Column="2" Style="{StaticResource MacroTextButtonStyle}" Padding="4" MinHeight="28" AutomationProperties.Name="{Binding OptionsLabel}" Click="CardOptions_Click">
-                                            <FontIcon Glyph="&#xE712;" FontSize="14"/>
-                                        </Button>
-                                    </Grid>
+                                <Grid Grid.Row="1" Padding="{Binding BodyPadding}" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="SelectionCheckBox" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Top"
+                                        AutomationProperties.Name="{Binding SelectLabel}" Checked="Selection_Changed" Unchecked="Selection_Changed"/>
+                                    <StackPanel Grid.Column="1" Spacing="5">
+                                        <TextBlock Text="{Binding Name}" ToolTipService.ToolTip="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Summary}" ToolTipService.ToolTip="{Binding Summary}" FontSize="12" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="CardPlaybackSummary" Text="{Binding PlaybackSummary}" Visibility="{Binding PlaybackVisibility}"
+                                            FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource MacroInkBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding LastOpened}" FontSize="11" Foreground="{ThemeResource MacroMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel Grid.Row="{Binding ActionsRow}" Grid.Column="{Binding ActionsColumn}" Grid.ColumnSpan="{Binding ActionsColumnSpan}"
+                                    Padding="12,8,12,12" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button x:Name="CardPlayButton" Content="Play" Style="{StaticResource MacroPrimaryButtonStyle}" Click="Play_Click" Padding="12,7"
+                                        Visibility="{Binding PlaybackVisibility}" IsEnabled="{Binding PreferencesLoaded}" AutomationProperties.Name="{Binding PlayLabel}"/>
+                                    <Button x:Name="CardPlaybackOptionsButton" Style="{StaticResource MacroIconButtonStyle}" Click="PlaybackOptions_Click"
+                                        Visibility="{Binding PlaybackVisibility}" AutomationProperties.Name="{Binding PlaybackOptionsLabel}" ToolTipService.ToolTip="Playback options · saved for this recording">
+                                        <FontIcon Glyph="&#xE70D;" FontSize="12"/>
+                                    </Button>
+                                    <Button Content="Rename" FontSize="12" Style="{StaticResource MacroTextButtonStyle}" Padding="7,4" MinHeight="32"
+                                        Visibility="{Binding RenameVisibility}" AutomationProperties.Name="{Binding RenameLabel}" Click="Rename_Click"/>
+                                    <Button Style="{StaticResource MacroTextButtonStyle}" Padding="7" MinHeight="32" AutomationProperties.Name="{Binding OptionsLabel}" Click="CardOptions_Click">
+                                        <FontIcon Glyph="&#xE712;" FontSize="14"/>
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>

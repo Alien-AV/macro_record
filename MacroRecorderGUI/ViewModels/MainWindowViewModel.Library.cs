@@ -94,23 +94,28 @@ public partial class MainWindowViewModel
         finally { _libraryGate.Release(); }
     }
 
-    public async Task<MacroViewModel> OpenRecordingAsync(Guid id)
+    public async Task<MacroViewModel> OpenRecordingAsync(Guid id, bool select = true, CancellationToken cancellationToken = default)
     {
         EnsureLibraryWritable();
-        await _libraryGate.WaitAsync();
+        await _libraryGate.WaitAsync(cancellationToken);
         try
         {
             EnsureLibraryWritable();
             EnsureRecordingAvailable(id);
             if (MacroTabs.FirstOrDefault(macro => macro.RecordingId == id) is { } existing)
             {
-                SelectedTabIndex = MacroTabs.IndexOf(existing);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (select) SelectedTabIndex = MacroTabs.IndexOf(existing);
                 return existing;
             }
-            var record = await _libraryStore.LoadAsync(id);
+            var record = await _libraryStore.LoadAsync(id, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             EnsureLibraryWritable();
-            var result = AddNewTab();
+            var result = new MacroViewModel(record.Metadata.Name, PlaybackEngine, PlayMacroAsync);
             result.Restore(record);
+            result.ContentReplaced += MacroContentReplaced;
+            MacroTabs.Add(result);
+            if (select) SelectedTabIndex = MacroTabs.Count - 1;
             return result;
         }
         finally { _libraryGate.Release(); }

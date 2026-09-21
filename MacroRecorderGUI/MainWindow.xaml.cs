@@ -68,6 +68,8 @@ public sealed partial class MainWindow : Window
         ViewModel.StatusMessageRequested += ViewModel_StatusMessageRequested;
         ViewModel.MacroTabs.CollectionChanged += Macros_Changed;
         Library.OpenRequested += Library_OpenRequested;
+        Library.PlayRequested += Library_PlayRequested;
+        Library.PlaybackOptionsRequested += Library_PlaybackOptionsRequested;
         Library.RenameAsync = RenameLibraryCardAsync;
         Library.ExportRequested += Library_ExportRequested;
         Library.DeleteRequested += Library_DeleteRequested;
@@ -151,6 +153,7 @@ public sealed partial class MainWindow : Window
         if (_closed || !_constructed) return;
         var macro = ViewModel.ActiveMacro;
         var preview = !_libraryVisible && ActiveEditor?.IsPreviewMode == true;
+        var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping;
         PageTitle.Text = _libraryVisible ? "Recordings" : macro?.Name ?? "Your workspace";
         PageTitle.MaxWidth = Math.Max(150, RootGrid.ActualWidth - 450);
         BreadcrumbLibrary.Content = _libraryVisible ? "Your workspace" : "Recordings";
@@ -173,15 +176,15 @@ public sealed partial class MainWindow : Window
         EditorHost.Visibility = !_libraryVisible && macro is not null ? Visibility.Visible : Visibility.Collapsed;
         EmptyEditor.Visibility = !_libraryVisible && macro is null ? Visibility.Visible : Visibility.Collapsed;
         UndoButton.Visibility = _libraryVisible ? Visibility.Collapsed : Visibility.Visible;
-        UndoButton.IsEnabled = !_busy && !RunActive && ActiveEditor?.CanUndo == true;
-        RecordButton.IsEnabled = !_busy && !RunActive && ViewModel.CanRecord && _preferences.IsLoaded;
-        RecordingOptionsButton.IsEnabled = !_busy && !RunActive;
+        UndoButton.IsEnabled = commandsAvailable && ActiveEditor?.CanUndo == true;
+        RecordButton.IsEnabled = commandsAvailable && ViewModel.CanRecord && _preferences.IsLoaded;
+        RecordingOptionsButton.IsEnabled = commandsAvailable;
         ToolTipService.SetToolTip(RecordButton, _preferences.IsLoaded
             ? $"Record a new task (Ctrl+Q) · {_preferences.Recording.CountdownSeconds}s delay. Rename afterwards."
             : "Loading recording options…");
-        DocumentButton.IsEnabled = !_busy && !RunActive;
-        EditorHost.IsEnabled = !_busy && !RunActive;
-        Library.IsEnabled = !_busy && !RunActive;
+        DocumentButton.IsEnabled = commandsAvailable;
+        EditorHost.IsEnabled = commandsAvailable;
+        Library.IsEnabled = commandsAvailable;
         var playback = _runPlaybackOptions ?? (macro is null ? new PlaybackOptions() : _preferences.PlaybackFor(macro.RecordingId));
         PlaybackSettings.Visibility = _libraryVisible || macro is null ? Visibility.Collapsed : Visibility.Visible;
         PlaybackSettingsSummary.Visibility = preview ? Visibility.Collapsed : Visibility.Visible;
@@ -192,29 +195,38 @@ public sealed partial class MainWindow : Window
         PreferenceWarning.Visibility = _preferences.Warning is null ? Visibility.Collapsed : Visibility.Visible;
         BackToEditorButton.Visibility = NextActionButton.Visibility = preview ? Visibility.Visible : Visibility.Collapsed;
         PreviewButton.Visibility = _libraryVisible || RunActive ? Visibility.Collapsed : Visibility.Visible;
-        PreviewButton.IsEnabled = !_busy && ActiveEditor?.CanPreview == true;
-        PreviewLabel.Text = preview ? ActiveEditor?.IsPreviewPlaying == true ? "Pause" : "Play preview" : "Preview";
+        PreviewButton.IsEnabled = commandsAvailable && ActiveEditor?.CanPreview == true;
+        PreviewLabel.Text = preview ? ActiveEditor?.IsPreviewPlaying == true ? "Pause preview" : "Play preview" : "Preview (simulated)";
         PreviewIcon.Glyph = ActiveEditor?.IsPreviewPlaying == true ? "\uE769" : "\uE768";
         PlayButton.Visibility = _libraryVisible || preview || RunActive ? Visibility.Collapsed : Visibility.Visible;
-        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro is not null && (macro.Events.Count > 0 || macro.PointerOrigins.Count > 0) && _preferences.IsLoaded;
+        PlayButton.IsEnabled = !_busy && ViewModel.CanPlay && macro is not null && (macro.Events.Count > 0 || macro.PointerOrigins.Count > 0) && _preferences.IsLoaded && commandsAvailable;
         PlaybackOptionsButton.Visibility = PlayButton.Visibility;
-        PlaybackOptionsButton.IsEnabled = !_busy && !RunActive && macro is not null;
+        PlaybackOptionsButton.IsEnabled = commandsAvailable && macro is not null;
         ToolTipService.SetToolTip(PlayButton, $"Play (Ctrl+E) sends real input to the focused app. {PlaybackSettingsSummary.Text}. Emergency stop: {EmergencyShortcut}.");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PlayButton, $"Play, sends real input. {PlaybackSettingsSummary.Text}");
         ImportButton.Visibility = _libraryVisible ? Visibility.Visible : Visibility.Collapsed;
-        ImportButton.IsEnabled = !_busy && !RunActive;
+        ImportButton.IsEnabled = commandsAvailable;
         StopButton.Visibility = RunActive ? Visibility.Visible : Visibility.Collapsed;
         StopButton.Content = _recordCountdown is not null || ViewModel.PlaybackState.Phase == PlaybackPhase.Countdown ? "Cancel countdown" : "Stop";
         StatusDot.Fill = Resource(preview ? "MacroBlueBrush" : ViewModel.IsRecording ? "MacroRedBrush" : "MacroMutedBrush");
-        StatusText.Text = RunActive ? _preparingRun ? (_isRecordingRun ? "Preparing recording…" : "Preparing playback…") : ViewModel.IsRecording ? "Recording" : "Run in progress"
+        var runState = CurrentRunPresentation();
+        var showRunState = RunActive || _savingRun || _activeRun is not null;
+        StatusText.Text = showRunState ? runState.State
             : macro?.SaveState == RecordingSaveState.Failed ? $"Save failed: {macro.SaveError}"
             : _feedback.Text ?? (preview ? "Preview only" : _libraryVisible ? $"{ViewModel.Library.Count} saved {(ViewModel.Library.Count == 1 ? "recording" : "recordings")}" : "Stopped");
         ToolTipService.SetToolTip(StatusText, StatusText.Text);
-        SummaryText.Text = _libraryVisible ? "Local recordings · original .macro format" : ActiveEditor?.Summary ?? "";
+        SummaryText.Text = showRunState ? string.Join(" · ", new[] { runState.Clock, runState.Detail, runState.Note }.Where(value => !string.IsNullOrEmpty(value)))
+            : _libraryVisible ? "Local recordings · Play uses settings saved for each recording" : ActiveEditor?.Summary ?? "";
+        ToolTipService.SetToolTip(SummaryText, SummaryText.Text);
         RefreshController();
     }
     private Brush Resource(string key) => DesignResources.Brush(RootGrid, key);
-    private void SetMessage(string message) { _feedback.Report(message); RefreshShell(); }
+    private void SetMessage(string message)
+    {
+        _feedback.Report(message);
+        if (_libraryVisible) Library.SetOperationMessage(message);
+        RefreshShell();
+    }
     private void ViewModel_StatusMessageRequested(object? sender, string message)
     {
         if (_closed) return;
@@ -223,8 +235,12 @@ public sealed partial class MainWindow : Window
 
     private async Task OperationAsync(Func<Task> action)
     {
-        if (_busy || _closed || _closing || RunActive) return;
-        if (ActiveEditor?.TryCommitPendingEdits() == false) return;
+        if (_busy || _closed || _closing || RunActive || _savingRun || _stopping) return;
+        if (ActiveEditor?.TryCommitPendingEdits() == false)
+        {
+            SetMessage(ActiveEditor.Status);
+            return;
+        }
         _busy = true; RefreshShell();
         try { await action(); }
         catch (OperationCanceledException) when (_closed || _closing) { }
@@ -234,8 +250,7 @@ public sealed partial class MainWindow : Window
     private async Task SaveActiveAsync()
     {
         if (ActiveEditor?.TryCommitPendingEdits() == false) throw new InvalidOperationException(ActiveEditor.Status);
-        if (ViewModel.ActiveMacro is { IsDirty: true } macro && (macro.ChangeVersion > 0 || macro.SavedAt is not null))
-            await ViewModel.SaveRecordingAsync(macro);
+        if (ViewModel.ActiveMacro is { } macro) await SaveTargetAsync(macro);
     }
     private async Task ShowLibraryAsync()
     {
@@ -282,7 +297,8 @@ public sealed partial class MainWindow : Window
                 }
                 catch (Exception error) { thumbnail = new([], "Could not read recording", "Preview unavailable"); SetMessage($"Could not load thumbnail for {item.Name}: {error.Message}"); }
             }
-            cards.Add(new LibraryCard(item.Id, item.Name, summary, $"Saved {item.UpdatedAt.ToLocalTime():g}", thumbnail));
+            cards.Add(new LibraryCard(item.Id, item.Name, summary, $"Saved {item.UpdatedAt.ToLocalTime():g}", thumbnail)
+                { PreferencesLoaded = _preferences.IsLoaded, Playback = _preferences.PlaybackFor(item.Id) });
         }
         if (_closed || _closing || version != _libraryRefreshVersion) return;
         Library.SetCards(cards);
@@ -301,9 +317,10 @@ public sealed partial class MainWindow : Window
     });
     private async Task RenameLibraryCardAsync(LibraryCard card, string name)
     {
-        if (_busy || RunActive) throw new InvalidOperationException("Wait for the current operation to finish before renaming.");
+        if (_busy || RunActive || _savingRun || _stopping) throw new InvalidOperationException("Wait for the current operation to finish before renaming.");
         ThrowIfClosing();
-        _busy = true;
+        if (ActiveEditor?.TryCommitPendingEdits() == false) throw new InvalidOperationException(ActiveEditor.Status);
+        _busy = true; RefreshShell();
         try
         {
             await ViewModel.RenameRecordingAsync((Guid)card.Key, name);
@@ -417,7 +434,7 @@ public sealed partial class MainWindow : Window
         var name = macro.Name;
         await EditOptionsAsync(lease => DirectRunPreparation.EditPlaybackOptionsAsync(_preferences, lease, id,
             options => Dialogs.PlaybackOptionsAsync(options, name, EmergencyShortcut, macro)));
-        await SaveActiveAsync();
+        await SaveTargetAsync(macro);
     });
 
     private async void Record_Click(object sender, RoutedEventArgs e) => await OperationAsync(() => StartRecordingAsync(false, false));
@@ -476,16 +493,24 @@ public sealed partial class MainWindow : Window
         try
         {
             var prepared = await DirectRunPreparation.PlayAsync(ViewModel, _preferences, run, macro);
-            _runPlaybackOptions = prepared.Options;
-            run.ThrowIfCancelled(); ThrowIfClosing();
-            ViewModel.SelectedTabIndex = ViewModel.MacroTabs.IndexOf(prepared.Macro);
-            ShowEditor(); ActiveEditor!.IsPreviewMode = false;
-            _preparingRun = false;
-            ShowController(macro.Name);
-            await ViewModel.PlayMacroAsync(prepared.Macro, prepared.Options);
+            await RunPreparedPlaybackAsync(prepared, run);
         }
         catch (OperationCanceledException) { if (!_closed) SetMessage("Playback cancelled"); }
         finally { _preparingRun = false; if (!RunActive) FinishController(run); RefreshShell(); }
+    }
+    private async Task RunPreparedPlaybackAsync(PlaybackRun prepared, RunLease run, bool showEditor = true)
+    {
+        run.ThrowIfCancelled(); ThrowIfClosing();
+        _runMacro = prepared.Macro;
+        _runPlaybackOptions = prepared.Options;
+        if (showEditor)
+        {
+            ViewModel.SelectedTabIndex = ViewModel.MacroTabs.IndexOf(prepared.Macro);
+            ShowEditor(); ActiveEditor!.IsPreviewMode = false;
+        }
+        _preparingRun = false;
+        ShowController(prepared.Macro.Name);
+        await ViewModel.PlayMacroAsync(prepared.Macro, prepared.Options);
     }
     private void ShowController(string name)
     {
@@ -540,16 +565,20 @@ public sealed partial class MainWindow : Window
     private void RefreshController()
     {
         if (_controller is null) return;
+        _controller.SetState(CurrentRunPresentation(), EmergencyShortcut);
+    }
+    private RunControllerPresentation CurrentRunPresentation()
+    {
+        if (_preparingRun) return new(_isRecordingRun ? "Preparing recording…" : "Preparing playback…", "", "", "No input yet.", Recording: _isRecordingRun);
         if (_recordCountdown is not null)
-            _controller.SetState(RunControllerPresentation.RecordingCountdown(_recordCountdownSeconds), EmergencyShortcut);
-        else if (_isRecordingRun)
+            return RunControllerPresentation.RecordingCountdown(_recordCountdownSeconds);
+        if (_isRecordingRun)
         {
             var state = RunControllerPresentation.ForRecording(ViewModel.IsRecording, ViewModel.IsFinalizingRecording,
                 _savingRun, ViewModel.RecordingElapsed, ViewModel.RecordedEventCount);
-            _controller.SetState(_runError is null ? state : state with { Note = _runError }, EmergencyShortcut);
+            return _runError is null ? state : state with { Note = _runError };
         }
-        else
-            _controller.SetState(RunControllerPresentation.ForPlayback(ViewModel.PlaybackState, _savingRun), EmergencyShortcut);
+        return RunControllerPresentation.ForPlayback(ViewModel.PlaybackState, _savingRun);
     }
     private async Task SaveRunAsync(MacroViewModel macro)
     {
@@ -609,6 +638,9 @@ public sealed partial class MainWindow : Window
     });
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
     {
+        if (e.Handled) return;
+        if (e.Key == VirtualKey.Escape && _libraryVisible && Library.SelectedCards.Count > 0)
+        { Library.ClearSelection(); e.Handled = true; return; }
         if (e.Key == VirtualKey.Escape && ActiveEditor?.IsPreviewMode == true) { BackToEditor_Click(sender, e); e.Handled = true; return; }
         if (e.Key != VirtualKey.Z || IsTextInput(e.OriginalSource as DependencyObject)) return;
         if ((Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control) & Windows.UI.Core.CoreVirtualKeyStates.Down) == 0) return;
