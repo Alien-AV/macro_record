@@ -208,10 +208,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_editor is not null && _macro is not null)
         {
-            SelectionScope.Text = _editor.RawSelection ? $"{EditorText.Count(_macro.SelectedEvents.Count, "raw event")} selected"
-                : ActionsList.SelectedItems.Count > 0 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Select an action";
-            DeleteButton.IsEnabled = _macro.SelectedEvents.Count > 0;
-            var deleteScope = _editor.RawSelection ? "Delete selected raw events" : "Delete selected actions";
+            SelectionScope.Text = ActionsList.SelectedItems.Count > 0 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Select an action";
+            DeleteButton.IsEnabled = _rawOpen ? RawList.SelectedItems.Count > 0 : ActionsList.SelectedItems.Count > 0;
+            var deleteScope = _rawOpen ? "Delete selected raw events" : "Delete selected actions";
             ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(DeleteButton, deleteScope);
         }
@@ -307,15 +306,47 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void AddMouse_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(() => { _macro.CreateMouseEventManually(); SetRawOpen(true); }, "Mouse event added. Edit it in Exact input.", resetDrafts: false);
+        if (_macro is not null) AddRawEvent(_macro.CreateMouseEventManually, "Mouse event added. Edit it in Exact input.");
     }
     private void AddKeyboard_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(() => { _macro.CreateKeyboardEventManually(); SetRawOpen(true); }, "Keyboard event added. Edit it in Exact input.", resetDrafts: false);
+        if (_macro is not null) AddRawEvent(_macro.CreateKeyboardEventManually, "Keyboard event added. Edit it in Exact input.");
+    }
+    private void AddRawEvent(Action create, string message)
+    {
+        if (_macro is null || _editor is null) return;
+        RunEdit(() =>
+        {
+            var before = _macro.Events.ToHashSet();
+            create();
+            var inserted = _macro.Events.Single(input => !before.Contains(input));
+            _rawSelection = [inserted]; _rawEvent = inserted;
+            _editor.SelectRawEvents(_rawSelection);
+            RefreshEditor();
+            SetRawOpen(true); ShowPane(true);
+        }, message, resetDrafts: false);
     }
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(_macro.RemoveSelectedEvents, "Selection deleted. Undo is available.");
+        DeleteSelection(_rawOpen && InspectorPanel.Visibility == Visibility.Visible
+            && (ReferenceEquals(sender, DeleteButton) || _detailsPane));
+    }
+    private void DeleteActions_Click(object sender, RoutedEventArgs e) => DeleteSelection(raw: false);
+    private void DeleteSelection(bool raw)
+    {
+        if (_macro is null || _editor is null) return;
+        var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(action => action.First).ToArray();
+        var inputs = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
+        RunEdit(() =>
+        {
+            // View navigation retains both selections. Resolve only this command's
+            // scope, after drafts commit and against the current action projection.
+            RefreshEditor();
+            if (raw) _editor.SelectRawEvents(inputs);
+            else _editor.SelectActions(anchors.Select(input => _editor.Projection.ActionAt(_macro.Events.IndexOf(input)))
+                .OfType<RecordedAction>().Distinct());
+            _macro.RemoveSelectedEvents();
+        }, raw ? "Selected raw input removed. Undo is available." : "Selected actions deleted. Undo is available.");
     }
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
@@ -323,9 +354,13 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Actions_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key != VirtualKey.Delete || IsTextInput(e.OriginalSource as DependencyObject)) return;
-        if (_macro is not null) RunEdit(_macro.RemoveSelectedEvents, "Selected raw input removed. Undo is available.");
-        e.Handled = true;
+        if (HandleDeleteKey(sender, e.Key, e.OriginalSource as DependencyObject)) e.Handled = true;
+    }
+    private bool HandleDeleteKey(object sender, VirtualKey key, DependencyObject? source)
+    {
+        if (key != VirtualKey.Delete || IsTextInput(source)) return false;
+        DeleteSelection(ReferenceEquals(sender, RawList));
+        return true;
     }
     private static bool IsTextInput(DependencyObject? source)
     {
@@ -362,31 +397,32 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (!_rawOpen || _editor is null || _macro is null) return;
         _sync = true;
-        var previous = _rawEvent;
-        _rawRows.Refresh(_macro.Events, ActionsList.SelectedItems.OfType<RecordedAction>().OrderBy(a => a.Start).ToArray());
-        if (enterRaw)
+        try
         {
-            RawList.SelectedItems.Clear();
-            foreach (var row in _rawRows.Where(row => _rawSelection.Contains(row.Input))) RawList.SelectedItems.Add(row);
-            if (RawList.SelectedItems.Count == 0)
-                RawList.SelectedItem = _rawRows.FirstOrDefault(row => ReferenceEquals(row.Input, previous)) ?? _rawRows.FirstOrDefault();
-            _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
+            var previous = _rawEvent;
+            _rawRows.Refresh(_macro.Events, ActionsList.SelectedItems.OfType<RecordedAction>().OrderBy(a => a.Start).ToArray());
+            var selection = enterRaw ? _rawSelection : _editor.RawSelection ? _macro.SelectedEvents.ToArray() : [];
+            if (selection.Length == 0 && (enterRaw || !_editor.RawSelection))
+                selection = _rawRows.FirstOrDefault(row => ReferenceEquals(row.Input, previous)) is { } retained
+                    ? [retained.Input] : _rawRows.FirstOrDefault() is { } first ? [first.Input] : [];
+            RestoreRawSelection(selection, previous);
+            _rawSelection = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
+            _editor.SelectRawEvents(_rawSelection);
         }
-        else if (_editor.RawSelection)
-        {
-            var selected = _macro.SelectedEvents.ToHashSet();
-            foreach (var row in RawList.SelectedItems.OfType<RawEventRow>().Where(row => !selected.Contains(row.Input)).ToArray()) RawList.SelectedItems.Remove(row);
-            foreach (var row in _rawRows.Where(row => selected.Contains(row.Input)))
-                if (!RawList.SelectedItems.Contains(row)) RawList.SelectedItems.Add(row);
-        }
-        else if (_rawOpen)
-        {
-            RawList.SelectedItems.Clear();
-            RawList.SelectedItem = _rawRows.FirstOrDefault();
-            _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
-        }
-        _rawSelection = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
-        _sync = false; LoadRaw(); UpdateSelectionScope();
+        finally { _sync = false; }
+        LoadRaw(); UpdateSelectionScope();
+    }
+    private void RestoreRawSelection(IEnumerable<InputEvent> selection, InputEvent? primary)
+    {
+        var selected = selection.ToHashSet();
+        var rows = _rawRows.Where(row => selected.Contains(row.Input)).ToArray();
+        var owner = rows.FirstOrDefault(row => ReferenceEquals(row.Input, primary)) ?? rows.FirstOrDefault();
+        // SelectedItem owns the fields and can differ from the earliest selected
+        // row. Restore it first so LoadRaw cannot discard another input's draft.
+        if (!ReferenceEquals(RawList.SelectedItem, owner)) RawList.SelectedItem = owner;
+        foreach (var row in RawList.SelectedItems.OfType<RawEventRow>().Where(row => !rows.Contains(row)).ToArray()) RawList.SelectedItems.Remove(row);
+        foreach (var row in rows)
+            if (!RawList.SelectedItems.Contains(row)) RawList.SelectedItems.Add(row);
     }
     private void Raw_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -396,8 +432,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             _sync = true;
             try
             {
-                RawList.SelectedItems.Clear();
-                foreach (var row in _rawRows.Where(row => _rawSelection.Contains(row.Input))) RawList.SelectedItems.Add(row);
+                RestoreRawSelection(_rawSelection, _rawEvent);
             }
             finally { _sync = false; }
             return;

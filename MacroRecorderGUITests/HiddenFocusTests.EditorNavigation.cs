@@ -13,6 +13,9 @@ public sealed partial class HiddenFocusTests
 {
     private static void CheckEditorNavigationAndAuthoring()
     {
+        CheckEditorDeleteScope();
+        CheckDescendingRawDraftOwnership();
+        CheckAdvancedAddFromEmpty();
         using var macro = new MacroViewModel("Navigation", new FakePlaybackEngine());
         macro.AddEvent(new MouseEvent(10, 20, MouseActionTypeFlags.Move));
         macro.AddEvent(new MouseEvent(30, 40, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 100 });

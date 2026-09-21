@@ -25,7 +25,7 @@
         <ListView.ContextFlyout><MenuFlyout>
          <MenuFlyoutItem Text="Click…" Click="AddClick_Click"/><MenuFlyoutItem Text="Shortcut…" Click="AddShortcut_Click"/><MenuFlyoutItem Text="Pointer movement…" Click="AddMovement_Click"/><MenuFlyoutItem Text="Wait until…" Click="AddWait_Click"/>
          <MenuFlyoutSubItem Text="Advanced"><MenuFlyoutItem Text="Mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutItem Text="Replace pause with a condition…" Click="ReplaceDelay_Click"/></MenuFlyoutSubItem>
-         <MenuFlyoutSeparator/><MenuFlyoutItem Text="Delete selection" Click="Delete_Click"/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
+         <MenuFlyoutSeparator/><MenuFlyoutItem Text="Delete selected actions" Click="DeleteActions_Click"/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
         </MenuFlyout></ListView.ContextFlyout>
         <ListView.ItemTemplate><DataTemplate>
          <Grid ColumnSpacing="10" ToolTipService.ToolTip="{Binding TechnicalSummary}">
