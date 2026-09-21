@@ -24,30 +24,88 @@ namespace ProtobufGenerated {
     static EventsReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkIqEDChJQcm90b2J1",
+            "CgxFdmVudHMucHJvdG8SEXByb3RvYnVmR2VuZXJhdGVkItwDChJQcm90b2J1",
             "ZklucHV0RXZlbnQSGgoSdGltZVNpbmNlTGFzdEV2ZW50GAEgASgEElAKDWtl",
             "eWJvYXJkRXZlbnQYAiABKAsyNy5wcm90b2J1ZkdlbmVyYXRlZC5Qcm90b2J1",
             "ZklucHV0RXZlbnQuS2V5Ym9hcmRFdmVudFR5cGVIABJKCgptb3VzZUV2ZW50",
             "GAMgASgLMjQucHJvdG9idWZHZW5lcmF0ZWQuUHJvdG9idWZJbnB1dEV2ZW50",
-            "Lk1vdXNlRXZlbnRUeXBlSAAaOgoRS2V5Ym9hcmRFdmVudFR5cGUSFgoOdmly",
-            "dHVhbEtleUNvZGUYASABKA0SDQoFa2V5VXAYAiABKAgaiwEKDk1vdXNlRXZl",
-            "bnRUeXBlEgkKAXgYASABKAUSCQoBeRgCIAEoBRISCgphY3Rpb25UeXBlGAMg",
-            "ASgNEhUKDXdoZWVsUm90YXRpb24YBCABKA0SGAoQcmVsYXRpdmVQb3NpdGlv",
-            "bhgFIAEoCBIeChZtYXBwZWRUb1ZpcnR1YWxEZXNrdG9wGAYgASgIQgcKBUV2",
-            "ZW50IlQKFlByb3RvYnVmSW5wdXRFdmVudExpc3QSOgoLaW5wdXRFdmVudHMY",
-            "ASADKAsyJS5wcm90b2J1ZkdlbmVyYXRlZC5Qcm90b2J1ZklucHV0RXZlbnRi",
-            "BnByb3RvMw=="));
+            "Lk1vdXNlRXZlbnRUeXBlSAASOQoNd2FpdENvbmRpdGlvbhgEIAEoCzIgLnBy",
+            "b3RvYnVmR2VuZXJhdGVkLldhaXRDb25kaXRpb25IABo6ChFLZXlib2FyZEV2",
+            "ZW50VHlwZRIWCg52aXJ0dWFsS2V5Q29kZRgBIAEoDRINCgVrZXlVcBgCIAEo",
+            "CBqLAQoOTW91c2VFdmVudFR5cGUSCQoBeBgBIAEoBRIJCgF5GAIgASgFEhIK",
+            "CmFjdGlvblR5cGUYAyABKA0SFQoNd2hlZWxSb3RhdGlvbhgEIAEoDRIYChBy",
+            "ZWxhdGl2ZVBvc2l0aW9uGAUgASgIEh4KFm1hcHBlZFRvVmlydHVhbERlc2t0",
+            "b3AYBiABKAhCBwoFRXZlbnQiVAoWUHJvdG9idWZJbnB1dEV2ZW50TGlzdBI6",
+            "CgtpbnB1dEV2ZW50cxgBIAMoCzIlLnByb3RvYnVmR2VuZXJhdGVkLlByb3Rv",
+            "YnVmSW5wdXRFdmVudCKXAgoNV2FpdENvbmRpdGlvbhIZChFzZW1hbnRpY3Nf",
+            "dmVyc2lvbhgBIAEoDRIvCgd0cmlnZ2VyGAIgASgOMh4ucHJvdG9idWZHZW5l",
+            "cmF0ZWQuV2FpdFRyaWdnZXISEgoKdGltZW91dF91cxgDIAEoBBIVCg1zdGFi",
+            "bGVfZm9yX3VzGAQgASgEEhgKEHBvbGxfaW50ZXJ2YWxfdXMYBSABKAQSNAoG",
+            "d2luZG93GAYgASgLMiIucHJvdG9idWZHZW5lcmF0ZWQuV2luZG93Q29uZGl0",
+            "aW9uSAASMgoFcGl4ZWwYByABKAsyIS5wcm90b2J1ZkdlbmVyYXRlZC5QaXhl",
+            "bENvbmRpdGlvbkgAQgsKCWNvbmRpdGlvbiKwAQoOV2luZG93U2VsZWN0b3IS",
+            "FwoPZXhlY3V0YWJsZV9wYXRoGAEgASgJEhQKDHdpbmRvd19jbGFzcxgCIAEo",
+            "CRINCgV0aXRsZRgDIAEoCRIyCgt0aXRsZV9tYXRjaBgEIAEoDjIdLnByb3Rv",
+            "YnVmR2VuZXJhdGVkLlRpdGxlTWF0Y2gSGQoRaWdub3JlX3RpdGxlX2Nhc2UY",
+            "BSABKAgSEQoJYW55X21hdGNoGAYgASgIInEKD1dpbmRvd0NvbmRpdGlvbhIx",
+            "CgZ0YXJnZXQYASABKAsyIS5wcm90b2J1ZkdlbmVyYXRlZC5XaW5kb3dTZWxl",
+            "Y3RvchIrCgR0ZXN0GAIgASgOMh0ucHJvdG9idWZHZW5lcmF0ZWQuV2luZG93",
+            "VGVzdCKQAgoOUGl4ZWxDb25kaXRpb24SOAoLY29vcmRpbmF0ZXMYASABKA4y",
+            "Iy5wcm90b2J1ZkdlbmVyYXRlZC5QaXhlbENvb3JkaW5hdGVzEjEKBnRhcmdl",
+            "dBgCIAEoCzIhLnByb3RvYnVmR2VuZXJhdGVkLldpbmRvd1NlbGVjdG9yEgkK",
+            "AXgYAyABKBESCQoBeRgEIAEoERILCgNyZ2IYBSABKA0SEQoJdG9sZXJhbmNl",
+            "GAYgASgNEhEKCW5vdF9lcXVhbBgHIAEoCBIVCg1yZWZlcmVuY2VfZHBpGAgg",
+            "ASgNEhcKD3JlZmVyZW5jZV93aWR0aBgJIAEoDRIYChByZWZlcmVuY2VfaGVp",
+            "Z2h0GAogASgNKkkKC1dhaXRUcmlnZ2VyEgsKB0lTX1RSVUUQABIQCgxCRUNP",
+            "TUVTX1RSVUUQARILCgdDSEFOR0VTEAISDgoKTkVXX1dJTkRPVxADKiUKClRp",
+            "dGxlTWF0Y2gSCQoFRVhBQ1QQABIMCghDT05UQUlOUxABKkEKCldpbmRvd1Rl",
+            "c3QSCgoGRVhJU1RTEAASCwoHVklTSUJMRRABEg4KCkZPUkVHUk9VTkQQAhIK",
+            "CgZBQlNFTlQQAypRChBQaXhlbENvb3JkaW5hdGVzEhQKEERFU0tUT1BfUEhZ",
+            "U0lDQUwQABITCg9DTElFTlRfUEhZU0lDQUwQARISCg5DTElFTlRfTE9HSUNB",
+            "TBACYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent), global::ProtobufGenerated.ProtobufInputEvent.Parser, new[]{ "TimeSinceLastEvent", "KeyboardEvent", "MouseEvent" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::ProtobufGenerated.WaitTrigger), typeof(global::ProtobufGenerated.TitleMatch), typeof(global::ProtobufGenerated.WindowTest), typeof(global::ProtobufGenerated.PixelCoordinates), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent), global::ProtobufGenerated.ProtobufInputEvent.Parser, new[]{ "TimeSinceLastEvent", "KeyboardEvent", "MouseEvent", "WaitCondition" }, new[]{ "Event" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.KeyboardEventType.Parser, new[]{ "VirtualKeyCode", "KeyUp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType), global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType.Parser, new[]{ "X", "Y", "ActionType", "WheelRotation", "RelativePosition", "MappedToVirtualDesktop" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEventList), global::ProtobufGenerated.ProtobufInputEventList.Parser, new[]{ "InputEvents" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.ProtobufInputEventList), global::ProtobufGenerated.ProtobufInputEventList.Parser, new[]{ "InputEvents" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.WaitCondition), global::ProtobufGenerated.WaitCondition.Parser, new[]{ "SemanticsVersion", "Trigger", "TimeoutUs", "StableForUs", "PollIntervalUs", "Window", "Pixel" }, new[]{ "Condition" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.WindowSelector), global::ProtobufGenerated.WindowSelector.Parser, new[]{ "ExecutablePath", "WindowClass", "Title", "TitleMatch", "IgnoreTitleCase", "AnyMatch" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.WindowCondition), global::ProtobufGenerated.WindowCondition.Parser, new[]{ "Target", "Test" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::ProtobufGenerated.PixelCondition), global::ProtobufGenerated.PixelCondition.Parser, new[]{ "Coordinates", "Target", "X", "Y", "Rgb", "Tolerance", "NotEqual", "ReferenceDpi", "ReferenceWidth", "ReferenceHeight" }, null, null, null, null)
           }));
     }
     #endregion
 
   }
+  #region Enums
+  public enum WaitTrigger {
+    [pbr::OriginalName("IS_TRUE")] IsTrue = 0,
+    [pbr::OriginalName("BECOMES_TRUE")] BecomesTrue = 1,
+    [pbr::OriginalName("CHANGES")] Changes = 2,
+    [pbr::OriginalName("NEW_WINDOW")] NewWindow = 3,
+  }
+
+  public enum TitleMatch {
+    [pbr::OriginalName("EXACT")] Exact = 0,
+    [pbr::OriginalName("CONTAINS")] Contains = 1,
+  }
+
+  public enum WindowTest {
+    [pbr::OriginalName("EXISTS")] Exists = 0,
+    [pbr::OriginalName("VISIBLE")] Visible = 1,
+    [pbr::OriginalName("FOREGROUND")] Foreground = 2,
+    [pbr::OriginalName("ABSENT")] Absent = 3,
+  }
+
+  public enum PixelCoordinates {
+    [pbr::OriginalName("DESKTOP_PHYSICAL")] DesktopPhysical = 0,
+    [pbr::OriginalName("CLIENT_PHYSICAL")] ClientPhysical = 1,
+    [pbr::OriginalName("CLIENT_LOGICAL")] ClientLogical = 2,
+  }
+
+  #endregion
+
   #region Messages
   public sealed partial class ProtobufInputEvent : pb::IMessage<ProtobufInputEvent>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -90,6 +148,9 @@ namespace ProtobufGenerated {
           break;
         case EventOneofCase.MouseEvent:
           MouseEvent = other.MouseEvent.Clone();
+          break;
+        case EventOneofCase.WaitCondition:
+          WaitCondition = other.WaitCondition.Clone();
           break;
       }
 
@@ -138,12 +199,25 @@ namespace ProtobufGenerated {
       }
     }
 
+    /// <summary>Field number for the "waitCondition" field.</summary>
+    public const int WaitConditionFieldNumber = 4;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WaitCondition WaitCondition {
+      get { return eventCase_ == EventOneofCase.WaitCondition ? (global::ProtobufGenerated.WaitCondition) event_ : null; }
+      set {
+        event_ = value;
+        eventCase_ = value == null ? EventOneofCase.None : EventOneofCase.WaitCondition;
+      }
+    }
+
     private object event_;
     /// <summary>Enum of possible cases for the "Event" oneof.</summary>
     public enum EventOneofCase {
       None = 0,
       KeyboardEvent = 2,
       MouseEvent = 3,
+      WaitCondition = 4,
     }
     private EventOneofCase eventCase_ = EventOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -177,6 +251,7 @@ namespace ProtobufGenerated {
       if (TimeSinceLastEvent != other.TimeSinceLastEvent) return false;
       if (!object.Equals(KeyboardEvent, other.KeyboardEvent)) return false;
       if (!object.Equals(MouseEvent, other.MouseEvent)) return false;
+      if (!object.Equals(WaitCondition, other.WaitCondition)) return false;
       if (EventCase != other.EventCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -188,6 +263,7 @@ namespace ProtobufGenerated {
       if (TimeSinceLastEvent != 0UL) hash ^= TimeSinceLastEvent.GetHashCode();
       if (eventCase_ == EventOneofCase.KeyboardEvent) hash ^= KeyboardEvent.GetHashCode();
       if (eventCase_ == EventOneofCase.MouseEvent) hash ^= MouseEvent.GetHashCode();
+      if (eventCase_ == EventOneofCase.WaitCondition) hash ^= WaitCondition.GetHashCode();
       hash ^= (int) eventCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -219,6 +295,10 @@ namespace ProtobufGenerated {
         output.WriteRawTag(26);
         output.WriteMessage(MouseEvent);
       }
+      if (eventCase_ == EventOneofCase.WaitCondition) {
+        output.WriteRawTag(34);
+        output.WriteMessage(WaitCondition);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -241,6 +321,10 @@ namespace ProtobufGenerated {
         output.WriteRawTag(26);
         output.WriteMessage(MouseEvent);
       }
+      if (eventCase_ == EventOneofCase.WaitCondition) {
+        output.WriteRawTag(34);
+        output.WriteMessage(WaitCondition);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -259,6 +343,9 @@ namespace ProtobufGenerated {
       }
       if (eventCase_ == EventOneofCase.MouseEvent) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MouseEvent);
+      }
+      if (eventCase_ == EventOneofCase.WaitCondition) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(WaitCondition);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -287,6 +374,12 @@ namespace ProtobufGenerated {
             MouseEvent = new global::ProtobufGenerated.ProtobufInputEvent.Types.MouseEventType();
           }
           MouseEvent.MergeFrom(other.MouseEvent);
+          break;
+        case EventOneofCase.WaitCondition:
+          if (WaitCondition == null) {
+            WaitCondition = new global::ProtobufGenerated.WaitCondition();
+          }
+          WaitCondition.MergeFrom(other.WaitCondition);
           break;
       }
 
@@ -327,6 +420,15 @@ namespace ProtobufGenerated {
             MouseEvent = subBuilder;
             break;
           }
+          case 34: {
+            global::ProtobufGenerated.WaitCondition subBuilder = new global::ProtobufGenerated.WaitCondition();
+            if (eventCase_ == EventOneofCase.WaitCondition) {
+              subBuilder.MergeFrom(WaitCondition);
+            }
+            input.ReadMessage(subBuilder);
+            WaitCondition = subBuilder;
+            break;
+          }
         }
       }
     #endif
@@ -362,6 +464,15 @@ namespace ProtobufGenerated {
             }
             input.ReadMessage(subBuilder);
             MouseEvent = subBuilder;
+            break;
+          }
+          case 34: {
+            global::ProtobufGenerated.WaitCondition subBuilder = new global::ProtobufGenerated.WaitCondition();
+            if (eventCase_ == EventOneofCase.WaitCondition) {
+              subBuilder.MergeFrom(WaitCondition);
+            }
+            input.ReadMessage(subBuilder);
+            WaitCondition = subBuilder;
             break;
           }
         }
@@ -1148,6 +1259,1619 @@ namespace ProtobufGenerated {
             break;
           case 10: {
             inputEvents_.AddEntriesFrom(ref input, _repeated_inputEvents_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Version 1: read-only window/pixel observations; failures always stop playback.
+  /// </summary>
+  public sealed partial class WaitCondition : pb::IMessage<WaitCondition>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WaitCondition> _parser = new pb::MessageParser<WaitCondition>(() => new WaitCondition());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WaitCondition> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::ProtobufGenerated.EventsReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WaitCondition() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WaitCondition(WaitCondition other) : this() {
+      semanticsVersion_ = other.semanticsVersion_;
+      trigger_ = other.trigger_;
+      timeoutUs_ = other.timeoutUs_;
+      stableForUs_ = other.stableForUs_;
+      pollIntervalUs_ = other.pollIntervalUs_;
+      switch (other.ConditionCase) {
+        case ConditionOneofCase.Window:
+          Window = other.Window.Clone();
+          break;
+        case ConditionOneofCase.Pixel:
+          Pixel = other.Pixel.Clone();
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WaitCondition Clone() {
+      return new WaitCondition(this);
+    }
+
+    /// <summary>Field number for the "semantics_version" field.</summary>
+    public const int SemanticsVersionFieldNumber = 1;
+    private uint semanticsVersion_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint SemanticsVersion {
+      get { return semanticsVersion_; }
+      set {
+        semanticsVersion_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "trigger" field.</summary>
+    public const int TriggerFieldNumber = 2;
+    private global::ProtobufGenerated.WaitTrigger trigger_ = global::ProtobufGenerated.WaitTrigger.IsTrue;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WaitTrigger Trigger {
+      get { return trigger_; }
+      set {
+        trigger_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "timeout_us" field.</summary>
+    public const int TimeoutUsFieldNumber = 3;
+    private ulong timeoutUs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong TimeoutUs {
+      get { return timeoutUs_; }
+      set {
+        timeoutUs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "stable_for_us" field.</summary>
+    public const int StableForUsFieldNumber = 4;
+    private ulong stableForUs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong StableForUs {
+      get { return stableForUs_; }
+      set {
+        stableForUs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "poll_interval_us" field.</summary>
+    public const int PollIntervalUsFieldNumber = 5;
+    private ulong pollIntervalUs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong PollIntervalUs {
+      get { return pollIntervalUs_; }
+      set {
+        pollIntervalUs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "window" field.</summary>
+    public const int WindowFieldNumber = 6;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WindowCondition Window {
+      get { return conditionCase_ == ConditionOneofCase.Window ? (global::ProtobufGenerated.WindowCondition) condition_ : null; }
+      set {
+        condition_ = value;
+        conditionCase_ = value == null ? ConditionOneofCase.None : ConditionOneofCase.Window;
+      }
+    }
+
+    /// <summary>Field number for the "pixel" field.</summary>
+    public const int PixelFieldNumber = 7;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.PixelCondition Pixel {
+      get { return conditionCase_ == ConditionOneofCase.Pixel ? (global::ProtobufGenerated.PixelCondition) condition_ : null; }
+      set {
+        condition_ = value;
+        conditionCase_ = value == null ? ConditionOneofCase.None : ConditionOneofCase.Pixel;
+      }
+    }
+
+    private object condition_;
+    /// <summary>Enum of possible cases for the "condition" oneof.</summary>
+    public enum ConditionOneofCase {
+      None = 0,
+      Window = 6,
+      Pixel = 7,
+    }
+    private ConditionOneofCase conditionCase_ = ConditionOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ConditionOneofCase ConditionCase {
+      get { return conditionCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearCondition() {
+      conditionCase_ = ConditionOneofCase.None;
+      condition_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WaitCondition);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WaitCondition other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SemanticsVersion != other.SemanticsVersion) return false;
+      if (Trigger != other.Trigger) return false;
+      if (TimeoutUs != other.TimeoutUs) return false;
+      if (StableForUs != other.StableForUs) return false;
+      if (PollIntervalUs != other.PollIntervalUs) return false;
+      if (!object.Equals(Window, other.Window)) return false;
+      if (!object.Equals(Pixel, other.Pixel)) return false;
+      if (ConditionCase != other.ConditionCase) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SemanticsVersion != 0) hash ^= SemanticsVersion.GetHashCode();
+      if (Trigger != global::ProtobufGenerated.WaitTrigger.IsTrue) hash ^= Trigger.GetHashCode();
+      if (TimeoutUs != 0UL) hash ^= TimeoutUs.GetHashCode();
+      if (StableForUs != 0UL) hash ^= StableForUs.GetHashCode();
+      if (PollIntervalUs != 0UL) hash ^= PollIntervalUs.GetHashCode();
+      if (conditionCase_ == ConditionOneofCase.Window) hash ^= Window.GetHashCode();
+      if (conditionCase_ == ConditionOneofCase.Pixel) hash ^= Pixel.GetHashCode();
+      hash ^= (int) conditionCase_;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SemanticsVersion != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(SemanticsVersion);
+      }
+      if (Trigger != global::ProtobufGenerated.WaitTrigger.IsTrue) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Trigger);
+      }
+      if (TimeoutUs != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(TimeoutUs);
+      }
+      if (StableForUs != 0UL) {
+        output.WriteRawTag(32);
+        output.WriteUInt64(StableForUs);
+      }
+      if (PollIntervalUs != 0UL) {
+        output.WriteRawTag(40);
+        output.WriteUInt64(PollIntervalUs);
+      }
+      if (conditionCase_ == ConditionOneofCase.Window) {
+        output.WriteRawTag(50);
+        output.WriteMessage(Window);
+      }
+      if (conditionCase_ == ConditionOneofCase.Pixel) {
+        output.WriteRawTag(58);
+        output.WriteMessage(Pixel);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SemanticsVersion != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(SemanticsVersion);
+      }
+      if (Trigger != global::ProtobufGenerated.WaitTrigger.IsTrue) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Trigger);
+      }
+      if (TimeoutUs != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(TimeoutUs);
+      }
+      if (StableForUs != 0UL) {
+        output.WriteRawTag(32);
+        output.WriteUInt64(StableForUs);
+      }
+      if (PollIntervalUs != 0UL) {
+        output.WriteRawTag(40);
+        output.WriteUInt64(PollIntervalUs);
+      }
+      if (conditionCase_ == ConditionOneofCase.Window) {
+        output.WriteRawTag(50);
+        output.WriteMessage(Window);
+      }
+      if (conditionCase_ == ConditionOneofCase.Pixel) {
+        output.WriteRawTag(58);
+        output.WriteMessage(Pixel);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SemanticsVersion != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(SemanticsVersion);
+      }
+      if (Trigger != global::ProtobufGenerated.WaitTrigger.IsTrue) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Trigger);
+      }
+      if (TimeoutUs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TimeoutUs);
+      }
+      if (StableForUs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(StableForUs);
+      }
+      if (PollIntervalUs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(PollIntervalUs);
+      }
+      if (conditionCase_ == ConditionOneofCase.Window) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Window);
+      }
+      if (conditionCase_ == ConditionOneofCase.Pixel) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Pixel);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WaitCondition other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SemanticsVersion != 0) {
+        SemanticsVersion = other.SemanticsVersion;
+      }
+      if (other.Trigger != global::ProtobufGenerated.WaitTrigger.IsTrue) {
+        Trigger = other.Trigger;
+      }
+      if (other.TimeoutUs != 0UL) {
+        TimeoutUs = other.TimeoutUs;
+      }
+      if (other.StableForUs != 0UL) {
+        StableForUs = other.StableForUs;
+      }
+      if (other.PollIntervalUs != 0UL) {
+        PollIntervalUs = other.PollIntervalUs;
+      }
+      switch (other.ConditionCase) {
+        case ConditionOneofCase.Window:
+          if (Window == null) {
+            Window = new global::ProtobufGenerated.WindowCondition();
+          }
+          Window.MergeFrom(other.Window);
+          break;
+        case ConditionOneofCase.Pixel:
+          if (Pixel == null) {
+            Pixel = new global::ProtobufGenerated.PixelCondition();
+          }
+          Pixel.MergeFrom(other.Pixel);
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            SemanticsVersion = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            Trigger = (global::ProtobufGenerated.WaitTrigger) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            TimeoutUs = input.ReadUInt64();
+            break;
+          }
+          case 32: {
+            StableForUs = input.ReadUInt64();
+            break;
+          }
+          case 40: {
+            PollIntervalUs = input.ReadUInt64();
+            break;
+          }
+          case 50: {
+            global::ProtobufGenerated.WindowCondition subBuilder = new global::ProtobufGenerated.WindowCondition();
+            if (conditionCase_ == ConditionOneofCase.Window) {
+              subBuilder.MergeFrom(Window);
+            }
+            input.ReadMessage(subBuilder);
+            Window = subBuilder;
+            break;
+          }
+          case 58: {
+            global::ProtobufGenerated.PixelCondition subBuilder = new global::ProtobufGenerated.PixelCondition();
+            if (conditionCase_ == ConditionOneofCase.Pixel) {
+              subBuilder.MergeFrom(Pixel);
+            }
+            input.ReadMessage(subBuilder);
+            Pixel = subBuilder;
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            SemanticsVersion = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            Trigger = (global::ProtobufGenerated.WaitTrigger) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            TimeoutUs = input.ReadUInt64();
+            break;
+          }
+          case 32: {
+            StableForUs = input.ReadUInt64();
+            break;
+          }
+          case 40: {
+            PollIntervalUs = input.ReadUInt64();
+            break;
+          }
+          case 50: {
+            global::ProtobufGenerated.WindowCondition subBuilder = new global::ProtobufGenerated.WindowCondition();
+            if (conditionCase_ == ConditionOneofCase.Window) {
+              subBuilder.MergeFrom(Window);
+            }
+            input.ReadMessage(subBuilder);
+            Window = subBuilder;
+            break;
+          }
+          case 58: {
+            global::ProtobufGenerated.PixelCondition subBuilder = new global::ProtobufGenerated.PixelCondition();
+            if (conditionCase_ == ConditionOneofCase.Pixel) {
+              subBuilder.MergeFrom(Pixel);
+            }
+            input.ReadMessage(subBuilder);
+            Pixel = subBuilder;
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  public sealed partial class WindowSelector : pb::IMessage<WindowSelector>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WindowSelector> _parser = new pb::MessageParser<WindowSelector>(() => new WindowSelector());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WindowSelector> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::ProtobufGenerated.EventsReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowSelector() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowSelector(WindowSelector other) : this() {
+      executablePath_ = other.executablePath_;
+      windowClass_ = other.windowClass_;
+      title_ = other.title_;
+      titleMatch_ = other.titleMatch_;
+      ignoreTitleCase_ = other.ignoreTitleCase_;
+      anyMatch_ = other.anyMatch_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowSelector Clone() {
+      return new WindowSelector(this);
+    }
+
+    /// <summary>Field number for the "executable_path" field.</summary>
+    public const int ExecutablePathFieldNumber = 1;
+    private string executablePath_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ExecutablePath {
+      get { return executablePath_; }
+      set {
+        executablePath_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "window_class" field.</summary>
+    public const int WindowClassFieldNumber = 2;
+    private string windowClass_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string WindowClass {
+      get { return windowClass_; }
+      set {
+        windowClass_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "title" field.</summary>
+    public const int TitleFieldNumber = 3;
+    private string title_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Title {
+      get { return title_; }
+      set {
+        title_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "title_match" field.</summary>
+    public const int TitleMatchFieldNumber = 4;
+    private global::ProtobufGenerated.TitleMatch titleMatch_ = global::ProtobufGenerated.TitleMatch.Exact;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.TitleMatch TitleMatch {
+      get { return titleMatch_; }
+      set {
+        titleMatch_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ignore_title_case" field.</summary>
+    public const int IgnoreTitleCaseFieldNumber = 5;
+    private bool ignoreTitleCase_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IgnoreTitleCase {
+      get { return ignoreTitleCase_; }
+      set {
+        ignoreTitleCase_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "any_match" field.</summary>
+    public const int AnyMatchFieldNumber = 6;
+    private bool anyMatch_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool AnyMatch {
+      get { return anyMatch_; }
+      set {
+        anyMatch_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WindowSelector);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WindowSelector other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ExecutablePath != other.ExecutablePath) return false;
+      if (WindowClass != other.WindowClass) return false;
+      if (Title != other.Title) return false;
+      if (TitleMatch != other.TitleMatch) return false;
+      if (IgnoreTitleCase != other.IgnoreTitleCase) return false;
+      if (AnyMatch != other.AnyMatch) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ExecutablePath.Length != 0) hash ^= ExecutablePath.GetHashCode();
+      if (WindowClass.Length != 0) hash ^= WindowClass.GetHashCode();
+      if (Title.Length != 0) hash ^= Title.GetHashCode();
+      if (TitleMatch != global::ProtobufGenerated.TitleMatch.Exact) hash ^= TitleMatch.GetHashCode();
+      if (IgnoreTitleCase != false) hash ^= IgnoreTitleCase.GetHashCode();
+      if (AnyMatch != false) hash ^= AnyMatch.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (ExecutablePath.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(ExecutablePath);
+      }
+      if (WindowClass.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(WindowClass);
+      }
+      if (Title.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Title);
+      }
+      if (TitleMatch != global::ProtobufGenerated.TitleMatch.Exact) {
+        output.WriteRawTag(32);
+        output.WriteEnum((int) TitleMatch);
+      }
+      if (IgnoreTitleCase != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(IgnoreTitleCase);
+      }
+      if (AnyMatch != false) {
+        output.WriteRawTag(48);
+        output.WriteBool(AnyMatch);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (ExecutablePath.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(ExecutablePath);
+      }
+      if (WindowClass.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(WindowClass);
+      }
+      if (Title.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Title);
+      }
+      if (TitleMatch != global::ProtobufGenerated.TitleMatch.Exact) {
+        output.WriteRawTag(32);
+        output.WriteEnum((int) TitleMatch);
+      }
+      if (IgnoreTitleCase != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(IgnoreTitleCase);
+      }
+      if (AnyMatch != false) {
+        output.WriteRawTag(48);
+        output.WriteBool(AnyMatch);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (ExecutablePath.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ExecutablePath);
+      }
+      if (WindowClass.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(WindowClass);
+      }
+      if (Title.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Title);
+      }
+      if (TitleMatch != global::ProtobufGenerated.TitleMatch.Exact) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) TitleMatch);
+      }
+      if (IgnoreTitleCase != false) {
+        size += 1 + 1;
+      }
+      if (AnyMatch != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WindowSelector other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ExecutablePath.Length != 0) {
+        ExecutablePath = other.ExecutablePath;
+      }
+      if (other.WindowClass.Length != 0) {
+        WindowClass = other.WindowClass;
+      }
+      if (other.Title.Length != 0) {
+        Title = other.Title;
+      }
+      if (other.TitleMatch != global::ProtobufGenerated.TitleMatch.Exact) {
+        TitleMatch = other.TitleMatch;
+      }
+      if (other.IgnoreTitleCase != false) {
+        IgnoreTitleCase = other.IgnoreTitleCase;
+      }
+      if (other.AnyMatch != false) {
+        AnyMatch = other.AnyMatch;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            ExecutablePath = input.ReadString();
+            break;
+          }
+          case 18: {
+            WindowClass = input.ReadString();
+            break;
+          }
+          case 26: {
+            Title = input.ReadString();
+            break;
+          }
+          case 32: {
+            TitleMatch = (global::ProtobufGenerated.TitleMatch) input.ReadEnum();
+            break;
+          }
+          case 40: {
+            IgnoreTitleCase = input.ReadBool();
+            break;
+          }
+          case 48: {
+            AnyMatch = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            ExecutablePath = input.ReadString();
+            break;
+          }
+          case 18: {
+            WindowClass = input.ReadString();
+            break;
+          }
+          case 26: {
+            Title = input.ReadString();
+            break;
+          }
+          case 32: {
+            TitleMatch = (global::ProtobufGenerated.TitleMatch) input.ReadEnum();
+            break;
+          }
+          case 40: {
+            IgnoreTitleCase = input.ReadBool();
+            break;
+          }
+          case 48: {
+            AnyMatch = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  public sealed partial class WindowCondition : pb::IMessage<WindowCondition>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WindowCondition> _parser = new pb::MessageParser<WindowCondition>(() => new WindowCondition());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WindowCondition> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::ProtobufGenerated.EventsReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowCondition() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowCondition(WindowCondition other) : this() {
+      target_ = other.target_ != null ? other.target_.Clone() : null;
+      test_ = other.test_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WindowCondition Clone() {
+      return new WindowCondition(this);
+    }
+
+    /// <summary>Field number for the "target" field.</summary>
+    public const int TargetFieldNumber = 1;
+    private global::ProtobufGenerated.WindowSelector target_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WindowSelector Target {
+      get { return target_; }
+      set {
+        target_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "test" field.</summary>
+    public const int TestFieldNumber = 2;
+    private global::ProtobufGenerated.WindowTest test_ = global::ProtobufGenerated.WindowTest.Exists;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WindowTest Test {
+      get { return test_; }
+      set {
+        test_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WindowCondition);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WindowCondition other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(Target, other.Target)) return false;
+      if (Test != other.Test) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (target_ != null) hash ^= Target.GetHashCode();
+      if (Test != global::ProtobufGenerated.WindowTest.Exists) hash ^= Test.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (target_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Target);
+      }
+      if (Test != global::ProtobufGenerated.WindowTest.Exists) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Test);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (target_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Target);
+      }
+      if (Test != global::ProtobufGenerated.WindowTest.Exists) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Test);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (target_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Target);
+      }
+      if (Test != global::ProtobufGenerated.WindowTest.Exists) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Test);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WindowCondition other) {
+      if (other == null) {
+        return;
+      }
+      if (other.target_ != null) {
+        if (target_ == null) {
+          Target = new global::ProtobufGenerated.WindowSelector();
+        }
+        Target.MergeFrom(other.Target);
+      }
+      if (other.Test != global::ProtobufGenerated.WindowTest.Exists) {
+        Test = other.Test;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (target_ == null) {
+              Target = new global::ProtobufGenerated.WindowSelector();
+            }
+            input.ReadMessage(Target);
+            break;
+          }
+          case 16: {
+            Test = (global::ProtobufGenerated.WindowTest) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            if (target_ == null) {
+              Target = new global::ProtobufGenerated.WindowSelector();
+            }
+            input.ReadMessage(Target);
+            break;
+          }
+          case 16: {
+            Test = (global::ProtobufGenerated.WindowTest) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  public sealed partial class PixelCondition : pb::IMessage<PixelCondition>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<PixelCondition> _parser = new pb::MessageParser<PixelCondition>(() => new PixelCondition());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<PixelCondition> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::ProtobufGenerated.EventsReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PixelCondition() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PixelCondition(PixelCondition other) : this() {
+      coordinates_ = other.coordinates_;
+      target_ = other.target_ != null ? other.target_.Clone() : null;
+      x_ = other.x_;
+      y_ = other.y_;
+      rgb_ = other.rgb_;
+      tolerance_ = other.tolerance_;
+      notEqual_ = other.notEqual_;
+      referenceDpi_ = other.referenceDpi_;
+      referenceWidth_ = other.referenceWidth_;
+      referenceHeight_ = other.referenceHeight_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PixelCondition Clone() {
+      return new PixelCondition(this);
+    }
+
+    /// <summary>Field number for the "coordinates" field.</summary>
+    public const int CoordinatesFieldNumber = 1;
+    private global::ProtobufGenerated.PixelCoordinates coordinates_ = global::ProtobufGenerated.PixelCoordinates.DesktopPhysical;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.PixelCoordinates Coordinates {
+      get { return coordinates_; }
+      set {
+        coordinates_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "target" field.</summary>
+    public const int TargetFieldNumber = 2;
+    private global::ProtobufGenerated.WindowSelector target_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::ProtobufGenerated.WindowSelector Target {
+      get { return target_; }
+      set {
+        target_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "x" field.</summary>
+    public const int XFieldNumber = 3;
+    private int x_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int X {
+      get { return x_; }
+      set {
+        x_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "y" field.</summary>
+    public const int YFieldNumber = 4;
+    private int y_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Y {
+      get { return y_; }
+      set {
+        y_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "rgb" field.</summary>
+    public const int RgbFieldNumber = 5;
+    private uint rgb_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint Rgb {
+      get { return rgb_; }
+      set {
+        rgb_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "tolerance" field.</summary>
+    public const int ToleranceFieldNumber = 6;
+    private uint tolerance_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint Tolerance {
+      get { return tolerance_; }
+      set {
+        tolerance_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "not_equal" field.</summary>
+    public const int NotEqualFieldNumber = 7;
+    private bool notEqual_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool NotEqual {
+      get { return notEqual_; }
+      set {
+        notEqual_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "reference_dpi" field.</summary>
+    public const int ReferenceDpiFieldNumber = 8;
+    private uint referenceDpi_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint ReferenceDpi {
+      get { return referenceDpi_; }
+      set {
+        referenceDpi_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "reference_width" field.</summary>
+    public const int ReferenceWidthFieldNumber = 9;
+    private uint referenceWidth_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint ReferenceWidth {
+      get { return referenceWidth_; }
+      set {
+        referenceWidth_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "reference_height" field.</summary>
+    public const int ReferenceHeightFieldNumber = 10;
+    private uint referenceHeight_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint ReferenceHeight {
+      get { return referenceHeight_; }
+      set {
+        referenceHeight_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as PixelCondition);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(PixelCondition other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Coordinates != other.Coordinates) return false;
+      if (!object.Equals(Target, other.Target)) return false;
+      if (X != other.X) return false;
+      if (Y != other.Y) return false;
+      if (Rgb != other.Rgb) return false;
+      if (Tolerance != other.Tolerance) return false;
+      if (NotEqual != other.NotEqual) return false;
+      if (ReferenceDpi != other.ReferenceDpi) return false;
+      if (ReferenceWidth != other.ReferenceWidth) return false;
+      if (ReferenceHeight != other.ReferenceHeight) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Coordinates != global::ProtobufGenerated.PixelCoordinates.DesktopPhysical) hash ^= Coordinates.GetHashCode();
+      if (target_ != null) hash ^= Target.GetHashCode();
+      if (X != 0) hash ^= X.GetHashCode();
+      if (Y != 0) hash ^= Y.GetHashCode();
+      if (Rgb != 0) hash ^= Rgb.GetHashCode();
+      if (Tolerance != 0) hash ^= Tolerance.GetHashCode();
+      if (NotEqual != false) hash ^= NotEqual.GetHashCode();
+      if (ReferenceDpi != 0) hash ^= ReferenceDpi.GetHashCode();
+      if (ReferenceWidth != 0) hash ^= ReferenceWidth.GetHashCode();
+      if (ReferenceHeight != 0) hash ^= ReferenceHeight.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Coordinates != global::ProtobufGenerated.PixelCoordinates.DesktopPhysical) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Coordinates);
+      }
+      if (target_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Target);
+      }
+      if (X != 0) {
+        output.WriteRawTag(24);
+        output.WriteSInt32(X);
+      }
+      if (Y != 0) {
+        output.WriteRawTag(32);
+        output.WriteSInt32(Y);
+      }
+      if (Rgb != 0) {
+        output.WriteRawTag(40);
+        output.WriteUInt32(Rgb);
+      }
+      if (Tolerance != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(Tolerance);
+      }
+      if (NotEqual != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(NotEqual);
+      }
+      if (ReferenceDpi != 0) {
+        output.WriteRawTag(64);
+        output.WriteUInt32(ReferenceDpi);
+      }
+      if (ReferenceWidth != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(ReferenceWidth);
+      }
+      if (ReferenceHeight != 0) {
+        output.WriteRawTag(80);
+        output.WriteUInt32(ReferenceHeight);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Coordinates != global::ProtobufGenerated.PixelCoordinates.DesktopPhysical) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Coordinates);
+      }
+      if (target_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Target);
+      }
+      if (X != 0) {
+        output.WriteRawTag(24);
+        output.WriteSInt32(X);
+      }
+      if (Y != 0) {
+        output.WriteRawTag(32);
+        output.WriteSInt32(Y);
+      }
+      if (Rgb != 0) {
+        output.WriteRawTag(40);
+        output.WriteUInt32(Rgb);
+      }
+      if (Tolerance != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(Tolerance);
+      }
+      if (NotEqual != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(NotEqual);
+      }
+      if (ReferenceDpi != 0) {
+        output.WriteRawTag(64);
+        output.WriteUInt32(ReferenceDpi);
+      }
+      if (ReferenceWidth != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(ReferenceWidth);
+      }
+      if (ReferenceHeight != 0) {
+        output.WriteRawTag(80);
+        output.WriteUInt32(ReferenceHeight);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Coordinates != global::ProtobufGenerated.PixelCoordinates.DesktopPhysical) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Coordinates);
+      }
+      if (target_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Target);
+      }
+      if (X != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeSInt32Size(X);
+      }
+      if (Y != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeSInt32Size(Y);
+      }
+      if (Rgb != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Rgb);
+      }
+      if (Tolerance != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Tolerance);
+      }
+      if (NotEqual != false) {
+        size += 1 + 1;
+      }
+      if (ReferenceDpi != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ReferenceDpi);
+      }
+      if (ReferenceWidth != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ReferenceWidth);
+      }
+      if (ReferenceHeight != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ReferenceHeight);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(PixelCondition other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Coordinates != global::ProtobufGenerated.PixelCoordinates.DesktopPhysical) {
+        Coordinates = other.Coordinates;
+      }
+      if (other.target_ != null) {
+        if (target_ == null) {
+          Target = new global::ProtobufGenerated.WindowSelector();
+        }
+        Target.MergeFrom(other.Target);
+      }
+      if (other.X != 0) {
+        X = other.X;
+      }
+      if (other.Y != 0) {
+        Y = other.Y;
+      }
+      if (other.Rgb != 0) {
+        Rgb = other.Rgb;
+      }
+      if (other.Tolerance != 0) {
+        Tolerance = other.Tolerance;
+      }
+      if (other.NotEqual != false) {
+        NotEqual = other.NotEqual;
+      }
+      if (other.ReferenceDpi != 0) {
+        ReferenceDpi = other.ReferenceDpi;
+      }
+      if (other.ReferenceWidth != 0) {
+        ReferenceWidth = other.ReferenceWidth;
+      }
+      if (other.ReferenceHeight != 0) {
+        ReferenceHeight = other.ReferenceHeight;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Coordinates = (global::ProtobufGenerated.PixelCoordinates) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (target_ == null) {
+              Target = new global::ProtobufGenerated.WindowSelector();
+            }
+            input.ReadMessage(Target);
+            break;
+          }
+          case 24: {
+            X = input.ReadSInt32();
+            break;
+          }
+          case 32: {
+            Y = input.ReadSInt32();
+            break;
+          }
+          case 40: {
+            Rgb = input.ReadUInt32();
+            break;
+          }
+          case 48: {
+            Tolerance = input.ReadUInt32();
+            break;
+          }
+          case 56: {
+            NotEqual = input.ReadBool();
+            break;
+          }
+          case 64: {
+            ReferenceDpi = input.ReadUInt32();
+            break;
+          }
+          case 72: {
+            ReferenceWidth = input.ReadUInt32();
+            break;
+          }
+          case 80: {
+            ReferenceHeight = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Coordinates = (global::ProtobufGenerated.PixelCoordinates) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (target_ == null) {
+              Target = new global::ProtobufGenerated.WindowSelector();
+            }
+            input.ReadMessage(Target);
+            break;
+          }
+          case 24: {
+            X = input.ReadSInt32();
+            break;
+          }
+          case 32: {
+            Y = input.ReadSInt32();
+            break;
+          }
+          case 40: {
+            Rgb = input.ReadUInt32();
+            break;
+          }
+          case 48: {
+            Tolerance = input.ReadUInt32();
+            break;
+          }
+          case 56: {
+            NotEqual = input.ReadBool();
+            break;
+          }
+          case 64: {
+            ReferenceDpi = input.ReadUInt32();
+            break;
+          }
+          case 72: {
+            ReferenceWidth = input.ReadUInt32();
+            break;
+          }
+          case 80: {
+            ReferenceHeight = input.ReadUInt32();
             break;
           }
         }

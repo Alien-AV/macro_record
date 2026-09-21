@@ -86,6 +86,18 @@ RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_abort(uint64_t session_i
 	catch (...) { return PlaybackResult::InternalError; }
 }
 
+RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_wait_request(uint64_t session_id, PlaybackWaitRequest* request) noexcept {
+	if (!request) return PlaybackResult::InvalidInput;
+	try { return playback_session.wait_request(session_id, *request); }
+	catch (...) { return PlaybackResult::InternalError; }
+}
+
+RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_resolve_wait(uint64_t session_id, uint64_t occurrence, int satisfied) noexcept {
+	if (satisfied != 0 && satisfied != 1) return PlaybackResult::InvalidInput;
+	try { return playback_session.resolve_wait(session_id, occurrence, satisfied != 0); }
+	catch (...) { return PlaybackResult::InternalError; }
+}
+
 RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_set_loop(uint64_t session_id, int loop) noexcept {
 	if (loop != 0 && loop != 1) return PlaybackResult::InvalidInput;
 	try { return playback_session.set_loop(session_id, loop != 0); }

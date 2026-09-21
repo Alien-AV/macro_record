@@ -9,7 +9,7 @@ using MacroRecorderGUI.Utils;
 namespace MacroRecorderGUI.Editor;
 
 /// <summary>UI-independent editor. Capture appends are incremental; mutations are explicit transactions.</summary>
-public sealed class ActionEditor : IDisposable
+public sealed partial class ActionEditor : IDisposable
 {
     private readonly MacroViewModel _macro;
     private readonly HashSet<InputEvent> _observed = [];
@@ -177,7 +177,7 @@ public sealed class ActionEditor : IDisposable
         for (var index = action.End; index < _macro.Events.Count; index++)
         {
             var input = _macro.Events[index];
-            if (following.Count > 0 && (input is KeyboardEvent || input.TimeSinceLastEvent >= ActionProjection.MovementPause)) break;
+            if (input is WaitConditionEvent || following.Count > 0 && (input is KeyboardEvent || input.TimeSinceLastEvent >= ActionProjection.MovementPause)) break;
             if (input is not MouseEvent mouse) continue;
             if (ActionProjection.HasMove(mouse)) following.Add(mouse);
             if (following.Count > 0 && mouse.ActionType != Common.MouseActionTypeFlags.Move) break;
@@ -289,6 +289,7 @@ public sealed class ActionEditor : IDisposable
             m.MouseData = v.WheelRotation; m.RelativePosition = v.RelativePosition; m.MappedToVirtualDesktop = v.MappedToVirtualDesktop;
         }
         else if (input is KeyboardEvent k) { k.VirtualKeyCode = value.KeyboardEvent.VirtualKeyCode; k.KeyUp = value.KeyboardEvent.KeyUp; }
+        else if (input is WaitConditionEvent wait) wait.RestoreCondition(value.WaitCondition);
     }
 
     private void RequireCurrent(RecordedAction action)

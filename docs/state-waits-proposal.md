@@ -1,10 +1,10 @@
 # Conditional waits — implementation proposal
 
-Status: planning only; not implemented or approved for implementation. Prepared against `4818fda` on 2026-09-20. Source line references describe that revision. The current pointer-origin work will retain the `.macro` extension with versioned contents; reconcile this proposal with that document codec before implementation.
+Status: phase 1 implementation in progress on `codex/conditional-waits`, based on `c2c0fca` (2026-09-20). The shared schema, native wait boundary, managed runner, window/pixel providers, editor operations, and focused tests are implemented; UI integration and final verification are underway. No live desktop validation has been performed. The architecture discussion below was originally prepared against `4818fda`; line references describe that older revision.
 
-+Implement a single **“Wait until…” action** with typed window, pixel, accessibility-text, OCR-text, and memory conditions. Share timing, cancellation, diagnostics, and failure handling across providers. Extend the existing event stream and native playback session; a new scripting engine is unnecessary.
+Implement a single **“Wait until…” action** with typed conditions. Phase 1 supports window and pixel observations only; accessibility text, OCR text, and memory remain future phases with no placeholder providers or UI. Share timing, cancellation, diagnostics, and failure handling across providers. Extend the existing event stream and native playback session; a new scripting engine is unnecessary.
 
-This proposal is based on inspection of `codex/state-waits-plan` at `4818fda`. It is planning only: no files changed, tests run, applications launched, input injected, or process memory read.
+Implementation reconciliation: event field 4 stores `WaitCondition` semantics version 1. Wait-bearing saves use document version 3 inside the existing `.macro` envelope; old version-2 players reject that version and legacy raw-protobuf readers reject the envelope's invalid-tag prefix. Legacy export explicitly rejects waits. Existing document/origin/recovery data and unknown fields are retained through cloning. Playback request indices refer to the final native array after origin setup moves are inserted; pixel targets are independent of pointer relocation. Native wait-only streams inject no startup releases; origin setup moves remain requested input when present.
 
 1. **Existing architecture and extension points**
 

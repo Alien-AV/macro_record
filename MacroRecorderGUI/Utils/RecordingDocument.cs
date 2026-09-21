@@ -31,7 +31,7 @@ internal sealed record RecordingDocument
         }
         var document = JsonSerializer.Deserialize<RecordingDocument>(bytes.AsSpan(Magic.Length))
             ?? throw new InvalidDataException("Missing recording document.");
-        if (document.Version != 2 || document.Events is null || document.Origins is null)
+        if (document.Version is not (2 or 3) || document.Events is null || document.Origins is null)
             throw new InvalidDataException("This recording requires a different file-format version.");
         var count = ProtobufInputEventList.Parser.ParseFrom(document.Events).InputEvents.Count;
         var previous = -1;
@@ -49,8 +49,9 @@ internal sealed record RecordingDocument
 
     public byte[] Write()
     {
-        if (!IsExtended && Origins.Length == 0 && BeforeOriginAdoption is null) return Events.ToArray();
-        var json = JsonSerializer.SerializeToUtf8Bytes(this);
+        var hasWaits = ParseEvents().InputEvents.Any(input => input.WaitCondition is not null);
+        if (!hasWaits && !IsExtended && Origins.Length == 0 && BeforeOriginAdoption is null) return Events.ToArray();
+        var json = JsonSerializer.SerializeToUtf8Bytes(hasWaits ? this with { Version = 3 } : this);
         var bytes = new byte[Magic.Length + json.Length];
         Magic.CopyTo(bytes); json.CopyTo(bytes, Magic.Length);
         if (bytes.Length > RecordingLibraryStore.MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
@@ -62,6 +63,8 @@ internal sealed record RecordingDocument
     public byte[] ExportLegacy()
     {
         var wire = ParseEvents();
+        if (wire.InputEvents.Any(input => input.WaitCondition is not null))
+            throw new InvalidOperationException("Legacy export cannot represent conditional waits. Use the versioned .macro export.");
         PointerPlayback.Validate(Origins, wire.InputEvents.Count, PlaybackPointerOrigin.RecordedStartingPoint);
         // Use stored physical positions and unscaled delays; do not sample or inject input.
         var raw = wire.InputEvents.Select(input => input.Clone()).ToArray();

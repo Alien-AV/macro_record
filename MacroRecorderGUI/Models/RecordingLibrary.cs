@@ -11,7 +11,9 @@ public enum RecordingSaveState { Unsaved, Dirty, Saving, Saved, Failed }
 public sealed record RecordingLibraryItem(Guid Id, string Name, bool IsDraft, DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt, int EventCount, string DurationMicroseconds, bool HasKeyboard, bool HasMouse)
 {
-    public string Summary => $"{EventCount} raw events · {(double)BigInteger.Parse(DurationMicroseconds) / 1_000_000:0.###} seconds";
+    public int ConditionalWaitCount { get; init; }
+    public string Summary => $"{EventCount} events · {(double)BigInteger.Parse(DurationMicroseconds) / 1_000_000:0.###} seconds"
+        + (ConditionalWaitCount > 0 ? $" recorded timing + {ConditionalWaitCount} conditional wait(s)" : "");
     public bool Matches(string? query) => string.IsNullOrWhiteSpace(query)
         || $"{Name} {Summary} {(IsDraft ? "draft" : "recording")} {(HasKeyboard ? "keyboard" : "")} {(HasMouse ? "mouse" : "")}".Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
 }
@@ -141,7 +143,8 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
             + RecordingDocument.Read(bytes).Origins.Aggregate(BigInteger.Zero, (total, origin) => total + origin.DelayMicroseconds);
         return new(id, name, isDraft, created, updated, events.Length, duration.ToString(System.Globalization.CultureInfo.InvariantCulture),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.KeyboardEvent),
-            events.Any(input => input.Type == Event.InputEvent.InputEventType.MouseEvent));
+            events.Any(input => input.Type == Event.InputEvent.InputEventType.MouseEvent))
+            { ConditionalWaitCount = events.Count(input => input is Event.WaitConditionEvent) };
     }
 
     private static void Validate(StoredRecording recording)

@@ -3,6 +3,7 @@
 #include "Event.h"
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
+#include "WaitEvent.h"
 #include <limits>
 #include <stdexcept>
 
@@ -35,6 +36,14 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 
 			return mouseevent;
 		}		
+	case protobufGenerated::ProtobufInputEvent::EventCase::kWaitCondition:
+		{
+			if (!WaitEvent::valid(serialized_event.waitcondition())) throw std::invalid_argument("Invalid wait condition");
+			auto wait = std::make_unique<WaitEvent>();
+			wait->condition = serialized_event.waitcondition();
+			wait->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
+			return wait;
+		}
 	default:
 		throw std::invalid_argument("Missing input event payload");
 	}

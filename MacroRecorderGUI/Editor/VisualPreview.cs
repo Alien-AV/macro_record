@@ -15,12 +15,24 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
     private readonly HashSet<uint> _keys = [];
     private readonly HashSet<string> _buttons = [];
     private int _processed;
+    private int _satisfiedThrough = -1;
+    public void ResetCheckpoints() => _satisfiedThrough = -1;
+    public RecordedAction? Checkpoint(BigInteger time) => projection.Actions.FirstOrDefault(a =>
+        a.Kind == ActionKind.Wait && a.Start > _satisfiedThrough && a.StartTime + a.Wait <= time);
+    public bool SimulateSatisfied(BigInteger time)
+    {
+        if (Checkpoint(time) is not { } wait) return false;
+        _satisfiedThrough = wait.Start;
+        return true;
+    }
 
     public PreviewFrame Seek(BigInteger time)
     {
         time = BigInteger.Clamp(time, 0, projection.TotalTime);
         var sample = projection.SampleAt(time);
         var target = (sample?.Index ?? -1) + 1;
+        var checkpoint = Checkpoint(time);
+        if (checkpoint is not null) { time = checkpoint.StartTime + checkpoint.Wait; target = checkpoint.Start; }
         if (target < _processed) { _processed = 0; _keys.Clear(); _buttons.Clear(); }
         while (_processed < target)
         {
@@ -47,8 +59,9 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
             if (actions[mid].EndTime <= time) low = mid + 1; else high = mid;
         }
         var index = Math.Min(low, actions.Count - 1);
+        if (checkpoint is not null) index = checkpoint.Number - 1;
         var current = index < 0 ? null : actions[index];
-        var waiting = current is not null && time < current.StartTime + current.Wait;
+        var waiting = checkpoint is not null || current is not null && time < current.StartTime + current.Wait;
         return new(current, index + 1 < actions.Count ? actions[index + 1] : null, waiting, projection.PointerAt(time),
             _keys.OrderBy(k => k).ToArray(), _buttons.OrderBy(b => b, StringComparer.Ordinal).ToArray());
     }

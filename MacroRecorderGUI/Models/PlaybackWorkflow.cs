@@ -27,6 +27,7 @@ public sealed class PlaybackWorkflow
     {
         options.Validate();
         var snapshot = events.Select(input => InputEvent.CreateInputEvent(input.OriginalProtobufInputEvent.Clone())).ToArray();
+        WaitValidation.ValidateSchedule(snapshot, options.RepeatUntilStopped);
         var originSnapshot = origins?.ToArray() ?? [];
         if (snapshot.Length == 0 && originSnapshot.Length == 0) throw new InvalidOperationException("The recording has no captured input.");
         PointerPlayback.Validate(originSnapshot, snapshot.Length, options.PointerOrigin);
@@ -145,6 +146,19 @@ public sealed class PlaybackWorkflow
                 }
                 // Await native completion even after abort fails: cancellation does
                 // not establish that native cleanup has completed.
+                while (!native.IsCompleted)
+                {
+                    await Task.WhenAny(native, Task.Delay(50)).ConfigureAwait(false);
+                    lock (_gate)
+                    {
+                        if (!Owns(session)) return;
+                        if (!native.IsCompleted && !token.IsCancellationRequested && _engine is IWaitPlaybackProgress progress)
+                        {
+                            session.Wait = progress.CurrentWait;
+                            Publish(session, session.Wait is null ? PlaybackPhase.Playing : PlaybackPhase.Waiting);
+                        }
+                    }
+                }
                 await native.ConfigureAwait(false);
                 lock (_gate)
                 {
@@ -185,7 +199,7 @@ public sealed class PlaybackWorkflow
     {
         if (!Owns(session)) return;
         _state = new(phase, session.Repeat, session.Options.RepeatUntilStopped ? 0 : session.Options.RepeatCount,
-            remaining, session.Clock.Elapsed, error, session.Options.RepeatUntilStopped);
+            remaining, session.Clock.Elapsed, error, session.Options.RepeatUntilStopped) { Wait = phase == PlaybackPhase.Waiting ? session.Wait : null };
         StateChanged?.Invoke(_state);
     }
     private void Finish(Session session, PlaybackPhase phase, Exception? error = null)
@@ -218,6 +232,7 @@ public sealed class PlaybackWorkflow
         public Task? NativeTask { get; set; }
         public Stopwatch Clock { get; } = new();
         public int Repeat { get; set; }
+        public WaitProgress? Wait { get; set; }
         public bool Aborting { get; set; }
         public bool StartingNative { get; set; }
         public bool RunnerFinished { get; set; }

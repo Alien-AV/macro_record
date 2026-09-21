@@ -12,7 +12,13 @@
 #include "../Common/StatusEnum.cs"
 
 enum class PlaybackResult : int {
-	Running, Finished, Cancelled, InvalidInput, Busy, InjectionFailed, InternalError, StaleSession
+	Running, Finished, Cancelled, InvalidInput, Busy, InjectionFailed, InternalError, StaleSession, WaitTimedOut, WaitFailed, StaleWait
+};
+
+struct PlaybackWaitRequest {
+	uint64_t occurrence = 0;
+	uint64_t event_index = 0;
+	uint64_t remaining_us = 0;
 };
 
 extern "C" {
@@ -29,6 +35,8 @@ extern "C" {
 	// Input is copied before returning. Empty/malformed lists are rejected without injection.
 	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_start(const unsigned char buffer[], size_t size, int loop, uint64_t* session_id) noexcept;
 	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_poll(uint64_t session_id) noexcept;
+	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_wait_request(uint64_t session_id, PlaybackWaitRequest* request) noexcept;
+	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_resolve_wait(uint64_t session_id, uint64_t occurrence, int satisfied) noexcept;
 	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_set_loop(uint64_t session_id, int loop) noexcept;
 	// Abort joins the worker, including best-effort releases of held synthetic input.
 	RECORD_PLAYBACK_DLL_API PlaybackResult iac_dll_playback_abort(uint64_t session_id) noexcept;

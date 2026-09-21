@@ -16,7 +16,7 @@ public interface IPlaybackEngine : IDisposable
 
 internal enum PlaybackResult
 {
-    Running, Finished, Cancelled, InvalidInput, Busy, InjectionFailed, InternalError, StaleSession
+    Running, Finished, Cancelled, InvalidInput, Busy, InjectionFailed, InternalError, StaleSession, WaitTimedOut, WaitFailed, StaleWait
 }
 
 internal interface IPlaybackNativeApi
@@ -27,20 +27,38 @@ internal interface IPlaybackNativeApi
     PlaybackResult SetLoop(ulong sessionId, bool loop);
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct NativeWaitRequest { public ulong Occurrence, EventIndex, RemainingUs; }
+internal interface IPlaybackWaitNativeApi : IPlaybackNativeApi
+{
+    PlaybackResult WaitRequest(ulong sessionId, out NativeWaitRequest request);
+    PlaybackResult ResolveWait(ulong sessionId, ulong occurrence, bool satisfied);
+}
+internal interface IWaitPlaybackProgress { WaitProgress? CurrentWait { get; } }
+
 // Abort joined this session, but cleanup failed. The abort caller reports the
 // error synchronously; the session task carries the same failure for awaiters.
 internal sealed class PlaybackStoppedException(string message) : InvalidOperationException(message);
 
-internal sealed class PlaybackEngine : IPlaybackEngine
+internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
 {
-    private sealed record Session(ulong Id, TaskCompletionSource Completion);
+    private sealed record Session(ulong Id, TaskCompletionSource Completion, InputEvent[] Events)
+    {
+        public CancellationTokenSource Cancel { get; } = new();
+        public ulong Occurrence;
+        public WaitProgress? Progress;
+        public string? WaitFailure;
+    }
     private readonly object _gate = new();
     private readonly IPlaybackNativeApi _native;
     private Session? _active;
     private bool _disposed;
+    private readonly WaitRunner _waitRunner;
+    public WaitProgress? CurrentWait { get { lock (_gate) return _active?.Progress; } }
 
     public PlaybackEngine() : this(new PlaybackNativeApi()) { }
-    internal PlaybackEngine(IPlaybackNativeApi native) => _native = native;
+    internal PlaybackEngine(IPlaybackNativeApi native, IWaitObserver? observer = null)
+    { _native = native; _waitRunner = new(observer ?? new WindowPixelObserver(new WindowsWaitDesktop())); }
 
     public Task PlaybackEventsAsync(IEnumerable<InputEvent> events, bool loop = false)
     {
@@ -52,10 +70,14 @@ internal sealed class PlaybackEngine : IPlaybackEngine
 
             // Serialize on the caller's thread before yielding: edits/tab switches
             // cannot change the active native session or a later loop iteration.
-            var bytes = SerializeEvents.SerializeEventsToByteArray(events);
+            var snapshot = events.Select(e => InputEvent.CreateInputEvent(e.OriginalProtobufInputEvent.Clone())).ToArray();
+            WaitValidation.ValidateSchedule(snapshot, loop);
+            if (snapshot.Any(e => e is WaitConditionEvent) && _native is not IPlaybackWaitNativeApi)
+                throw new InvalidOperationException("The playback backend does not support conditional waits.");
+            var bytes = SerializeEvents.SerializeEventsToByteArray(snapshot);
             var result = _native.Start(bytes, loop, out var id);
             if (result != PlaybackResult.Running) throw PlaybackError(result);
-            var session = new Session(id, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+            var session = new Session(id, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously), snapshot);
             _active = session;
             _ = ObserveAsync(session);
             return session.Completion.Task;
@@ -73,8 +95,26 @@ internal sealed class PlaybackEngine : IPlaybackEngine
                 {
                     if (!ReferenceEquals(_active, session)) return;
                     var result = _native.Poll(session.Id);
-                    if (result == PlaybackResult.Running) continue;
+                    if (result == PlaybackResult.Running)
+                    {
+                        if (_native is IPlaybackWaitNativeApi waitApi)
+                        {
+                            var waitResult = waitApi.WaitRequest(session.Id, out var request);
+                            if (waitResult == PlaybackResult.Running && request.Occurrence != 0 && request.Occurrence != session.Occurrence)
+                            {
+                                if (request.EventIndex >= (ulong)session.Events.Length || session.Events[(int)request.EventIndex] is not WaitConditionEvent wait)
+                                    throw new InvalidOperationException("Native wait event does not match the playback snapshot.");
+                                session.Occurrence = request.Occurrence;
+                                session.WaitFailure = null;
+                                session.Progress = new(wait.Description, TimeSpan.Zero, TimeSpan.FromMicroseconds(request.RemainingUs), TimeSpan.Zero, "Waiting for observation");
+                                _ = Task.Run(() => RunWaitAsync(session, request, wait.Condition));
+                            }
+                            else if (request.Occurrence == 0) session.Progress = null;
+                        }
+                        continue;
+                    }
                     _active = null;
+                    session.Cancel.Cancel();
                     Complete(session, result);
                     return;
                 }
@@ -88,7 +128,36 @@ internal sealed class PlaybackEngine : IPlaybackEngine
                 try { _native.Abort(session.Id); }
                 catch (Exception cleanupError) { error = new AggregateException(error, cleanupError); }
                 _active = null;
+                session.Cancel.Cancel();
                 session.Completion.TrySetException(error);
+            }
+        }
+    }
+
+    private async Task RunWaitAsync(Session session, NativeWaitRequest request, ProtobufGenerated.WaitCondition condition)
+    {
+        try
+        {
+            var outcome = await _waitRunner.RunAsync(condition, TimeSpan.FromMicroseconds(request.RemainingUs), session.Cancel.Token,
+                progress => { lock (_gate) { if (ReferenceEquals(_active, session) && session.Occurrence == request.Occurrence) session.Progress = progress; } }).ConfigureAwait(false);
+            lock (_gate)
+            {
+                if (!ReferenceEquals(_active, session) || session.Occurrence != request.Occurrence) return;
+                if (!outcome.Satisfied) session.WaitFailure = $"Wait at event {request.EventIndex + 1}: {WaitValidation.Describe(condition)}. {outcome.Detail}";
+                var result = ((IPlaybackWaitNativeApi)_native).ResolveWait(session.Id, request.Occurrence, outcome.Satisfied);
+                if (result is not (PlaybackResult.Running or PlaybackResult.StaleWait or PlaybackResult.StaleSession))
+                    throw PlaybackError(result);
+            }
+        }
+        catch (OperationCanceledException) when (session.Cancel.IsCancellationRequested) { }
+        catch (Exception error)
+        {
+            lock (_gate)
+            {
+                if (!ReferenceEquals(_active, session) || session.Occurrence != request.Occurrence) return;
+                session.WaitFailure = $"Wait at event {request.EventIndex + 1} failed: {error.Message}";
+                try { ((IPlaybackWaitNativeApi)_native).ResolveWait(session.Id, request.Occurrence, false); }
+                catch { /* Native deadline remains authoritative if resolution interop fails. */ }
             }
         }
     }
@@ -120,6 +189,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine
         // Keep ownership if interop itself fails, so another start cannot overlap.
         var result = _native.Abort(session.Id);
         _active = null;
+        session.Cancel.Cancel();
         if (result is PlaybackResult.Finished or PlaybackResult.Cancelled)
         {
             session.Completion.TrySetCanceled();
@@ -147,7 +217,9 @@ internal sealed class PlaybackEngine : IPlaybackEngine
     {
         if (result == PlaybackResult.Finished) session.Completion.TrySetResult();
         else if (result == PlaybackResult.Cancelled) session.Completion.TrySetCanceled();
-        else session.Completion.TrySetException(PlaybackError(result));
+        else session.Completion.TrySetException(result is PlaybackResult.WaitFailed or PlaybackResult.WaitTimedOut
+            ? new InvalidOperationException(session.WaitFailure ?? $"{PlaybackError(result).Message} {session.Progress?.Condition}. Last observation: {session.Progress?.Observation ?? "unavailable"}")
+            : PlaybackError(result));
     }
 
     private static Exception PlaybackError(PlaybackResult result) => new InvalidOperationException(result switch
@@ -156,16 +228,25 @@ internal sealed class PlaybackEngine : IPlaybackEngine
         PlaybackResult.Busy => "Another macro is already playing.",
         PlaybackResult.InjectionFailed => "Windows could not inject or release macro input. Check the target application's permissions.",
         PlaybackResult.StaleSession => "The playback session is no longer available.",
+        PlaybackResult.WaitTimedOut => "The conditional wait reached its native deadline.",
+        PlaybackResult.WaitFailed => "The conditional wait failed.",
         _ => "Playback failed unexpectedly."
     });
 
-    private sealed class PlaybackNativeApi : IPlaybackNativeApi
+    private sealed class PlaybackNativeApi : IPlaybackWaitNativeApi
     {
         public PlaybackResult Start(byte[] events, bool loop, out ulong sessionId) =>
             StartNative(events, (nuint)events.Length, loop ? 1 : 0, out sessionId);
         public PlaybackResult Poll(ulong sessionId) => PollNative(sessionId);
         public PlaybackResult Abort(ulong sessionId) => AbortNative(sessionId);
         public PlaybackResult SetLoop(ulong sessionId, bool loop) => SetLoopNative(sessionId, loop ? 1 : 0);
+        public PlaybackResult WaitRequest(ulong sessionId, out NativeWaitRequest request) => WaitRequestNative(sessionId, out request);
+        public PlaybackResult ResolveWait(ulong sessionId, ulong occurrence, bool satisfied) => ResolveWaitNative(sessionId, occurrence, satisfied ? 1 : 0);
+
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_wait_request", CallingConvention = CallingConvention.Cdecl)]
+        private static extern PlaybackResult WaitRequestNative(ulong sessionId, out NativeWaitRequest request);
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_resolve_wait", CallingConvention = CallingConvention.Cdecl)]
+        private static extern PlaybackResult ResolveWaitNative(ulong sessionId, ulong occurrence, int satisfied);
 
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_playback_start", CallingConvention = CallingConvention.Cdecl)]
         private static extern PlaybackResult StartNative([In] byte[] buffer, nuint size, int loop, out ulong sessionId);

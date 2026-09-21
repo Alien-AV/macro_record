@@ -10,6 +10,7 @@ public abstract class InputEvent : INotifyPropertyChanged
     {
         KeyboardEvent = ProtobufInputEvent.EventOneofCase.KeyboardEvent,
         MouseEvent = ProtobufInputEvent.EventOneofCase.MouseEvent,
+        WaitCondition = ProtobufInputEvent.EventOneofCase.WaitCondition,
         None = ProtobufInputEvent.EventOneofCase.None
     }
 
@@ -45,6 +46,7 @@ public abstract class InputEvent : INotifyPropertyChanged
         {
             ProtobufInputEvent.EventOneofCase.KeyboardEvent => new KeyboardEvent(protobufEvent),
             ProtobufInputEvent.EventOneofCase.MouseEvent => new MouseEvent(protobufEvent),
+            ProtobufInputEvent.EventOneofCase.WaitCondition => new WaitConditionEvent(protobufEvent),
             _ => throw new ArgumentOutOfRangeException(nameof(protobufEvent), "The protobuf event has no supported payload.")
         };
     }

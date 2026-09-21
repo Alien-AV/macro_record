@@ -23,6 +23,7 @@ internal sealed record RunControllerPresentation(string State, string Clock, str
             PlaybackPhase.Idle => saving ? "Saving recording" : "Ready",
             PlaybackPhase.Countdown => "Switch to your app",
             PlaybackPhase.Playing => "Playing",
+            PlaybackPhase.Waiting => "Waiting",
             PlaybackPhase.BetweenRepeats => "Between repeats",
             PlaybackPhase.Stopping => "Stopping…",
             PlaybackPhase.Completed => "Finished",
@@ -31,13 +32,15 @@ internal sealed record RunControllerPresentation(string State, string Clock, str
             _ => throw new ArgumentOutOfRangeException(nameof(state))
         };
         var countdown = state.Phase == PlaybackPhase.Countdown;
-        var detail = countdown ? (state.RepeatUntilStopped ? "seconds until playback · Until stopped" : "seconds until playback")
+        var detail = state.Wait is { } wait ? $"{wait.Remaining.TotalSeconds:0.0}s remaining · stable {wait.StableFor.TotalMilliseconds:0} ms"
+            : countdown ? (state.RepeatUntilStopped ? "seconds until playback · Until stopped" : "seconds until playback")
             : state.Phase == PlaybackPhase.Idle ? "Playback has not started"
             : state.Phase == PlaybackPhase.Stopping ? "Waiting for playback to stop"
             : state.RepeatUntilStopped ? (state.IsActive ? "Repeating until stopped" : "Repeat until stopped")
             : state.CurrentRepeat > 0 && state.RepeatCount > 1 ? $"Repeat {state.CurrentRepeat} of {state.RepeatCount}"
             : "";
-        var note = state.Error ?? (countdown ? "No input yet. Playback uses the focused app."
+        var note = state.Error ?? (state.Wait is { } waiting ? $"{waiting.Condition} · {waiting.Observation}"
+            : countdown ? "No input yet. Playback uses the focused app."
             : state.Phase == PlaybackPhase.Playing ? "Sending input to the focused app."
             : state.Phase == PlaybackPhase.BetweenRepeats ? "Waiting for the next repeat."
             : state.Phase == PlaybackPhase.Stopping ? "Input may continue until playback stops."

@@ -6,7 +6,7 @@ namespace MacroRecorderGUI.Editor;
 public sealed record RawEventRow(InputEvent Input, int Index)
 {
     public string Label => $"{Index + 1}. {TimeText.Human(Input.TimeSinceLastEvent)} · " + (Input is MouseEvent m
-        ? $"{m.ActionName} · ({m.X}, {m.Y}) {(m.RelativePosition ? "counts" : "px")}" : Input is KeyboardEvent k ? $"{k.KeyName} {(k.KeyUp ? "up" : "down")}" : "Input");
+        ? $"{m.ActionName} · ({m.X}, {m.Y}) {(m.RelativePosition ? "counts" : "px")}" : Input is KeyboardEvent k ? $"{k.KeyName} {(k.KeyUp ? "up" : "down")}" : Input is WaitConditionEvent w ? w.Description : "Input");
 }
 
 /// <summary>The raw drilldown exists only while expanded; capture appends reuse existing row objects.</summary>

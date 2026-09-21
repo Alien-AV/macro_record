@@ -330,7 +330,7 @@ public sealed class PointerOriginTests
     {
         var wire = SerializeEvents.SerializeEventsToByteArray([Move(1, 2)]);
         var doc = new RecordingDocument { IsExtended = true, Events = wire, Origins = [new(0, new(1, 2))] };
-        Assert.Throws<InvalidDataException>(() => RecordingDocument.Read((doc with { Version = 3 }).Write()));
+        Assert.Throws<InvalidDataException>(() => RecordingDocument.Read((doc with { Version = 4 }).Write()));
         Assert.Throws<InvalidDataException>(() => RecordingDocument.Read((doc with { Origins = [new(2, new(1, 2))] }).Write()));
         var bytes = doc.Write();
         for (var i = 0; i < 6; i++) bytes = (doc with { BeforeOriginAdoption = bytes }).Write();

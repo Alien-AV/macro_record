@@ -173,6 +173,7 @@
     <ClInclude Include="Record\RecordEngine.h" />
     <ClInclude Include="Common\DeserializeEvent.h" />
     <ClInclude Include="Common\Event.h" />
+    <ClInclude Include="Common\WaitEvent.h" />
     <ClInclude Include="Common\KeyboardEvent.h" />
     <ClInclude Include="Common\MouseEvent.h" />
     <ClInclude Include="RecordPlaybackDLL.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="Record\RecordEngine.cpp" />
     <ClCompile Include="Common\DeserializeEvent.cpp" />
     <ClCompile Include="Common\Event.cpp" />
+    <ClCompile Include="Common\WaitEvent.cpp" />
     <ClCompile Include="Common\KeyboardEvent.cpp" />
     <ClCompile Include="Common\MouseEvent.cpp" />
     <ClCompile Include="RecordPlaybackDLL.cpp">

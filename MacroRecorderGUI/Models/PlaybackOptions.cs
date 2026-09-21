@@ -21,13 +21,14 @@ public sealed record PlaybackOptions
     }
 }
 
-public enum PlaybackPhase { Idle, Countdown, Playing, BetweenRepeats, Stopping, Completed, Cancelled, Failed }
+public enum PlaybackPhase { Idle, Countdown, Playing, BetweenRepeats, Stopping, Completed, Cancelled, Failed, Waiting }
 
 /// <summary>Repeat counters are zero when RepeatUntilStopped is true: native loop progress is unavailable.</summary>
 public sealed record PlaybackState(PlaybackPhase Phase, int CurrentRepeat, int RepeatCount,
     TimeSpan CountdownRemaining, TimeSpan Elapsed, string? Error = null, bool RepeatUntilStopped = false)
 {
+    public WaitProgress? Wait { get; init; }
     public static PlaybackState Idle { get; } = new(PlaybackPhase.Idle, 0, 0, TimeSpan.Zero, TimeSpan.Zero);
     public bool IsActive => Phase is PlaybackPhase.Countdown or PlaybackPhase.Playing
-        or PlaybackPhase.BetweenRepeats or PlaybackPhase.Stopping;
+        or PlaybackPhase.BetweenRepeats or PlaybackPhase.Stopping or PlaybackPhase.Waiting;
 }

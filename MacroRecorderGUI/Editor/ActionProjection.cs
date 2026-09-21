@@ -103,6 +103,17 @@ public sealed class ActionProjection
         _renderIndices.Add(RenderSamples.Count); RenderSamples.Add(renderSample); RenderRevision++;
 
         var neutral = _keys.Count == 0 && _buttons == 0;
+        if (input is WaitConditionEvent wait)
+        {
+            if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
+            var waitAction = new RecordedAction(index, input, timeBefore) { Number = Actions.Count + 1, Count = 1,
+                Kind = ActionKind.Wait, Complete = neutral, Name = "Wait until…", Detail = wait.Description,
+                Description = wait.Description };
+            Actions.Add(waitAction);
+            if (!neutral) IncompleteActionCount++;
+            _active = null; _previousMouse = null;
+            return;
+        }
         var continuation = CanContinue(input);
         if (!continuation)
         {
