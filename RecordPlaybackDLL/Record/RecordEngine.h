@@ -23,7 +23,7 @@ public:
 private:
     static constexpr UINT WM_START_RECORD = WM_APP + 1;
     static constexpr UINT WM_STOP_RECORD = WM_APP + 2;
-    static constexpr UINT WM_FAILED_RECORD = WM_APP + 3;
+    static constexpr UINT WM_COLLECTOR_WAKE = WM_APP + 3;
     static constexpr UINT WM_SHUTDOWN_RECORD = WM_APP + 4;
     struct Command { UINT kind; uint64_t session; DWORD cutoff; uint32_t gestures; };
 

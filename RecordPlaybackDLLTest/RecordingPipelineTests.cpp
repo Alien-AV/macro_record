@@ -92,7 +92,7 @@ TEST(RecordingPipeline, SlowCallbacksCannotDelayRawSourceWhenLongPrefixBecomesGe
                 ++callbacks;
                 if (!in_source) advance(now + 75);
             }
-        }, [](uint64_t) { ADD_FAILURE() << "No capture failure expected"; },
+        }, [] { ADD_FAILURE() << "No capture failure expected"; return false; },
             [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); }, pending(probe, budget));
         probe.on_read = [&] { EXPECT_FALSE(in_source) << "Source must transfer, not read, the resolved spool"; };
         ASSERT_TRUE(pipeline.start(1, ControlW));
@@ -176,7 +176,7 @@ TEST(RecordingPipeline, PausedCollectorDoesNotHoldQueueLockOrBackpressureContinu
             resumed.wait();
         }
         received.push_back(std::move(packet));
-    }, [](uint64_t) { ADD_FAILURE() << "No capture failure expected"; },
+    }, [] { ADD_FAILURE() << "No capture failure expected"; return false; },
         [&] { return std::chrono::steady_clock::time_point(Microseconds(now.load())); }, pending(probe));
     pipeline.start(1, ControlW);
     pipeline.collect_one();
@@ -221,7 +221,7 @@ TEST(RecordingPipeline, ConfirmedBatchAndImmediateRolloverKeepBoundariesOriginsA
     int64_t now = 0;
     std::vector<Packet> received;
     Pipeline pipeline([&](Packet packet) { received.push_back(std::move(packet)); },
-        [](uint64_t) { ADD_FAILURE(); }, [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); });
+        [] { ADD_FAILURE(); return false; }, [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); });
     pipeline.start(1, ControlW, {-100, 200, true});
     now = 7; pipeline.keyboard(raw_key(VK_CONTROL), 1);
     now = 18; pipeline.mouse(raw_motion(10), {}, 2);
@@ -297,13 +297,142 @@ TEST(RecordingPipeline, CollectorReadAndDelayOverflowFailuresOwnTheirSessionAndC
     }
 }
 
+TEST(RecordingPipeline, RejectedFailureWakeTerminatesSourceAndAllowsRestartDuringFailureCallback) {
+    enum class SourceAction { Pump, Keyboard, IgnoredKeyboard, Mouse, Stop, Restart };
+    for (const auto action : {SourceAction::Pump, SourceAction::Keyboard, SourceAction::IgnoredKeyboard,
+        SourceAction::Mouse, SourceAction::Stop, SourceAction::Restart}) {
+        SCOPED_TRACE(static_cast<int>(action));
+        StorageProbe probe;
+        auto budget = std::make_shared<PendingBudget>();
+        int64_t now = 0;
+        size_t rejected_posts = 0;
+        std::promise<void> failure_entered, resume;
+        auto resumed = resume.get_future().share();
+        std::vector<Packet> received;
+        Pipeline pipeline([&](Packet packet) {
+            if (packet.session == 1 && packet.boundary == Boundary::Failed) {
+                // Managed ownership can be cleared and a new start requested
+                // before this collector callback returns.
+                failure_entered.set_value();
+                resumed.wait();
+            }
+            received.push_back(std::move(packet));
+        }, [&] { ++rejected_posts; return false; }, // No wake message is ever delivered.
+            [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); }, pending(probe, budget));
+        ASSERT_TRUE(pipeline.start(1, ControlW));
+        ASSERT_TRUE(pipeline.collect_one());
+        // Leave both stale queued data and a provisional source spool behind the
+        // batch whose collector read will fail.
+        for (int round = 0; round < 3; ++round) {
+            now += 125; pipeline.keyboard(raw_key(VK_CONTROL), 1);
+            for (int i = 0; i < 513; ++i) {
+                now += 125; pipeline.mouse(raw_motion(i + 1), {}, 1);
+            }
+            if (round < 2) {
+                now += 125; pipeline.keyboard(raw_key(VK_CONTROL, true), 1);
+            }
+        }
+        ASSERT_EQ(3u, probe.opened.load());
+        probe.fail_read = true;
+        auto collector = std::async(std::launch::async, [&] { return pipeline.collect_one(); });
+        const auto entered = failure_entered.get_future().wait_for(std::chrono::seconds(2));
+        if (entered != std::future_status::ready) {
+            resume.set_value();
+            collector.get();
+            FAIL() << "Collector did not publish the injected read failure";
+        }
+        EXPECT_EQ(1u, rejected_posts);
+        EXPECT_EQ(1u, pipeline.session()) << "Collector must not mutate source Stream state";
+        EXPECT_GT(budget->used(), 0u);
+        // These are production source entry points, not a simulated successful
+        // error post. Even an immediate start must first consume the retained error.
+        switch (action) {
+        case SourceAction::Pump: pipeline.process_failure(); break;
+        case SourceAction::Keyboard: pipeline.keyboard(raw_key('A'), 2); break;
+        case SourceAction::IgnoredKeyboard: pipeline.keyboard(raw_key(255), 2); break;
+        case SourceAction::Mouse: pipeline.mouse(raw_motion(999), {}, 2); break;
+        case SourceAction::Stop: pipeline.stop(1); break;
+        case SourceAction::Restart: break;
+        }
+        if (action != SourceAction::Restart) EXPECT_EQ(0u, pipeline.session());
+        EXPECT_TRUE(pipeline.start(2));
+        EXPECT_EQ(2u, pipeline.session());
+        pipeline.process_failure(); // No duplicate/stale failure may end the restart.
+        now += 47; pipeline.mouse(raw_motion(123), {}, 2);
+        pipeline.stop(2);
+        resume.set_value(); // Always release the collector, even after a failed expectation.
+        EXPECT_TRUE(collector.get());
+        probe.fail_read = false;
+        pipeline.close();
+        while (pipeline.collect_one(true)) {}
+        ASSERT_EQ(5u, received.size());
+        EXPECT_EQ(1u, received[0].session);
+        EXPECT_EQ(Boundary::Started, received[0].boundary);
+        EXPECT_EQ(1u, received[1].session);
+        EXPECT_EQ(Boundary::Failed, received[1].boundary);
+        EXPECT_EQ(2u, received[2].session);
+        EXPECT_EQ(Boundary::Started, received[2].boundary);
+        EXPECT_EQ(2u, received[3].session);
+        ASSERT_NE(nullptr, received[3].event);
+        EXPECT_EQ(Microseconds(47), received[3].event->time_since_last_event);
+        EXPECT_EQ(2u, received[4].session);
+        EXPECT_EQ(Boundary::Stopped, received[4].boundary);
+        EXPECT_EQ(0u, budget->used());
+        closed(probe);
+    }
+}
+
+TEST(RecordingPipeline, RejectedOldFailureWakeCannotTerminateNewerSourceSession) {
+    StorageProbe probe;
+    auto budget = std::make_shared<PendingBudget>();
+    int64_t now = 0;
+    size_t rejected_posts = 0;
+    std::vector<Packet> received;
+    Pipeline pipeline([&](Packet packet) { received.push_back(std::move(packet)); },
+        [&] { ++rejected_posts; return false; },
+        [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); }, pending(probe, budget));
+    ASSERT_TRUE(pipeline.start(500));
+    for (int i = 0; i < 513; ++i) {
+        now += 125; pipeline.mouse(raw_motion(i + 1), {}, 1);
+    }
+    pipeline.stop(500);
+    ASSERT_TRUE(pipeline.start(7)); // Session IDs are identities, not ordered counters.
+    probe.fail_read = true;
+    ASSERT_TRUE(pipeline.collect_one()); // Started 500.
+    ASSERT_TRUE(pipeline.collect_one()); // Batch 500 fails while source 7 is active.
+    ASSERT_EQ(1u, rejected_posts);
+    EXPECT_EQ(7u, pipeline.session());
+    now += 47; pipeline.mouse(raw_motion(123), {}, 2); // Consumes stale failure, keeps input.
+    EXPECT_EQ(7u, pipeline.session());
+    pipeline.process_failure();
+    EXPECT_EQ(7u, pipeline.session());
+    pipeline.stop(7);
+    probe.fail_read = false;
+    pipeline.close();
+    while (pipeline.collect_one(true)) {}
+    ASSERT_EQ(5u, received.size());
+    EXPECT_EQ(500u, received[0].session);
+    EXPECT_EQ(Boundary::Started, received[0].boundary);
+    EXPECT_EQ(500u, received[1].session);
+    EXPECT_EQ(Boundary::Failed, received[1].boundary);
+    EXPECT_EQ(7u, received[2].session);
+    EXPECT_EQ(Boundary::Started, received[2].boundary);
+    EXPECT_EQ(7u, received[3].session);
+    ASSERT_NE(nullptr, received[3].event);
+    EXPECT_EQ(Microseconds(47), received[3].event->time_since_last_event);
+    EXPECT_EQ(7u, received[4].session);
+    EXPECT_EQ(Boundary::Stopped, received[4].boundary);
+    EXPECT_EQ(0u, budget->used());
+    closed(probe);
+}
+
 TEST(RecordingPipeline, SharedBudgetExhaustionStillDeliversFailureAndAllowsCleanRestart) {
     StorageProbe probe;
     constexpr size_t limit = 32 * 1024;
     auto budget = std::make_shared<PendingBudget>(limit);
     int64_t now = 0;
     std::vector<Packet> received;
-    Pipeline pipeline([&](Packet packet) { received.push_back(std::move(packet)); }, [](uint64_t) { ADD_FAILURE(); },
+    Pipeline pipeline([&](Packet packet) { received.push_back(std::move(packet)); }, [] { ADD_FAILURE(); return false; },
         [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); }, pending(probe, budget));
     pipeline.start(1, ControlW);
     // Multiple transferred prefixes and the active prefix share one bound.
@@ -345,7 +474,7 @@ TEST(RecordingPipeline, ShutdownAndAbandonmentReleaseTransferredQueuedAndProvisi
         auto budget = std::make_shared<PendingBudget>();
         {
             int64_t now = 0;
-            Pipeline pipeline([](Packet) {}, [](uint64_t) { ADD_FAILURE(); },
+            Pipeline pipeline([](Packet) {}, [] { ADD_FAILURE(); return false; },
                 [&] { return std::chrono::steady_clock::time_point(Microseconds(now)); }, pending(probe, budget));
             pipeline.start(1, ControlW);
             now += 1; pipeline.keyboard(raw_key(VK_CONTROL), 1);

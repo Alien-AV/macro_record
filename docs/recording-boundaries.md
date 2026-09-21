@@ -83,11 +83,16 @@ resource limits, and the absence of files after all normal/error cleanup paths.
 
 Started, data and Stopped remain ordered in one FIFO. A collector-side read or
 delay-overflow error closes that batch, reports Failed for its owning session,
-and posts a session-scoped error command to the source thread. Collector callbacks
-never mutate Stream state. Stale data or success for the failed/ended session are
-suppressed, including after a newer Started. The source rejects an old error
-command if a newer session is active. Failure metadata is independent of the
-data-byte budget, so exhausting that budget cannot swallow the failure marker.
+and retains that session ID in an atomic mailbox before invoking the Failed
+callback. A best-effort thread message only wakes the source: a rejected post
+cannot lose the failure or leave the native session rejecting a client restart.
+The source consumes the mailbox before raw input, start/stop, pump waits and
+shutdown. Collector callbacks never mutate Stream state. Stale data or success
+for the failed/ended session are suppressed, including after a newer Started.
+The source ignores an old failure if a newer session is active. One FIFO collector
+publishes failures in source order, so the fixed-size mailbox may replace an older
+failure only after that older source session has ended. Both failure metadata and
+the mailbox are independent of the data-byte budget.
 
 ## Native ordering
 
@@ -166,7 +171,9 @@ its remaining events cannot migrate to another tab.
   callbacks replay a long resolved prefix. A separately paused collector also
   verifies concurrent source progress and FIFO-lock ownership. Further tests cover
   rollover, collector faults, stale success/data, shared quota exhaustion, reserved
-  error markers and shutdown/discard of transferred storage.
+  error markers and shutdown/discard of transferred storage. Rejected wake-up
+  regressions verify source-only failure consumption, restart while the Failed
+  callback is paused, stale-session isolation and complete spool cleanup.
 
 Run the Release solution build with `VCPKG_MAX_CONCURRENCY=4`, then
 `x64\Release\RecordPlaybackDLLTest.exe` and
@@ -179,7 +186,8 @@ stalls and OS scheduling are outside the deterministic callback-drain regression
 
 Pipeline verification (2026-09-21): full x64 Debug and Release solution builds
 pass with VS18 MSBuild and VCPKG_MAX_CONCURRENCY=4. Each configuration passes
-89 native and 522 managed tests, none skipped. The existing MSB3851 mismatch
+91 native and 522 managed tests, none skipped. The two rejected-wake regressions
+also pass 50 consecutive Release runs. The existing MSB3851 mismatch
 between native and managed Windows SDK targets remains the only build warning.
 
 Ordering references: [GetMessage](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-getmessage),

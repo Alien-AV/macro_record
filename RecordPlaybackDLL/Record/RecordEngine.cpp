@@ -74,16 +74,18 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
     initialized.set_value(true);
     MSG message{};
     for (;;) {
+        pipeline_.process_failure();
         if (!commands_.empty()) advance_boundaries(hwnd);
+        pipeline_.process_failure();
         if (!commands_.empty()) {
             // Service control messages between bounded raw batches without posting
             // extra continuation messages or waiting for an ever-busy input queue.
             if (!PeekMessage(&message, nullptr, WM_START_RECORD, WM_SHUTDOWN_RECORD, PM_REMOVE)) continue;
         } else if (GetMessage(&message, nullptr, 0, 0) <= 0) break;
+        pipeline_.process_failure();
         if (message.message == WM_SHUTDOWN_RECORD || message.message == WM_QUIT) break;
-        if (message.message == WM_FAILED_RECORD) {
-            pipeline_.fail(static_cast<uint64_t>(message.wParam));
-        } else if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
+        if (message.message == WM_COLLECTOR_WAKE) continue;
+        if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
             const auto payload = static_cast<uint64_t>(message.lParam);
             const auto gestures = static_cast<uint32_t>(payload);
             const auto cutoff = message.message == WM_STOP_RECORD && gestures
@@ -94,6 +96,7 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
             DispatchMessage(&message);
         }
     }
+    pipeline_.process_failure();
     if (pipeline_.session()) pipeline_.stop(pipeline_.session());
     unregister_raw_input_stuff();
     DestroyWindow(hwnd);
@@ -134,8 +137,8 @@ RecordEngine::RecordEngine(record_events_callback_t input, status_callback_t sta
       pipeline_([this](capture::Packet packet) {
           if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
           else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys, packet.origin);
-      }, [this](uint64_t session) {
-          PostThreadMessage(window_thread_id_, WM_FAILED_RECORD, static_cast<WPARAM>(session), 0);
+      }, [this] {
+          return PostThreadMessage(window_thread_id_, WM_COLLECTOR_WAKE, 0, 0) != FALSE;
       }) {
     std::promise<bool> initialized;
     auto readiness = initialized.get_future();
