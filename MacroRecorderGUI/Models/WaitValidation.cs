@@ -25,8 +25,8 @@ public static class WaitValidation
                 if (!Enum.IsDefined(wait.Window.Test)) Fail("Unsupported window condition.");
                 if (wait.Trigger == WaitTrigger.NewWindow && wait.Window.Test is not (WindowTest.Exists or WindowTest.Visible))
                     Fail("New window requires Exists or Visible.");
-                if (wait.Trigger == WaitTrigger.Changes && (wait.Window.Target.AnyMatch || wait.Window.Test == WindowTest.Absent))
-                    Fail("Changes requires a single existing target.");
+                if (wait.Trigger == WaitTrigger.Changes && (wait.Window.Target.AnyMatch || wait.Window.Test is WindowTest.Absent or WindowTest.Exists))
+                    Fail("Changes requires a single target and the Visible or Foreground condition.");
                 break;
             case WaitCondition.ConditionOneofCase.Pixel:
                 var pixel = wait.Pixel;
@@ -98,9 +98,19 @@ public static class WaitValidation
     {
         var target = wait.Window?.Target ?? wait.Pixel?.Target;
         var name = target is null ? "desktop" : string.Join(" · ", new[] { target.ExecutablePath, target.WindowClass, target.Title }.Where(s => s.Length > 0));
-        return wait.Window is { } window ? $"Window {window.Test.ToString().ToLowerInvariant()} · {name}"
-            : wait.Pixel is { } pixel ? $"Pixel ({pixel.X}, {pixel.Y}) {pixel.Coordinates} {(pixel.NotEqual ? "≠" : "=")} #{pixel.Rgb:X6} ±{pixel.Tolerance} · {name}"
-            : "Unsupported wait condition";
+        var basis = wait.Window is { } window ? $"window {window.Test.ToString().ToLowerInvariant()} · {name}"
+            : wait.Pixel is { } pixel ? wait.Trigger == WaitTrigger.Changes
+                ? $"pixel ({pixel.X}, {pixel.Y}) {pixel.Coordinates} differs from its first valid runtime sample by more than {pixel.Tolerance} per channel · {name}"
+                : $"pixel ({pixel.X}, {pixel.Y}) {pixel.Coordinates} {(pixel.NotEqual ? "≠" : "=")} #{pixel.Rgb:X6} ±{pixel.Tolerance} · {name}"
+            : "unsupported wait condition";
+        return wait.Trigger switch
+        {
+            WaitTrigger.IsTrue => "Is true: " + basis,
+            WaitTrigger.BecomesTrue => "Becomes true after observing false: " + basis,
+            WaitTrigger.Changes => "Changes from runtime baseline: " + basis,
+            WaitTrigger.NewWindow => "New instance outside the initial matching set: " + basis,
+            _ => "Unsupported trigger: " + basis
+        };
     }
     private static void Fail(string message) => throw new ArgumentException(message);
 }

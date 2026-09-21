@@ -60,6 +60,7 @@ internal sealed class WaitEvaluator(WaitCondition condition)
 
 internal sealed class WaitRunner(IWaitObserver observer)
 {
+    internal static WaitRunner Desktop { get; } = new(new WindowPixelObserver(new WindowsWaitDesktop()));
     // A blocked provider retains this permit until it actually returns. Cancellation
     // never starts replacement observations alongside a stuck call.
     private readonly SemaphoreSlim _observationSlot = new(1, 1);
@@ -72,7 +73,10 @@ internal sealed class WaitRunner(IWaitObserver observer)
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         if (remaining <= TimeSpan.Zero) return new(false, "Condition timed out before observation started.");
         deadline.CancelAfter(remaining);
-        var token = deadline.Token;
+        // Provider callbacks never register on the runner's deadline signal.
+        // A callback that throws or blocks cannot prevent WaitAsync from ending.
+        var observerCancel = new CancellationTokenSource();
+        var observerToken = observerCancel.Token;
         var clock = Stopwatch.StartNew();
         var evaluator = new WaitEvaluator(condition);
         var last = "No observation available";
@@ -84,7 +88,7 @@ internal sealed class WaitRunner(IWaitObserver observer)
                 var started = clock.Elapsed;
                 var observationTask = Task.Run(async () =>
                 {
-                    try { return await observer.ObserveAsync(condition.Clone(), token).ConfigureAwait(false); }
+                    try { return await observer.ObserveAsync(condition.Clone(), observerToken).ConfigureAwait(false); }
                     catch (Exception error) { return new WaitObservation(ObservationState.Error, error.Message); }
                     finally { _observationSlot.Release(); }
                 });
@@ -102,5 +106,10 @@ internal sealed class WaitRunner(IWaitObserver observer)
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         { return new(false, $"Condition timed out. Last observation: {last}"); }
+        finally
+        {
+            _ = observerCancel.CancelAsync().ContinueWith(task => { _ = task.Exception; observerCancel.Dispose(); },
+                CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
     }
 }

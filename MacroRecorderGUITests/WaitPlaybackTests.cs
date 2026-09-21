@@ -31,6 +31,79 @@ public sealed class WaitPlaybackTests
             return PlaybackResult.Running;
         }
     }
+
+    [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(false, true)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public async Task ThrowingOrBlockedObserverCancellationCannotStrandAbortOrNativeTimeout(bool timeout, bool blocks)
+    {
+        var native = new Native();
+        using var release = new ManualResetEventSlim();
+        var observing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<WaitObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var engine = new PlaybackEngine(native, new Observer((condition, token) =>
+        {
+            token.Register(() =>
+            {
+                callbackStarted.TrySetResult();
+                try { if (blocks) release.Wait(); else throw new InvalidOperationException("fake cancellation callback failed"); }
+                finally { callbackFinished.TrySetResult(); }
+            });
+            observing.TrySetResult(); return new(response.Task);
+        }));
+        try
+        {
+            var playback = engine.PlaybackEventsAsync([Wait()]); await observing.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            if (timeout) native.Result = PlaybackResult.WaitTimedOut;
+            else await Task.Run(engine.PlaybackEventAbort).WaitAsync(TimeSpan.FromSeconds(2));
+            if (timeout) await Assert.ThrowsAsync<InvalidOperationException>(() => playback.WaitAsync(TimeSpan.FromSeconds(2)));
+            else await Assert.ThrowsAsync<OperationCanceledException>(() => playback.WaitAsync(TimeSpan.FromSeconds(2)));
+            await callbackStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.AreEqual(0, native.Resolves);
+            var next = engine.PlaybackEventsAsync([Wait()]);
+            await Task.Run(engine.PlaybackEventAbort).WaitAsync(TimeSpan.FromSeconds(2));
+            await Assert.ThrowsAsync<OperationCanceledException>(() => next);
+        }
+        finally { release.Set(); response.TrySetResult(new(ObservationState.Match, "late")); await callbackFinished.Task.WaitAsync(TimeSpan.FromSeconds(2)); }
+    }
+
+    private sealed class FailedAbortEngine : IPlaybackEngine, IWaitPlaybackProgress
+    {
+        public readonly TaskCompletionSource Completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int Aborts;
+        public WaitProgress? CurrentWait => new("fake wait", TimeSpan.Zero, TimeSpan.FromSeconds(30), TimeSpan.Zero, "pending");
+        public Task PlaybackEventsAsync(IEnumerable<InputEvent> events, bool loop = false) => Completion.Task;
+        public void PlaybackEventAbort()
+        {
+            if (++Aborts == 1) throw new InvalidOperationException("fake abort interop failure");
+            Completion.TrySetCanceled();
+        }
+        public void SetLoopPlayback(bool loop) { }
+        public void Dispose() { }
+    }
+    [TestMethod]
+    public async Task WaitingSubscriberAbortFailureRetainsOwnershipUntilSuccessfulRetry()
+    {
+        var engine = new FailedAbortEngine(); var workflow = new PlaybackWorkflow(engine);
+        var attempted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        workflow.StateChanged += state =>
+        {
+            if (state.Phase == PlaybackPhase.Waiting) { attempted.TrySetResult(); workflow.Abort(); }
+        };
+        var playback = workflow.PlayAsync([Wait()], new() { Countdown = TimeSpan.Zero });
+        await attempted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        // Synchronize with the failed callback by reading State under the workflow gate.
+        Assert.AreEqual(PlaybackPhase.Stopping, workflow.State.Phase);
+        Assert.IsTrue(workflow.IsActive); Assert.IsFalse(playback.IsCompleted);
+        Assert.Throws<InvalidOperationException>(() => workflow.PlayAsync([Wait()], new() { Countdown = TimeSpan.Zero }));
+        workflow.Abort();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => playback.WaitAsync(TimeSpan.FromSeconds(2)));
+        Assert.IsFalse(workflow.IsActive); Assert.AreEqual(2, engine.Aborts);
+    }
     private sealed class Observer(Func<WaitCondition, CancellationToken, ValueTask<WaitObservation>> observe) : IWaitObserver
     {
         public ValueTask<WaitObservation> ObserveAsync(WaitCondition condition, CancellationToken token) => observe(condition, token);

@@ -160,6 +160,28 @@ public sealed class ConditionalWaitTests
         public WindowObservation FindWindows(WindowSelector selector, CancellationToken token) => Found;
         public PixelObservation ReadPixel(PixelCondition condition, ObservedWindow? window) => Pixel;
     }
+
+    [TestMethod]
+    public void PreviewCheckpointCutsOffEqualTimePointerInputAndLaterOriginMarkers()
+    {
+        InputEvent[] inputs = [new WaitConditionEvent(Condition()), new MouseEvent(100, 200, MacroRecorderGUI.Common.MouseActionTypeFlags.Move),
+            new WaitConditionEvent(Condition()), new MouseEvent(300, 400, MacroRecorderGUI.Common.MouseActionTypeFlags.Move)];
+        var projection = new ActionProjection();
+        projection.BeginPointerSegment(new(0, new(1, 2)));
+        projection.Append(inputs[0]);
+        projection.BeginPointerSegment(new(1, new(20, 30)));
+        projection.Append(inputs[1]); projection.Append(inputs[2]);
+        projection.BeginPointerSegment(new(3, new(40, 50)));
+        projection.Append(inputs[3]);
+        var preview = new VisualPreview(inputs, projection);
+        Assert.AreEqual(1d, preview.Seek(0).Pointer!.Value.Position!.Value.X);
+        preview.SimulateSatisfied(0);
+        Assert.AreEqual(100d, preview.Seek(0).Pointer!.Value.Position!.Value.X);
+        preview.SimulateSatisfied(0);
+        Assert.AreEqual(300d, preview.Seek(0).Pointer!.Value.Position!.Value.X);
+        var noOrigin = new ActionProjection(); foreach (var input in inputs) noOrigin.Append(input);
+        Assert.IsNull(new VisualPreview(inputs, noOrigin).Seek(0).Pointer);
+    }
     [TestMethod]
     public async Task ProviderDistinguishesAbsenceAmbiguityAndUnavailableNegativePixels()
     {

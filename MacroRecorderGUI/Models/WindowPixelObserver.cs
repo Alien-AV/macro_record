@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 using ProtobufGenerated;
+using Point = MacroRecorderGUI.Models.WaitPixelPoint;
+using Rect = MacroRecorderGUI.Models.WaitPixelRect;
 
 namespace MacroRecorderGUI.Models;
 
@@ -52,7 +54,7 @@ internal sealed class WindowPixelObserver(IWindowPixelDesktop desktop) : IWaitOb
     }
 }
 
-internal sealed class WindowsWaitDesktop : IWindowPixelDesktop
+internal sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitGeometryApi
 {
     public WindowObservation FindWindows(WindowSelector selector, CancellationToken token)
     {
@@ -104,20 +106,8 @@ internal sealed class WindowsWaitDesktop : IWindowPixelDesktop
             if (window is not null)
             {
                 if (!Revalidate(window) || !window.Visible || IsIconic(window.Handle)) return new(0, "", "Target is hidden, minimized, or has changed.");
-                if (!GetClientRect(window.Handle, out var bounds)) return new(0, "", "Client bounds are unavailable.");
-                if (condition.Coordinates == PixelCoordinates.ClientLogical)
-                {
-                    var dpi = GetDpiForWindow(window.Handle);
-                    if (dpi == 0) return new(0, "", "Target DPI is unavailable.");
-                    var x = Math.Round((double)point.X * dpi / condition.ReferenceDpi);
-                    var y = Math.Round((double)point.Y * dpi / condition.ReferenceDpi);
-                    if (x > int.MaxValue || y > int.MaxValue) return new(0, "", "Scaled client coordinates overflow.");
-                    point.X = (int)x; point.Y = (int)y;
-                }
-                if (point.X < bounds.Left || point.Y < bounds.Top || point.X >= bounds.Right || point.Y >= bounds.Bottom)
-                    return new(0, "", "Pixel lies outside the current client bounds.");
-                if (!ClientToScreen(window.Handle, ref point)) return new(0, "", "Client position is unavailable.");
-                if (GetAncestor(WindowFromPoint(point), 2) != window.Handle) return new(0, "", "The target pixel is covered by another window.");
+                if (!WaitPixelGeometry.Resolve(condition, window.Handle, this, out point)) return new(0, "", "Client pixel is out of bounds or its physical rendering transform is unavailable.");
+                if (!WaitPixelGeometry.Uncovered(window.Handle, point, this)) return new(0, "", "The target pixel is covered or occlusion cannot be established.");
                 identity = window.Identity;
             }
             if (MonitorFromPoint(point, 0) == 0) return new(0, "", "Pixel lies outside a connected monitor.");
@@ -127,7 +117,9 @@ internal sealed class WindowsWaitDesktop : IWindowPixelDesktop
             try { color = GetPixel(dc, point.X, point.Y); }
             finally { ReleaseDC(0, dc); }
             if (color == 0xffffffff) return new(0, "", "Pixel read failed.");
-            if (window is not null && (!Revalidate(window) || GetAncestor(WindowFromPoint(point), 2) != window.Handle))
+            if (window is not null && (!Revalidate(window) || !IsWindowVisible(window.Handle) || IsIconic(window.Handle)
+                || !WaitPixelGeometry.Resolve(condition, window.Handle, this, out var after) || after.X != point.X || after.Y != point.Y
+                || !WaitPixelGeometry.Uncovered(window.Handle, point, this)))
                 return new(0, "", "Target changed or became covered during sampling.");
             return new(((color & 255) << 16) | (color & 0xff00) | ((color >> 16) & 255), identity);
         }
@@ -141,8 +133,26 @@ internal sealed class WindowsWaitDesktop : IWindowPixelDesktop
         return !process.IsInvalid && GetProcessTimes(process, out var created, out _, out _, out _) && created == window.ProcessCreated;
     }
 
-    [StructLayout(LayoutKind.Sequential)] private struct Point { public int X, Y; }
-    [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
+    nint IWaitGeometryApi.WindowContext(nint window) => GetWindowDpiAwarenessContext(window);
+    nint IWaitGeometryApi.SetContext(nint context) => SetThreadDpiAwarenessContext(context);
+    uint IWaitGeometryApi.WindowDpi(nint window) => GetDpiForWindow(window);
+    bool IWaitGeometryApi.ClientBounds(nint window, out Rect rect) => GetClientRect(window, out rect);
+    bool IWaitGeometryApi.ToScreen(nint window, ref Point point) => ClientToScreen(window, ref point);
+    bool IWaitGeometryApi.ToPhysical(nint window, ref Point point) => LogicalToPhysicalPointForPerMonitorDPI(window, ref point);
+    bool IWaitGeometryApi.Above(nint window, out nint above)
+    {
+        Marshal.SetLastPInvokeError(0);
+        above = GetWindow(window, 3);
+        return above != 0 || Marshal.GetLastPInvokeError() == 0;
+    }
+    WaitSurface? IWaitGeometryApi.Surface(nint window)
+    {
+        if (!IsWindow(window)) return null;
+        var visible = IsWindowVisible(window); var minimized = IsIconic(window);
+        if (!visible || minimized) return new(visible, minimized, false, null);
+        if (DwmGetWindowAttribute(window, 14, out var cloaked, sizeof(int)) != 0) return null;
+        return new(visible, minimized, cloaked != 0, GetWindowRect(window, out var bounds) ? bounds : null);
+    }
     private delegate bool EnumWindowsCallback(nint hwnd, nint parameter);
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool EnumWindows(EnumWindowsCallback callback, nint parameter);
     [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetClassNameW")] private static extern int GetClassName(nint hwnd, StringBuilder value, int size);
@@ -160,8 +170,10 @@ internal sealed class WindowsWaitDesktop : IWindowPixelDesktop
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetClientRect(nint hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(nint hwnd);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool ClientToScreen(nint hwnd, ref Point point);
-    [DllImport("user32.dll")] private static extern nint WindowFromPoint(Point point);
-    [DllImport("user32.dll")] private static extern nint GetAncestor(nint hwnd, uint flags);
+    [DllImport("user32.dll")] private static extern nint GetWindowDpiAwarenessContext(nint hwnd);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool LogicalToPhysicalPointForPerMonitorDPI(nint hwnd, ref Point point);
+    [DllImport("user32.dll", SetLastError = true)] private static extern nint GetWindow(nint hwnd, uint relationship);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetWindowRect(nint hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern nint MonitorFromPoint(Point point, uint flags);
     [DllImport("user32.dll")] private static extern nint GetDC(nint hwnd);
     [DllImport("user32.dll")] private static extern int ReleaseDC(nint hwnd, nint dc);

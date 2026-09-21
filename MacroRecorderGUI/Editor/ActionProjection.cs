@@ -272,6 +272,15 @@ public sealed class ActionProjection
             || origin.Time == input.Value.Time && origin.Index >= input.Value.Index ? origin : input;
     }
 
+    // Render order includes origin markers before their event. A time lookup alone
+    // can cross a zero-delay wait and expose pointer input from after it.
+    public PathSample? PointerBeforeEvent(int index)
+    {
+        if (index < 0 || index >= _renderIndices.Count) return null;
+        var before = _renderIndices[index] - 1;
+        return before < 0 ? null : RenderSamples[before];
+    }
+
     public static bool HasMove(MouseEvent m) => (m.ActionType & MouseActionTypeFlags.Move) != 0;
     private static bool IsModifier(uint code) => code is 0x10 or 0x11 or 0x12 or >= 0xA0 and <= 0xA5 or 0x5B or 0x5C;
     public static string KeyName(uint code) => code switch

@@ -27,7 +27,7 @@ bool WaitEvent::valid(const protobufGenerated::WaitCondition& wait) {
         const auto& window = wait.window();
         return window.has_target() && selector(window.target()) && WindowTest_IsValid(window.test())
             && (wait.trigger() != NEW_WINDOW || window.test() == EXISTS || window.test() == VISIBLE)
-            && (wait.trigger() != CHANGES || (!window.target().any_match() && window.test() != ABSENT));
+            && (wait.trigger() != CHANGES || (!window.target().any_match() && (window.test() == VISIBLE || window.test() == FOREGROUND)));
     }
     if (wait.has_pixel()) {
         const auto& pixel = wait.pixel();

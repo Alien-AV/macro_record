@@ -200,7 +200,14 @@ public sealed class PlaybackWorkflow
         if (!Owns(session)) return;
         _state = new(phase, session.Repeat, session.Options.RepeatUntilStopped ? 0 : session.Options.RepeatCount,
             remaining, session.Clock.Elapsed, error, session.Options.RepeatUntilStopped) { Wait = phase == PlaybackPhase.Waiting ? session.Wait : null };
-        StateChanged?.Invoke(_state);
+        try { StateChanged?.Invoke(_state); }
+        catch (Exception callbackError) when (session.NativeTask is { IsCompleted: false })
+        {
+            // In particular, an observer may request Abort and encounter an
+            // interop failure. Keep the native task owned until it finishes or
+            // an explicit abort retry joins it.
+            _state = _state with { Error = callbackError.Message };
+        }
     }
     private void Finish(Session session, PlaybackPhase phase, Exception? error = null)
     {

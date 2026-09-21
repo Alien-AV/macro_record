@@ -47,6 +47,8 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         public CancellationTokenSource Cancel { get; } = new();
         public ulong Occurrence;
         public WaitProgress? Progress;
+        public WaitProgress? LastWait;
+        public ulong WaitEventIndex;
         public string? WaitFailure;
     }
     private readonly object _gate = new();
@@ -58,7 +60,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
 
     public PlaybackEngine() : this(new PlaybackNativeApi()) { }
     internal PlaybackEngine(IPlaybackNativeApi native, IWaitObserver? observer = null)
-    { _native = native; _waitRunner = new(observer ?? new WindowPixelObserver(new WindowsWaitDesktop())); }
+    { _native = native; _waitRunner = observer is null ? WaitRunner.Desktop : new(observer); }
 
     public Task PlaybackEventsAsync(IEnumerable<InputEvent> events, bool loop = false)
     {
@@ -105,8 +107,10 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
                                 if (request.EventIndex >= (ulong)session.Events.Length || session.Events[(int)request.EventIndex] is not WaitConditionEvent wait)
                                     throw new InvalidOperationException("Native wait event does not match the playback snapshot.");
                                 session.Occurrence = request.Occurrence;
+                                session.WaitEventIndex = request.EventIndex;
                                 session.WaitFailure = null;
                                 session.Progress = new(wait.Description, TimeSpan.Zero, TimeSpan.FromMicroseconds(request.RemainingUs), TimeSpan.Zero, "Waiting for observation");
+                                session.LastWait = session.Progress;
                                 _ = Task.Run(() => RunWaitAsync(session, request, wait.Condition));
                             }
                             else if (request.Occurrence == 0) session.Progress = null;
@@ -114,8 +118,8 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
                         continue;
                     }
                     _active = null;
-                    session.Cancel.Cancel();
                     Complete(session, result);
+                    CancelObserver(session);
                     return;
                 }
             }
@@ -128,10 +132,18 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
                 try { _native.Abort(session.Id); }
                 catch (Exception cleanupError) { error = new AggregateException(error, cleanupError); }
                 _active = null;
-                session.Cancel.Cancel();
                 session.Completion.TrySetException(error);
+                CancelObserver(session);
             }
         }
+    }
+
+    private static void CancelObserver(Session session)
+    {
+        // Cancellation callbacks belong to the observer. Never execute them on
+        // the native ownership thread or make terminal completion depend on them.
+        _ = session.Cancel.CancelAsync().ContinueWith(task => { _ = task.Exception; session.Cancel.Dispose(); },
+            CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private async Task RunWaitAsync(Session session, NativeWaitRequest request, ProtobufGenerated.WaitCondition condition)
@@ -139,7 +151,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         try
         {
             var outcome = await _waitRunner.RunAsync(condition, TimeSpan.FromMicroseconds(request.RemainingUs), session.Cancel.Token,
-                progress => { lock (_gate) { if (ReferenceEquals(_active, session) && session.Occurrence == request.Occurrence) session.Progress = progress; } }).ConfigureAwait(false);
+                progress => { lock (_gate) { if (ReferenceEquals(_active, session) && session.Occurrence == request.Occurrence) session.LastWait = session.Progress = progress; } }).ConfigureAwait(false);
             lock (_gate)
             {
                 if (!ReferenceEquals(_active, session) || session.Occurrence != request.Occurrence) return;
@@ -189,7 +201,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         // Keep ownership if interop itself fails, so another start cannot overlap.
         var result = _native.Abort(session.Id);
         _active = null;
-        session.Cancel.Cancel();
+        CancelObserver(session);
         if (result is PlaybackResult.Finished or PlaybackResult.Cancelled)
         {
             session.Completion.TrySetCanceled();
@@ -218,7 +230,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         if (result == PlaybackResult.Finished) session.Completion.TrySetResult();
         else if (result == PlaybackResult.Cancelled) session.Completion.TrySetCanceled();
         else session.Completion.TrySetException(result is PlaybackResult.WaitFailed or PlaybackResult.WaitTimedOut
-            ? new InvalidOperationException(session.WaitFailure ?? $"{PlaybackError(result).Message} {session.Progress?.Condition}. Last observation: {session.Progress?.Observation ?? "unavailable"}")
+            ? new InvalidOperationException(session.WaitFailure ?? $"Wait at event {session.WaitEventIndex + 1}: {PlaybackError(result).Message} {session.LastWait?.Condition}. Last observation: {session.LastWait?.Observation ?? "unavailable"}")
             : PlaybackError(result));
     }
 

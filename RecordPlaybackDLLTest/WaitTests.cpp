@@ -130,3 +130,11 @@ TEST(ConditionalWait, CodecRejectsUnsupportedSemanticsAndMissingProviders) {
     event->condition.set_trigger(protobufGenerated::IS_TRUE); event->condition.clear_condition();
     EXPECT_THROW(record_playback::deserialize_event(*event->serialize()), std::invalid_argument);
 }
+
+TEST(ConditionalWait, ChangesRejectsImpossibleExistsAndAbsentButAcceptsVisibility) {
+    auto event = wait_event(); event->condition.set_trigger(protobufGenerated::CHANGES);
+    EXPECT_FALSE(WaitEvent::valid(event->condition));
+    event->condition.mutable_window()->set_test(protobufGenerated::ABSENT); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    event->condition.mutable_window()->set_test(protobufGenerated::VISIBLE); EXPECT_TRUE(WaitEvent::valid(event->condition));
+    event->condition.mutable_window()->set_test(protobufGenerated::FOREGROUND); EXPECT_TRUE(WaitEvent::valid(event->condition));
+}

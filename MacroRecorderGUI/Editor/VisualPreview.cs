@@ -17,6 +17,11 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
     private int _processed;
     private int _satisfiedThrough = -1;
     public void ResetCheckpoints() => _satisfiedThrough = -1;
+    public void SelectAction(int actionIndex)
+    {
+        if (actionIndex < 0 || actionIndex >= projection.Actions.Count) throw new ArgumentOutOfRangeException(nameof(actionIndex));
+        _satisfiedThrough = projection.Actions[actionIndex].Start - 1;
+    }
     public RecordedAction? Checkpoint(BigInteger time) => projection.Actions.FirstOrDefault(a =>
         a.Kind == ActionKind.Wait && a.Start > _satisfiedThrough && a.StartTime + a.Wait <= time);
     public bool SimulateSatisfied(BigInteger time)
@@ -62,7 +67,8 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
         if (checkpoint is not null) index = checkpoint.Number - 1;
         var current = index < 0 ? null : actions[index];
         var waiting = checkpoint is not null || current is not null && time < current.StartTime + current.Wait;
-        return new(current, index + 1 < actions.Count ? actions[index + 1] : null, waiting, projection.PointerAt(time),
+        return new(current, index + 1 < actions.Count ? actions[index + 1] : null, waiting,
+            checkpoint is null ? projection.PointerAt(time) : projection.PointerBeforeEvent(checkpoint.Start),
             _keys.OrderBy(k => k).ToArray(), _buttons.OrderBy(b => b, StringComparer.Ordinal).ToArray());
     }
 
