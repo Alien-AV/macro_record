@@ -52,7 +52,7 @@ These tests are noninteractive: native playback tests use fake injection sinks a
 
 The native test project compiles the production C++ model/playback sources into its executable, so owning C++ objects stay within one static CRT. Its DLL reference is build-only: ABI tests load that DLL explicitly and pass only borrowed byte buffers and scalar values. Debug selects Debug vcpkg libraries and `/MTd`; Release selects Release libraries and `/MT`. To verify Debug compilation without executing a Debug test process, build the solution with `/p:Configuration=Debug /p:Platform=x64`.
 
-Playback owns one cancellable session. Short native looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility; completion/abort releases keys and buttons held by that session. Playback uses a cloned event snapshot, including speed-adjusted delays, so the saved recording is not modified. Finite repeats and repeat-until-stopped share the cancellable countdown and emergency stop. Physical modifier interference during playback remains a separate limitation.
+Playback owns one cancellable session. Short native looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility, except for wait-only schedules; completion/abort releases keys and buttons held by that session. Playback uses a cloned event snapshot, including speed-adjusted delays, so the saved recording is not modified. Finite repeats and repeat-until-stopped share the cancellable countdown and emergency stop. Physical modifier interference during playback remains a separate limitation.
 
 ## Recording workspace
 
@@ -65,13 +65,14 @@ reconstructed screen positions.
 Named recordings and drafts are stored under `%LOCALAPPDATA%/MacroRecorder/Recordings`
 with atomic writes and a previous-copy recovery file. The library accepts macros
 up to 64 MB. Legacy `.macro` files remain readable; recordings with pointer-origin
-metadata use versioned contents under the same `.macro` extension, which older
+metadata or conditional waits use versioned contents under the same `.macro` extension, which older
 players reject. Unsaved
 changes and failures are shown explicitly, and navigation/close waits for saves.
 An untouched initial document is not saved as an empty library entry.
 
 Use a card's options menu to delete one recording, or **Select recordings** to
-select several and **Delete selected**. Ctrl/Shift select individual items/ranges;
+select several and **Delete selected**. Each click toggles an item independently;
+keyboard users can move with the arrow keys and toggle with Space.
 **Select all visible** covers the current search results. Hidden selections are
 discarded when the search changes. Deletion moves library copies into persistent
 **Local trash**, with last-batch Undo and restore after restart. Imported/exported
@@ -91,7 +92,32 @@ adopt an eligible first absolute Move as origin, with undo and a saved pre-adopt
 recovery copy. The document menu offers explicit **Export legacy .macro**: it
 materializes recorded setup moves for old players and leaves the library document
 unchanged. Ordinary export retains origin metadata and recovery information;
-per-recording playback preferences stay local.
+per-recording playback preferences stay local. Legacy export rejects conditional
+waits rather than dropping them.
+
+### Wait until
+
+Use **Add → Wait until…** to insert a condition after the selected action, or
+explicitly replace an action's fixed delay with a condition. The first release
+supports window existence/visibility/foreground/absence and pixel color conditions.
+Enter a window selector or pixel coordinates manually; target picking,
+accessibility text, memory values, and OCR remain future work.
+
+The inspector supports condition edits and Undo. The default is a condition that
+is true for 200 ms, with a 30-second timeout. Advanced triggers can require a
+transition, a change from the runtime baseline, or a new matching window.
+**Test condition** explicitly observes for at most five seconds; opening a
+recording or using Preview does not observe the desktop. Preview stops at waits
+until **Simulate satisfied / Next**. Real playback stops if a condition times out
+or fails; waiting never focuses a target window.
+
+Wait-bearing files use document version 3 under the same `.macro` extension.
+Unsupported or malformed conditions are rejected, and playback validates the
+whole schedule before sending input. Waits require released recorded keys/buttons;
+pixel targets do not move when playback uses the current pointer as its origin.
+See [conditional-wait semantics and limitations](docs/state-waits-proposal.md).
+
+### Recording and playback controls
 
 Record and Ctrl+Q start a new automatically named recording after the configured
 countdown. Play and Ctrl+E start the selected recording using its saved settings.
@@ -109,7 +135,7 @@ See `docs/direct-run-controls.md` for direct-run behavior and safety,
 `docs/action-editor.md` for editing semantics and manual smoke checks, and
 `docs/design-implementation.md` for the visual specification and verification scope.
 See `docs/library-origin-and-branding.md` for combined regression checks and
-`docs/state-waits-proposal.md` for the separate, unimplemented conditional-waits proposal.
+`docs/state-waits-proposal.md` for implemented window/pixel waits and future provider plans.
 
 ## Unpackaged distribution
 
