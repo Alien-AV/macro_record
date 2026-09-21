@@ -237,6 +237,42 @@ public sealed class ActionAuthoringTests
     }
 
     [TestMethod]
+    [DataRow(2u, 0u, true)]
+    [DataRow(3u, 0u, true)]
+    [DataRow(0u, 1u, false)]
+    [DataRow(1u, 0u, false)]
+    [DataRow(0u, 0u, false)]
+    public void LegacyZeroXPayloadMeansX1AndCannotReleaseHeldX2(uint downPayload, uint upPayload, bool stillHeld)
+    {
+        using var macro = Macro(
+            new MouseEvent(0, 0, MouseActionTypeFlags.XDown) { MouseData = downPayload },
+            new MouseEvent(0, 0, MouseActionTypeFlags.XUp) { MouseData = upPayload });
+        var anchor = Last(macro);
+        var before = macro.SnapshotBytes();
+        Func<IReadOnlyList<InputEvent>>[] insertions =
+        [
+            () => macro.Editor.InsertClick(anchor, new(MouseButton.Left)),
+            () => macro.Editor.InsertShortcut(anchor, new(0x41)),
+            () => macro.Editor.InsertPointerMovement(anchor, new(1, 2, CoordinateSpace.RelativeCounts))
+        ];
+        foreach (var insert in insertions)
+        {
+            if (stillHeld)
+            {
+                Assert.Throws<ArgumentException>(() => insert());
+                Assert.IsFalse(macro.Editor.CanUndo);
+            }
+            else
+            {
+                insert();
+                Assert.IsTrue(macro.Editor.Undo());
+                anchor = Last(macro);
+            }
+            CollectionAssert.AreEqual(before, macro.SnapshotBytes());
+        }
+    }
+
+    [TestMethod]
     public void InsertionDoesNotRewriteUnknownFieldsOrWaitsAndReindexesOnlyLaterOrigins()
     {
         byte[] unknown = [0xA0, 0x06, 0x7B];

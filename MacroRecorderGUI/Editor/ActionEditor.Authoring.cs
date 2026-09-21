@@ -98,9 +98,9 @@ public sealed partial class ActionEditor
                 Track(MouseActionTypeFlags.LeftDown, MouseActionTypeFlags.LeftUp, 1);
                 Track(MouseActionTypeFlags.RightDown, MouseActionTypeFlags.RightUp, 2);
                 Track(MouseActionTypeFlags.MiddleDown, MouseActionTypeFlags.MiddleUp, 4);
-                var extra = (mouse.MouseData & 3) << 3;
-                // Unknown X-button payloads may hold either button; do not insert a gesture into that state.
-                Track(MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, extra == 0 ? 24u : extra);
+                // Native playback interprets the legacy zero payload as X1, not both X buttons.
+                var extra = ((mouse.MouseData == 0 ? 1u : mouse.MouseData) & 3) << 3;
+                Track(MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, extra);
                 void Track(MouseActionTypeFlags down, MouseActionTypeFlags up, uint mask)
                 {
                     if ((mouse.ActionType & down) != 0) buttons |= mask;
