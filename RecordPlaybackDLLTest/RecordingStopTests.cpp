@@ -165,22 +165,24 @@ TEST(RecordingStop, HeldAtStartAndItsRepeatsAreNotFreshCommandModifiers) {
     EXPECT_EQ(std::chrono::microseconds(37), received[1].event->time_since_last_event);
 }
 
-TEST(RecordingStop, BufferPressurePreservesEveryRepeatAndItsExactDelay) {
+TEST(RecordingStop, BufferPressurePreservesRepeatsUnlessCommandIsConfirmed) {
+    for (bool confirmed : {false, true}) {
     std::vector<std::unique_ptr<Event>> received;
     StopChord filter([&](std::unique_ptr<Event> event) { received.push_back(std::move(event)); });
     filter.start(ControlW, {});
-    for (size_t i = 0; i < StopChord::capacity * 4; ++i) {
+    for (size_t i = 0; i < PendingInput::capacity * 4; ++i) {
         auto event = std::make_unique<KeyboardEvent>();
         event->virtualKeyCode = VK_CONTROL;
         event->keyUp = false;
         event->time_since_last_event = std::chrono::microseconds(i * 19);
         filter.input(std::move(event), 1);
-        ASSERT_LT(filter.pending_count(), StopChord::capacity);
+        ASSERT_LE(filter.pending_count(), PendingInput::capacity);
     }
-    filter.finish(ControlW, 1);
-    ASSERT_EQ(StopChord::capacity * 4, received.size());
+    filter.finish(confirmed ? ControlW : NoStopGesture, 1);
+    ASSERT_EQ(confirmed ? 0u : PendingInput::capacity * 4, received.size());
     for (size_t i = 0; i < received.size(); ++i)
         EXPECT_EQ(std::chrono::microseconds(i * 19), received[i]->time_since_last_event);
+    }
 }
 
 TEST(RecordingStop, OrdinaryStopPreservesUnknownEventPayloadAndOwnershipBehindCandidate) {

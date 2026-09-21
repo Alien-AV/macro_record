@@ -167,6 +167,42 @@ public class RecordingBoundaryTests
         Assert.IsTrue(capture.IsRecording);
         Assert.IsFalse(second.Completion.IsCompleted);
     }
+
+    [TestMethod]
+    public async Task FailureAfterCaptureStartedReportsErrorAndCannotCompleteOrContaminateRestart()
+    {
+        var transport = new FakeRecordingTransport();
+        using var capture = new RecordingCapture(transport);
+        var first = new RecordingSession(stopGestures: RecordingStopGestures.ControlW);
+        var second = new RecordingSession(stopGestures: RecordingStopGestures.ControlR);
+        var ended = new List<(RecordingSession Session, Exception? Error)>();
+        var received = new List<(RecordingSession Session, ProtobufInputEvent Input)>();
+        capture.Ended += (session, error) => ended.Add((session, error));
+        capture.Input += (session, input) => received.Add((session, input));
+        capture.Start(first);
+        transport.Begin(first);
+        transport.Push(first, Mouse(31));
+        transport.Fail(first); // Native provisional-storage failure, after readiness.
+        var error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.Completion);
+        StringAssert.Contains(error.Message, "could not complete capture");
+        Assert.IsFalse(capture.IsRecording);
+        Assert.AreSame(error, ended.Single().Error);
+        capture.Start(second);
+        transport.End(first);
+        transport.Push(first, Key(0x11, false, 99));
+        Assert.IsTrue(capture.IsRecording);
+        Assert.HasCount(1, ended);
+        transport.Begin(second);
+        transport.Push(second, Mouse(47));
+        capture.Stop();
+        transport.End(second);
+        await second.Completion;
+        Assert.HasCount(2, received);
+        Assert.AreSame(first, received[0].Session);
+        Assert.AreSame(second, received[1].Session);
+        Assert.AreEqual(47ul, received[1].Input.TimeSinceLastEvent);
+        Assert.IsNull(ended.Last().Error);
+    }
 }
 
 internal sealed class FakeRecordingTransport : IRecordingTransport

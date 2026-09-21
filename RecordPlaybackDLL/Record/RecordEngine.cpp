@@ -44,7 +44,10 @@ void RecordEngine::read_input(HRAWINPUT handle) {
     if (GetRawInputData(handle, RID_INPUT, bytes.data(), &size, sizeof(RAWINPUTHEADER)) != size) return;
     const auto raw = reinterpret_cast<const RAWINPUT*>(bytes.data());
     if (raw->header.dwType == RIM_TYPEKEYBOARD) handle_keyboard_event(raw->data.keyboard);
-    else if (raw->header.dwType == RIM_TYPEMOUSE && stream_.session()) handle_mouse_event(raw->data.mouse);
+    else if (raw->header.dwType == RIM_TYPEMOUSE) {
+        stream_.mouse(raw->data.mouse.usButtonFlags);
+        if (stream_.session()) handle_mouse_event(raw->data.mouse);
+    }
 }
 
 void RecordEngine::window_main(std::promise<bool> initialized) {
@@ -124,10 +127,13 @@ void RecordEngine::advance_boundaries(HWND hwnd) {
 
 void RecordEngine::enqueue(capture::Packet packet) {
     {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
+        std::unique_lock<std::mutex> lock(queue_mutex_);
+        // A resolved disk-backed candidate can contain far more events than
+        // RAM. Backpressure keeps replay into the collector bounded as well.
+        queue_changed_.wait(lock, [this] { return queue_.size() < 256; });
         queue_.push(std::move(packet));
     }
-    queue_changed_.notify_one();
+    queue_changed_.notify_all();
 }
 
 void RecordEngine::collect() {
@@ -140,6 +146,7 @@ void RecordEngine::collect() {
             packet = std::move(queue_.front());
             queue_.pop();
         }
+        queue_changed_.notify_all();
         if (packet.event) record_events_callback_(std::move(packet.event), packet.session);
         else boundary_callback_(packet.session, packet.boundary, packet.held_keys, packet.idle_released_keys, packet.origin);
     }

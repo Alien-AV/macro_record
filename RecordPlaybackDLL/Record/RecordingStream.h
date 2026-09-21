@@ -31,11 +31,19 @@ struct Packet {
 class Stream {
 public:
     using Sink = std::function<void(Packet)>;
-    explicit Stream(Sink sink) : sink_(std::move(sink)), stop_chord_([this](std::unique_ptr<Event> event) {
+    explicit Stream(Sink sink, PendingInput pending = PendingInput()) : sink_(std::move(sink)), stop_chord_([this](std::unique_ptr<Event> event) {
         sink_({session_, std::move(event)});
-    }) {}
+    }, std::move(pending)) {}
     uint64_t session() const { return session_; }
     uint32_t held_keys() const { return held_; }
+    // Observe button transitions while idle too, so an already-started drag
+    // cannot become ordinary pointer motion at the next capture boundary.
+    void mouse(USHORT flags) {
+        for (size_t i = 0; i < 5; ++i) {
+            if (flags & (1u << (i * 2))) physical_buttons_ |= 1u << i;
+            if (flags & (2u << (i * 2))) physical_buttons_ &= ~(1u << i);
+        }
+    }
     void key(WORD key, bool up) {
         if (key < physical_keys_.size()) physical_keys_[key] = !up;
         const uint32_t bit = key == 'Q' ? Q : key == VK_LCONTROL ? LeftControl
@@ -52,27 +60,41 @@ public:
             return false;
         }
         session_ = session;
-        stop_chord_.start(stop_gestures, physical_keys_);
+        stop_chord_.start(stop_gestures, physical_keys_, physical_buttons_);
         sink_({session_, nullptr, Boundary::Started, held_, idle_released_, origin});
         idle_released_ = 0;
         return true;
     }
     void input(std::unique_ptr<Event> event, DWORD time = 0) {
-        if (session_) stop_chord_.input(std::move(event), time);
+        if (const auto mouse = dynamic_cast<MouseEvent*>(event.get()))
+            physical_buttons_ = mouse_buttons(physical_buttons_, mouse->ActionType, mouse->wheelRotation);
+        if (session_) {
+            try { stop_chord_.input(std::move(event), time); }
+            catch (const PendingInputError&) { fail(); }
+        }
     }
     void stop(uint64_t session, uint32_t gesture = NoStopGesture, DWORD cutoff = 0) {
         if (!session) return;
         if (session_ != session) return;
-        stop_chord_.finish(gesture, cutoff);
+        try { stop_chord_.finish(gesture, cutoff); }
+        catch (const PendingInputError&) { fail(); return; }
         session_ = 0;
         idle_released_ = 0;
         sink_({session, nullptr, Boundary::Stopped});
     }
 private:
+    void fail() {
+        const auto session = session_;
+        stop_chord_.clear();
+        session_ = 0;
+        idle_released_ = 0;
+        sink_({session, nullptr, Boundary::Failed});
+    }
     Sink sink_;
     uint64_t session_ = 0;
     uint32_t held_ = 0;
     uint32_t idle_released_ = 0;
+    uint32_t physical_buttons_ = 0;
     StopChord::Keys physical_keys_{};
     StopChord stop_chord_;
 };

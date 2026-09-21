@@ -126,7 +126,7 @@ public sealed class RecordingCapture : IDisposable
 
             if (boundary == RecordingBoundary.Failed)
             {
-                var error = new InvalidOperationException("The native recorder could not begin capture.");
+                var error = new InvalidOperationException("The native recorder could not complete capture.");
                 Ended?.Invoke(state.Session, error);
                 state.Session.Fail(error);
             }

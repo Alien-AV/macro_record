@@ -64,6 +64,32 @@ public class RecordingStopCommandTests
     }
 
     [TestMethod]
+    public async Task FailedHotkeyDispatchLeavesOrdinaryRetryAndExactNativeTailIntact()
+    {
+        var transport = new FakeRecordingTransport();
+        using var capture = new RecordingCapture(transport);
+        var session = new RecordingSession(stopGestures: RecordingStopGestures.ControlW);
+        var received = new List<ProtobufInputEvent>();
+        capture.Input += (_, input) => received.Add(input);
+        capture.Start(session);
+        transport.Begin(session);
+        transport.StopError = new InvalidOperationException("Simulated failed native post");
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            capture.Stop(new(RecordingStopGestures.ControlW, session.RequestedAt)));
+        Assert.IsTrue(capture.IsRecording);
+        Assert.IsEmpty(transport.StopCommands);
+        Assert.IsFalse(session.Completion.IsCompleted);
+        transport.StopError = null;
+        Assert.IsTrue(capture.Stop());
+        Assert.IsNull(transport.StopCommands.Single());
+        var tail = new[] { Key(0x11, false, 17), Mouse(31), Key(0x57, false, 47) };
+        foreach (var input in tail) transport.Push(session, input);
+        transport.End(session);
+        await session.Completion;
+        CollectionAssert.AreEqual(tail, received);
+    }
+
+    [TestMethod]
     public void OldBoundaryCannotChangeNewSessionsStopConfiguration()
     {
         var transport = new FakeRecordingTransport();
