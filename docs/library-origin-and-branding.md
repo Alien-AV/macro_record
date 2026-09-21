@@ -68,13 +68,16 @@ development:
 Implementation ranges were independently reviewed, findings fixed, and reviewed
 again before linear integration. Branding is at `493cd74`; library deletion and
 cross-process locking are at `9be81aa` / `101e35b`; origin handling and editor
-follow-ups are at `58ba9a0` / `757b88d` / `13fd8d9`.
+follow-ups are at `58ba9a0` / `757b88d` / `13fd8d9`. The final combined audit
+required codec error normalization for backup/trash recovery at `71d5166`;
+that fix was independently reviewed before integration.
 
 Both full x64 Debug and Release builds pass, with the existing MSB3851 Windows SDK
-target mismatch warning. Each configuration passes **519 managed and 66 native
-tests**. The combined library/origin test covers bulk deletion, restart, restore,
+target mismatch warning. Each configuration passes **520 managed and 66 native
+tests**. The combined library/origin tests cover bulk deletion, restart, restore,
 exact document bytes, saved origin preferences, export/re-import, adoption
-recovery, and undo. Interprocess tests use console-only helpers and temporary
+recovery, undo, and a matching-checksum primary with malformed origin data and a
+healthy backup. Interprocess tests use console-only helpers and temporary
 libraries; compiled-control diagnostics verify invisible HWNDs, cursor placement,
 origin selection, library selection, title/icon delivery, and existing edit-focus
 behavior. No visible app launch, real capture, or real input injection was used.
