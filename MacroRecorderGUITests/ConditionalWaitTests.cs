@@ -162,6 +162,23 @@ public sealed class ConditionalWaitTests
     }
 
     [TestMethod]
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void LibraryWaitCountsUseRealPluralsAndOnlyRecordedDelays(int count)
+    {
+        using var macro = new MacroViewModel("Wait timing", new FakePlaybackEngine());
+        for (var i = 0; i < count; i++) macro.AddEvent(new WaitConditionEvent(Condition()) { TimeSinceLastEvent = 125_000 });
+        var item = RecordingLibraryStore.Describe(Guid.NewGuid(), "Wait timing", false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, macro.SnapshotBytes());
+        Assert.AreEqual(count, item.ConditionalWaitCount);
+        Assert.AreEqual((count * 125_000).ToString(), item.DurationMicroseconds);
+        if (count == 0) Assert.IsFalse(item.Summary.Contains("conditional wait"));
+        else Assert.IsTrue(item.Summary.EndsWith(count == 1 ? "recorded timing + 1 conditional wait" : "recorded timing + 2 conditional waits"));
+        Assert.IsFalse(item.Summary.Contains("(s)"));
+        Assert.IsFalse(item.Summary.Contains("30 seconds"), "The configured timeout is not recorded timing.");
+    }
+
+    [TestMethod]
     public void PreviewCheckpointCutsOffEqualTimePointerInputAndLaterOriginMarkers()
     {
         InputEvent[] inputs = [new WaitConditionEvent(Condition()), new MouseEvent(100, 200, MacroRecorderGUI.Common.MouseActionTypeFlags.Move),

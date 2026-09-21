@@ -12,7 +12,7 @@ public sealed record RecordingLibraryItem(Guid Id, string Name, bool IsDraft, Da
 {
     public int ConditionalWaitCount { get; init; }
     public string Summary => $"{EventCount} events · {(double)BigInteger.Parse(DurationMicroseconds) / 1_000_000:0.###} seconds"
-        + (ConditionalWaitCount > 0 ? $" recorded timing + {ConditionalWaitCount} conditional wait(s)" : "");
+        + (ConditionalWaitCount > 0 ? $" recorded timing + {ConditionalWaitCount} conditional wait{(ConditionalWaitCount == 1 ? "" : "s")}" : "");
     public bool Matches(string? query) => string.IsNullOrWhiteSpace(query)
         || $"{Name} {Summary} {(IsDraft ? "draft" : "recording")} {(HasKeyboard ? "keyboard" : "")} {(HasMouse ? "mouse" : "")}".Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
 }
