@@ -35,13 +35,13 @@
                         <Button x:Name="ClearSelectionButton" Content="Clear selection" Click="ClearSelection_Click"/>
                         <Button x:Name="BatchActionButton" Content="Delete selected" Click="BatchAction_Click" IsEnabled="False"/>
                     </StackPanel>
-                    <TextBlock Text="Use Ctrl to toggle a selection and Shift to select a range. Ctrl+A selects visible results; Escape clears selection."
+                    <TextBlock Text="Click a card to select or deselect it. Use arrow keys to move and Space to toggle. Ctrl+A selects visible results; Escape clears selection."
                         TextWrapping="Wrap" Foreground="{ThemeResource MacroMutedBrush}" FontSize="12"/>
                 </StackPanel>
                 <TextBlock x:Name="OperationMessage" Visibility="Collapsed" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Foreground="{ThemeResource MacroInkBrush}"/>
             </StackPanel>
             <GridView x:Name="Cards" Margin="-10,0" SelectionMode="None" IsItemClickEnabled="True" ItemClick="Cards_ItemClick"
-                SelectionChanged="Cards_SelectionChanged" KeyDown="Cards_KeyDown" AutomationProperties.Name="Recordings"
+                SelectionChanged="Cards_SelectionChanged" KeyDown="Cards_KeyDown" AutomationProperties.Name="Recordings" IsMultiSelectCheckBoxEnabled="True"
                 HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollMode="Disabled">
                 <GridView.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="300"/></ItemsPanelTemplate></GridView.ItemsPanel>

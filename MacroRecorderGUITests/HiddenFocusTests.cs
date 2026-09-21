@@ -90,6 +90,7 @@ public sealed partial class HiddenFocusTests
     private static async Task CheckControls()
     {
         await CheckLibraryControls();
+        CheckEditorScrollbars();
         var engine = new FakePlaybackEngine(); var store = new RunTestLibrary();
         using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
         var macro = vm.ActiveMacro!;

@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
@@ -38,7 +39,8 @@ internal static class ClickAwayFocus
         foreach (var source in route)
         {
             if (ReferenceEquals(source, root)) return true;
-            if (IsTextInput(source) || source is TextBlock { IsTextSelectionEnabled: true } or RichTextBlock { IsTextSelectionEnabled: true }
+            // Scrollbars own pointer gestures even though they are not keyboard tab stops.
+            if (IsTextInput(source) || source is ScrollBar or TextBlock { IsTextSelectionEnabled: true } or RichTextBlock { IsTextSelectionEnabled: true }
                 || source is Control { IsTabStop: true } and not UserControl and not ScrollViewer) return false;
         }
         return false; // Popups and other XamlRoots own their own focus scopes.

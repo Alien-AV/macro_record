@@ -82,7 +82,7 @@ public sealed partial class LibraryView : UserControl
         if (Cards is null) return;
         var selecting = SelectToggle.IsChecked == true;
         if (Cards.SelectedItems.Count > 0) Cards.SelectedItems.Clear();
-        Cards.SelectionMode = selecting ? ListViewSelectionMode.Extended : ListViewSelectionMode.None;
+        Cards.SelectionMode = selecting ? ListViewSelectionMode.Multiple : ListViewSelectionMode.None;
         Cards.IsItemClickEnabled = !selecting && !ShowingTrash;
         SelectionToolbar.Visibility = selecting ? Visibility.Visible : Visibility.Collapsed;
         UpdateSelection();

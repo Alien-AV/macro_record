@@ -4,7 +4,7 @@
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Editor/DesignedEditorResources.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
  <Grid Background="{ThemeResource DesignedEditorSurface}">
   <ScrollViewer x:Name="WorkspaceScroller" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" SizeChanged="Workspace_SizeChanged">
-   <Grid x:Name="Workspace">
+   <Grid x:Name="Workspace" Margin="0,0,20,0">
     <Grid.ColumnDefinitions><ColumnDefinition Width="38*"/><ColumnDefinition Width="62*"/></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <Border x:Name="ListPanel" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="0,0,1,0">
@@ -57,8 +57,8 @@
      </Grid>
     </Border>
     <Border x:Name="InspectorPanel" Grid.Column="1" Padding="26,22">
-     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <Grid x:Name="DetailGrid" RowSpacing="12">
+     <ScrollViewer x:Name="InspectorScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Action inspector">
+      <Grid x:Name="DetailGrid" RowSpacing="12" Margin="0,0,20,0">
        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="150"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <StackPanel Spacing="6">
         <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -131,7 +131,7 @@
         <TextBlock x:Name="TechnicalDetail" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorInk}"/>
         <CheckBox x:Name="ShowSamples" Content="Show path samples" Checked="Samples_Changed" Unchecked="Samples_Changed"/>
         <TextBlock Text="Original events · Ctrl/Shift to select several. Delete uses this raw selection." FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
-        <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" AutomationProperties.Name="Original events in the selected actions"><ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/></DataTemplate></ListView.ItemTemplate></ListView>
+        <ListView x:Name="RawList" Height="180" SelectionMode="Extended" SelectionChanged="Raw_SelectionChanged" KeyDown="Actions_KeyDown" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Original events in the selected actions"><ListView.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" TextWrapping="Wrap" FontSize="13" Foreground="{ThemeResource DesignedEditorInk}"/></DataTemplate></ListView.ItemTemplate></ListView>
         <TextBox x:Name="RawDelay" Header="This event's delay (µs)" Style="{StaticResource DesignedEditorField}"/>
         <StackPanel x:Name="RawMouseFields" Spacing="6">
          <TextBox x:Name="RawX" Header="Raw X (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawY" Header="Raw Y (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/>
