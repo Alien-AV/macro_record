@@ -183,6 +183,7 @@ public sealed partial class HiddenFocusTests
         finally { window?.Close(); temporary.Delete(recursive: true); }
         await CheckLibraryPreferencePublication();
         await CheckPreferenceCommitAfterWindowClose();
+        await CheckPreferenceCommitAfterRejectedClose();
         await CheckStoppedRunCommands();
     }
 
@@ -310,6 +311,99 @@ public sealed partial class HiddenFocusTests
         {
             blocked.Release.TrySetResult();
             if (!Field<bool>(window, "_closed")) { SetLibraryShellField(window, "_allowClose", true); window.Close(); }
+        }
+    }
+
+    private static async Task CheckPreferenceCommitAfterRejectedClose()
+    {
+        var store = new RunTestLibrary();
+        var engine = new FakePlaybackEngine();
+        using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
+        var target = await vm.CreateDraftAsync("Requested");
+        var preferenceWrite = new PreparationBlock();
+        var documentWrite = new PreparationBlock();
+        var keepOpen = new PreparationBlock();
+        var preferences = new RunPreferences(new MemoryRunPreferenceStore { BeforeSave = preferenceWrite.WaitAsync });
+        await preferences.InitializeAsync();
+        var window = new MainWindow(vm, false, preferences);
+        SetLibraryShellField(window, "_initialized", true);
+        SetLibraryShellField(window, "_libraryVisible", true);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        Task? optionsOperation = null, closeOperation = null;
+        try
+        {
+            var library = Field<LibraryView>(window, "Library");
+            library.SetCards([new(target.RecordingId, target.Name, "", "Saved", new([], "", "")) { PreferencesLoaded = true }]);
+            var search = Field<TextBox>(library, "SearchBox");
+            search.Text = "Requested";
+            Field<ToggleButton>(library, "CompactToggle").IsChecked = true;
+            Call(window, "RefreshShell");
+            var cards = Field<GridView>(library, "Cards");
+            cards.ItemsPanel = (ItemsPanelTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+                "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><StackPanel/></ItemsPanelTemplate>");
+            LayoutControl(Field<Grid>(window, "RootGrid"), 1100, 800);
+            await Task.Delay(1);
+            var shown = (LibraryCard)cards.Items.Single();
+            shown.IsSelected = true;
+            Call(library, "UpdateSelection");
+            var before = shown.Playback;
+            var changed = new PlaybackOptions { RepeatUntilStopped = true, Countdown = TimeSpan.Zero, Speed = 2 };
+            optionsOperation = window.ExecuteLibraryCommandAsync(target.RecordingId, false, async (macro, _, lease) =>
+            {
+                macro.AddEvent(new KeyboardEvent(Windows.System.VirtualKey.A, false));
+                await DirectRunPreparation.EditPlaybackOptionsAsync(preferences, lease, macro.RecordingId,
+                    _ => Task.FromResult<PlaybackOptions?>(changed));
+            });
+            await preferenceWrite.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            store.BeforeSave = async () => { await documentWrite.WaitAsync(); throw new IOException("close document save unavailable"); };
+            string? closeFailure = null;
+            closeOperation = window.CloseSafelyAsync(async error =>
+            {
+                closeFailure = error;
+                await keepOpen.WaitAsync();
+                return false;
+            });
+            await documentWrite.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            preferenceWrite.Release.SetResult();
+            await optionsOperation;
+            Assert.IsTrue(Field<bool>(window, "_closing"));
+            Assert.AreEqual(changed, preferences.PlaybackFor(target.RecordingId));
+            Assert.AreEqual(before, shown.Playback, "Closing deliberately defers updates to the current card bindings.");
+            documentWrite.Release.SetResult();
+            await keepOpen.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            Assert.AreEqual("close document save unavailable", closeFailure);
+            keepOpen.Release.SetResult();
+            await closeOperation;
+
+            Assert.IsFalse(Field<bool>(window, "_closing"));
+            Assert.IsFalse(Field<bool>(window, "_closed"));
+            Assert.IsFalse(Field<bool>(window, "_allowClose"));
+            Assert.AreEqual(1L, preferences.Revision);
+            Assert.AreEqual(changed, shown.Playback, "Keep open must publish settings committed while closing without another user action or timer tick.");
+            Assert.AreSame(shown, cards.Items.Single());
+            var summary = LibraryDescendants((GridViewItem)cards.ContainerFromIndex(0)).OfType<TextBlock>()
+                .Single(element => element.Name == "CardPlaybackSummary");
+            Assert.AreEqual(RunSettingsPresentation.PlaybackSummary(true, changed), summary.Text);
+            StringAssert.Contains(shown.PlayLabel, summary.Text);
+            Assert.IsTrue(shown.IsSelected);
+            Assert.AreEqual("Requested", search.Text);
+            Assert.IsTrue(Field<ToggleButton>(library, "CompactToggle").IsChecked);
+            Assert.IsTrue(library.IsEnabled);
+            Assert.IsTrue(Field<Button>(window, "PlaybackOptionsButton").IsEnabled);
+            StringAssert.Contains(Field<TextBlock>(window, "StatusText").Text, "close document save unavailable");
+            Assert.IsTrue(target.IsDirty, "Rejected close must retain the unsaved document.");
+            Assert.AreEqual(0, engine.Starts);
+            Assert.IsFalse(vm.IsRecording);
+            Assert.IsNull(Field<RunController?>(window, "_controller"));
+            Assert.IsFalse(Field<bool>(window, "_mainHiddenForRun"));
+            Assert.IsFalse(IsWindowVisible(hwnd));
+        }
+        finally
+        {
+            preferenceWrite.Release.TrySetResult(); documentWrite.Release.TrySetResult(); keepOpen.Release.TrySetResult();
+            if (optionsOperation is not null) await optionsOperation;
+            if (closeOperation is not null) await closeOperation;
+            SetLibraryShellField(window, "_allowClose", true); window.Close();
         }
     }
 

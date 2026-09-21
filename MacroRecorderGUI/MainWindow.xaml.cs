@@ -665,7 +665,12 @@ public sealed partial class MainWindow : Window
     {
         if (_allowClose) return;
         args.Cancel = true;
-        if (_closing) return;
+        await CloseSafelyAsync(Dialogs.CloseFailureAsync);
+    }
+
+    internal async Task CloseSafelyAsync(Func<string, Task<bool>> chooseRetry)
+    {
+        if (_closed || _closing) return;
         if (ActiveEditor?.TryCommitPendingEdits() == false) return;
         _closing = true;
         try
@@ -679,10 +684,10 @@ public sealed partial class MainWindow : Window
         catch (Exception error)
         {
             SetMessage(error.Message);
-            if (await Dialogs.CloseFailureAsync(error.Message))
+            if (await chooseRetry(error.Message))
             { _closing = false; Close(); }
         }
-        finally { _closing = false; }
+        finally { _closing = false; RefreshShell(); }
     }
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
