@@ -62,3 +62,30 @@ development:
 - Open a legacy macro: its events remain unchanged until explicit origin adoption.
   Verify adoption/undo/recovery, appended captures, negative monitor coordinates,
   and helpful rejection of destinations outside the applicable screen frame.
+
+## Integrated verification (2026-09-20)
+
+Implementation ranges were independently reviewed, findings fixed, and reviewed
+again before linear integration. Branding is at `493cd74`; library deletion and
+cross-process locking are at `9be81aa` / `101e35b`; origin handling and editor
+follow-ups are at `58ba9a0` / `757b88d` / `13fd8d9`.
+
+Both full x64 Debug and Release builds pass, with the existing MSB3851 Windows SDK
+target mismatch warning. Each configuration passes **519 managed and 66 native
+tests**. The combined library/origin test covers bulk deletion, restart, restore,
+exact document bytes, saved origin preferences, export/re-import, adoption
+recovery, and undo. Interprocess tests use console-only helpers and temporary
+libraries; compiled-control diagnostics verify invisible HWNDs, cursor placement,
+origin selection, library selection, title/icon delivery, and existing edit-focus
+behavior. No visible app launch, real capture, or real input injection was used.
+
+Self-contained Release publish was refreshed. Eight runtime/icon files and eight
+compiled XAML files match the build by SHA-256; the published native DLL also
+matches the solution's DLL, and the delivered icon matches the original source.
+Visible appearance and real hardware interaction remain for the user's smoke test.
+
+Deletion is recoverable through persistent Local trash; it is not permanent disk
+purging. Origin-aware geometry editing remains deliberately blocked across capture
+segments, and device counts are not converted into screen pixels implicitly.
+Conditional waits remain an unimplemented proposal in `state-waits-proposal.md`.
+Everything is local; no GitHub writes or pushes were made.

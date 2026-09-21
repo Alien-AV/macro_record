@@ -29,7 +29,11 @@ from the recording library. Playback preferences use the library recording ID;
 renaming preserves them, while a newly imported copy gets its own defaults.
 Exporting `.macro` does not include these local run preferences.
 
-Preferences do not alter macro events, recorded timing or the `.macro` wire format.
+Changing run preferences does not alter captured events or recorded timing.
+Pointer-origin mode is a local preference; actual capture origins belong to the
+versioned `.macro` document. Explicit adoption of a legacy first positioning Move
+is a separate undoable document edit, with a saved recovery copy. Current-pointer
+playback samples after countdown and reuses that origin across repeats.
 Existing recordings without preferences default to speed 1, one repetition and a
 three-second countdown. Invalid or unreadable preference data must not silently
 activate unexpected settings or an infinite loop. Persistence errors stay visible.

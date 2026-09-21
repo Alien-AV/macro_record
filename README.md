@@ -48,7 +48,7 @@ Run both test suites after the Release build (also run by CI):
 dotnet test MacroRecorderGUITests/MacroRecorderGUITests.csproj -c Release -p:Platform=x64 --no-build
 ```
 
-These tests are noninteractive: native playback tests use fake injection sinks and constructed input, and managed lifecycle tests use fake engines. They do not launch the app or inject keyboard/mouse input. Native ABI rejection tests only submit invalid schedules.
+These tests are noninteractive: native playback tests use fake injection sinks and constructed input, and managed lifecycle tests use fake engines and temporary stores. A separate diagnostic constructs compiled UI controls in invisible windows without production startup, hotkey registration, capture, or activation. Tests do not show the app or inject keyboard/mouse input. Native ABI rejection tests only submit invalid schedules.
 
 The native test project compiles the production C++ model/playback sources into its executable, so owning C++ objects stay within one static CRT. Its DLL reference is build-only: ABI tests load that DLL explicitly and pass only borrowed byte buffers and scalar values. Debug selects Debug vcpkg libraries and `/MTd`; Release selects Release libraries and `/MT`. To verify Debug compilation without executing a Debug test process, build the solution with `/p:Configuration=Debug /p:Platform=x64`.
 
@@ -64,9 +64,34 @@ reconstructed screen positions.
 
 Named recordings and drafts are stored under `%LOCALAPPDATA%/MacroRecorder/Recordings`
 with atomic writes and a previous-copy recovery file. The library accepts macros
-up to 64 MB; `.macro` import/export keeps the existing protobuf format. Unsaved
+up to 64 MB. Legacy `.macro` files remain readable; recordings with pointer-origin
+metadata use versioned contents under the same `.macro` extension, which older
+players reject. Unsaved
 changes and failures are shown explicitly, and navigation/close waits for saves.
 An untouched initial document is not saved as an empty library entry.
+
+Use a card's options menu to delete one recording, or **Select recordings** to
+select several and **Delete selected**. Ctrl/Shift select individual items/ranges;
+**Select all visible** covers the current search results. Hidden selections are
+discarded when the search changes. Deletion moves library copies into persistent
+**Local trash**, with last-batch Undo and restore after restart. Imported/exported
+source files are untouched. Dirty documents are saved first; failures and live
+recording/playback targets are protected and reported rather than discarded.
+
+New captures keep starting pointer positions as metadata, not visible input
+actions. Playback options offer **Recorded starting point** or **Current pointer**;
+the latter samples the pointer after countdown and reuses that run origin for
+every repeat. Appended captures retain their own origin boundaries. Raw relative
+movements remain device counts, while actual absolute positions are translated
+within their screen coordinate frame. Invalid or out-of-bounds positions stop
+playback before input is sent.
+
+Legacy recordings are not guessed or trimmed. Playback options can explicitly
+adopt an eligible first absolute Move as origin, with undo and a saved pre-adoption
+recovery copy. The document menu offers explicit **Export legacy .macro**: it
+materializes recorded setup moves for old players and leaves the library document
+unchanged. Ordinary export retains origin metadata and recovery information;
+per-recording playback preferences stay local.
 
 Record and Ctrl+Q start a new automatically named recording after the configured
 countdown. Play and Ctrl+E start the selected recording using its saved settings.
@@ -83,6 +108,8 @@ a controller mouse click.
 See `docs/direct-run-controls.md` for direct-run behavior and safety,
 `docs/action-editor.md` for editing semantics and manual smoke checks, and
 `docs/design-implementation.md` for the visual specification and verification scope.
+See `docs/library-origin-and-branding.md` for combined regression checks and
+`docs/state-waits-proposal.md` for the separate, unimplemented conditional-waits proposal.
 
 ## Unpackaged distribution
 
