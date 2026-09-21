@@ -19,8 +19,16 @@ public sealed record PointerOriginBoundary(int EventIndex, PointerPosition? Posi
     [JsonExtensionData] public Dictionary<string, JsonElement>? Extensions { get; init; }
     internal ProtobufInputEvent SetupEvent()
     {
-        var input = AdoptedEvent is null ? new ProtobufInputEvent { MouseEvent = new() { ActionType = 1, MappedToVirtualDesktop = true } }
-            : ProtobufInputEvent.Parser.ParseFrom(Convert.FromBase64String(AdoptedEvent));
+        ProtobufInputEvent input;
+        try
+        {
+            input = AdoptedEvent is null ? new ProtobufInputEvent { MouseEvent = new() { ActionType = 1, MappedToVirtualDesktop = true } }
+                : ProtobufInputEvent.Parser.ParseFrom(Convert.FromBase64String(AdoptedEvent));
+        }
+        catch (FormatException error)
+        {
+            throw new InvalidDataException("An adopted pointer origin contains invalid Base64 event data.", error);
+        }
         if (input.MouseEvent is not { RelativePosition: false, ActionType: 1, WheelRotation: 0 })
             throw new InvalidDataException("An adopted pointer origin must contain only an absolute Move.");
         input.TimeSinceLastEvent = DelayMicroseconds;

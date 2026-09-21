@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using MacroRecorderGUI.Common;
 using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
@@ -74,6 +76,58 @@ public sealed class LibraryOriginIntegrationTests
             CollectionAssert.AreEqual(legacy, imported.SnapshotBytes());
             Assert.IsTrue(imported.Editor.Undo());
             CollectionAssert.AreEqual(versioned, imported.SnapshotBytes());
+        }
+        finally { temporary.Delete(recursive: true); }
+    }
+
+    [TestMethod]
+    public async Task MalformedAdoptedOriginRecoversThroughBackupAndTrashRestoresBothExactCopies()
+    {
+        var temporary = Directory.CreateTempSubdirectory("macro-library-origin-");
+        try
+        {
+            var directory = Path.Combine(temporary.FullName, "library");
+            var store = new RecordingLibraryStore(directory);
+            var playback = new FakePlaybackEngine();
+            using var macro = new MacroViewModel("Adopted origin", playback);
+            macro.AddEvent(new MouseEvent(-400, 100, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 123 });
+            macro.AddEvent(new MouseEvent(7, -2, MouseActionTypeFlags.Move) { RelativePosition = true, TimeSinceLastEvent = 500 });
+            macro.AdoptFirstPositionAsOrigin();
+            var healthy = macro.SnapshotBytes();
+            var id = Guid.NewGuid();
+            var now = DateTimeOffset.UtcNow;
+            var metadata = RecordingLibraryStore.Describe(id, macro.Name, false, now, now, healthy);
+            var record = new StoredRecording(metadata, healthy);
+            await store.SaveAsync(record); await store.SaveAsync(record);
+            var path = Path.Combine(directory, $"{id:N}.json");
+            var backupBytes = await File.ReadAllBytesAsync(path + ".bak");
+            var document = RecordingDocument.Read(healthy);
+            var malformed = (document with { Origins = [document.Origins[0] with { AdoptedEvent = "not base64!" }] }).Write();
+            var primary = JsonNode.Parse(await File.ReadAllTextAsync(path))!;
+            primary["MacroBytes"] = Convert.ToBase64String(malformed);
+            primary["Sha256"] = Convert.ToHexString(SHA256.HashData(malformed));
+            await File.WriteAllTextAsync(path, primary.ToJsonString());
+            var primaryBytes = await File.ReadAllBytesAsync(path);
+
+            var recovered = await store.LoadAsync(id);
+            Assert.IsTrue(recovered.Recovered);
+            CollectionAssert.AreEqual(healthy, recovered.MacroBytes);
+            var deleted = await store.DeleteAsync(id);
+            Assert.AreEqual(metadata, deleted.Metadata); Assert.IsEmpty(deleted.Warnings);
+            Assert.IsFalse(File.Exists(path)); Assert.IsFalse(File.Exists(path + ".bak"));
+            store = new RecordingLibraryStore(directory);
+            Assert.IsEmpty((await store.ListAsync()).Items);
+            Assert.AreEqual(metadata, (await store.ListTrashAsync()).Items.Single().Metadata);
+            await store.RestoreAsync(id);
+            CollectionAssert.AreEqual(primaryBytes, await File.ReadAllBytesAsync(path));
+            CollectionAssert.AreEqual(backupBytes, await File.ReadAllBytesAsync(path + ".bak"));
+            recovered = await store.LoadAsync(id);
+            Assert.IsTrue(recovered.Recovered);
+            CollectionAssert.AreEqual(healthy, recovered.MacroBytes);
+            var error = Assert.Throws<InvalidDataException>(() => RecordingDocument.Read(malformed));
+            Assert.IsInstanceOfType<FormatException>(error.InnerException);
+            StringAssert.Contains(error.Message, "Base64");
+            Assert.AreEqual(0, playback.Starts); Assert.AreEqual(0, playback.Aborts);
         }
         finally { temporary.Delete(recursive: true); }
     }
