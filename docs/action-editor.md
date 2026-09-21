@@ -2,20 +2,23 @@
 
 The editor is a WinUI view over the original event objects. Opening a macro,
 grouping input, selecting a path, and previewing do not modify its bytes, event
-order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
+order, or delays. Existing input fields retain their meaning; conditional waits
+use an explicit payload and versioned document contents that old players reject.
 
 ## Selection and editing
 
 - The action list supports Ctrl/Shift multi-selection. The inspector changes
-  the primary selected action. Add and Delete live above the action list;
+  the primary selected action. Add stays anchored beside the action list;
   its context menu also offers these commands and Clear all. Clear all is
   also available from Add. Delete removes the selected input.
-- Expanding Exact captured input enters raw selection and selects its first row. Raw rows
+- Opening Exact input enters its dedicated detail view. Raw rows
   cover all selected actions. Ctrl/Shift selects an exact raw subset. The
   label above the list and Delete's accessible name identify the current scope.
-  Capture/refresh never broadens that subset. Collapsing Exact captured input returns to
-  the highlighted action selection. Undo can reopen a restored raw selection.
-- Wait-before changes only the first event's delay. Duration scales the other
+  Capture/refresh never broadens that subset. Returning to action details preserves
+  the raw subset and unfinished raw drafts for reopening. Delete in the sequence
+  targets actions; Delete in Exact input targets raw events. A hidden remembered
+  raw subset never becomes the sequence's deletion target.
+- Pause before changes only the first event's delay. Execution time scales the other
   delays using cumulative integer arithmetic, preserving their exact requested
   total, count, and order. A zero-duration action distributes a new duration
   evenly across its internal intervals. A single event has no internal duration.
@@ -26,7 +29,8 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   these drafts before save, navigation or playback snapshots. Invalid drafts
   retain their text and explanation and block commands or selection changes
   that would otherwise discard them. Exact raw-input editing still requires
-  its explicit Apply command; dialog options and rename still require Apply/Save.
+  its explicit Apply or Discard command; pending raw edits block commands instead
+  of being silently bypassed. Dialog options and rename still require Apply/Save.
 - Action rows are numbered by group, with intent names, icons and concise
   incomplete warnings. Raw event counts, coordinate representation and original
   indices are available in row tooltips and Exact captured input. The macro heading shows
@@ -99,12 +103,12 @@ order, or delays. `.macro` protobuf fields and the native ABI are unchanged.
   View timers and subscriptions stop on unload/disposal. Capture projection and
   action selection append incrementally; eligibility and frame bounds are cached.
   Visual refreshes are batched to 100 ms. A redraw before a pending refresh defers
-  until current selection references are restored under the refresh guard. Closed raw
-  drilldowns retain no rows; open ones reuse rows during capture. Typed inspector
+  until current selection references are restored under the refresh guard. Exact
+  input retains selection and drafts across view navigation. Typed inspector
   drafts survive capture refreshes. Auto-applying fields retain their original
   input identity and commit before action selection changes or Add commands;
   they cannot be applied to a newly selected action instead. Explicit raw drafts
-  survive Add commands and other auto-applied edits while their event remains selected.
+  must be applied or discarded before Add and other model-changing commands.
   Draft tracking uses synchronous
   [WinUI TextChanging](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.textbox.textchanging?view=windows-app-sdk-1.8),
   so programmatic field population cannot become an asynchronous false draft.
@@ -137,16 +141,23 @@ even when customization support reports true. No custom chrome or undocumented
 Windows 10 API is used.
 
 The approved design uses a two-column editor: a compact action sequence on the
-left and selected-action details with an integrated path on the right. Narrow
-windows stack these panels; short windows keep content scrollable. A separate
+left and selected-action details with an integrated path on the right. The panes
+have bounded independent scrolling, without an outer scrolling page. Narrow
+windows use Sequence/Details navigation and preserve drafts and selection. Exact
+input is a dedicated detail view with an independently bounded event list. A separate
 preview view contains the path, current/next action, held input, segmented
 timeline and scrubber. Its transport never calls the real playback engine.
 Position fields appear only when edits are safe; otherwise a reason is shown.
-Wait-before and execution duration are visible together with their total and
-retain independent exact values. Single-event actions show only their wait.
-There is no synthetic
-standalone wait input: waits remain delays on recorded events, and a trailing
-wait with no next event is not representable in the existing file format.
+Pause before and Execution time retain independent exact values. Single-event
+actions have no internal execution duration. Wait until is a separate conditional
+action, including at the end of a recording; its unknown duration is not the
+timeout. Ordinary fixed pauses remain delays before input events.
+
+Add offers Click, Shortcut, Pointer movement, and Wait until. Mouse/keyboard raw
+construction lives under Advanced. Authored gestures are balanced and undoable;
+they require released inputs at the insertion boundary and do not rewrite
+captured input. One authored pointer movement is an instantaneous report in an
+explicit coordinate frame, not an interpolated path or reconstructed trajectory.
 
 ## User smoke checks after integration
 
@@ -189,17 +200,17 @@ The user will perform these smoke checks after integration:
    hidden position fields with a reason, and no automatic conversion. If testing
    Convert path estimate inside Exact captured input, acknowledge its assumptions, inspect changed raw values,
    and Undo before saving. Incomplete input must remain conservative.
-8. Ctrl/Shift-select actions, expand Exact captured input, select a raw subset (including
+8. Ctrl/Shift-select actions, open Exact input, select a raw subset (including
    across selected actions), and remove it. Exactly the visible selected raw
-   rows should disappear; Undo restores them. Collapse Exact captured input and confirm the
+   rows should disappear; Undo restores them. Return to action details and confirm the
    label above the list and Delete tooltip return to actions. Press Delete inside a numeric text
    field: only text should be deleted.
 9. Record a dense stream while typing an unapplied timing/raw draft and while
-   selecting raw rows. The draft and raw subset must survive appends. Collapse
-   Exact captured input and verify capture remains responsive. Then stop recording.
-   With an unapplied raw-field draft, use Add mouse and Add keyboard
-   while the same first input remains selected; verify the raw draft survives.
-   Valid auto-applying timing drafts should commit before those commands.
+   selecting raw rows. The draft and raw subset must survive appends and switching
+   between Exact input and action details. Then stop recording. With an unapplied
+   raw-field draft, Add and Play must wait for explicit Apply/Discard, preserving
+   the draft and showing an explanation. Valid auto-applying action timing drafts
+   still commit before commands.
 10. Edit, append a recording, and Undo: later capture input must remain. Edit,
     then load/replace/clear externally or apply recording auto-delay: stale undo
     must be unavailable. Confirm clear-before-recording session rollover still
@@ -245,7 +256,8 @@ capture/session/playback tests remain in place. Presentation tests also cover
 compact versus exact timing, sequential group numbering, warning completion,
 scroll intent, centered viewport mapping/inversion, direction-cue bounds and
 frame gaps, responsive panel sizes, native caption palette reset/restoration,
-and surviving action/raw drafts after manual insertion rebuilds the projection.
+and retaining action/raw drafts across view navigation and projection regrouping.
+Add commands require pending raw edits to be applied or discarded first.
 The native test suite uses fake sinks; no native changes are required here.
 
 `DesktopThemeMonitorTests` also exercises the production settings API bindings:

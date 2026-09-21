@@ -1,15 +1,15 @@
 # Interaction rework proposal
 
-Status: full proposal approved for implementation on 2026-09-21. Delivery and
-verification are tracked in ux-rework-delivery.md. The selection, stop-chord,
+Status: fully implemented, independently reviewed and verified on 2026-09-21.
+Delivery evidence is in ux-rework-delivery.md. The selection, stop-chord,
 scroll-access, and first window/pixel wait implementation were completed at
-37e358d; this pass implements the broader interaction model below.
+37e358d; this pass implemented the broader interaction model below.
 
-## Why the current workflow feels awkward
+## Problems this rework addresses
 
-The visual shell describes a task library, but many interactions still expose the
-underlying input debugger. The user records a task once and replays it often;
-opening an editor should not be necessary merely to run a saved recording.
+The following problems motivated the approved proposal. The user records a task
+once and replays it often; opening an editor should not be necessary merely to run
+a saved recording.
 
 - Library cards open the editor but offer no direct Play action. Explicit Select
   recordings mode used Extended selection: ordinary clicks replaced the selection
@@ -32,7 +32,7 @@ These are interaction problems, not a reason to discard the approved appearance
 or change the UI framework. Recent direct Record/Play, remembered preferences,
 origin metadata, and recovery changes already establish useful foundations.
 
-## Proposed interaction model
+## Accepted interaction model
 
 ### Library: choose a task, then run or edit
 
@@ -49,8 +49,7 @@ card-body opening and explicit Play separate from selection rather than silently
 changing their meaning when a batch exists. Escape clears the batch without
 opening or running anything. Keep selection scope explicit under search; do not
 silently delete hidden items. Restore remains available through Undo and Local
-trash. This removes a mode in the proposed rework; the currently approved bug fix
-retains explicit selection mode and makes its ordinary clicks work correctly.
+trash. This removes the explicit selection mode retained by the earlier bug fix.
 
 Offer a compact list view if a growing library makes large path cards wasteful.
 Thumbnails remain optional recognition aids, not the purpose of the library.
@@ -104,7 +103,7 @@ During execution, show only truthful state: countdown, playing, waiting, stopped
 or a specific failure. Stop stays prominent. For waits, show the condition and time
 remaining, not an invented percentage-complete estimate.
 
-## Suggested implementation order after approval
+## Implementation order
 
 1. Direct library Play and checkbox-first selection, with no accidental execution.
 2. Stable editor panes and a dedicated Exact input view, preserving draft ownership.

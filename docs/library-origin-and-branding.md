@@ -21,8 +21,8 @@
   missing or incompatible origins rather than silently misplaying them.
 - Keep the `.macro` extension. Version new document contents so older players
   reject unsupported semantics; continue importing legacy `.macro` files.
-- State-change waits remain a separate planning exercise, not implementation
-  scope for this pass.
+- State-change waits were outside this original pass. Window/pixel waits are
+  now implemented; text, memory and OCR providers remain future work.
 
 ## Verification and coordination
 
@@ -49,7 +49,7 @@ recovery must retain a coherent document. Preview never sends setup input.
 The following are user-run smoke checks, not permission to launch the app during
 development:
 
-- Select several library cards, use Ctrl/Shift and Select all visible, narrow the
+- Check several library cards independently, use Select all visible, narrow the
   search, and verify the count and delete operation cover only visible selections.
   Restore a batch through Undo and through Local trash after restarting.
 - Confirm normal clicks still open recordings and imported/exported source files
@@ -90,5 +90,7 @@ Visible appearance and real hardware interaction remain for the user's smoke tes
 Deletion is recoverable through persistent Local trash; it is not permanent disk
 purging. Origin-aware geometry editing remains deliberately blocked across capture
 segments, and device counts are not converted into screen pixels implicitly.
-Conditional waits remain an unimplemented proposal in `state-waits-proposal.md`.
+Window/pixel conditional waits are implemented; `state-waits-proposal.md` records
+their semantics and future text/memory/OCR plans. `ux-rework-delivery.md` records
+the subsequent full interaction rework.
 Everything is local; no GitHub writes or pushes were made.

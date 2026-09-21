@@ -6,6 +6,9 @@
   start its cancellable countdown. No name or settings form is required.
 - Play and Ctrl+E immediately prepare playback of the selected recording using
   its saved speed, repeat and countdown settings. No confirmation form is required.
+- Library cards and compact rows have their own explicit Play/options commands,
+  bound to that recording's stable ID. A checkbox batch is not a playback target.
+  Opening a card remains editing, even while other checkboxes are selected.
 - Adjacent options controls change preferences without starting a run. Cancel
   discards changes. Recording defaults are shared; playback preferences belong to
   the recording and survive switching documents and restarting the application.
@@ -23,6 +26,8 @@ Every requested run owns cancellation before its first asynchronous operation,
 including preference/library loading and saves. Stop or close prevents a pending
 continuation from creating a controller or beginning capture/playback. The selected
 recording and run settings must remain consistent across preparation awaits.
+Library commands do not replace the active editor merely to load their target;
+unfinished raw edits and modal editor commands still gate execution/options.
 
 Preferences live in `%LOCALAPPDATA%/MacroRecorder/run-preferences.json`, separate
 from the recording library. Playback preferences use the library recording ID;

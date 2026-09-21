@@ -12,11 +12,13 @@ framework; the approved appearance uses intentionally styled controls.
   Record. Preserve native caption buttons, dragging and resizing; match
   the title bar to the active theme.
 - A two-column editor: readable action sequence on the left; selected action,
-  pointer path or input visualization, timing/position fields, and expandable
-  exact input on the right. Avoid a separate permanent third inspector column.
-- Searchable library cards with real names, summaries and path thumbnails.
+  pointer path or input visualization, timing/position fields, and a dedicated
+  Exact input detail view on the right. Bound pane scrolling; use Sequence/Details
+  navigation at narrow widths. Avoid a separate permanent third inspector column.
+- Searchable library cards or compact list rows with real names and summaries,
+  independent selection checkboxes, explicit Play, and adjacent playback options.
 - A separate visual-preview mode with current/next action, a scrubber and
-  action timeline. Preview never records or sends input.
+  action timeline. Preview is secondary to Play and never records or sends input.
 - Direct Record and Play actions with remembered settings, adjacent options
   controls, and a compact run controller with state, elapsed time and Stop.
   Playback is clearly identified as controlling other apps. Options Apply/Cancel
@@ -106,5 +108,6 @@ the user's manual smoke test. No recorder was launched or real input captured/se
 
 Current boundaries: appearance and emergency-shortcut selections are session-local;
 use the recording stop hotkey to avoid capturing a controller click. Preview uses
-captured timing. Relative motion and standalone trailing waits retain the existing
-format limitations. Native caption affordances remain Windows-controlled.
+captured timing. Relative motion and standalone trailing fixed delays retain the
+existing format limitations; trailing conditional waits are supported. Native
+caption affordances remain Windows-controlled.

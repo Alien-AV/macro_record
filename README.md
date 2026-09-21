@@ -70,9 +70,14 @@ players reject. Unsaved
 changes and failures are shown explicitly, and navigation/close waits for saves.
 An untouched initial document is not saved as an empty library entry.
 
-Use a card's options menu to delete one recording, or **Select recordings** to
-select several and **Delete selected**. Each click toggles an item independently;
-keyboard users can move with the arrow keys and toggle with Space.
+Each library card has an explicit **Play** action using its saved settings and
+adjacent playback options that do not start a run. Opening the card edits the
+recording; selecting its checkbox never starts playback or changes what opening
+does. **Compact list** offers the same commands without large thumbnails.
+
+Use the always-visible checkboxes to select recordings, then **Delete selected**
+in the contextual toolbar. A card's options menu can delete just that recording.
+Space toggles a focused checkbox; Escape clears the batch without opening a card.
 **Select all visible** covers the current search results. Hidden selections are
 discarded when the search changes. Deletion moves library copies into persistent
 **Local trash**, with last-batch Undo and restore after restart. Imported/exported
@@ -94,6 +99,27 @@ materializes recorded setup moves for old players and leaves the library documen
 unchanged. Ordinary export retains origin metadata and recovery information;
 per-recording playback preferences stay local. Legacy export rejects conditional
 waits rather than dropping them.
+
+### Editing actions
+
+The sequence and selected action details occupy independent bounded panes. At
+narrow widths, **Sequence** and **Details** switch views without dropping the
+selection or drafts; F6 switches keyboard focus between the panes. **Exact input**
+opens a dedicated view with its own event
+list; returning to the action retains unfinished raw edits. Raw changes remain
+explicit: **Apply** or **Discard** them before running or leaving the recording.
+
+The primary **Add** menu offers **Click**, **Shortcut**, **Pointer movement**, and
+**Wait until**. New actions are inserted after the selected action (at the
+beginning when nothing is selected), and Undo restores the previous input.
+Clicks use the current pointer position; shortcuts contain balanced key presses
+and releases, not inferred text. Pointer movement is one explicit report in
+screen pixels or relative device counts, not an invented interpolated path.
+Exact mouse and keyboard event construction is under **Advanced**.
+
+**Pause before** is a fixed delay; **Execution time** is time within an action;
+**Wait until** observes a condition whose duration is not known in advance.
+Precise raw values and technical diagnostics remain available in Exact input.
 
 ### Wait until
 

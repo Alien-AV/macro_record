@@ -95,6 +95,7 @@ public sealed partial class HiddenFocusTests
     private static async Task CheckControls()
     {
         await CheckLibraryControls();
+        await CheckUxLibraryEditorIntegration();
         CheckEditorScrollbars();
         CheckEditorNavigationAndAuthoring();
         var engine = new FakePlaybackEngine(); var store = new RunTestLibrary();
