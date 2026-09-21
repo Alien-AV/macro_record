@@ -13,7 +13,16 @@ public sealed partial class MacroTabContent
         : ReferenceEquals(control, DestinationY) ? ActionField.DestinationY : null;
 
     /// <summary>Called before disabling, saving, navigating or snapshotting this editor.</summary>
-    public bool TryCommitPendingEdits() => CommitCondition() && CommitActionFields();
+    public bool TryCommitPendingEdits()
+    {
+        if (_modalConditionEditor is { } modal)
+        {
+            modal.CancelTest();
+            Status = "Close the wait dialog before starting another command.";
+            return false;
+        }
+        return CommitCondition() && CommitActionFields();
+    }
 
     private bool CommitActionFields(ActionField? field = null, bool refresh = true)
     {

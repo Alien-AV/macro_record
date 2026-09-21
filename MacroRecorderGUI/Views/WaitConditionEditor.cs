@@ -14,6 +14,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     private readonly WaitRunner _runner;
     private bool _populating = true, _disposed;
     private CancellationTokenSource? _test;
+    private long _testGeneration;
     public bool IsDirty { get; private set; }
     public event Action? Changed;
     internal readonly ComboBox Source, Trigger, WindowRule, Coordinates, TitleRule;
@@ -112,13 +113,18 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     public void CancelTest()
     {
         if (_test is { } test)
+        {
+            _testGeneration++;
+            if (!_disposed) Feedback.Text = "Condition test cancelled.";
             _ = test.CancelAsync().ContinueWith(task => _ = task.Exception, CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
     }
     internal async Task TestAsync()
     {
         if (_disposed) return;
         if (_test is not null) { CancelTest(); return; }
+        var generation = ++_testGeneration;
         try
         {
             var condition = Read();
@@ -127,14 +133,16 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
             Feedback.Text = "Testing this condition only…";
             var duration = TimeSpan.FromMicroseconds(Math.Min(condition.TimeoutUs, 5_000_000));
             var result = await _runner.RunAsync(condition, duration, cancel.Token, progress => DispatcherQueue.TryEnqueue(() =>
-            { if (!_disposed && ReferenceEquals(_test, cancel)) Feedback.Text = $"{progress.Remaining.TotalSeconds:0.0}s remaining · {progress.Observation}"; }));
-            if (!_disposed) Feedback.Text = (result.Satisfied ? "Satisfied. " : "Not satisfied. ") + result.Detail;
+            { if (CurrentTest(cancel, generation)) Feedback.Text = $"{progress.Remaining.TotalSeconds:0.0}s remaining · {progress.Observation}"; }));
+            if (CurrentTest(cancel, generation)) Feedback.Text = (result.Satisfied ? "Satisfied. " : "Not satisfied. ") + result.Detail;
         }
-        catch (OperationCanceledException) { if (!_disposed) Feedback.Text = "Condition test cancelled."; }
+        catch (OperationCanceledException) { if (!_disposed && generation == _testGeneration) Feedback.Text = "Condition test cancelled."; }
         catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
-        { Feedback.Text = error.Message; }
+        { if (!_disposed && generation == _testGeneration) Feedback.Text = error.Message; }
         finally { _test = null; _testButton.Content = "Test condition · up to 5 s"; }
     }
+    private bool CurrentTest(CancellationTokenSource test, long generation) =>
+        !_disposed && generation == _testGeneration && ReferenceEquals(_test, test) && !test.IsCancellationRequested;
     private static ulong Duration(string text, decimal multiplier)
     {
         var value = decimal.Parse(text, NumberStyles.Number, CultureInfo.InvariantCulture) * multiplier;

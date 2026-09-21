@@ -110,7 +110,7 @@ public sealed partial class HiddenFocusTests
         {
             Assert.IsFalse(IsWindowVisible(hwnd));
             WindowBrandingTests.CheckHiddenWindows(window);
-            await CheckWaitControls();
+            await CheckWaitControls(window);
             typeof(MainWindow).GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(window, true);
             var root = Field<Grid>(window, "RootGrid");
             root.Measure(new Windows.Foundation.Size(1200, 800));

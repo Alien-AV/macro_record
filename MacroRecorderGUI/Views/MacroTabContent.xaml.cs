@@ -109,6 +109,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void Detach()
     {
+        _modalConditionEditor?.Dispose(); _modalConditionEditor = null;
         _conditionEditor?.Dispose(); _conditionEditor = null; _conditionOwner = null; WaitConditionHost.Content = null;
         StopPreview(); _refreshTimer.Stop(); CancelDrag();
         if (_editor is not null) _editor.Invalidated -= Editor_Invalidated;
@@ -568,7 +569,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void UpdateCursor()
     {
         if (_editor is null) return;
-        var p = _editor.Projection.PointerAt(_previewPosition.Time)?.Position;
+        var p = _previewFrame?.Pointer?.Position;
         if (_cursor is not null)
         {
             _cursor.Visibility = IsPreviewMode && p?.Space == _space ? Visibility.Visible : Visibility.Collapsed;
@@ -589,7 +590,13 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (!TryCommitPendingEdits()) return;
         if (!IsPreviewMode) IsPreviewMode = true;
         if (_previewTimer.IsEnabled) { StopPreview(); return; }
-        if (_editor is null || _editor.Projection.TotalTime == 0) return;
+        if (_editor is null) return;
+        if (_editor.Projection.TotalTime == 0)
+        {
+            if (_preview?.Checkpoint(_previewPosition.Time) is null) _preview?.ResetCheckpoints();
+            UpdatePreviewFrame(); DrawPath();
+            return;
+        }
         if (_previewPosition.Time >= _editor.Projection.TotalTime) { _previewPosition.SeekTime(0, _editor.Projection.TotalTime); _preview?.ResetCheckpoints(); }
         _previewStart = _previewPosition.Time; _previewWatch.Restart(); _previewTimer.Start();
         UpdatePreviewFrame(); DrawPath();

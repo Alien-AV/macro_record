@@ -3,12 +3,14 @@ using MacroRecorderGUI.Event;
 using MacroRecorderGUI.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Views;
 
 public sealed partial class MacroTabContent
 {
     private WaitConditionEditor? _conditionEditor;
+    private WaitConditionEditor? _modalConditionEditor;
     private WaitConditionEvent? _conditionOwner;
 
     private void UpdateConditionInspector(RecordedAction? action, bool reset)
@@ -59,12 +61,32 @@ public sealed partial class MacroTabContent
     private async void AddWait_Click(object sender, RoutedEventArgs e) => await AddWaitAsync(replaceDelay: false);
     private async void ReplaceDelay_Click(object sender, RoutedEventArgs e) => await AddWaitAsync(replaceDelay: true);
 
+    private Action<WaitCondition>? PrepareWaitInsertion(bool replaceDelay)
+    {
+        if (_editor is null || _macro is null) return null;
+        var editor = _editor;
+        var macro = _macro;
+        var anchor = Selected?.First;
+        if (!TryCommitPendingEdits()) return null;
+        if (replaceDelay && anchor is null) { Status = "Select the action whose fixed delay should be replaced."; return null; }
+        return condition =>
+        {
+            if (_disposed || !ReferenceEquals(_editor, editor) || !ReferenceEquals(_macro, macro))
+                throw new ArgumentException("The recording is no longer open in this editor. Reopen the wait command.");
+            // Draft commits and deferred refreshes replace projected actions. The
+            // selected event remains the command's anchor throughout the dialog.
+            RefreshEditor();
+            var selected = anchor is null ? null : editor.Projection.ActionAt(macro.Events.IndexOf(anchor))
+                ?? throw new ArgumentException("The selected action is no longer available. Reopen the wait command.");
+            if (replaceDelay) editor.ReplaceDelayWithWait(selected!, condition); else editor.InsertWait(selected, condition);
+        };
+    }
+
     private async Task AddWaitAsync(bool replaceDelay)
     {
-        if (_editor is null || _macro is null || !TryCommitPendingEdits()) return;
+        var apply = PrepareWaitInsertion(replaceDelay);
+        if (apply is null) return;
         var editor = _editor;
-        var selected = Selected;
-        if (replaceDelay && selected is null) { Status = "Select the action whose fixed delay should be replaced."; return; }
         using var fields = new WaitConditionEditor(WaitValidation.NewWindow());
         fields.ApplyStyles((Style)Resources.MergedDictionaries[0]["DesignedEditorField"], (Style)Resources.MergedDictionaries[0]["DesignedEditorButton"]);
         var dialog = new ContentDialog
@@ -79,13 +101,32 @@ public sealed partial class MacroTabContent
             try
             {
                 var condition = fields.Read();
-                if (replaceDelay) editor.ReplaceDelayWithWait(selected!, condition); else editor.InsertWait(selected, condition);
+                apply(condition);
             }
             catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
             { fields.Feedback.Text = error.Message; args.Cancel = true; }
         };
-        await dialog.ShowAsync();
-        if (!_disposed && ReferenceEquals(_editor, editor)) RefreshEditor(resetDrafts: true);
+        BeginWaitDialog(fields);
+        ContentDialogResult result;
+        try { result = await dialog.ShowAsync(); }
+        finally { EndWaitDialog(fields); }
+        FinishWaitInsertion(editor!, result);
+    }
+
+    private void BeginWaitDialog(WaitConditionEditor fields)
+    {
+        if (_disposed || _modalConditionEditor is not null) throw new InvalidOperationException("A wait dialog cannot be opened here.");
+        _modalConditionEditor = fields;
+    }
+    private void EndWaitDialog(WaitConditionEditor fields)
+    {
+        fields.CancelTest();
+        if (ReferenceEquals(_modalConditionEditor, fields)) _modalConditionEditor = null;
+    }
+
+    private void FinishWaitInsertion(ActionEditor editor, ContentDialogResult result)
+    {
+        if (!_disposed && ReferenceEquals(_editor, editor)) RefreshEditor(resetDrafts: result == ContentDialogResult.Primary);
     }
 
     private void SimulateCondition_Click(object sender, RoutedEventArgs e)
