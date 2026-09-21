@@ -9,7 +9,7 @@ public sealed record RawEventRow(InputEvent Input, int Index)
         ? $"{m.ActionName} · ({m.X}, {m.Y}) {(m.RelativePosition ? "counts" : "px")}" : Input is KeyboardEvent k ? $"{k.KeyName} {(k.KeyUp ? "up" : "down")}" : Input is WaitConditionEvent w ? w.Description : "Input");
 }
 
-/// <summary>The raw drilldown exists only while expanded; capture appends reuse existing row objects.</summary>
+/// <summary>Exact input retains row identities across view switches; capture appends reuse existing rows.</summary>
 public sealed class RawEventRows : ObservableCollection<RawEventRow>
 {
     private RecordedAction[] _actions = [];

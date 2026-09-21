@@ -1,4 +1,5 @@
 using System.Globalization;
+using MacroRecorderGUI.Editor;
 using MacroRecorderGUI.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -31,7 +32,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         _template = condition.Clone();
         _runner = runner ?? WaitRunner.Desktop;
         Spacing = 10;
-        Source = Choice("Condition source", ["Window", "Pixel"], condition.Pixel is null ? 0 : 1);
+        Source = Choice("Wait until", ["A window matches", "A pixel matches"], condition.Pixel is null ? 0 : 1);
         Trigger = Choice("Trigger", ["Is true", "Becomes true", "Changes from starting value", "New matching window"], (int)condition.Trigger);
         Children.Add(_sentence); Children.Add(Source);
         WindowRule = Choice("Window condition", ["Exists", "Visible", "Foreground", "Absent"], (int)(condition.Window?.Test ?? WindowTest.Visible));
@@ -58,10 +59,10 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         Timeout = Field("Timeout · seconds (stop on failure)", (condition.TimeoutUs / 1_000_000m).ToString(CultureInfo.InvariantCulture));
         Stability = Field("Stable for · milliseconds", (condition.StableForUs / 1000m).ToString(CultureInfo.InvariantCulture));
         Poll = Field("Polling interval · milliseconds", (condition.PollIntervalUs / 1000m).ToString(CultureInfo.InvariantCulture));
-        Children.Add(Timeout); Children.Add(Stability);
         var advanced = new StackPanel { Spacing = 8 };
+        advanced.Children.Add(Timeout); advanced.Children.Add(Stability);
         advanced.Children.Add(Trigger); advanced.Children.Add(Poll); advanced.Children.Add(Dpi);
-        Children.Add(new Expander { Header = "Advanced observation", Content = advanced, HorizontalAlignment = HorizontalAlignment.Stretch,
+        Children.Add(new Expander { Header = "Timeout, stability and advanced options", Content = advanced, HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch });
         Children.Add(_help); Children.Add(_testButton); Children.Add(Feedback);
         Source.SelectionChanged += (_, _) => UpdateFields(); Coordinates.SelectionChanged += (_, _) => UpdateFields(); Trigger.SelectionChanged += (_, _) => UpdateFields();
@@ -168,7 +169,8 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         Dpi.Visibility = pixel && Coordinates.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
         Rgb.Visibility = NotEqual.Visibility = Trigger.SelectedIndex == (int)WaitTrigger.Changes ? Visibility.Collapsed : Visibility.Visible;
         _help.Text = pixel ? "Samples one visible screen pixel. Covered or minimized client targets are unavailable. Logical offsets scale with DPI, not window size."
-            : "Specify at least one target field. Multiple matches need a narrower selector or Allow any matching window. Waiting does not focus the window.";
+            : "Specify at least one target field. Multiple matches need a narrower selector or Allow any matching window.";
+        _help.Text += " Waiting does not focus a window or redirect subsequent input. Timeout or an unavailable target stops playback.";
         if (Trigger.SelectedIndex == (int)WaitTrigger.Changes)
             _help.Text += pixel ? " Changes compares with the first valid runtime pixel, using the channel tolerance."
                 : " Changes requires Visible or Foreground and a single target; Exists and Absent are not supported for this trigger.";
@@ -180,7 +182,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     }
     private void UpdateSentence()
     {
-        try { _sentence.Text = WaitValidation.Describe(Read()); }
+        try { _sentence.Text = WaitConditionText.Describe(Read()); }
         catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
         { _sentence.Text = "Complete the condition fields below. " + error.Message; }
     }

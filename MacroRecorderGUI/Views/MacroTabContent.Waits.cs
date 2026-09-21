@@ -66,7 +66,7 @@ public sealed partial class MacroTabContent
         if (_editor is null || _macro is null) return null;
         var editor = _editor;
         var macro = _macro;
-        var anchor = Selected?.First;
+        var anchor = (replaceDelay ? Selected : ActionsList.SelectedItems.OfType<RecordedAction>().OrderBy(a => a.Start).LastOrDefault())?.First;
         if (!TryCommitPendingEdits()) return null;
         if (replaceDelay && anchor is null) { Status = "Select the action whose fixed delay should be replaced."; return null; }
         return condition =>
@@ -115,7 +115,7 @@ public sealed partial class MacroTabContent
 
     private void BeginWaitDialog(WaitConditionEditor fields)
     {
-        if (_disposed || _modalConditionEditor is not null) throw new InvalidOperationException("A wait dialog cannot be opened here.");
+        if (_disposed || _modalConditionEditor is not null || _authoringDialogOpen) throw new InvalidOperationException("An Add action dialog cannot be opened here.");
         _modalConditionEditor = fields;
     }
     private void EndWaitDialog(WaitConditionEditor fields)

@@ -48,7 +48,7 @@ public sealed partial class MacroTabContent
         PreviewStep.Text = a is null ? "NO ACTIONS" : $"ACTION {a.Number:D2} OF {_editor.Projection.Actions.Count}";
         var checkpoint = _preview.Checkpoint(_previewPosition.Time);
         SimulateCondition.Visibility = checkpoint is null ? Visibility.Collapsed : Visibility.Visible;
-        PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Wait before action" : a.Name;
+        PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Pause before action" : a.Name;
         PreviewDescription.Text = checkpoint is not null ? checkpoint.Description + " · No desktop observation. Choose Simulate satisfied to continue."
             : a is null ? "Record or add input to preview a sequence."
             : _previewFrame.Waiting ? $"{TimeText.Human(a.StartTime + a.Wait - _previewPosition.Time)} until {a.Name}"
@@ -94,7 +94,7 @@ public sealed partial class MacroTabContent
                 Background = BrushResource(segment.Waiting ? "WaitTrack" : "Track"),
                 BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(3)
             };
-            var name = segment.Setup ? "Pointer setup wait" : segment.Waiting ? $"Wait before action {segment.FirstAction + 1}"
+            var name = segment.Setup ? "Pointer setup pause" : segment.Waiting ? $"Pause before action {segment.FirstAction + 1}"
                 : segment.FirstAction == segment.LastAction ? $"Action {segment.FirstAction + 1} · {_editor.Projection.Actions[segment.FirstAction].Name}"
                 : $"Actions {segment.FirstAction + 1}–{segment.LastAction + 1}";
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, name);
@@ -160,16 +160,26 @@ public sealed partial class MacroTabContent
     private void ResizeWorkspace()
     {
         if (Workspace is null) return;
-        var layout = EditorLayout.Fit(WorkspaceScroller.ActualWidth, WorkspaceScroller.ActualHeight);
-        Workspace.ColumnDefinitions[0].Width = new GridLength(layout.Stacked ? 1 : 38, GridUnitType.Star);
-        Workspace.ColumnDefinitions[1].Width = layout.Stacked ? new GridLength(0) : new GridLength(62, GridUnitType.Star);
-        Grid.SetColumn(InspectorPanel, layout.Stacked ? 0 : 1); Grid.SetRow(InspectorPanel, layout.Stacked ? 1 : 0);
-        ListPanel.Height = layout.ListHeight; InspectorPanel.Height = layout.InspectorHeight;
-        ListPanel.BorderThickness = layout.Stacked ? new Thickness(0, 0, 0, 1) : new Thickness(0, 0, 1, 0);
-        InspectorPanel.Padding = new Thickness(layout.Stacked ? 20 : 26, 22, layout.Stacked ? 20 : 26, 22);
-        var wait = Selected?.Kind == ActionKind.Wait;
-        DetailGrid.RowDefinitions[1].MinHeight = wait ? 0 : 150;
-        DetailGrid.RowDefinitions[1].Height = new GridLength(wait ? 0 : Math.Max(240, layout.InspectorHeight - (_rawOpen ? 510 : 360)));
+        var narrow = EditorLayout.Fit(EditorWorkspace.ActualWidth, Workspace.ActualHeight).SinglePane;
+        _navigatingView = true;
+        try
+        {
+            Workspace.ColumnDefinitions[0].Width = new GridLength(narrow ? 1 : 38, GridUnitType.Star);
+            Workspace.ColumnDefinitions[1].Width = narrow ? new GridLength(0) : new GridLength(62, GridUnitType.Star);
+            Grid.SetColumn(InspectorPanel, narrow ? 0 : 1);
+            ListPanel.Visibility = narrow && _detailsPane ? Visibility.Collapsed : Visibility.Visible;
+            InspectorPanel.Visibility = narrow && !_detailsPane ? Visibility.Collapsed : Visibility.Visible;
+            ListPanel.BorderThickness = narrow ? new Thickness(0) : new Thickness(0, 0, 1, 0);
+            InspectorPanel.Padding = new Thickness(narrow ? 16 : 26, 12, narrow ? 16 : 26, 12);
+            DetailGrid.RowDefinitions[1].Height = new GridLength(Selected?.Kind == ActionKind.Wait ? 0 : 240);
+            SequenceNavigation.BorderBrush = BrushResource(_detailsPane ? "Line" : "Blue");
+            DetailsNavigation.BorderBrush = BrushResource(_detailsPane ? "Blue" : "Line");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(SequenceNavigation,
+                (_detailsPane ? "Show sequence. " : "Current pane. ") + "F6 switches panes; selection is retained.");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(DetailsNavigation,
+                (_detailsPane ? "Current pane. " : "Show details. ") + "F6 switches panes; drafts are retained.");
+        }
+        finally { _navigatingView = false; }
     }
     private void PreviewBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {

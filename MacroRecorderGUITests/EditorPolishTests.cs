@@ -131,18 +131,17 @@ public class EditorPolishTests
     }
 
     [TestMethod]
-    [DataRow(1180d, 600d, false, 600d, 600d)]
-    [DataRow(1180d, 220d, false, 420d, 420d)]
-    [DataRow(900d, 400d, false, 420d, 420d)]
-    [DataRow(600d, 800d, true, 300d, 500d)]
-    [DataRow(600d, 180d, true, 300d, 480d)]
-    public void TwoColumnLayoutStacksOnNarrowViewportsAndKeepsDetailScrollable(
-        double width, double height, bool stacked, double listHeight, double inspectorHeight)
+    [DataRow(1180d, 600d, false)]
+    [DataRow(1180d, 220d, false)]
+    [DataRow(900d, 400d, false)]
+    [DataRow(600d, 800d, true)]
+    [DataRow(600d, 180d, true)]
+    public void EditorPanesStayWithinTheViewportAtEveryWidth(
+        double width, double height, bool singlePane)
     {
         var layout = EditorLayout.Fit(width, height);
-        Assert.AreEqual(stacked, layout.Stacked);
-        Assert.AreEqual(listHeight, layout.ListHeight);
-        Assert.AreEqual(inspectorHeight, layout.InspectorHeight);
+        Assert.AreEqual(singlePane, layout.SinglePane);
+        Assert.AreEqual(height, layout.ViewportHeight);
     }
 
     [TestMethod]

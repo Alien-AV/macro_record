@@ -1,12 +1,10 @@
 namespace MacroRecorderGUI.Editor;
 
-/// <summary>The original design uses two columns, then stacks sequence and detail on narrow windows.</summary>
-public readonly record struct EditorLayout(bool Stacked, double ListHeight, double InspectorHeight)
+/// <summary>Narrow viewports show one selected pane; neither pane expands the page.</summary>
+public readonly record struct EditorLayout(bool SinglePane, double ViewportHeight)
 {
     public static EditorLayout Fit(double width, double viewportHeight)
     {
-        var stacked = width < 900;
-        return new(stacked, stacked ? 300 : Math.Max(420, viewportHeight),
-            stacked ? Math.Max(480, viewportHeight - 300) : Math.Max(420, viewportHeight));
+        return new(width < 900, Math.Max(0, viewportHeight));
     }
 }

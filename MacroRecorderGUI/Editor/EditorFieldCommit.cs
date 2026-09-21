@@ -15,13 +15,14 @@ public sealed partial class MacroTabContent
     /// <summary>Called before disabling, saving, navigating or snapshotting this editor.</summary>
     public bool TryCommitPendingEdits()
     {
-        if (_modalConditionEditor is { } modal)
+        if (_modalConditionEditor is not null || _authoringDialogOpen)
         {
-            modal.CancelTest();
-            Status = "Close the wait dialog before starting another command.";
+            _modalConditionEditor?.CancelTest();
+            Status = "Close the Add action dialog before starting another command.";
             return false;
         }
-        return CommitCondition() && CommitActionFields();
+        _conditionEditor?.CancelTest();
+        return CanLeaveRawDraft() && CommitCondition() && CommitActionFields();
     }
 
     private bool CommitActionFields(ActionField? field = null, bool refresh = true)
@@ -41,6 +42,7 @@ public sealed partial class MacroTabContent
 
     private void ActionField_LosingFocus(UIElement sender, LosingFocusEventArgs e)
     {
+        if (_navigatingView || IsViewNavigation(e.NewFocusedElement)) return;
         if (ActionFieldFor(sender) is not { } field) return;
         // X/Y are one validation unit. Moving between them must keep both drafts intact.
         if (field is ActionField.DestinationX or ActionField.DestinationY

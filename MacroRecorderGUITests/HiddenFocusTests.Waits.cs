@@ -70,7 +70,7 @@ public sealed partial class HiddenFocusTests
             Assert.IsNull(((WaitConditionEvent)macro.Events[0]).Condition.Pixel.Target);
             Call(editor, "RefreshEditor", false);
             LayoutControl(editor, 520, 420);
-            Assert.AreEqual(20d, Field<Grid>(editor, "Workspace").Margin.Right);
+            Assert.AreEqual(0d, Field<Grid>(editor, "Workspace").Margin.Right);
             Assert.AreEqual(20d, Field<Grid>(editor, "DetailGrid").Margin.Right);
             Assert.AreEqual(0d, Field<Grid>(editor, "DetailGrid").RowDefinitions[1].Height.Value);
             editor.IsPreviewMode = true;
@@ -160,7 +160,7 @@ public sealed partial class HiddenFocusTests
                 Call(editor, "Attach"); Call(editor, "SetRawOpen", true);
                 var delay = Field<TextBox>(editor, "RawDelay"); var x = Field<TextBox>(editor, "RawX");
                 delay.Text = "unfinished"; x.Text = "901";
-                Assert.IsNotNull(Call(editor, "PrepareWaitInsertion", replaceDelay));
+                Assert.IsNull(Call(editor, "PrepareWaitInsertion", replaceDelay), "Raw drafts must be resolved before Add or Replace can mutate data.");
                 Call(editor, "FinishWaitInsertion", macro.Editor, ContentDialogResult.None);
                 Assert.AreSame(input, Field<InputEvent>(editor, "_rawEvent"));
                 Assert.AreEqual("unfinished", delay.Text); Assert.AreEqual("901", x.Text);

@@ -38,7 +38,12 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public BigInteger EndTime => StartTime + Wait + Duration;
     public string Detail { get; internal set; } = "";
     public string Name { get; internal set; } = "";
-    public string Description { get; internal set; } = "";
+    private string _description = "";
+    public string Description
+    {
+        get => First is WaitConditionEvent wait ? WaitConditionText.Describe(wait.Condition) : _description;
+        internal set => _description = value;
+    }
     public IReadOnlyList<string> KeyLabels { get; internal set; } = [];
     public string DisplayNumber => Number.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
     public string DisplayTime => Kind == ActionKind.Wait ? "Conditional" : TimeText.Human((BigInteger)Wait + Duration);
@@ -48,12 +53,12 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
     public string EventCountLabel => EditorText.Count(Count, "event");
     public string Summary => Kind == ActionKind.Wait && First is WaitConditionEvent condition
         ? $"{TimeText.Human(Wait)} pause before · up to {TimeText.Human(condition.Condition.TimeoutUs)} · stop on failure"
-        : $"{TimeText.Human(Wait)} wait + {TimeText.Human(Duration)} execution";
+        : $"{TimeText.Human(Wait)} pause before + {TimeText.Human(Duration)} execution time";
     public string TechnicalSummary => $"{Detail} · {EditorText.Count(Count, "raw event")} · "
         + (Count == 1 ? $"event {End:N0}" : $"events {Start + 1:N0}–{End:N0}");
     public string Warning => Complete ? "" : "Incomplete";
     public Microsoft.UI.Xaml.Visibility WarningVisibility => Complete ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
-    public string WarningExplanation => Complete ? "" : "Missing or unmatched key/button transitions. Inspect Exact captured input before replaying or editing geometry.";
+    public string WarningExplanation => Complete ? "" : "Missing or unmatched key/button transitions. Inspect Exact input before replaying or editing geometry.";
     public string Glyph => Kind switch
     {
         ActionKind.Move => "\uE7C2", ActionKind.Click => "\uE8B0", ActionKind.Drag => "\uE7C9",

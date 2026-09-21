@@ -96,6 +96,7 @@ public sealed partial class HiddenFocusTests
     {
         await CheckLibraryControls();
         CheckEditorScrollbars();
+        CheckEditorNavigationAndAuthoring();
         var engine = new FakePlaybackEngine(); var store = new RunTestLibrary();
         using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
         var macro = vm.ActiveMacro!;
@@ -149,9 +150,12 @@ public sealed partial class HiddenFocusTests
             Call(editor, "SetRawOpen", true);
             var rawDelay = Field<TextBox>(editor, "RawDelay");
             rawDelay.Text = "999999";
-            wait.Text = "0.05"; Assert.IsTrue(editor.TryCommitPendingEdits());
-            Assert.AreEqual("999999", rawDelay.Text, "Auto-commit must not discard an explicit raw draft.");
-            Assert.AreEqual(50000UL, macro.Events[0].TimeSinceLastEvent, "Raw input must not implicitly Apply.");
+            wait.Text = "0.05"; Assert.IsFalse(editor.TryCommitPendingEdits());
+            Assert.AreEqual("999999", rawDelay.Text, "The command gate must not discard an explicit raw draft.");
+            Assert.AreEqual(12345UL, macro.Events[0].TimeSinceLastEvent, "Raw input must not implicitly Apply.");
+            Call(editor, "RawDiscard_Click", editor, new RoutedEventArgs());
+            Assert.IsTrue(editor.TryCommitPendingEdits());
+            Assert.AreEqual(50000UL, macro.Events[0].TimeSinceLastEvent);
 
             wait.Text = "0.07";
             actions.SelectedItem = macro.Editor.Projection.Actions[1];
@@ -190,7 +194,8 @@ public sealed partial class HiddenFocusTests
         Assert.AreSame(input, Field<InputEvent>(editor, "_rawEvent"));
         delay.Text = "999999"; x.Text = "999"; y.Text = "unfinished"; desktop.IsChecked = false;
         Field<TextBox>(editor, "WaitInput").Text = "0.000010";
-        Assert.IsTrue(editor.TryCommitPendingEdits());
+        Assert.IsFalse(editor.TryCommitPendingEdits());
+        Call(editor, "CommitActionFields", MacroRecorderGUI.Editor.ActionField.Wait, true);
         Assert.AreEqual(1, macro.Editor.Projection.Actions.Count, "The second movement must merge with the first.");
         Assert.AreSame(input, Field<InputEvent>(editor, "_rawEvent"));
         Assert.IsTrue(macro.Editor.RawSelection);

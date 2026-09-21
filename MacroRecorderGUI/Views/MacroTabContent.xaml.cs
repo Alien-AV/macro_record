@@ -71,7 +71,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
                 _preview?.ResetCheckpoints();
             }
             else { PreviewPathHost.Content = null; EditorPathHost.Content = PathPanel; }
-            WorkspaceScroller.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            EditorWorkspace.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
             PreviewPage.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
             if (value) BuildTimeline();
             UpdatePreviewFrame(); DrawPath();
@@ -90,6 +90,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         foreach (var field in new[] { WaitInput, DurationInput, DestinationX, DestinationY, RawDelay, RawX, RawY, RawFlags, RawData, RawKey })
             field.TextChanging += Draft_Changing;
         foreach (var field in new[] { RawRelative, RawDesktop, RawKeyUp }) { field.Checked += CheckDraft_Changed; field.Unchecked += CheckDraft_Changed; }
+        RawEachDelay.TextChanging += (_, _) => _rawEachEdited = true;
     }
 
     private void Editor_Loaded(object sender, RoutedEventArgs e) { _loaded = true; Attach(); }
@@ -116,6 +117,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _sync = true;
         ActionsList.ItemsSource = null; RawList.ItemsSource = null;
         _rawRows.Close(); _rawDrafts.Clear();
+        _rawEachEdited = false;
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
         _actionEdits = null; _inspectorSelection = [];
@@ -127,7 +129,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         PreviewDescription.Text = "Record or add input to preview a sequence.";
         PreviewNext.Text = "End of sequence"; PreviewClock.Text = "0ms / 0ms"; PreviewTiming.Text = "Recorded timing · 0 actions";
         HeldNote.Text = "No recorded keys or buttons held";
-        _rawOpen = false; RawContent.Visibility = Visibility.Collapsed; RawChevron.Glyph = "\uE76C";
+        _rawOpen = false; RawContent.Visibility = Visibility.Collapsed; InspectorScroller.Visibility = Visibility.Visible;
+        _rawSelection = []; _detailsPane = false; _actionFocus = _rawFocus = _sequenceFocus = null;
         _display = []; _selectedDisplay = []; PathCanvas.Children.Clear();
         SummaryText.Text = "0 actions · 0ms";
         EmptySequence.Visibility = Visibility.Visible;
@@ -163,7 +166,6 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             }
         }
         finally { _sync = false; }
-        if (_editor.RawSelection && !_rawOpen) SetRawOpen(true);
         SummaryText.Text = $"{EditorText.Count(_editor.Projection.Actions.Count, "action")} · {TimeText.Human(_editor.Projection.TotalTime)}";
         if (_macro.Events.OfType<WaitConditionEvent>().Count() is var waitCount && waitCount > 0)
             SummaryText.Text += $" recorded timing + {EditorText.Count(waitCount, "conditional wait")}";
@@ -178,7 +180,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_sync || _committingFields || _editor is null) return;
         var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(a => a.First).ToArray();
-        var committed = CommitCondition() && CommitActionFields(refresh: false);
+        var committed = CanLeaveRawDraft() && CommitCondition() && CommitActionFields(refresh: false);
         if (!committed) anchors = _inspectorSelection;
         // Commit against the old inspector identity before adopting the requested selection.
         if (_macro is not null && (_editor.IsDirty || !committed
@@ -194,7 +196,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             finally { _sync = false; }
         }
         StopPreview(); CancelDrag();
-        if (committed) _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
+        if (committed)
+        {
+            _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
+            _rawSelection = []; _rawEvent = null; _rawDrafts.Clear();
+        }
         if (Selected is { } a) _previewPosition.SeekTime(a.StartTime + a.Wait, _editor.Projection.TotalTime);
         RefreshEditor();
     }
@@ -203,7 +209,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (_editor is not null && _macro is not null)
         {
             SelectionScope.Text = _editor.RawSelection ? $"{EditorText.Count(_macro.SelectedEvents.Count, "raw event")} selected"
-                : ActionsList.SelectedItems.Count > 1 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Every captured input preserved";
+                : ActionsList.SelectedItems.Count > 0 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Select an action";
             DeleteButton.IsEnabled = _macro.SelectedEvents.Count > 0;
             var deleteScope = _editor.RawSelection ? "Delete selected raw events" : "Delete selected actions";
             ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
@@ -240,13 +246,12 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         ActionFields.IsEnabled = a is not null;
         ActionFields.Visibility = a is null ? Visibility.Collapsed : Visibility.Visible;
         SelectedTitle.Text = a?.Name ?? "Select an action";
-        SampleBadge.Text = a?.EventCountLabel ?? "No input";
         var rawCount = ActionsList.SelectedItems.OfType<RecordedAction>().Sum(action => action.Count);
-        RawHeader.Text = a is null ? "Exact captured input" : $"Exact captured input · {EditorText.Count(rawCount, "event")}";
+        RawHeader.Text = a is null ? "Exact input" : $"Exact input · {EditorText.Count(rawCount, "event")}";
         RawToggle.IsEnabled = a is not null;
         InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
         InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
-        TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nExact wait: {TimeText.Seconds(a.Wait)}s · execution: {TimeText.Seconds(a.Duration)}s";
+        TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nPause before: {TimeText.Seconds(a.Wait)}s · execution time: {TimeText.Seconds(a.Duration)}s";
         ActionWarning.Text = _presentation?.InspectorWarning(a) ?? "";
         ActionWarning.Visibility = ActionWarning.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         ToolTipService.SetToolTip(ActionWarning, a is { Complete: false } ? a.WarningExplanation : ActionWarning.Text);
@@ -255,12 +260,12 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         InputVisual.Visibility = a is not null && !path ? Visibility.Visible : Visibility.Collapsed;
         CapturedKeys.ItemsSource = a?.KeyLabels ?? Array.Empty<string>();
         InputGlyph.Glyph = a?.Glyph ?? "\uE8A5";
-        InputDetail.Text = a?.Detail ?? "";
+        InputDetail.Text = a?.Description ?? "";
         if (a is null || _editor is null) { UpdateConditionInspector(null, resetDrafts); _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
         Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
         DurationFields.Visibility = a.CanEditDuration ? Visibility.Visible : Visibility.Collapsed;
         DurationColumn.Width = new GridLength(a.CanEditDuration ? 1 : 0, GridUnitType.Star);
-        TimingSummary.Text = a.CanEditDuration ? $"{a.Summary} = {a.DisplayTime} total" : $"{a.DisplayTime} total · wait before one event";
+        TimingSummary.Text = a.CanEditDuration ? $"{a.Summary} = {a.DisplayTime} total" : $"{a.DisplayTime} pause before";
         var reason = _editor.GeometryBlockReason(a);
         GeometryNote.Text = reason is null ? "Adjusts the end of this movement."
             : a.Kind is ActionKind.Keys ? "Original key order is preserved."
@@ -302,11 +307,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void AddMouse_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(_macro.CreateMouseEventManually, "Mouse event added. Edit it in Exact captured input.", resetDrafts: false);
+        if (_macro is not null) RunEdit(() => { _macro.CreateMouseEventManually(); SetRawOpen(true); }, "Mouse event added. Edit it in Exact input.", resetDrafts: false);
     }
     private void AddKeyboard_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is not null) RunEdit(_macro.CreateKeyboardEventManually, "Keyboard event added. Edit it in Exact captured input.", resetDrafts: false);
+        if (_macro is not null) RunEdit(() => { _macro.CreateKeyboardEventManually(); SetRawOpen(true); }, "Keyboard event added. Edit it in Exact input.", resetDrafts: false);
     }
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
@@ -333,22 +338,25 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
 
     private bool _rawOpen;
-    private void RawToggle_Click(object sender, RoutedEventArgs e) => SetRawOpen(!_rawOpen);
+    private void RawToggle_Click(object sender, RoutedEventArgs e) { SetRawOpen(true); FocusDetail(); }
+    private void BackToAction_Click(object sender, RoutedEventArgs e) { SetRawOpen(false); FocusDetail(); }
     private void SetRawOpen(bool open)
     {
-        if (!TryCommitPendingEdits()) return;
-        if (_editor?.IsDirty == true) RefreshEditor();
-        _rawOpen = open;
-        RawContent.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
-        RawChevron.Glyph = open ? "\uE70E" : "\uE76C";
-        if (open) PopulateRaw(enterRaw: _editor?.RawSelection != true);
-        else
+        if (_rawOpen == open || _modalConditionEditor is not null || _authoringDialogOpen) return;
+        _navigatingView = true;
+        try
         {
-            _sync = true; _rawRows.Close(); _sync = false; _rawEvent = null; _rawDrafts.Clear();
-            _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
-            UpdateSelectionScope();
+            RememberPaneFocus();
+            _conditionEditor?.CancelTest();
+            _rawOpen = open;
+            if (open) _detailsPane = true;
+            RawContent.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+            InspectorScroller.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
+            if (open) PopulateRaw(enterRaw: true);
+            else _editor?.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
+            UpdateSelectionScope(); ResizeWorkspace();
         }
-        ResizeWorkspace();
+        finally { _navigatingView = false; }
     }
     private void PopulateRaw(bool enterRaw = false)
     {
@@ -359,7 +367,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (enterRaw)
         {
             RawList.SelectedItems.Clear();
-            RawList.SelectedItem = _rawRows.FirstOrDefault(row => ReferenceEquals(row.Input, previous)) ?? _rawRows.FirstOrDefault();
+            foreach (var row in _rawRows.Where(row => _rawSelection.Contains(row.Input))) RawList.SelectedItems.Add(row);
+            if (RawList.SelectedItems.Count == 0)
+                RawList.SelectedItem = _rawRows.FirstOrDefault(row => ReferenceEquals(row.Input, previous)) ?? _rawRows.FirstOrDefault();
             _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
         }
         else if (_editor.RawSelection)
@@ -369,12 +379,30 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             foreach (var row in _rawRows.Where(row => selected.Contains(row.Input)))
                 if (!RawList.SelectedItems.Contains(row)) RawList.SelectedItems.Add(row);
         }
-        else RawList.SelectedItems.Clear();
+        else if (_rawOpen)
+        {
+            RawList.SelectedItems.Clear();
+            RawList.SelectedItem = _rawRows.FirstOrDefault();
+            _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
+        }
+        _rawSelection = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
         _sync = false; LoadRaw(); UpdateSelectionScope();
     }
     private void Raw_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_sync) return;
+        if (!CanLeaveRawDraft())
+        {
+            _sync = true;
+            try
+            {
+                RawList.SelectedItems.Clear();
+                foreach (var row in _rawRows.Where(row => _rawSelection.Contains(row.Input))) RawList.SelectedItems.Add(row);
+            }
+            finally { _sync = false; }
+            return;
+        }
+        _rawSelection = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
         LoadRaw();
         _editor?.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
         UpdateSelectionScope();
@@ -382,6 +410,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void LoadRaw()
     {
         _rawEvent = (RawList.SelectedItem as RawEventRow)?.Input; RawApply.IsEnabled = _rawEvent is not null;
+        RawDelay.IsEnabled = _rawEvent is not null;
+        RawMouseFields.Visibility = _rawEvent is MouseEvent ? Visibility.Visible : Visibility.Collapsed;
+        RawKeyFields.Visibility = _rawEvent is KeyboardEvent ? Visibility.Visible : Visibility.Collapsed;
         // Projection regrouping can change an action's first input without changing
         // the exact raw event being edited. Only that event owns these drafts.
         _rawDrafts.Select(_rawEvent);
@@ -399,29 +430,32 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     }
     private void RawApply_Click(object sender, RoutedEventArgs e)
     {
-        if (_rawEvent is not { } input) return;
-        RunEdit(() =>
+        if (_rawEvent is not { } input || _editor is null || _modalConditionEditor is not null || _authoringDialogOpen) return;
+        try
         {
-            var value = input.OriginalProtobufInputEvent.Clone();
-            value.TimeSinceLastEvent = ulong.Parse(RawDelay.Text, CultureInfo.InvariantCulture);
-            if (value.MouseEvent is { } m)
-            {
-                m.X = int.Parse(RawX.Text, CultureInfo.InvariantCulture); m.Y = int.Parse(RawY.Text, CultureInfo.InvariantCulture);
-                m.ActionType = uint.Parse(RawFlags.Text, CultureInfo.InvariantCulture); m.WheelRotation = uint.Parse(RawData.Text, CultureInfo.InvariantCulture);
-                m.RelativePosition = RawRelative.IsChecked == true; m.MappedToVirtualDesktop = RawDesktop.IsChecked == true;
-            }
-            else if (value.KeyboardEvent is { } key) { key.VirtualKeyCode = uint.Parse(RawKey.Text, CultureInfo.InvariantCulture); key.KeyUp = RawKeyUp.IsChecked == true; }
-            _editor!.EditRaw(input, value);
-        }, "Raw event updated. Grouping may change; undo is available.");
+            // Validate all explicit raw fields before any other draft can change the recording.
+            _ = ReadRawDraft();
+            if (!CommitCondition() || !CommitActionFields()) return;
+            StopPreview(); _editor.EditRaw(input, ReadRawDraft());
+            _rawDrafts.Clear(); RefreshEditor();
+            Status = "Exact input applied. Undo is available.";
+        }
+        catch (Exception error) when (error is ArgumentException or OverflowException or FormatException)
+        { Status = error.Message; }
     }
     private void RawEach_Click(object sender, RoutedEventArgs e)
     {
-        if (_macro is null) return;
-        RunEdit(() =>
+        if (_macro is null || _editor is null || _modalConditionEditor is not null || _authoringDialogOpen) return;
+        if (HasRawDraft) { CanLeaveRawDraft(); return; }
+        try
         {
-            _editor!.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
-            _macro.ChangeDelaysOnSelected(ulong.Parse(RawEachDelay.Text, CultureInfo.InvariantCulture));
-        }, "Each selected raw delay changed, including internal action timing.");
+            var delay = ulong.Parse(RawEachDelay.Text, CultureInfo.InvariantCulture);
+            if (!CommitCondition() || !CommitActionFields()) return;
+            _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
+            _macro.ChangeDelaysOnSelected(delay); _rawEachEdited = false;
+            RefreshEditor(); Status = "Each selected raw delay changed, including execution time. Undo is available.";
+        }
+        catch (Exception error) when (error is ArgumentException or OverflowException or FormatException) { Status = error.Message; }
     }
 
     private Brush BrushResource(string name)
@@ -673,7 +707,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     public void RefreshTheme()
     {
         if (_disposed) return;
-        RefreshRowColors(); if (IsPreviewMode) BuildTimeline(); DrawPath();
+        RefreshRowColors(); ResizeWorkspace(); if (IsPreviewMode) BuildTimeline(); DrawPath();
     }
     private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e) => DrawPath();
     private void Workspace_SizeChanged(object sender, SizeChangedEventArgs e)

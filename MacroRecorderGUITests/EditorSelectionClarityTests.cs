@@ -223,7 +223,7 @@ public class EditorSelectionClarityTests
         if (rawSelection) editor.SelectRawEvents([raw]);
         var selected = macro.SelectedEvents.ToArray();
         Assert.IsTrue(action.CanEditDuration);
-        Assert.AreEqual("1.89s wait + 303µs execution", action.Summary);
+        Assert.AreEqual("1.89s pause before + 303µs execution time", action.Summary);
         editor.SetWait(action, checked((ulong)TimeText.ParseSeconds("2.123456")));
         editor.Refresh(); action = editor.Projection.Actions[0];
         Assert.AreEqual(2_123_456UL, action.Wait);
@@ -361,10 +361,10 @@ public class EditorSelectionClarityTests
     [DataRow(719d, true)]
     [DataRow(899d, true)]
     [DataRow(900d, false)]
-    public void NarrowEditorStacksBeforeItsActionRowsBecomeCramped(double width, bool stacked)
+    public void NarrowEditorUsesPaneNavigationBeforeItsActionRowsBecomeCramped(double width, bool singlePane)
     {
         var layout = EditorLayout.Fit(width, 500);
-        Assert.AreEqual(stacked, layout.Stacked);
-        Assert.IsTrue(layout.InspectorHeight >= 480);
+        Assert.AreEqual(singlePane, layout.SinglePane);
+        Assert.AreEqual(500d, layout.ViewportHeight);
     }
 }

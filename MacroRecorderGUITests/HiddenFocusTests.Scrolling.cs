@@ -68,42 +68,47 @@ public sealed partial class HiddenFocusTests
             var selection = raw.SelectedItem;
             var before = macro.SnapshotBytes();
             var inspector = Field<ScrollViewer>(editor, "InspectorScroller");
-            var workspace = Field<ScrollViewer>(editor, "WorkspaceScroller");
+            var fields = Field<ScrollViewer>(editor, "RawFieldsScroller");
+            var workspace = Field<Grid>(editor, "Workspace");
+            Assert.IsNull(ScrollOwner(workspace), "The editor must not have a whole-page scroller.");
+            Assert.IsNull(ScrollOwner(raw), "The exact-input table must not be nested in an inspector scroller.");
 
+            foreach (var theme in new[] { ElementTheme.Light, ElementTheme.Dark, ElementTheme.Default })
             foreach (var (width, height) in new[] { (1200d, 800d), (1200d, 260d), (600d, 800d), (420d, 300d), (900d, 500d), (1200d, 800d) })
             {
+                editor.RequestedTheme = theme;
                 LayoutControl(editor, width, height);
                 Call(editor, "ResizeWorkspace");
                 editor.UpdateLayout();
                 var rawScroller = Descendants(raw).OfType<ScrollViewer>().First();
                 Assert.IsTrue(rawScroller.ScrollableHeight > 0, "The sample list must actually overflow.");
-                Assert.IsTrue(inspector.ScrollableHeight > 0, "Expanded exact input must overflow the bounded inspector.");
+                Assert.AreEqual(Visibility.Collapsed, inspector.Visibility, "Exact input replaces the action details viewport.");
+                Assert.IsTrue(fields.ScrollableHeight > 0, "The raw fields have their own bounded viewport beside the table, never around it.");
 
                 var rawBar = VerticalBar(rawScroller);
-                var inspectorBar = VerticalBar(inspector);
-                var workspaceBar = VerticalBar(workspace);
+                var inspectorBar = VerticalBar(fields);
                 var rawBounds = Bounds(rawBar, editor);
                 var inspectorBounds = Bounds(inspectorBar, editor);
-                var workspaceBounds = Bounds(workspaceBar, editor);
                 Assert.IsTrue(rawBar.ActualWidth > 0 && rawBar.ActualHeight > 0);
                 Assert.IsTrue(inspectorBar.ActualWidth > 0 && inspectorBar.ActualHeight > 0);
                 Assert.AreEqual(rawScroller.ScrollableHeight, rawBar.Maximum, 0.01);
-                Assert.AreEqual(inspector.ScrollableHeight, inspectorBar.Maximum, 0.01);
+                Assert.AreEqual(fields.ScrollableHeight, inspectorBar.Maximum, 0.01);
                 Assert.IsTrue(rawBar.IsEnabled && inspectorBar.IsEnabled);
                 Assert.IsTrue(rawBar.IsHitTestVisible && inspectorBar.IsHitTestVisible);
                 Assert.IsFalse(ClickAwayFocus.IsBackgroundPress(editor, rawBar, true, false));
                 Assert.IsFalse(ClickAwayFocus.IsBackgroundPress(editor, inspectorBar, true, false),
                     "Dragging the inspector scrollbar must not commit or clear an editor draft.");
-                Assert.IsTrue(rawBounds.Right <= inspectorBounds.Left,
-                    $"Raw and inspector scrollbar hit areas overlap at {width}x{height}: {rawBounds}; {inspectorBounds}");
-                if (workspace.ScrollableHeight > 0)
-                    Assert.IsTrue(inspectorBounds.Right <= workspaceBounds.Left,
-                        $"Inspector and page scrollbar hit areas overlap at {width}x{height}.");
+                Assert.IsTrue(rawBounds.Bottom <= inspectorBounds.Top,
+                    $"Table and field scrollbar hit areas overlap at {width}x{height}: {rawBounds}; {inspectorBounds}");
+                Assert.IsTrue(inspectorBounds.Bottom <= height + 1);
+                Assert.IsTrue(workspace.ActualHeight <= height);
+                Assert.AreEqual(Visibility.Visible, Field<Border>(editor, "InspectorPanel").Visibility);
+                Assert.AreEqual(width < 900 ? Visibility.Collapsed : Visibility.Visible, Field<Border>(editor, "ListPanel").Visibility);
 
                 // Hidden HWNDs do not advance compositor scrolling. Check the actual
                 // template ranges and disjoint hit columns; physical dragging is a smoke test.
-                Assert.IsTrue(rawScroller.ViewportHeight <= inspector.ViewportHeight);
-                Assert.IsTrue(rawScroller.ViewportHeight <= workspace.ViewportHeight);
+                Assert.IsTrue(rawScroller.ViewportHeight <= workspace.ActualHeight);
+                Assert.IsTrue(fields.ViewportHeight <= workspace.ActualHeight);
                 Assert.AreSame(selection, raw.SelectedItem);
                 Assert.AreEqual("unfinished raw draft", delay.Text);
                 Assert.AreEqual("unfinished action draft", wait.Text);
@@ -111,6 +116,37 @@ public sealed partial class HiddenFocusTests
                 CollectionAssert.AreEqual(before, macro.SnapshotBytes());
                 Assert.IsFalse(IsWindowVisible(hwnd));
             }
+
+            // Exercise the actual compiled high-contrast resources without changing OS preferences.
+            var resources = editor.Resources.MergedDictionaries[0];
+            var light = resources.ThemeDictionaries["Light"];
+            var contrast = (ResourceDictionary)resources.ThemeDictionaries["HighContrast"];
+            var contrastCopy = new ResourceDictionary();
+            foreach (var resource in contrast) contrastCopy[resource.Key] = new SolidColorBrush(((SolidColorBrush)resource.Value).Color);
+            resources.ThemeDictionaries.Remove("Light"); resources.ThemeDictionaries["Light"] = contrastCopy;
+            editor.RequestedTheme = ElementTheme.Dark; editor.RequestedTheme = ElementTheme.Light;
+            Call(editor, "ShowPane", true);
+            Call(editor, "SetRawOpen", false);
+            LayoutControl(editor, 420, 420);
+            var ink = (SolidColorBrush)contrast["DesignedEditorInk"];
+            Assert.AreEqual(ink.Color, ((SolidColorBrush)Call(editor, "BrushResource", "Ink")!).Color);
+            var textControls = Descendants(editor).ToArray();
+            foreach (var block in textControls.OfType<TextBlock>()) block.FontSize *= 2;
+            foreach (var control in textControls.OfType<Control>().Where(control => control is TextBox or Button or CheckBox)) control.FontSize *= 2;
+            LayoutControl(editor, 420, 420);
+            Assert.IsTrue(inspector.ScrollableHeight > 0, "Enlarged text stays reachable in the bounded details pane.");
+            Assert.IsTrue(Bounds(VerticalBar(inspector), editor).Bottom <= 421);
+            Call(editor, "SetRawOpen", true); LayoutControl(editor, 420, 420);
+            Assert.IsTrue(fields.ScrollableHeight > 0);
+            Assert.IsTrue(Bounds(VerticalBar(fields), editor).Bottom <= 421);
+            Call(editor, "ShowPane", false); LayoutControl(editor, 420, 420);
+            Assert.AreEqual(Visibility.Collapsed, Field<Border>(editor, "InspectorPanel").Visibility);
+            Assert.IsTrue(Bounds(Field<Button>(editor, "AddAction"), editor).Bottom <= 421, "Add stays anchored when text is enlarged.");
+            resources.ThemeDictionaries.Remove("Light"); resources.ThemeDictionaries["Light"] = light;
+            CollectionAssert.AreEqual(before, macro.SnapshotBytes());
+            Assert.AreEqual("unfinished raw draft", delay.Text);
+            Assert.AreEqual("unfinished action draft", wait.Text);
+            Assert.IsFalse(IsWindowVisible(hwnd));
         }
         finally { window.Close(); }
     }
