@@ -50,9 +50,9 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
                     Button(mouse, MouseActionTypeFlags.LeftDown, MouseActionTypeFlags.LeftUp, "Left mouse");
                     Button(mouse, MouseActionTypeFlags.RightDown, MouseActionTypeFlags.RightUp, "Right mouse");
                     Button(mouse, MouseActionTypeFlags.MiddleDown, MouseActionTypeFlags.MiddleUp, "Middle mouse");
-                    if ((mouse.MouseData & 1) != 0) Button(mouse, MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, "Mouse X1");
-                    if ((mouse.MouseData & 2) != 0) Button(mouse, MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, "Mouse X2");
-                    if ((mouse.MouseData & 3) == 0) Button(mouse, MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, "Mouse X (unspecified)");
+                    var extra = ActionProjection.ExtraButtonMask(mouse);
+                    if ((extra & 1) != 0) Button(mouse, MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, "Mouse X1");
+                    if ((extra & 2) != 0) Button(mouse, MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, "Mouse X2");
                     break;
             }
         }

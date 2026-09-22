@@ -98,8 +98,7 @@ public sealed partial class ActionEditor
                 Track(MouseActionTypeFlags.LeftDown, MouseActionTypeFlags.LeftUp, 1);
                 Track(MouseActionTypeFlags.RightDown, MouseActionTypeFlags.RightUp, 2);
                 Track(MouseActionTypeFlags.MiddleDown, MouseActionTypeFlags.MiddleUp, 4);
-                // Native playback interprets the legacy zero payload as X1, not both X buttons.
-                var extra = ((mouse.MouseData == 0 ? 1u : mouse.MouseData) & 3) << 3;
+                var extra = ActionProjection.ExtraButtonMask(mouse) << 3;
                 Track(MouseActionTypeFlags.XDown, MouseActionTypeFlags.XUp, extra);
                 void Track(MouseActionTypeFlags down, MouseActionTypeFlags up, uint mask)
                 {

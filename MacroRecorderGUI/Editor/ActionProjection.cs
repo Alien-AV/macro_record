@@ -282,6 +282,8 @@ public sealed class ActionProjection
     }
 
     public static bool HasMove(MouseEvent m) => (m.ActionType & MouseActionTypeFlags.Move) != 0;
+    // Playback interprets an omitted legacy payload as X1; other payloads use the low two bits.
+    internal static uint ExtraButtonMask(MouseEvent mouse) => (mouse.MouseData == 0 ? 1u : mouse.MouseData) & 3;
     private static bool IsModifier(uint code) => code is 0x10 or 0x11 or 0x12 or >= 0xA0 and <= 0xA5 or 0x5B or 0x5C;
     public static string KeyName(uint code) => code switch
     {
@@ -303,13 +305,13 @@ public sealed class ActionProjection
         if ((flags & (down ? MouseActionTypeFlags.RightDown : MouseActionTypeFlags.RightUp)) != 0) result |= 2;
         if ((flags & (down ? MouseActionTypeFlags.MiddleDown : MouseActionTypeFlags.MiddleUp)) != 0) result |= 4;
         if ((flags & (down ? MouseActionTypeFlags.XDown : MouseActionTypeFlags.XUp)) != 0)
-            result |= (m.MouseData & 3) == 0 ? 24 : (int)(m.MouseData & 3) << 3;
+            result |= (int)ExtraButtonMask(m) << 3;
         return result;
     }
     private static bool IsSingleButton(MouseEvent m, bool down) => down
         ? m.ActionType is MouseActionTypeFlags.LeftDown or MouseActionTypeFlags.RightDown or MouseActionTypeFlags.MiddleDown
-            || m.ActionType == MouseActionTypeFlags.XDown && m.MouseData is 1 or 2
+            || m.ActionType == MouseActionTypeFlags.XDown && m.MouseData is 0 or 1 or 2
         : m.ActionType is MouseActionTypeFlags.LeftUp or MouseActionTypeFlags.RightUp or MouseActionTypeFlags.MiddleUp
-            || m.ActionType == MouseActionTypeFlags.XUp && m.MouseData is 1 or 2;
+            || m.ActionType == MouseActionTypeFlags.XUp && m.MouseData is 0 or 1 or 2;
     private static string ButtonName(int button) => button switch { 1 => "Left", 2 => "Right", 4 => "Middle", 8 => "X1", 16 => "X2", _ => "Mouse" };
 }
