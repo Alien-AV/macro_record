@@ -394,25 +394,35 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
         if (_disposed || _recordingSession is not { } session) return;
         if (command is { } hotkey && !session.Accepts(hotkey)) return;
         var target = (RecordingTarget)session.Context!;
-        target.Delay = autoDelay;
-        if (autoDelay is not null && IsCurrentTarget(target))
-        {
-            target.DelayEvents.UnionWith(target.Macro.Events);
-            _pendingRecordingDelays.Add(session.Id, target);
-        }
+        var stopped = false;
         try
         {
-            if (!RecordEngine.StopRecord(command)) return;
+            target.Delay = autoDelay;
+            if (autoDelay is not null && IsCurrentTarget(target))
+            {
+                target.DelayEvents.UnionWith(target.Macro.Events);
+                _pendingRecordingDelays.Add(session.Id, target);
+            }
+            // Native completion may precede its queued UI callback. Keep the delay
+            // until that callback drains the tail, even when no stop remains to send.
+            if (!RecordEngine.StopRecord(command) && !session.Completion.IsCompleted) return;
+            stopped = true;
             _recordingSession = null;
             _recordingClock.Stop();
             NotifyRecordingState();
         }
         catch (Exception error)
         {
-            target.Delay = null;
-            target.DelayEvents.Clear();
-            _pendingRecordingDelays.Remove(session.Id);
             StatusMessageRequested?.Invoke(this, $"Could not stop recording: {error.Message}");
+        }
+        finally
+        {
+            if (!stopped)
+            {
+                target.Delay = null;
+                target.DelayEvents.Clear();
+                _pendingRecordingDelays.Remove(session.Id);
+            }
         }
     }
 
