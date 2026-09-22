@@ -165,11 +165,23 @@ See `docs/library-origin-and-branding.md` for combined regression checks and
 
 ## Unpackaged distribution
 
-Publish a self-contained x64 directory:
+Build the complete solution for Release first, then publish a self-contained x64
+directory. Publishing requires the matching native DLL under `x64/Release` and
+fails if it is missing; a managed-only build is not a complete distribution.
 
 ```powershell
 dotnet publish MacroRecorderGUI/MacroRecorderGUI.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o x64/Release/publish
 ```
+
+Verify packaging without launching the application:
+
+```powershell
+./scripts/Test-Publish.ps1 -Configuration Release
+```
+
+This checks missing-native failures, native DLL and compiled UI resource hashes,
+and self-contained runtime configuration and files in an isolated directory under
+`artifacts`.
 
 The publish directory can be copied directly to another machine. To produce the optional Inno Setup installer:
 

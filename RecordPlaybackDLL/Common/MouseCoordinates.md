@@ -61,10 +61,12 @@ Relative recordings contain raw device counts, not measured physical cursor
 displacement. Windows pointer speed/acceleration can change relative replay.
 Summing those counts into pixels estimates a path; it cannot reconstruct an exact
 physical path. Conversion requires a preceding absolute move, ignores button/wheel
-positions, saturates sums rather than overflowing, and marks converted moves as
+positions, rejects overflow without changing any events, and marks converted moves as
 virtual-desktop positions so they can cross monitors. Unanchored relative moves
 remain relative. Original absolute moves retain their mapping and provide a new
-anchor. No monitor layout or acceleration settings are stored in a macro.
+anchor. Recordings with capture-origin metadata cannot use this conversion: an
+origin does not supply a device-count-to-pixel scale. No monitor layout or
+acceleration settings are stored in a macro.
 
 ## Acceptance cases for a later authorized interactive session
 
