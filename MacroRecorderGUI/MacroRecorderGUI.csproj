@@ -32,16 +32,26 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <NativeOutputDirectory Condition="'$(SolutionDir)' != ''">$(SolutionDir)x64\$(Configuration)\</NativeOutputDirectory>
     <NativeOutputDirectory Condition="'$(NativeOutputDirectory)' == ''">$(MSBuildProjectDirectory)\..\x64\$(Configuration)\</NativeOutputDirectory>
+    <NativeRuntimePath>$([MSBuild]::EnsureTrailingSlash('$(NativeOutputDirectory)'))RecordPlaybackDLL.dll</NativeRuntimePath>
   </PropertyGroup>
 
-  <Target Name="CopyNativeRuntimeToBuildOutput" AfterTargets="Build" Condition="Exists('$(NativeOutputDirectory)RecordPlaybackDLL.dll')">
-    <Copy SourceFiles="$(NativeOutputDirectory)RecordPlaybackDLL.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  <Target Name="CopyNativeRuntimeToBuildOutput" AfterTargets="Build" Condition="Exists('$(NativeRuntimePath)')">
+    <Copy SourceFiles="$(NativeRuntimePath)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="CopyNativeRuntimeToPublishOutput" AfterTargets="Publish" Condition="Exists('$(NativeOutputDirectory)RecordPlaybackDLL.dll')">
-    <Copy SourceFiles="$(NativeOutputDirectory)RecordPlaybackDLL.dll" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  <Target Name="RequireNativeRuntimeForPublish" BeforeTargets="PrepareForPublish">
+    <Error Condition="!Exists('$(NativeRuntimePath)')"
+           Text="Native runtime missing: $(NativeRuntimePath). Build macro_record.sln with Visual Studio MSBuild for $(Configuration)|x64 before publishing, or set NativeOutputDirectory to the matching native build output." />
+  </Target>
+
+  <Target Name="IncludeNativeRuntimeInPublish" AfterTargets="ComputeFilesToPublish" DependsOnTargets="RequireNativeRuntimeForPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(NativeRuntimePath)">
+        <RelativePath>RecordPlaybackDLL.dll</RelativePath>
+        <CopyToPublishDirectory>IfDifferent</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
   </Target>
 
   <Target Name="CopyWinUIResourcesToPublishOutput" AfterTargets="Publish">
