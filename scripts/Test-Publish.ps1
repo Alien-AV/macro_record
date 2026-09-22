@@ -20,11 +20,11 @@ if (!(Test-Path -LiteralPath $paths.NativeRuntimePath -PathType Leaf)) {
 }
 
 $publishArguments = @('publish', $project, '-c', $Configuration, '-p:Platform=x64',
-    '-r', 'win-x64', '--self-contained', 'true', '--no-build', '--no-restore',
+    '-r', 'win-x64', '--self-contained', 'true',
     '-o', $publishDirectory, '--verbosity', 'minimal')
 
 function Assert-MissingNativeFails {
-    $output = & dotnet @publishArguments "-p:NativeOutputDirectory=$missingNativeDirectory" 2>&1
+    $output = & dotnet @publishArguments --no-build --no-restore "-p:NativeOutputDirectory=$missingNativeDirectory" 2>&1
     if ($LASTEXITCODE -eq 0 -or ($output -join "`n") -notmatch 'Native runtime missing:') {
         throw "Publish must reject a missing native runtime with an actionable error.`n$($output -join "`n")"
     }
@@ -37,9 +37,33 @@ function Assert-SameFile([string] $Source, [string] $Destination) {
     }
 }
 
+function Assert-SelfContainedPublish([string] $Directory) {
+    $runtimeOptions = (Get-Content -LiteralPath (Join-Path $Directory 'MacroRecorderGUI.runtimeconfig.json') -Raw |
+        ConvertFrom-Json).runtimeOptions
+    if ($runtimeOptions.PSObject.Properties.Name -contains 'framework' -or
+        $runtimeOptions.PSObject.Properties.Name -contains 'frameworks') {
+        throw 'Published runtimeconfig still requires a shared framework.'
+    }
+    $coreFramework = @($runtimeOptions.includedFrameworks | Where-Object { $_.name -eq 'Microsoft.NETCore.App' })
+    if ($coreFramework.Count -ne 1 -or !$coreFramework[0].version) {
+        throw 'Published runtimeconfig must include Microsoft.NETCore.App with a version.'
+    }
+
+    $deps = Get-Content -LiteralPath (Join-Path $Directory 'MacroRecorderGUI.deps.json') -Raw | ConvertFrom-Json
+    $runtimeTarget = $deps.runtimeTarget.name
+    $runtimePack = 'runtimepack.Microsoft.NETCore.App.Runtime.win-x64/' + $coreFramework[0].version
+    $runtimeAssets = $deps.targets.$runtimeTarget.$runtimePack
+    if ($runtimeTarget -notlike '*/win-x64' -or !$deps.libraries.$runtimePack -or
+        !$runtimeAssets.runtime.'System.Private.CoreLib.dll' -or !$runtimeAssets.native.'coreclr.dll') {
+        throw "Published deps must include $runtimePack and its managed/native runtime assets for win-x64."
+    }
+}
+
 Assert-MissingNativeFails
+# Build with the publish settings to regenerate runtime metadata after an ordinary solution build.
 & dotnet @publishArguments
 if ($LASTEXITCODE -ne 0) { throw 'Self-contained publish failed.' }
+Assert-SelfContainedPublish $publishDirectory
 
 Assert-SameFile $paths.NativeRuntimePath (Join-Path $publishDirectory 'RecordPlaybackDLL.dll')
 # An alternate native source must replace a different, newer destination binary.
@@ -52,8 +76,9 @@ $publishedNative = Join-Path $publishDirectory 'RecordPlaybackDLL.dll'
 Copy-Item -LiteralPath (Join-Path $paths.TargetDir 'MacroRecorderGUI.dll') -Destination $publishedNative
 (Get-Item -LiteralPath $publishedNative).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(1)
 # Exercise an explicit native directory without a trailing separator.
-& dotnet @publishArguments "-p:NativeOutputDirectory=$alternateNativeDirectory"
+& dotnet @publishArguments --no-build --no-restore "-p:NativeOutputDirectory=$alternateNativeDirectory"
 if ($LASTEXITCODE -ne 0) { throw 'Republish with an alternate native directory failed.' }
+Assert-SelfContainedPublish $publishDirectory
 Assert-SameFile $alternateNative $publishedNative
 Assert-SameFile (Join-Path $paths.TargetDir 'MacroRecorderGUI.pri') (Join-Path $publishDirectory 'MacroRecorderGUI.pri')
 $xbfFiles = @(Get-ChildItem -LiteralPath $paths.TargetDir -Recurse -Filter '*.xbf' -File)
