@@ -191,6 +191,38 @@ TEST(Playback, BalancedOneShotKeepsOrderAndDoesNotAddReleases) {
 	EXPECT_EQ((std::vector<bool>{false, true}), ups);
 }
 
+TEST(Playback, PollRemainsRunningAndRestartIsBlockedUntilHeldInputCleanupReturns) {
+	for (const bool released : {false, true}) {
+		SCOPED_TRACE(released);
+		std::promise<void> cleanup_started, allow_cleanup;
+		auto allowed = allow_cleanup.get_future().share();
+		PlaybackSession session([&](const Event& event) {
+			if (!dynamic_cast<const KeyboardEvent&>(event).keyUp) return true;
+			cleanup_started.set_value();
+			allowed.wait();
+			return released;
+		});
+		uint64_t id;
+		ASSERT_EQ(PlaybackResult::Running, session.start(one(key('A')), false, id));
+		const auto reached = cleanup_started.get_future().wait_for(1s);
+		if (reached != std::future_status::ready) {
+			allow_cleanup.set_value();
+			FAIL() << "Session did not attempt held-key cleanup";
+		}
+		auto ownership = std::async(std::launch::async, [&] {
+			EXPECT_EQ(PlaybackResult::Running, session.poll(id));
+			uint64_t next;
+			EXPECT_EQ(PlaybackResult::Busy, session.start(one(key('B')), false, next));
+			EXPECT_EQ(0u, next);
+		});
+		const auto checked = ownership.wait_for(1s);
+		allow_cleanup.set_value();
+		EXPECT_EQ(std::future_status::ready, checked);
+		ownership.get();
+		EXPECT_EQ(released ? PlaybackResult::Finished : PlaybackResult::InjectionFailed, finish(session, id));
+	}
+}
+
 TEST(Playback, DestructionCancelsAndReleasesWithoutDetachedWork) {
 	std::atomic<int> calls{0};
 	std::promise<void> injected;

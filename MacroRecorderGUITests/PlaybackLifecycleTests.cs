@@ -15,7 +15,9 @@ public class PlaybackLifecycleTests
         public PlaybackResult Result = PlaybackResult.Running;
         public PlaybackResult StartResult = PlaybackResult.Running;
         public PlaybackResult AbortResult = PlaybackResult.Cancelled;
+        public volatile Exception? PollError;
         public Exception? AbortError;
+        public TaskCompletionSource? AbortAttempted;
         public int Starts;
         public int Aborts;
         public byte[] Bytes = [];
@@ -27,10 +29,11 @@ public class PlaybackLifecycleTests
             Loop = loop;
             return StartResult;
         }
-        public PlaybackResult Poll(ulong sessionId) => Result;
+        public PlaybackResult Poll(ulong sessionId) => PollError is { } error ? throw error : Result;
         public PlaybackResult Abort(ulong sessionId)
         {
             Aborts++;
+            AbortAttempted?.TrySetResult();
             if (AbortError is not null) throw AbortError;
             return AbortResult;
         }
@@ -40,7 +43,7 @@ public class PlaybackLifecycleTests
     private static KeyboardEvent Key() => new(VirtualKey.A, false);
 
     private sealed class QueuedViewModel(IPlaybackEngine engine)
-        : MainWindowViewModel(new FakeRecordEngine(), engine)
+        : MainWindowViewModel(new FakeRecordEngine(), engine, new RunTestLibrary(), new FakePointerEnvironment())
     {
         private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _callbacks = new();
         protected override void InvokeDispatcher(Action action) => _callbacks.Enqueue(action);
@@ -213,6 +216,179 @@ public class PlaybackLifecycleTests
         await task.WaitAsync(TimeSpan.FromSeconds(2));
         vm.DrainCallbacks();
         Assert.IsNull(vm.PlayingMacro);
+    }
+
+    [TestMethod]
+    public async Task PollAndAbortInteropFailuresKeepSessionPendingUntilStopRetryJoins()
+    {
+        var pollError = new InvalidOperationException("fake poll interop failure");
+        var abortError = new InvalidOperationException("fake abort interop failure");
+        var native = new FakeNative
+        {
+            PollError = pollError, AbortError = abortError,
+            AbortAttempted = new(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        using var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        try
+        {
+            await native.AbortAttempted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            // Take the engine gate after the failed cleanup attempt finishes.
+            engine.SetLoopPlayback(false);
+            Assert.IsFalse(task.IsCompleted, "Interop failure does not prove native injection has stopped.");
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.PlaybackEventsAsync([Key()]));
+            Assert.AreEqual(1, native.Starts);
+            Assert.AreSame(abortError, Assert.ThrowsExactly<InvalidOperationException>(engine.PlaybackEventAbort));
+            Assert.IsFalse(task.IsCompleted);
+
+            native.AbortError = null;
+            var stopped = Assert.ThrowsExactly<PlaybackStoppedException>(engine.PlaybackEventAbort);
+            var failure = await Assert.ThrowsExactlyAsync<PlaybackStoppedException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.AreSame(stopped, failure);
+            var errors = ((AggregateException)failure.InnerException!).Flatten().InnerExceptions;
+            CollectionAssert.Contains(errors, pollError);
+            CollectionAssert.Contains(errors, abortError);
+
+            native.PollError = null;
+            var next = engine.PlaybackEventsAsync([Key()]);
+            engine.PlaybackEventAbort();
+            await Assert.ThrowsAsync<OperationCanceledException>(() => next);
+            Assert.AreEqual(2, native.Starts);
+        }
+        finally { native.AbortError = null; }
+    }
+
+    [TestMethod]
+    public async Task PollFailureReportsJoinedCleanupFailureAlongsideOriginalError()
+    {
+        var pollError = new InvalidOperationException("fake poll interop failure");
+        var native = new FakeNative { PollError = pollError, AbortResult = PlaybackResult.InjectionFailed };
+        using var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        var error = await Assert.ThrowsExactlyAsync<AggregateException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
+        StringAssert.Contains(error.Message, "inject or release");
+        CollectionAssert.Contains(error.Flatten().InnerExceptions, pollError);
+        Assert.AreEqual(1, native.Aborts);
+    }
+
+    [TestMethod]
+    public async Task LaterTerminalPollReleasesOwnershipAndReportsBothInteropFailures()
+    {
+        var native = new FakeNative
+        {
+            PollError = new InvalidOperationException("fake poll interop failure"),
+            AbortError = new InvalidOperationException("fake abort interop failure"),
+            AbortAttempted = new(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        using var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        try
+        {
+            await native.AbortAttempted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            engine.SetLoopPlayback(false);
+            Assert.IsFalse(task.IsCompleted);
+            native.Result = PlaybackResult.Finished;
+            native.PollError = null;
+            var error = await Assert.ThrowsExactlyAsync<AggregateException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
+            StringAssert.Contains(error.Message, "poll interop failure");
+            StringAssert.Contains(error.Message, "abort interop failure");
+            Assert.AreEqual(1, native.Aborts);
+
+            // A terminal poll joined the old worker; starting another session is safe.
+            var next = engine.PlaybackEventsAsync([Key()]);
+            await next.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.AreEqual(2, native.Starts);
+        }
+        finally { native.AbortError = null; }
+    }
+
+    [TestMethod]
+    public async Task BackgroundPollFailureWithSuccessfulAbortIsReportedByViewModel()
+    {
+        var native = new FakeNative { PollError = new InvalidOperationException("fake poll interop failure") };
+        using var vm = new QueuedViewModel(new PlaybackEngine(native));
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        vm.ActiveMacro!.AddEvent(Key());
+        await vm.PlayActiveMacro(new PlaybackOptions { Countdown = TimeSpan.Zero }).WaitAsync(TimeSpan.FromSeconds(2));
+        vm.DrainCallbacks();
+        Assert.IsNull(vm.PlayingMacro);
+        Assert.IsTrue(vm.CanPlay);
+        Assert.AreEqual(PlaybackPhase.Failed, vm.PlaybackState.Phase);
+        Assert.AreEqual(1, native.Aborts);
+        Assert.AreEqual(1, messages.Count(message => message.Contains("Could not play macro: fake poll interop failure")));
+    }
+
+    [TestMethod]
+    public async Task DisposeInteropFailureCanRetryJoiningTheOwnedSession()
+    {
+        var native = new FakeNative { AbortError = new InvalidOperationException("fake abort interop failure") };
+        var engine = new PlaybackEngine(native);
+        var task = engine.PlaybackEventsAsync([Key()]);
+        try
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(engine.Dispose);
+            Assert.IsFalse(task.IsCompleted);
+            Assert.ThrowsExactly<ObjectDisposedException>(() => engine.PlaybackEventsAsync([Key()]));
+            native.AbortError = null;
+            engine.Dispose();
+            await Assert.ThrowsAsync<OperationCanceledException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.AreEqual(2, native.Aborts);
+            engine.Dispose();
+            Assert.AreEqual(2, native.Aborts);
+        }
+        finally { native.AbortError = null; engine.PlaybackEventAbort(); engine.Dispose(); }
+    }
+
+    [TestMethod]
+    public async Task PollAndAbortInteropFailuresRetainViewModelAndWorkflowStopOwnership()
+    {
+        var native = new FakeNative
+        {
+            PollError = new InvalidOperationException("fake poll interop failure"),
+            AbortError = new InvalidOperationException("fake abort interop failure"),
+            AbortAttempted = new(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        var engine = new PlaybackEngine(native);
+        using var vm = new QueuedViewModel(engine);
+        var owner = vm.ActiveMacro!;
+        owner.AddEvent(Key());
+        var options = new PlaybackOptions { Countdown = TimeSpan.Zero };
+        var messages = new List<string>();
+        vm.StatusMessageRequested += (_, message) => messages.Add(message);
+        var task = vm.PlayActiveMacro(options);
+        try
+        {
+            await native.AbortAttempted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            engine.SetLoopPlayback(false);
+            vm.DrainCallbacks();
+            Assert.AreSame(owner, vm.PlayingMacro);
+            Assert.IsFalse(vm.CanPlay);
+            Assert.IsFalse(task.IsCompleted);
+            Assert.AreEqual(PlaybackPhase.Playing, vm.PlaybackState.Phase);
+            await vm.PlayActiveMacro(options);
+            Assert.AreEqual(1, native.Starts);
+
+            var attempts = native.Aborts;
+            vm.AbortPlayback();
+            Assert.AreEqual(attempts + 1, native.Aborts);
+            Assert.AreSame(owner, vm.PlayingMacro);
+            Assert.IsFalse(vm.CanPlay);
+            Assert.IsFalse(task.IsCompleted);
+            Assert.AreEqual(PlaybackPhase.Stopping, vm.PlaybackState.Phase);
+
+            native.AbortError = null;
+            vm.AbortPlayback();
+            await task.WaitAsync(TimeSpan.FromSeconds(2));
+            vm.DrainCallbacks();
+            Assert.AreEqual(attempts + 2, native.Aborts);
+            Assert.IsNull(vm.PlayingMacro);
+            Assert.IsTrue(vm.CanPlay);
+            Assert.AreEqual(PlaybackPhase.Failed, vm.PlaybackState.Phase);
+            Assert.IsFalse(messages.Any(message => message.StartsWith("Playback finished")));
+            Assert.AreEqual(1, messages.Count(message => message.StartsWith("Playback stopped with an error")));
+        }
+        finally { native.AbortError = null; }
     }
 
     [TestMethod]

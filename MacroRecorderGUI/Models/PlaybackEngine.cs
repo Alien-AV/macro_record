@@ -36,9 +36,9 @@ internal interface IPlaybackWaitNativeApi : IPlaybackNativeApi
 }
 internal interface IWaitPlaybackProgress { WaitProgress? CurrentWait { get; } }
 
-// Abort joined this session, but cleanup failed. The abort caller reports the
+// Abort joined this session, but playback or cleanup failed. The abort caller reports the
 // error synchronously; the session task carries the same failure for awaiters.
-internal sealed class PlaybackStoppedException(string message) : InvalidOperationException(message);
+internal sealed class PlaybackStoppedException(string message, Exception? innerException = null) : InvalidOperationException(message, innerException);
 
 internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
 {
@@ -50,6 +50,8 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         public WaitProgress? LastWait;
         public ulong WaitEventIndex;
         public string? WaitFailure;
+        public Exception? ObservationError;
+        public bool ObserverCancelled;
     }
     private readonly object _gate = new();
     private readonly IPlaybackNativeApi _native;
@@ -88,18 +90,18 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
 
     private async Task ObserveAsync(Session session)
     {
-        try
+        while (true)
         {
-            while (true)
+            await Task.Delay(10).ConfigureAwait(false);
+            try
             {
-                await Task.Delay(10).ConfigureAwait(false);
                 lock (_gate)
                 {
                     if (!ReferenceEquals(_active, session)) return;
                     var result = _native.Poll(session.Id);
                     if (result == PlaybackResult.Running)
                     {
-                        if (_native is IPlaybackWaitNativeApi waitApi)
+                        if (session.ObservationError is null && _native is IPlaybackWaitNativeApi waitApi)
                         {
                             var waitResult = waitApi.WaitRequest(session.Id, out var request);
                             if (waitResult == PlaybackResult.Running && request.Occurrence != 0 && request.Occurrence != session.Occurrence)
@@ -123,23 +125,37 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
                     return;
                 }
             }
-        }
-        catch (Exception error)
-        {
-            lock (_gate)
+            catch (Exception error)
             {
-                if (!ReferenceEquals(_active, session)) return;
-                try { _native.Abort(session.Id); }
-                catch (Exception cleanupError) { error = new AggregateException(error, cleanupError); }
-                _active = null;
-                session.Completion.TrySetException(error);
-                CancelObserver(session);
+                lock (_gate)
+                {
+                    if (!ReferenceEquals(_active, session)) return;
+                    // The task is an ownership signal for the workflow and UI.
+                    // Fault it only after Poll or Abort confirms native termination.
+                    // Retain the first failure; repeated polling failures must not
+                    // grow an exception chain or repeatedly invoke failed cleanup.
+                    if (session.ObservationError is not null) continue;
+                    session.ObservationError = error;
+                    CancelObserver(session);
+                    PlaybackResult result;
+                    try { result = _native.Abort(session.Id); }
+                    catch (Exception cleanupError)
+                    {
+                        session.ObservationError = new AggregateException(error, cleanupError);
+                        continue;
+                    }
+                    _active = null;
+                    Complete(session, result);
+                    return;
+                }
             }
         }
     }
 
     private static void CancelObserver(Session session)
     {
+        if (session.ObserverCancelled) return;
+        session.ObserverCancelled = true;
         // Cancellation callbacks belong to the observer. Never execute them on
         // the native ownership thread or make terminal completion depend on them.
         _ = session.Cancel.CancelAsync().ContinueWith(task => { _ = task.Exception; session.Cancel.Dispose(); },
@@ -151,10 +167,10 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         try
         {
             var outcome = await _waitRunner.RunAsync(condition, TimeSpan.FromMicroseconds(request.RemainingUs), session.Cancel.Token,
-                progress => { lock (_gate) { if (ReferenceEquals(_active, session) && session.Occurrence == request.Occurrence) session.LastWait = session.Progress = progress; } }).ConfigureAwait(false);
+                progress => { lock (_gate) { if (ReferenceEquals(_active, session) && session.ObservationError is null && session.Occurrence == request.Occurrence) session.LastWait = session.Progress = progress; } }).ConfigureAwait(false);
             lock (_gate)
             {
-                if (!ReferenceEquals(_active, session) || session.Occurrence != request.Occurrence) return;
+                if (!ReferenceEquals(_active, session) || session.ObservationError is not null || session.Occurrence != request.Occurrence) return;
                 if (!outcome.Satisfied) session.WaitFailure = $"Wait at event {request.EventIndex + 1}: {WaitValidation.Describe(condition)}. {outcome.Detail}";
                 var result = ((IPlaybackWaitNativeApi)_native).ResolveWait(session.Id, request.Occurrence, outcome.Satisfied);
                 if (result is not (PlaybackResult.Running or PlaybackResult.StaleWait or PlaybackResult.StaleSession))
@@ -166,7 +182,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         {
             lock (_gate)
             {
-                if (!ReferenceEquals(_active, session) || session.Occurrence != request.Occurrence) return;
+                if (!ReferenceEquals(_active, session) || session.ObservationError is not null || session.Occurrence != request.Occurrence) return;
                 session.WaitFailure = $"Wait at event {request.EventIndex + 1} failed: {error.Message}";
                 try { ((IPlaybackWaitNativeApi)_native).ResolveWait(session.Id, request.Occurrence, false); }
                 catch { /* Native deadline remains authoritative if resolution interop fails. */ }
@@ -202,13 +218,14 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
         var result = _native.Abort(session.Id);
         _active = null;
         CancelObserver(session);
-        if (result is PlaybackResult.Finished or PlaybackResult.Cancelled)
+        var error = CompletionError(session, result);
+        if (error is null)
         {
             session.Completion.TrySetCanceled();
             return null;
         }
 
-        var failure = new PlaybackStoppedException(PlaybackError(result).Message);
+        var failure = new PlaybackStoppedException(error.Message, error);
         session.Completion.TrySetException(failure);
         return failure;
     }
@@ -217,7 +234,7 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
     {
         lock (_gate)
         {
-            if (_disposed) return;
+            if (_disposed && _active is null) return;
             _disposed = true;
             // The session task preserves cleanup errors. A terminal failure must
             // not escape through the window's synchronous shutdown callback.
@@ -227,11 +244,19 @@ internal sealed class PlaybackEngine : IPlaybackEngine, IWaitPlaybackProgress
 
     private void Complete(Session session, PlaybackResult result)
     {
-        if (result == PlaybackResult.Finished) session.Completion.TrySetResult();
-        else if (result == PlaybackResult.Cancelled) session.Completion.TrySetCanceled();
-        else session.Completion.TrySetException(result is PlaybackResult.WaitFailed or PlaybackResult.WaitTimedOut
-            ? TerminalWaitError(session, result)
-            : PlaybackError(result));
+        var error = CompletionError(session, result);
+        if (error is not null) session.Completion.TrySetException(error);
+        else if (result == PlaybackResult.Finished) session.Completion.TrySetResult();
+        else session.Completion.TrySetCanceled();
+    }
+
+    private Exception? CompletionError(Session session, PlaybackResult result)
+    {
+        var nativeError = result is PlaybackResult.Finished or PlaybackResult.Cancelled ? null
+            : result is PlaybackResult.WaitFailed or PlaybackResult.WaitTimedOut ? TerminalWaitError(session, result)
+            : PlaybackError(result);
+        return session.ObservationError is not { } observationError ? nativeError
+            : nativeError is null ? observationError : new AggregateException(observationError, nativeError);
     }
 
     private Exception TerminalWaitError(Session session, PlaybackResult result)

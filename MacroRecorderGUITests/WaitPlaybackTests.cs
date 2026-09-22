@@ -16,14 +16,22 @@ public sealed class WaitPlaybackTests
         public NativeWaitRequest Request;
         public bool TimeoutBeforeRequest, TimeoutAfterSuccess, FailTerminalQuery;
         public int ActiveQueries;
+        public volatile Exception? PollError;
+        public Exception? AbortError;
+        public TaskCompletionSource? AbortAttempted;
         public PlaybackResult Start(byte[] events, bool loop, out ulong sessionId)
         {
             Result = PlaybackResult.Running; Starts++; sessionId = ++Id;
             Request = new() { Occurrence = 7, EventIndex = Index, RemainingUs = 1_000_000 };
             return Result;
         }
-        public PlaybackResult Poll(ulong id) => TimeoutBeforeRequest ? Result = PlaybackResult.WaitTimedOut : Result;
-        public PlaybackResult Abort(ulong id) => Result = PlaybackResult.Cancelled;
+        public PlaybackResult Poll(ulong id) => PollError is { } error ? throw error : TimeoutBeforeRequest ? Result = PlaybackResult.WaitTimedOut : Result;
+        public PlaybackResult Abort(ulong id)
+        {
+            AbortAttempted?.TrySetResult();
+            if (AbortError is { } error) throw error;
+            return Result = PlaybackResult.Cancelled;
+        }
         public PlaybackResult SetLoop(ulong id, bool loop) => Result;
         public PlaybackResult WaitRequest(ulong id, out NativeWaitRequest request)
         {
@@ -205,6 +213,46 @@ public sealed class WaitPlaybackTests
     {
         var condition = ConditionalWaitTests.Condition(); condition.StableForUs = 0;
         return new(condition);
+    }
+
+    [TestMethod]
+    public async Task PollAndAbortInteropFailureCancelsObserverWithoutResolvingRetainedNativeWait()
+    {
+        var native = new Native
+        {
+            AbortError = new InvalidOperationException("fake abort interop failure"),
+            AbortAttempted = new(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        var observing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<WaitObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var engine = new PlaybackEngine(native, new Observer((condition, token) =>
+        {
+            token.Register(() => cancelled.TrySetResult());
+            observing.TrySetResult();
+            return new(response.Task);
+        }));
+        var task = engine.PlaybackEventsAsync([Wait()]);
+        try
+        {
+            await observing.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            native.PollError = new InvalidOperationException("fake poll interop failure");
+            await native.AbortAttempted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            engine.SetLoopPlayback(false);
+            await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.IsFalse(task.IsCompleted);
+            response.SetResult(new(ObservationState.Match, "late result after failed abort"));
+
+            // Native timeouts remain authoritative when abort could not join.
+            native.Result = PlaybackResult.WaitTimedOut;
+            native.PollError = null;
+            var error = await Assert.ThrowsExactlyAsync<AggregateException>(() => task.WaitAsync(TimeSpan.FromSeconds(2)));
+            StringAssert.Contains(error.Message, "native deadline");
+            StringAssert.Contains(error.Message, "poll interop failure");
+            StringAssert.Contains(error.Message, "abort interop failure");
+            Assert.AreEqual(0, native.Resolves);
+        }
+        finally { native.AbortError = null; response.TrySetResult(new(ObservationState.Match, "released")); }
     }
 
     [TestMethod]
