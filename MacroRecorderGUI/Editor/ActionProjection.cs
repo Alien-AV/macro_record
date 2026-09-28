@@ -44,9 +44,12 @@ public sealed class ActionProjection
     private int _segment;
     private bool _anomalous;
     private bool _originSegmentPending;
+    private readonly List<RecordedAction> _delayFragments = [];
+    private bool _delaySequenceAnomalous;
 
     public void BeginPointerSegment(PointerOriginBoundary origin)
     {
+        _delayFragments.Clear(); _delaySequenceAnomalous = false;
         if (_active is { } active) { UpdateKeyLabels(active); active.Notify(); _active = null; }
         TotalTime += origin.DelayMicroseconds;
         _position = origin.Position is { Frame: PointerCoordinateFrame.PhysicalScreenPixels } point
@@ -69,6 +72,7 @@ public sealed class ActionProjection
         TotalTime = 0; _buttons = 0; _active = null; _position = null; _previousMouse = null; _segment = 0;
         _bounds.Clear(); IncompleteActionCount = 0; HasRelativeMovement = false; _anomalous = false;
         _originSegmentPending = false;
+        _delayFragments.Clear(); _delaySequenceAnomalous = false;
     }
 
     public void Append(InputEvent input)
@@ -107,7 +111,19 @@ public sealed class ActionProjection
         var neutral = _keys.Count == 0 && _buttons == 0;
         if (input is DelayEvent delay)
         {
-            if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
+            if (_active is { } previous)
+            {
+                if (!neutral)
+                {
+                    // Keep disjoint raw ranges, but resolve balance across the fixed delay.
+                    _delayFragments.Add(previous); _delaySequenceAnomalous |= _anomalous;
+                    previous.Kind = ActionKind.Sequence;
+                    previous.Name = "Input sequence part";
+                    previous.Detail = "Input sequence · continues after delay";
+                    previous.Description = "Keys/buttons remain held across the delay · original order";
+                }
+                UpdateKeyLabels(previous); previous.Notify();
+            }
             AddAction(new RecordedAction(index, input, timeBefore)
             {
                 Count = 1, Kind = ActionKind.Delay, Complete = true,
@@ -119,6 +135,7 @@ public sealed class ActionProjection
         }
         if (input is WaitConditionEvent wait)
         {
+            _delayFragments.Clear(); _delaySequenceAnomalous = false;
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
             var waitAction = new RecordedAction(index, input, timeBefore) { Count = 1,
                 Kind = ActionKind.Wait, Complete = neutral, Name = "Wait until…", Detail = wait.Description,
@@ -133,8 +150,8 @@ public sealed class ActionProjection
         {
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
             _active = new(index, input, timeBefore);
-            _candidate = ActionKind.Raw;
-            _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = false;
+            _candidate = _delayFragments.Count > 0 ? ActionKind.Sequence : ActionKind.Raw;
+            _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = _delaySequenceAnomalous;
             if (neutral)
             {
                 if (input is KeyboardEvent { KeyUp: false }) _candidate = ActionKind.Keys;
@@ -173,6 +190,15 @@ public sealed class ActionProjection
         action.Complete = !_anomalous && (_candidate is ActionKind.Move or ActionKind.Scroll
             || (_candidate is ActionKind.Click or ActionKind.Keys or ActionKind.Sequence && _buttons == 0 && _keys.Count == 0));
         if (!action.Complete) IncompleteActionCount++;
+        if (_keys.Count == 0 && _buttons == 0 && _delayFragments.Count > 0)
+        {
+            if (action.Complete)
+                foreach (var fragment in _delayFragments)
+                {
+                    fragment.Complete = true; IncompleteActionCount--; fragment.Notify();
+                }
+            _delayFragments.Clear(); _delaySequenceAnomalous = false;
+        }
         action.Kind = _candidate == ActionKind.Sequence ? ActionKind.Sequence
             : action.Complete ? (_candidate == ActionKind.Click && _moved ? ActionKind.Drag : _candidate) : ActionKind.Raw;
         action.Detail = action.Kind switch

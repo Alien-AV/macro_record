@@ -123,6 +123,66 @@ public sealed class EditorDelayTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void BalancedInputAcrossDelayHasDisjointCompleteRangesAndAllowsUnrelatedGeometry(bool mouse)
+    {
+        InputEvent down = mouse ? new MouseEvent(0, 0, MouseActionTypeFlags.LeftDown) : new KeyboardEvent(VirtualKey.A, false);
+        InputEvent up = mouse ? new MouseEvent(0, 0, MouseActionTypeFlags.LeftUp) : new KeyboardEvent(VirtualKey.A, true);
+        using var macro = Macro(down, new DelayEvent(100));
+        Assert.AreEqual(1, macro.Editor.Projection.IncompleteActionCount, "A still-held input remains incomplete while recording.");
+        macro.AddEvent(up);
+        macro.AddEvent(new MouseEvent(10, 20, MouseActionTypeFlags.Move));
+        macro.Editor.Refresh();
+        var projection = macro.Editor.Projection;
+        Assert.AreEqual(0, projection.IncompleteActionCount);
+        CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, projection.Actions.Select(a => a.Start).ToArray());
+        Assert.IsTrue(projection.Actions.All(a => a.Count == 1 && a.Complete && a.Warning == ""));
+        Assert.AreEqual(ActionKind.Sequence, projection.Actions[0].Kind);
+        Assert.AreEqual(ActionKind.Delay, projection.Actions[1].Kind);
+        Assert.AreEqual(ActionKind.Sequence, projection.Actions[2].Kind);
+        var move = projection.Actions[3];
+        Assert.IsNull(macro.Editor.GeometryBlockReason(move));
+        var original = macro.SnapshotBytes();
+        macro.Editor.SetDestination(move, 30, 40);
+        Assert.AreEqual(30, ((MouseEvent)macro.Events[3]).X);
+        Assert.IsTrue(macro.Editor.Undo());
+        CollectionAssert.AreEqual(original, macro.SnapshotBytes());
+    }
+
+    [TestMethod]
+    public void MultipleDelayFragmentsResolveTogetherButDoNotHideAnomalies()
+    {
+        foreach (var anomalous in new[] { false, true })
+        {
+            using var macro = Macro(new KeyboardEvent(VirtualKey.A, false), new DelayEvent(0),
+                new MouseEvent(0, 0, MouseActionTypeFlags.LeftDown), new DelayEvent(100),
+                new KeyboardEvent(anomalous ? VirtualKey.B : VirtualKey.A, true),
+                new MouseEvent(0, 0, MouseActionTypeFlags.LeftUp),
+                new MouseEvent(10, 20, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 300000 });
+            var projection = macro.Editor.Projection;
+            Assert.AreEqual(anomalous, projection.IncompleteActionCount > 0);
+            Assert.AreEqual(macro.Events.Count, projection.Actions.Sum(a => a.Count));
+            for (var i = 1; i < projection.Actions.Count; i++)
+                Assert.AreEqual(projection.Actions[i - 1].End, projection.Actions[i].Start);
+            if (!anomalous) Assert.IsNull(macro.Editor.GeometryBlockReason(projection.Actions[^1]));
+        }
+    }
+
+    [TestMethod]
+    public void BalancedEndDoesNotEraseAnUnmatchedTransitionBeforeDelay()
+    {
+        using var macro = Macro(new MouseEvent(0, 0, MouseActionTypeFlags.LeftDown),
+            new MouseEvent(0, 0, MouseActionTypeFlags.RightUp), new DelayEvent(100),
+            new MouseEvent(0, 0, MouseActionTypeFlags.LeftUp),
+            new MouseEvent(10, 20, MouseActionTypeFlags.Move));
+        Assert.AreEqual(2, macro.Editor.Projection.IncompleteActionCount);
+        Assert.IsNotNull(macro.Editor.GeometryBlockReason(macro.Editor.Projection.Actions[^1]));
+        Assert.IsFalse(macro.Editor.Projection.Actions[0].Complete);
+        Assert.IsFalse(macro.Editor.Projection.Actions[2].Complete);
+    }
+
+    [TestMethod]
     public void ReplacingDelayReplacesOnlyTheSelectedTimingStep()
     {
         foreach (var replaceGap in new[] { false, true })

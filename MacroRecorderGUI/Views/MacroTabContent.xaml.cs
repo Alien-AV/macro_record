@@ -534,7 +534,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         }
         _display = frame.Overview; _selectedDisplay = frame.SelectedSamples; _space = frame.Space;
         PathSelectionNote.Text = action is null ? "Select an action to see its movement"
-            : frame.HasSelectedPosition ? $"Action {action.Number:D2} · {frame.SelectionLabel}" : frame.SelectionLabel;
+            : frame.HasSelectedPosition ? $"Action {action.StepNumber:D2} · {frame.SelectionLabel}" : frame.SelectionLabel;
         SelectedPathLegend.Visibility = frame.HasSelectedPosition ? Visibility.Visible : Visibility.Collapsed;
         PathNote.Text = _space switch
         {
@@ -587,7 +587,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         marker.Width = marker.Height = 12; marker.StrokeThickness = 2;
         marker.Stroke = BrushResource(ReferenceEquals(action, _pathAction) ? "Path" : "Muted");
         marker.Fill = BrushResource("Paper");
-        Place(marker, Map(p)); ToolTipService.SetToolTip(marker, $"Action {action.Number:D2} · {action.Detail} · last recorded position before drag");
+        Place(marker, Map(p)); ToolTipService.SetToolTip(marker, $"Action {action.StepNumber:D2} · {action.Detail} · last recorded position before drag");
         marker.Tapped += (_, args) => { if (IsPreviewMode) SeekPreview(action.StartTime); else ActionsList.SelectedItem = action; args.Handled = true; };
         PathCanvas.Children.Add(marker);
     }
@@ -645,7 +645,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             {
                 var end = AddDot(p, 14, "Paper");
                 end.Stroke = BrushResource("Path"); end.StrokeThickness = 2.5;
-                if (!IsPreviewMode && i == samples.Count - 1 && _pathAction is { } action) AddPathLabel(p, $"Action {action.Number:D2} end", below: false);
+                if (!IsPreviewMode && i == samples.Count - 1 && _pathAction is { } action) AddPathLabel(p, $"Action {action.StepNumber:D2} end", below: false);
             }
         }
     }

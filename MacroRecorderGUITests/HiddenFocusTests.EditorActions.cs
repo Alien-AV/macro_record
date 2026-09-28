@@ -169,6 +169,9 @@ public sealed partial class HiddenFocusTests
                 Call(editor, "SetRawOpen", false);
                 actions.SelectedItem = macro.Editor.Projection.Actions[1];
                 Assert.IsNull(Field<InputEvent?>(editor, "_leadingDelayAnchor"));
+                Call(editor, "DrawPath");
+                StringAssert.StartsWith(Field<TextBlock>(editor, "PathSelectionNote").Text, "Action 04",
+                    "Path labels use the same visible step number as the sequence list.");
                 Call(editor, "SetRawOpen", true);
                 Assert.AreSame(macro.Events[1], ((RawEventRow)raw.SelectedItem).Input);
                 Call(editor, "HandleDeleteKey", raw, VirtualKey.Delete, null);
