@@ -11,6 +11,9 @@ public sealed class RecordingSession
         RecordingStopGestures stopGestures = RecordingStopGestures.None, IReadOnlyList<RecordingCaptureGesture>? captureGestures = null)
         : this(context, new StartState(fromHotkey), stopGestures, captureGestures ?? []) { }
 
+    internal RecordingSession(uint requestedAt, IReadOnlyList<RecordingCaptureGesture> captureGestures)
+        : this(captureGestures: captureGestures) => RequestedAt = requestedAt;
+
     private RecordingSession(object? context, StartState start, RecordingStopGestures stopGestures, IReadOnlyList<RecordingCaptureGesture> captureGestures)
     {
         Context = context;

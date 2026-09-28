@@ -11,6 +11,7 @@ public interface IRecordEngine : IDisposable
     event Action<RecordingSession, PointerPosition?>? RecordingStarted;
     bool StartRecord(RecordingSession session);
     bool StopRecord(RecordingStopCommand? command = null);
+    bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime);
     CapturedWaitSubmission CapturedWait(WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime);
 }
 
@@ -45,6 +46,7 @@ public sealed class RecordEngine : IRecordEngine
     public event Action<RecordingSession, PointerPosition?>? RecordingStarted;
     public bool StartRecord(RecordingSession session) => _capture.Start(session);
     public bool StopRecord(RecordingStopCommand? command = null) => _capture.Stop(command);
+    public bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime) => _capture.AcceptsRecordingCapture(gesture, messageTime);
     public CapturedWaitSubmission CapturedWait(WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime) => _capture.CapturedWait(condition, gesture, messageTime);
     public void Dispose() => _capture.Dispose();
 

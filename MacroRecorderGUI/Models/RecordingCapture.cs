@@ -103,13 +103,25 @@ public sealed class RecordingCapture : IDisposable
         }
     }
 
+    public bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime)
+    {
+        lock (_gate) return CaptureRejection(gesture, messageTime) is null;
+    }
+
+    private CapturedWaitSubmission? CaptureRejection(RecordingCaptureGesture gesture, uint messageTime)
+    {
+        if (_disposed || _requestedSession is not { } session) return CapturedWaitSubmission.Inactive;
+        if (unchecked((int)(messageTime - session.RequestedAt)) < 0) return CapturedWaitSubmission.Stale;
+        if (!session.CaptureGestures.Contains(gesture)) return CapturedWaitSubmission.Unregistered;
+        return null;
+    }
+
     public CapturedWaitSubmission CapturedWait(WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime)
     {
         lock (_gate)
         {
-            if (_disposed || _requestedSession is not { } session) return CapturedWaitSubmission.Inactive;
-            if (unchecked((int)(messageTime - session.RequestedAt)) < 0) return CapturedWaitSubmission.Stale;
-            if (!session.CaptureGestures.Contains(gesture)) return CapturedWaitSubmission.Unregistered;
+            if (CaptureRejection(gesture, messageTime) is { } rejection) return rejection;
+            var session = _requestedSession!;
             // Even an invalid sample must release its native reservation.
             if (condition is not null)
             {

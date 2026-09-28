@@ -390,6 +390,13 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     public RecordingStopGestures RegisteredRecordingStops { get; set; }
     public IReadOnlyList<RecordingCaptureGesture> RegisteredRecordingCaptures { get; set; } = [];
+    /// <summary>Read-only eligibility before sampling; submission revalidates and native FIFO acknowledgment remains authoritative.</summary>
+    public bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime)
+        => HasCurrentCaptureTarget && RecordEngine.AcceptsRecordingCapture(gesture, messageTime);
+
+    private bool HasCurrentCaptureTarget => !_disposed && !_shuttingDown
+        && _recordingSession?.Context is RecordingTarget target && IsCurrentTarget(target);
+
     public CapturedWaitSubmission AddCapturedWait(ProtobufGenerated.WaitCondition condition, RecordingCaptureGesture gesture, uint messageTime)
         => SubmitCapturedWait(condition, gesture, messageTime);
     public CapturedWaitSubmission CancelCapturedWait(RecordingCaptureGesture gesture, uint messageTime)
@@ -397,7 +404,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
 
     private CapturedWaitSubmission SubmitCapturedWait(ProtobufGenerated.WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime)
     {
-        if (_disposed || _shuttingDown || _recordingSession is null) return CapturedWaitSubmission.Inactive;
+        if (!HasCurrentCaptureTarget) return CapturedWaitSubmission.Inactive;
         try
         {
             var result = RecordEngine.CapturedWait(condition, gesture, messageTime);

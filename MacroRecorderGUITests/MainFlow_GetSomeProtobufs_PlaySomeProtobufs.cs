@@ -33,6 +33,7 @@ internal sealed class FakeRecordEngine : IRecordEngine
         return true;
     }
     public void Dispose() => _engine.Dispose();
+    public bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime) => _engine.AcceptsRecordingCapture(gesture, messageTime);
     public CapturedWaitSubmission CapturedWait(WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime) => _engine.CapturedWait(condition, gesture, messageTime);
 
     public void PushEvent(ProtobufInputEvent fakeEvent)

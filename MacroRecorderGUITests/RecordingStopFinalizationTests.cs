@@ -102,6 +102,7 @@ public sealed class RecordingStopFinalizationTests
         public bool StartRecord(RecordingSession session) => _inner.StartRecord(session);
         public bool StopRecord(RecordingStopCommand? command = null) => !RejectStop && _inner.StopRecord(command);
         public void Dispose() => _inner.Dispose();
+        public bool AcceptsRecordingCapture(RecordingCaptureGesture gesture, uint messageTime) => _inner.AcceptsRecordingCapture(gesture, messageTime);
         public CapturedWaitSubmission CapturedWait(ProtobufGenerated.WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime) => _inner.CapturedWait(condition, gesture, messageTime);
     }
 }
