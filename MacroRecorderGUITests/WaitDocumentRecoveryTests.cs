@@ -359,11 +359,11 @@ public sealed class WaitDocumentRecoveryTests
         var store = Store();
         var error = await Assert.ThrowsAsync<IOException>(() => store.LoadAsync(fixture.Healthy.Metadata.Id));
         StringAssert.Contains(error.Message, "event 1");
-        StringAssert.Contains(error.Message, "supported window or pixel condition");
+        StringAssert.Contains(error.Message, "supported wait condition");
         Assert.IsInstanceOfType<AggregateException>(error.InnerException);
         var listing = await store.ListAsync();
         Assert.AreEqual(0, listing.Items.Count);
-        StringAssert.Contains(listing.Warnings.Single(), "supported window or pixel condition");
+        StringAssert.Contains(listing.Warnings.Single(), "supported wait condition");
         await Assert.ThrowsAsync<IOException>(() => store.DeleteAsync(fixture.Healthy.Metadata.Id));
         CollectionAssert.AreEqual(fixture.Primary, await File.ReadAllBytesAsync(fixture.Path));
         CollectionAssert.AreEqual(fixture.Primary, await File.ReadAllBytesAsync(fixture.Path + ".bak"));
@@ -378,7 +378,7 @@ public sealed class WaitDocumentRecoveryTests
         var wire = Wire(version == 3 ? Malformed("provider") : Condition());
         var recovery = version == 1 ? wire : Envelope(wire, version);
         var error = Assert.Throws<InvalidDataException>(() => RecordingDocument.Read(Envelope([], recovery: recovery)));
-        StringAssert.Contains(error.Message, version == 3 ? "supported window or pixel condition" : "version 3");
+        StringAssert.Contains(error.Message, version == 3 ? "supported wait condition" : "version 3");
     }
 
     [TestMethod]

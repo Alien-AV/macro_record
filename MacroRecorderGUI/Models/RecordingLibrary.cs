@@ -139,7 +139,7 @@ public sealed partial class RecordingLibraryStore : IRecordingLibraryStore, IRec
         if (bytes.Length > MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
         var document = RecordingDocument.Read(bytes);
         var events = document.ParseEvents().InputEvents.Select(Event.InputEvent.CreateInputEvent).ToArray();
-        var duration = events.Aggregate(BigInteger.Zero, (total, input) => total + input.TimeSinceLastEvent)
+        var duration = events.Aggregate(BigInteger.Zero, (total, input) => total + input.TimeSinceLastEvent + (input is Event.DelayEvent delay ? delay.DurationMicroseconds : 0))
             + document.Origins.Aggregate(BigInteger.Zero, (total, origin) => total + origin.DelayMicroseconds);
         return new(id, name, isDraft, created, updated, events.Length, duration.ToString(System.Globalization.CultureInfo.InvariantCulture),
             events.Any(input => input.Type == Event.InputEvent.InputEventType.KeyboardEvent),

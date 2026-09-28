@@ -79,7 +79,7 @@ internal sealed record RecordingDocument
                 if (input.Delay is { } delay) Event.DelayEvent.ValidateDuration(delay.DurationMicroseconds);
             }
             catch (ArgumentException error)
-            { throw new InvalidDataException($"Invalid conditional wait at event {index + 1}: {error.Message}", error); }
+            { throw new InvalidDataException($"Invalid action at event {index + 1}: {error.Message}", error); }
             if (version < needed)
                 throw new InvalidDataException($"The action at event {index + 1} requires file-format version {needed}. Raw protobuf and older recordings cannot contain this action.");
         }

@@ -2,6 +2,11 @@ using ProtobufGenerated;
 
 namespace MacroRecorder.Waiting;
 
+public interface IWaitScheduleEvent
+{
+    ProtobufInputEvent OriginalProtobufInputEvent { get; }
+}
+
 public enum ReadStatus { Success, Unavailable, Error }
 
 /// <summary>Transient window identity. Never persist Handle or ProcessId as a selector.</summary>
@@ -38,7 +43,7 @@ public sealed class WaitLocalSettings
     public bool MemoryEnabled
     {
         get => Options.MemoryEnabled;
-        set { WaitLocalOptions before; do { before = Options; } while (Interlocked.CompareExchange(ref _options, before with { MemoryEnabled = value }, before) != before); }
+        set { WaitLocalOptions before; do { before = Options; } while (!ReferenceEquals(Interlocked.CompareExchange(ref _options, before with { MemoryEnabled = value }, before), before)); }
     }
 }
 

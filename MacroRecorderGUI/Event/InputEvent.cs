@@ -4,7 +4,7 @@ using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Event;
 
-public abstract class InputEvent : INotifyPropertyChanged
+public abstract class InputEvent : INotifyPropertyChanged, IWaitScheduleEvent
 {
     public enum InputEventType
     {

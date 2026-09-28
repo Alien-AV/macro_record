@@ -102,6 +102,57 @@ TEST(FixedDelay, ZeroDurationBatchStillYieldsAndCanBeCancelled) {
     EXPECT_EQ(PlaybackResult::Cancelled, session.abort(id));
 }
 
+TEST(ExtendedWait, NativeValidatesEachProviderAndCreatesOrdinaryWaitBoundary) {
+    auto event = wait_event(); event->condition.set_semantics_version(2); event->condition.set_poll_interval_us(250000);
+    auto text = event->condition.mutable_accessibility_text();
+    text->mutable_target()->set_title("Fake"); text->mutable_element()->set_automation_id("status"); text->mutable_predicate()->set_expected("Ready");
+    EXPECT_TRUE(WaitEvent::valid(event->condition));
+    event->condition.set_poll_interval_us(100000); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    event->condition.set_poll_interval_us(500000);
+    auto ocr = event->condition.mutable_ocr_text(); ocr->set_language("eng"); ocr->mutable_region()->set_width(100); ocr->mutable_region()->set_height(100); ocr->mutable_predicate();
+    EXPECT_TRUE(WaitEvent::valid(event->condition));
+    ocr->set_language("../eng"); EXPECT_FALSE(WaitEvent::valid(event->condition)); ocr->set_language("eng");
+    ocr->mutable_region()->set_width(4096); ocr->mutable_region()->set_height(4096); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    auto memory = event->condition.mutable_memory(); memory->set_executable_path("C:\\fake.exe"); memory->set_absolute_address(4096);
+    memory->set_scalar_type(protobufGenerated::UINT64); memory->set_expected("18446744073709551615");
+    EXPECT_TRUE(WaitEvent::valid(event->condition));
+    memory->set_expected("18446744073709551616"); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    memory->set_scalar_type(protobufGenerated::INT64); memory->set_expected("-9223372036854775808"); EXPECT_TRUE(WaitEvent::valid(event->condition));
+    memory->set_expected("-9223372036854775809"); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    memory->set_scalar_type(protobufGenerated::FLOAT64); memory->set_expected("NaN"); EXPECT_FALSE(WaitEvent::valid(event->condition));
+    memory->set_expected("7.25"); memory->set_tolerance(.25); EXPECT_TRUE(WaitEvent::valid(event->condition));
+    memory->set_comparison(protobufGenerated::LESS); EXPECT_FALSE(WaitEvent::valid(event->condition)); memory->set_tolerance(0);
+    for (int i = 0; i < 17; ++i) memory->add_pointer_offsets(0);
+    EXPECT_FALSE(WaitEvent::valid(event->condition)); memory->mutable_pointer_offsets()->RemoveLast(); EXPECT_TRUE(WaitEvent::valid(event->condition));
+    const auto serialized = event->serialize(); EXPECT_NE(nullptr, dynamic_cast<WaitEvent*>(record_playback::deserialize_event(*serialized).get()));
+    PlaybackSession session([](const Event&) { ADD_FAILURE() << "Wait injected input"; return true; }, true);
+    std::vector<std::unique_ptr<Event>> events; events.push_back(std::move(event)); uint64_t id;
+    ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    const auto active = request(session, id); ASSERT_NE(0u, active.occurrence);
+    EXPECT_EQ(PlaybackResult::Running, session.resolve_wait(id, active.occurrence, true));
+    EXPECT_EQ(PlaybackResult::Finished, finished(session, id));
+}
+
+TEST(FixedDelay, OversizedCombinedScheduleRejectsBeforeAnySinkCall) {
+    PlaybackSession session([](const Event&) { ADD_FAILURE(); return true; });
+    auto delay = std::make_unique<DelayEvent>(); delay->duration = 24h;
+    delay->time_since_last_event = (std::chrono::microseconds::max)();
+    std::vector<std::unique_ptr<Event>> events; events.push_back(std::move(delay)); uint64_t id;
+    EXPECT_EQ(PlaybackResult::InvalidInput, session.start(std::move(events), false, id));
+}
+
+TEST(ExtendedWait, ScalarSignGrammarMatchesManaged) {
+    auto event = wait_event(); event->condition.set_semantics_version(2); event->condition.set_poll_interval_us(100000);
+    auto memory = event->condition.mutable_memory(); memory->set_executable_path("C:\\fake.exe"); memory->set_absolute_address(4096);
+    for (const auto type : { protobufGenerated::INT64, protobufGenerated::UINT64, protobufGenerated::FLOAT64 }) {
+        memory->set_scalar_type(type);
+        for (const auto value : { "+-1", "++1", "-+1", "--1" }) { memory->set_expected(value); EXPECT_FALSE(WaitEvent::valid(event->condition)) << value; }
+        for (const auto value : { "+1", "-0", "0" }) { memory->set_expected(value); EXPECT_TRUE(WaitEvent::valid(event->condition)) << value; }
+    }
+    for (const auto value : { "1e+2", "1e-2", "+1.0e-2" }) { memory->set_expected(value); EXPECT_TRUE(WaitEvent::valid(event->condition)) << value; }
+    for (const auto value : { "1e+-2", "1e++2", "1e--2" }) { memory->set_expected(value); EXPECT_FALSE(WaitEvent::valid(event->condition)) << value; }
+}
+
 TEST(ConditionalWait, NativeDeadlineStopsWithoutObserverAndRejectsLateResponse) {
     std::atomic<int> calls{0}; PlaybackSession session([&](const Event&) { ++calls; return true; });
     auto events = only_wait(50ms); events.push_back(key_event(true));

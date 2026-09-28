@@ -42,11 +42,24 @@ public sealed class FixedDelayBackendTests
     }
 
     [TestMethod]
-    public void InvalidDelayAndUnimplementedWaitSourceFailClosed()
+    public void InvalidDelayAndIncompleteWaitSourceFailClosed()
     {
         Assert.AreEqual(0UL, new DelayEvent(0).DurationMicroseconds);
         Assert.Throws<ArgumentException>(() => new DelayEvent(DelayEvent.MaximumDurationMicroseconds + 1));
         var wait = WaitValidation.NewWindow(); wait.SemanticsVersion = 2; wait.Memory = new();
         Assert.Throws<ArgumentException>(() => WaitValidation.Validate(wait));
+    }
+
+    [TestMethod]
+    public async Task ScalingCanRoundExplicitDelayToZeroAndRejectsOverflowBeforeStarting()
+    {
+        var engine = new FakePlaybackEngine(); var workflow = new PlaybackWorkflow(engine);
+        var delay = new DelayEvent(1) { TimeSinceLastEvent = 1 };
+        await workflow.PlayAsync([delay], new() { Countdown = TimeSpan.Zero, Speed = 10 });
+        var played = (DelayEvent)engine.PlayedEvents.Single();
+        Assert.AreEqual(0UL, played.DurationMicroseconds); Assert.AreEqual(0UL, played.TimeSinceLastEvent);
+        Assert.AreEqual(1UL, delay.DurationMicroseconds);
+        Assert.Throws<ArgumentOutOfRangeException>(() => workflow.PlayAsync([new DelayEvent(DelayEvent.MaximumDurationMicroseconds)], new() { Countdown = TimeSpan.Zero, Speed = .1 }));
+        Assert.AreEqual(1, engine.Starts);
     }
 }

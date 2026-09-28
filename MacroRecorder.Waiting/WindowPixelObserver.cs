@@ -2,19 +2,19 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 using ProtobufGenerated;
-using Point = MacroRecorderGUI.Models.WaitPixelPoint;
-using Rect = MacroRecorderGUI.Models.WaitPixelRect;
+using Point = MacroRecorder.Waiting.WaitPixelPoint;
+using Rect = MacroRecorder.Waiting.WaitPixelRect;
 
-namespace MacroRecorderGUI.Models;
+namespace MacroRecorder.Waiting;
 
-internal sealed record ObservedWindow(nint Handle, uint ProcessId, ulong ProcessCreated, string WindowClass,
+public sealed record ObservedWindow(nint Handle, uint ProcessId, ulong ProcessCreated, string WindowClass,
     string Title, string ExecutablePath, bool Visible, bool Foreground)
 {
     public string Identity => $"{Handle:X}:{ProcessId}:{ProcessCreated}";
 }
-internal sealed record WindowObservation(IReadOnlyList<ObservedWindow> Windows, ObservationState? Failure = null, string Detail = "");
-internal sealed record PixelObservation(uint Rgb, string Identity, string? Unavailable = null);
-internal interface IWindowPixelDesktop
+public sealed record WindowObservation(IReadOnlyList<ObservedWindow> Windows, ObservationState? Failure = null, string Detail = "");
+public sealed record PixelObservation(uint Rgb, string Identity, string? Unavailable = null);
+public interface IWindowPixelDesktop
 {
     WindowObservation FindWindows(WindowSelector selector, CancellationToken token);
     PixelObservation ReadPixel(PixelCondition condition, ObservedWindow? window);
@@ -54,7 +54,7 @@ internal sealed class WindowPixelObserver(IWindowPixelDesktop desktop) : IWaitOb
     }
 }
 
-internal interface IWaitPixelApi : IWaitGeometryApi
+public interface IWaitPixelApi : IWaitGeometryApi
 {
     bool Revalidate(ObservedWindow window);
     bool OnMonitor(Point point);
@@ -98,7 +98,7 @@ internal static class WaitPixelSampler
     }
 }
 
-internal sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitPixelApi
+public sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitPixelApi
 {
     public WindowObservation FindWindows(WindowSelector selector, CancellationToken token)
     {
