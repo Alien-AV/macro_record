@@ -94,8 +94,17 @@ public:
             repeated = down_[key->virtualKeyCode];
             down_[key->virtualKeyCode] = !key->keyUp;
             if (suppressed_[key->virtualKeyCode]) {
-                if (key->keyUp) suppressed_[key->virtualKeyCode] = false;
-                add_delay(suppressed_delay_, event->time_since_last_event);
+                const bool released = key->keyUp;
+                if (released) suppressed_[key->virtualKeyCode] = false;
+                if (borrowed_keys_[key->virtualKeyCode]) {
+                    add_delay(event->time_since_last_event, suppressed_delay_);
+                    suppressed_delay_ = {};
+                    pending_.append(std::move(event), true);
+                    // An unfinished modifier prefix becomes genuine when one of
+                    // its borrowed modifiers releases. A matched stop still owns
+                    // its complete provisional lifetime until command provenance.
+                    if (released && !matched_) flush(false);
+                } else add_delay(suppressed_delay_, event->time_since_last_event);
                 return;
             }
         }
@@ -122,7 +131,18 @@ public:
                 const bool fresh = previous == trigger_times_.end() || static_cast<LONG>(time - previous->second) > 0;
                 if (previous == trigger_times_.end()) trigger_times_.push_back({gesture, time});
                 else if (fresh) previous->second = time;
-                if (!fresh) marker->resolve(nullptr, CaptureResult::Stale);
+                if (!fresh) {
+                    // Gesture and message time are the complete submission
+                    // identity. Once duplicated, neither outstanding reservation
+                    // may accept a sample or cancellation intended for the other.
+                    for (auto it = markers_.begin(); it != markers_.end();) {
+                        if ((*it)->gesture == gesture && (*it)->message_time == time) {
+                            (*it)->resolve(nullptr, CaptureResult::Stale);
+                            it = markers_.erase(it);
+                        } else ++it;
+                    }
+                    marker->resolve(nullptr, CaptureResult::Stale);
+                }
                 else if (neutral) markers_.push_back(marker);
                 else marker->resolve(nullptr, CaptureResult::HeldInput);
                 sink_({std::move(reservation)});
@@ -203,7 +223,7 @@ public:
         // command's identity, registration and timestamp can confirm a prefix.
         flush(confirmed && (matched_ == gesture || (!matched_ && !(modifiers() & ~mods))));
     }
-    void clear() { pending_.clear(); pending_keys_.fill(false); matched_ = NoStopGesture; }
+    void clear() { pending_.clear(); pending_keys_.fill(false); borrowed_keys_.fill(false); matched_ = NoStopGesture; }
 private:
     uint32_t modifiers() const {
         uint32_t result = 0;
@@ -222,7 +242,21 @@ private:
         return false;
     }
     void defer_key(std::unique_ptr<Event> event, DWORD time, bool fresh_press) {
-        if (pending_.empty()) first_time_ = time;
+        if (pending_.empty()) {
+            first_time_ = time;
+            // Reused command modifiers precede the first new prefix key. Keep
+            // their restoration provisional too, including its original timing,
+            // so genuine input and confirmed commands can resolve the same FIFO.
+            for (WORD k = 0; k < down_.size(); ++k) {
+                if (!down_[k] || !suppressed_[k] || !modifier(k)) continue;
+                auto press = std::make_unique<KeyboardEvent>();
+                press->virtualKeyCode = k;
+                press->time_since_last_event = event->time_since_last_event;
+                event->time_since_last_event = {};
+                pending_.append(std::move(press), true);
+                borrowed_keys_[k] = true;
+            }
+        }
         // Later repeats/releases still belong to the same physical press even
         // if an older hotkey message reaches capture after those raw events.
         if (fresh_press) last_press_time_ = time;
@@ -233,6 +267,8 @@ private:
         auto next = pending_.fresh();
         auto resolved = std::make_unique<PendingInput>(std::move(pending_));
         pending_ = std::move(next);
+        if (!omit_command)
+            for (size_t k = 0; k < borrowed_keys_.size(); ++k) if (borrowed_keys_[k]) suppressed_[k] = false;
         clear();
         // The capture thread transfers ownership only. File reads and callbacks
         // belong to the collector, regardless of how large this prefix became.
@@ -251,6 +287,7 @@ private:
     std::chrono::microseconds suppressed_delay_{};
     Keys down_{};
     Keys pending_keys_{};
+    Keys borrowed_keys_{};
     PendingInput pending_;
     uint32_t buttons_ = 0;
     uint32_t gestures_ = 0;

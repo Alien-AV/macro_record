@@ -236,3 +236,105 @@ TEST(RecordingCapturedWait, WaitingCollectorCannotBlockRawMotionAndStopCancelsIt
     EXPECT_EQ(31, f.events().front()->time_since_last_event.count());
     EXPECT_EQ(1u, f.count(Boundary::Stopped));
 }
+
+TEST(RecordingCapturedWait, GenuineBufferedPrefixRestoresHeldModifierBeforeItsFirstPress) {
+    CaptureFixture f;
+    ASSERT_TRUE(f.pipeline.start(1, ControlW, {}, {capture_x, {MOD_CONTROL | MOD_ALT, 'Y'}}));
+    f.key(VK_CONTROL, false, 10, 1); f.key('X', false, 20, 2); f.resolve(2);
+    f.key('X', true, 30, 3); f.key(VK_MENU, false, 40, 4); f.move(50, 5);
+    f.key('A', false, 60, 6); f.key('A', true, 70, 7);
+    f.key(VK_MENU, true, 80, 8); f.key(VK_CONTROL, true, 90, 9);
+    f.pipeline.stop(1); f.drain();
+    std::vector<std::pair<WORD, bool>> keys;
+    std::vector<int64_t> delays;
+    for (const auto event : f.events()) {
+        delays.push_back(event->time_since_last_event.count());
+        if (const auto key = dynamic_cast<KeyboardEvent*>(event)) keys.push_back({key->virtualKeyCode, key->keyUp});
+    }
+    const std::vector<std::pair<WORD, bool>> expected = {
+        {VK_LCONTROL, false}, {VK_LMENU, false}, {'A', false}, {'A', true}, {VK_LMENU, true}, {VK_LCONTROL, true}};
+    EXPECT_EQ(expected, keys);
+    EXPECT_EQ((std::vector<int64_t>{30, 70, 0, 50, 60, 70, 80, 90}), delays);
+}
+
+TEST(RecordingCapturedWait, HeldModifierReleaseDuringBufferedPrefixPreservesItsLifetime) {
+    CaptureFixture f;
+    ASSERT_TRUE(f.pipeline.start(1, ControlW, {}, {capture_x, {MOD_CONTROL | MOD_ALT, 'Y'}}));
+    f.key(VK_CONTROL, false, 10, 1); f.key('X', false, 20, 2); f.resolve(2);
+    f.key('X', true, 30, 3); f.key(VK_MENU, false, 40, 4); f.move(50, 5);
+    f.key(VK_CONTROL, true, 60, 6); f.key('A', false, 70, 7);
+    f.key('A', true, 80, 8); f.key(VK_MENU, true, 90, 9);
+    f.pipeline.stop(1); f.drain();
+    std::vector<std::pair<WORD, bool>> keys;
+    std::vector<int64_t> delays;
+    for (const auto event : f.events()) {
+        delays.push_back(event->time_since_last_event.count());
+        if (const auto key = dynamic_cast<KeyboardEvent*>(event)) keys.push_back({key->virtualKeyCode, key->keyUp});
+    }
+    const std::vector<std::pair<WORD, bool>> expected = {
+        {VK_LCONTROL, false}, {VK_LMENU, false}, {VK_LCONTROL, true}, {'A', false}, {'A', true}, {VK_LMENU, true}};
+    EXPECT_EQ(expected, keys);
+    EXPECT_EQ((std::vector<int64_t>{30, 70, 0, 50, 60, 70, 80, 90}), delays);
+}
+
+TEST(RecordingCapturedWait, SameTickAmbiguityInvalidatesStillUnresolvedEarlierReservation) {
+    for (bool cancel : {false, true}) {
+        CaptureFixture f; f.start();
+        f.key(VK_CONTROL, false, 10, 1); f.key('X', false, 20, 2);
+        f.key('X', true, 30, 2); f.key('X', false, 40, 2);
+        // Neither a sample nor a cancellation for the second command may claim
+        // the first reservation: their submission identities are indistinguishable.
+        if (cancel) f.pipeline.captured_wait(1, capture_x, 2, nullptr);
+        else f.resolve(2, 2);
+        f.resolve(2, 1);
+        f.key('X', true, 50, 3); f.key(VK_CONTROL, true, 60, 4); f.move(70, 5);
+        f.pipeline.stop(1); f.drain();
+        ASSERT_EQ(1u, f.events().size());
+        EXPECT_NE(nullptr, dynamic_cast<MouseEvent*>(f.events()[0]));
+        EXPECT_EQ(280, f.events()[0]->time_since_last_event.count());
+        EXPECT_EQ(4u, f.count(Boundary::WaitStale));
+        EXPECT_EQ(0u, f.count(Boundary::WaitCancelled));
+    }
+}
+
+TEST(RecordingCapturedWait, ConfirmedCaptureOmitsBorrowedModifierAndNewPrefixTogether) {
+    CaptureFixture f;
+    const CaptureGesture capture_y{MOD_CONTROL | MOD_ALT, 'Y'};
+    ASSERT_TRUE(f.pipeline.start(1, ControlW, {}, {capture_x, capture_y}));
+    f.key(VK_CONTROL, false, 10, 1); f.key('X', false, 20, 2); f.resolve(2);
+    f.key('X', true, 30, 3); f.key(VK_MENU, false, 40, 4); f.move(50, 5);
+    f.key('Y', false, 60, 6); f.pipeline.captured_wait(1, capture_y, 6, condition(2));
+    f.key('Y', true, 70, 7); f.key(VK_MENU, true, 80, 8); f.key(VK_CONTROL, true, 90, 9); f.move(100, 10);
+    f.pipeline.stop(1); f.drain();
+    const auto events = f.events(); ASSERT_EQ(4u, events.size());
+    EXPECT_NE(nullptr, dynamic_cast<WaitEvent*>(events[0]));
+    EXPECT_NE(nullptr, dynamic_cast<MouseEvent*>(events[1]));
+    EXPECT_NE(nullptr, dynamic_cast<WaitEvent*>(events[2]));
+    EXPECT_NE(nullptr, dynamic_cast<MouseEvent*>(events[3]));
+    std::vector<int64_t> delays;
+    for (const auto event : events) delays.push_back(event->time_since_last_event.count());
+    EXPECT_EQ((std::vector<int64_t>{30, 120, 60, 340}), delays);
+}
+
+TEST(RecordingCapturedWait, BorrowedModifierLifetimeSurvivesSpilledPrefixAndStop) {
+    CaptureFixture f;
+    ASSERT_TRUE(f.pipeline.start(1, ControlW, {}, {capture_x, {MOD_CONTROL | MOD_ALT, 'Y'}}));
+    f.key(VK_CONTROL, false, 10, 1); f.key('X', false, 20, 2); f.resolve(2);
+    f.key('X', true, 30, 3); f.key(VK_MENU, false, 40, 4);
+    for (DWORD time = 5; time < 605; ++time) f.move(1, time);
+    f.key(VK_CONTROL, true, 60, 605); f.key(VK_MENU, true, 70, 606);
+    f.pipeline.stop(1); f.drain();
+    std::vector<std::pair<WORD, bool>> keys;
+    int64_t elapsed = 0;
+    for (const auto event : f.events()) {
+        elapsed += event->time_since_last_event.count();
+        if (const auto key = dynamic_cast<KeyboardEvent*>(event)) keys.push_back({key->virtualKeyCode, key->keyUp});
+    }
+    const std::vector<std::pair<WORD, bool>> expected = {
+        {VK_LCONTROL, false}, {VK_LMENU, false}, {VK_LCONTROL, true}, {VK_LMENU, true}};
+    EXPECT_EQ(expected, keys);
+    EXPECT_EQ(830, elapsed);
+    ASSERT_EQ(605u, f.events().size());
+    EXPECT_EQ(70, f.events()[1]->time_since_last_event.count());
+    EXPECT_EQ(0, f.events()[2]->time_since_last_event.count());
+}
