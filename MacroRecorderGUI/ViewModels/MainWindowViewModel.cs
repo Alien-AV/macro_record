@@ -309,7 +309,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     private void RecordEngineOnRecordStatus(object? sender, RecordEngine.RecordStatusEventArgs e)
     {
         InvokeDispatcher(() =>
-            StatusMessageRequested?.Invoke(this, $"Status reported: \"{e.StatusCode}\"."));
+            StatusMessageRequested?.Invoke(this, e.Message ?? $"Status reported: \"{e.StatusCode}\"."));
     }
 
     private void RecordEngineOnRecordingStarted(RecordingSession session, PointerPosition? origin)
@@ -349,7 +349,7 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     {
         if (!CanRecord || !MacroTabs.Contains(macro) || IsRecordingUnavailable(macro.RecordingId)) return false;
         if (clear) macro.Clear();
-        var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision), RegisteredRecordingStops);
+        var session = new RecordingSession(fromHotkey, new RecordingTarget(macro, macro.ContentRevision), RegisteredRecordingStops, RegisteredRecordingCaptures);
         return StartRecordingSession(session);
     }
 
@@ -389,6 +389,28 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
     }
 
     public RecordingStopGestures RegisteredRecordingStops { get; set; }
+    public IReadOnlyList<RecordingCaptureGesture> RegisteredRecordingCaptures { get; set; } = [];
+    public CapturedWaitSubmission AddCapturedWait(ProtobufGenerated.WaitCondition condition, RecordingCaptureGesture gesture, uint messageTime)
+        => SubmitCapturedWait(condition, gesture, messageTime);
+    public CapturedWaitSubmission CancelCapturedWait(RecordingCaptureGesture gesture, uint messageTime)
+        => SubmitCapturedWait(null, gesture, messageTime);
+
+    private CapturedWaitSubmission SubmitCapturedWait(ProtobufGenerated.WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime)
+    {
+        if (_disposed || _shuttingDown || _recordingSession is null) return CapturedWaitSubmission.Inactive;
+        try
+        {
+            var result = RecordEngine.CapturedWait(condition, gesture, messageTime);
+            if (result != CapturedWaitSubmission.Queued)
+                StatusMessageRequested?.Invoke(this, $"Conditional wait capture was not queued: {result}.");
+            return result;
+        }
+        catch (Exception error)
+        {
+            StatusMessageRequested?.Invoke(this, $"Conditional wait capture rejected: {error.Message}");
+            return CapturedWaitSubmission.EnqueueFailed;
+        }
+    }
     public bool AcceptsRecordingStop(RecordingStopCommand command) => _recordingSession?.Accepts(command) == true;
 
     public void StopRecording(ulong? autoDelay = null, RecordingStopCommand? command = null)

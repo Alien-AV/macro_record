@@ -26,15 +26,19 @@ public:
         // Source thread only. A late failure cannot terminate a newer session.
         stream_.fail(pending_failure_.exchange(0, std::memory_order_acq_rel));
     }
-    bool start(uint64_t session, uint32_t gestures = NoStopGesture, PointerOrigin origin = {}) {
+    bool start(uint64_t session, uint32_t gestures = NoStopGesture, PointerOrigin origin = {}, std::vector<CaptureGesture> captures = {}) {
         process_failure();
-        if (!stream_.start(session, gestures, origin)) return false;
+        if (!stream_.start(session, gestures, origin, std::move(captures))) return false;
         last_event_ = clock_();
         return true;
     }
     void stop(uint64_t session, uint32_t gesture = NoStopGesture, DWORD cutoff = 0) {
         process_failure();
         stream_.stop(session, gesture, cutoff);
+    }
+    void captured_wait(uint64_t session, CaptureGesture gesture, DWORD time, std::unique_ptr<WaitEvent> condition) {
+        process_failure();
+        stream_.captured_wait(session, gesture, time, std::move(condition));
     }
     void keyboard(const RAWKEYBOARD& raw, DWORD time) {
         process_failure();

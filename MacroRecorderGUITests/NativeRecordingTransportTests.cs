@@ -431,7 +431,8 @@ public sealed class NativeRecordingTransportTests
             return true;
         }
 
-        public bool Start(ulong sessionId, RecordingStopGestures stopGestures) { Starts.Add((sessionId, stopGestures)); return StartResult; }
+        public bool Start(ulong sessionId, RecordingStopGestures stopGestures, uint[] captureGestures) { Starts.Add((sessionId, stopGestures)); return StartResult; }
+        public bool CapturedWait(ulong sessionId, uint modifiers, uint key, uint messageTime, byte[] condition) => true;
         public bool Stop(ulong sessionId, RecordingStopGestures gesture, uint messageTime)
         { Stops.Add((sessionId, gesture, messageTime)); if (StopError is { } error) throw error; return StopResult; }
         public void Shutdown()

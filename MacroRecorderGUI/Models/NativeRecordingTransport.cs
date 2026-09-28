@@ -19,8 +19,9 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     {
         // Rejected initialization retains no callbacks owned by this caller.
         bool Initialize(InputCallback input, StatusCallback status, BoundaryCallback boundary);
-        bool Start(ulong sessionId, RecordingStopGestures stopGestures);
+        bool Start(ulong sessionId, RecordingStopGestures stopGestures, uint[] captureGestures);
         bool Stop(ulong sessionId, RecordingStopGestures gesture, uint messageTime);
+        bool CapturedWait(ulong sessionId, uint modifiers, uint key, uint messageTime, byte[] condition);
         void Shutdown(); // A normal return proves both native threads joined.
     }
 
@@ -60,10 +61,17 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     public event Action<ulong, RecordingBoundary, RecordingStartKeys, RecordingStartKeys, PointerPosition?>? Boundary;
     public event Action<StatusCode>? Status;
 
-    public void Start(ulong sessionId, RecordingStopGestures stopGestures)
+    public void Start(ulong sessionId, RecordingStopGestures stopGestures, IReadOnlyList<RecordingCaptureGesture>? captureGestures = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!_native.Start(sessionId, stopGestures)) throw new InvalidOperationException("The capture thread could not start recording.");
+        var captures = (captureGestures ?? []).SelectMany(gesture => new[] { gesture.Modifiers, gesture.VirtualKey }).ToArray();
+        if (!_native.Start(sessionId, stopGestures, captures)) throw new InvalidOperationException("The capture thread could not start recording (check capture shortcut configuration).");
+    }
+
+    public bool CapturedWait(ulong sessionId, WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _native.CapturedWait(sessionId, gesture.Modifiers, gesture.VirtualKey, messageTime, condition?.ToByteArray() ?? []);
     }
 
     public void Stop(ulong sessionId, RecordingStopCommand? command)
@@ -152,8 +160,9 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     private sealed class NativeApi : INativeApi
     {
         public bool Initialize(InputCallback input, StatusCallback status, BoundaryCallback boundary) => DllInit(input, status, boundary);
-        public bool Start(ulong sessionId, RecordingStopGestures stopGestures) => DllStartRecord(sessionId, stopGestures);
+        public bool Start(ulong sessionId, RecordingStopGestures stopGestures, uint[] captureGestures) => DllStartRecord(sessionId, stopGestures, captureGestures, (uint)captureGestures.Length / 2);
         public bool Stop(ulong sessionId, RecordingStopGestures gesture, uint messageTime) => DllStopRecord(sessionId, gesture, messageTime);
+        public bool CapturedWait(ulong sessionId, uint modifiers, uint key, uint messageTime, byte[] condition) => DllCapturedWait(sessionId, modifiers, key, messageTime, condition, condition.Length);
         public void Shutdown() => DllShutdown();
 
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init_v2", CallingConvention = CallingConvention.Cdecl)]
@@ -161,7 +170,10 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
         private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures);
+        private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures, uint[] captureGestures, uint captureCount);
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_record_captured_wait", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool DllCapturedWait(ulong sessionId, uint modifiers, uint key, uint messageTime, byte[] condition, int size);
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_stop_record", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool DllStopRecord(ulong sessionId, RecordingStopGestures gesture, uint messageTime);

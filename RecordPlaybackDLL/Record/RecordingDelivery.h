@@ -77,6 +77,7 @@ public:
         if (failed_session_ && packet.session == failed_session_) return;
         if (packet.boundary == Boundary::Started) {
             active_session_ = packet.session;
+            omitted_ = {};
             sink_(std::move(packet));
             return;
         }
@@ -87,16 +88,18 @@ public:
             return;
         }
         if (!active_session_ || packet.session != active_session_) return;
-        if (!packet.pending) {
-            if (packet.boundary == Boundary::Stopped) active_session_ = 0;
-            sink_(std::move(packet));
-            return;
-        }
         const auto session = packet.session;
         try {
-            packet.pending->drain(packet.omit_command, [&](std::unique_ptr<Event> event) {
-                sink_({session, std::move(event)});
-            });
+            if (packet.pending) {
+                const auto tail = packet.pending->drain(packet.omit_command, [&](std::unique_ptr<Event> event) {
+                    deliver(session, std::move(event));
+                });
+                add_delay(omitted_, tail);
+            } else if (packet.event) deliver(session, std::move(packet.event));
+            else {
+                if (packet.boundary == Boundary::Stopped) active_session_ = 0;
+                sink_(std::move(packet));
+            }
         } catch (const PendingInputError&) {
             // Close before notifying either thread. Queued input/end for this
             // failed session must not turn a partial capture into a success.
@@ -108,6 +111,26 @@ public:
         }
     }
 private:
+    static void add_delay(std::chrono::microseconds& target, std::chrono::microseconds value) {
+        if (value.count() < 0 || value.count() > (std::numeric_limits<int64_t>::max)() - target.count()) throw PendingInputError();
+        target += value;
+    }
+    void deliver(uint64_t session, std::unique_ptr<Event> event) {
+        if (const auto marker = dynamic_cast<MarkerEvent*>(event.get())) {
+            auto resolved = marker->marker->await();
+            if (!resolved.event) {
+                add_delay(omitted_, event->time_since_last_event);
+                sink_({session, nullptr, static_cast<Boundary>(resolved.result)});
+                return;
+            }
+            resolved.event->time_since_last_event = event->time_since_last_event;
+            event = std::move(resolved.event);
+        }
+        add_delay(event->time_since_last_event, omitted_);
+        omitted_ = {};
+        sink_({session, std::move(event)});
+    }
+    std::chrono::microseconds omitted_{};
     Stream::Sink sink_;
     Failure failure_;
     uint64_t failed_session_ = 0;

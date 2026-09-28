@@ -7,7 +7,7 @@
 #include "RecordingStopChord.h"
 
 namespace record_playback { namespace capture {
-enum class Boundary : uint32_t { Started = 1, Stopped = 2, Failed = 3 };
+enum class Boundary : uint32_t { Started = 1, Stopped = 2, Failed = 3, WaitHeldInput = 4, WaitCancelled = 5, WaitStale = 6, WaitTimedOut = 7 };
 enum HeldKeys : uint32_t { Q = 1, Control = 2, LeftControl = 4, RightControl = 8 };
 struct PointerOrigin { int32_t x = 0; int32_t y = 0; bool valid = false; };
 
@@ -50,6 +50,7 @@ public:
         }
     }
     void key(WORD key, bool up) {
+        if (!session_) stop_chord_.idle_key(key, up);
         if (key < physical_keys_.size()) physical_keys_[key] = !up;
         const uint32_t bit = key == 'Q' ? Q : key == VK_LCONTROL ? LeftControl
             : key == VK_RCONTROL ? RightControl : key == VK_CONTROL ? Control : 0;
@@ -59,13 +60,13 @@ public:
         }
         else held_ |= bit;
     }
-    bool start(uint64_t session, uint32_t stop_gestures = NoStopGesture, PointerOrigin origin = {}) {
-        if (!session || session_) {
+    bool start(uint64_t session, uint32_t stop_gestures = NoStopGesture, PointerOrigin origin = {}, std::vector<CaptureGesture> captures = {}) {
+        if (!session || session_ || !valid_capture_gestures(captures, stop_gestures)) {
             sink_({session, nullptr, Boundary::Failed});
             return false;
         }
         session_ = session;
-        stop_chord_.start(stop_gestures, physical_keys_, physical_buttons_);
+        stop_chord_.start(stop_gestures, physical_keys_, physical_buttons_, std::move(captures));
         try { sink_({session_, nullptr, Boundary::Started, held_, idle_released_, origin}); }
         catch (const PendingInputError&) { fail(); return false; }
         idle_released_ = 0;
@@ -82,6 +83,7 @@ public:
     void stop(uint64_t session, uint32_t gesture = NoStopGesture, DWORD cutoff = 0) {
         if (!session) return;
         if (session_ != session) return;
+        stop_chord_.cancel_markers();
         try { stop_chord_.finish(gesture, cutoff); }
         catch (const PendingInputError&) { fail(); return; }
         try { sink_({session, nullptr, Boundary::Stopped}); }
@@ -90,9 +92,17 @@ public:
         idle_released_ = 0;
     }
     void fail(uint64_t session) { if (session && session_ == session) fail(); }
+    void captured_wait(uint64_t session, CaptureGesture gesture, DWORD time, std::unique_ptr<WaitEvent> condition) {
+        if (!session || session != session_) return;
+        try {
+            if (!stop_chord_.resolve(gesture, time, std::move(condition)))
+                sink_({session, nullptr, Boundary::WaitStale});
+        } catch (const PendingInputError&) { fail(); }
+    }
 private:
     void fail() {
         const auto session = session_;
+        stop_chord_.cancel_markers();
         stop_chord_.clear();
         session_ = 0;
         idle_released_ = 0;

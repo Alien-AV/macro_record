@@ -22,6 +22,7 @@ public sealed class RecordingCapture : IDisposable
     public event Action<RecordingSession, ProtobufInputEvent>? Input;
     public event Action<RecordingSession, PointerPosition?>? Started;
     public event Action<RecordingSession, Exception?>? Ended;
+    public event Action<RecordingSession, RecordingBoundary>? WaitRejected;
 
     public bool IsRecording
     {
@@ -53,7 +54,7 @@ public sealed class RecordingCapture : IDisposable
             _requestedSession = session;
             try
             {
-                _transport.Start(session.Id, session.StopGestures);
+                _transport.Start(session.Id, session.StopGestures, session.CaptureGestures);
                 return true;
             }
             catch (Exception exception)
@@ -102,6 +103,25 @@ public sealed class RecordingCapture : IDisposable
         }
     }
 
+    public CapturedWaitSubmission CapturedWait(WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime)
+    {
+        lock (_gate)
+        {
+            if (_disposed || _requestedSession is not { } session) return CapturedWaitSubmission.Inactive;
+            if (unchecked((int)(messageTime - session.RequestedAt)) < 0) return CapturedWaitSubmission.Stale;
+            if (!session.CaptureGestures.Contains(gesture)) return CapturedWaitSubmission.Unregistered;
+            // Even an invalid sample must release its native reservation.
+            if (condition is not null)
+            {
+                try { WaitValidation.Validate(condition); }
+                catch { _transport.CapturedWait(session.Id, null, gesture, messageTime); throw; }
+            }
+            try { return _transport.CapturedWait(session.Id, condition?.Clone(), gesture, messageTime)
+                ? CapturedWaitSubmission.Queued : CapturedWaitSubmission.EnqueueFailed; }
+            catch { return CapturedWaitSubmission.EnqueueFailed; }
+        }
+    }
+
     private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys, PointerPosition? origin)
     {
         lock (_gate)
@@ -116,6 +136,11 @@ public sealed class RecordingCapture : IDisposable
                 if (state.Filter is not null) return;
                 state.Filter = state.Session.Begin(heldKeys, idleReleasedKeys);
                 Started?.Invoke(state.Session, origin);
+                return;
+            }
+            if (boundary is RecordingBoundary.WaitHeldInput or RecordingBoundary.WaitCancelled or RecordingBoundary.WaitStale or RecordingBoundary.WaitTimedOut)
+            {
+                WaitRejected?.Invoke(state.Session, boundary);
                 return;
             }
 

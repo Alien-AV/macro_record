@@ -129,7 +129,7 @@ public:
         if (memory_count_ == capacity) spill();
         memory_[memory_count_++] = {std::move(event), command_key};
     }
-    template<class Sink> void drain(bool omit_command, Sink sink) {
+    template<class Sink> std::chrono::microseconds drain(bool omit_command, Sink sink) {
         std::chrono::microseconds omitted{};
         const auto emit = [&](std::unique_ptr<Event> event, bool command_key) {
             const auto delay = event->time_since_last_event;
@@ -154,6 +154,7 @@ public:
         }
         for (size_t i = 0; i < memory_count_; ++i) emit(std::move(memory_[i].event), memory_[i].command_key);
         clear();
+        return omitted;
     }
     void clear() {
         for (size_t i = 0; i < memory_count_; ++i) memory_[i].event.reset();

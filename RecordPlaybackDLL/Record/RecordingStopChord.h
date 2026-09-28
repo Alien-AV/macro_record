@@ -2,6 +2,7 @@
 #include <array>
 #include <functional>
 #include "RecordingPendingInput.h"
+#include "RecordingWaitMarker.h"
 
 namespace record_playback { namespace capture {
 enum StopGestures : uint32_t { NoStopGesture = 0, ControlW = 1, ControlR = 2, ControlAltF12 = 4, ControlShiftF12 = 8 };
@@ -19,6 +20,22 @@ inline uint32_t gesture_modifiers(uint32_t gesture) {
     return gesture == ControlW || gesture == ControlR ? MOD_CONTROL
         : gesture == ControlAltF12 ? MOD_CONTROL | MOD_ALT
         : gesture == ControlShiftF12 ? MOD_CONTROL | MOD_SHIFT : 0;
+}
+inline bool valid_capture_gestures(const std::vector<CaptureGesture>& captures, uint32_t stops) {
+    if (captures.size() > 16 || (stops & ~15u)) return false;
+    std::vector<CaptureGesture> seen;
+    for (const auto& capture : captures) {
+        if (!capture.modifiers || (capture.modifiers & ~15u) || capture.key < VK_BACK || capture.key >= 255
+            || capture.key == VK_PACKET || capture.key == VK_PROCESSKEY || modifier(static_cast<WORD>(capture.key))) return false;
+        if (std::find(seen.begin(), seen.end(), capture) != seen.end()) return false;
+        for (auto stop : {ControlW, ControlR, ControlAltF12, ControlShiftF12}) {
+            const auto key = stop == ControlW ? 'W' : stop == ControlR ? 'R' : VK_F12;
+            if ((stops & stop) && capture.key == key && capture.modifiers == gesture_modifiers(stop)) return false;
+        }
+        if (capture.key == 'Q' && capture.modifiers == MOD_CONTROL) return false;
+        seen.push_back(capture);
+    }
+    return true;
 }
 
 inline uint32_t mouse_buttons(uint32_t held, DWORD flags, DWORD data) {
@@ -43,11 +60,31 @@ public:
     using Sink = std::function<void(CapturedInput)>;
     explicit StopChord(Sink sink, PendingInput pending = PendingInput())
         : sink_(std::move(sink)), pending_(std::move(pending)) {}
-    void start(uint32_t gestures, const Keys& held, uint32_t buttons = 0) {
+    void start(uint32_t gestures, const Keys& held, uint32_t buttons = 0, std::vector<CaptureGesture> captures = {}) {
         gestures_ = gestures;
         down_ = held;
         buttons_ = buttons;
         clear();
+        captures_ = std::move(captures);
+        trigger_times_.clear();
+        suppressed_delay_ = {};
+        for (size_t key = 0; key < held.size(); ++key) suppressed_[key] = suppressed_[key] && held[key];
+    }
+    void idle_key(WORD key, bool up) { if (up && key < suppressed_.size()) suppressed_[key] = false; }
+    bool resolve(CaptureGesture gesture, DWORD time, std::unique_ptr<WaitEvent> condition) {
+        for (auto it = markers_.begin(); it != markers_.end(); ++it) {
+            if ((*it)->gesture == gesture && (*it)->message_time == time) {
+                const auto result = condition ? CaptureResult::Inserted : CaptureResult::Cancelled;
+                const auto accepted = (*it)->resolve(std::move(condition), result);
+                markers_.erase(it);
+                return accepted;
+            }
+        }
+        return false;
+    }
+    void cancel_markers() {
+        for (auto& marker : markers_) marker->resolve(nullptr, CaptureResult::Cancelled);
+        markers_.clear();
     }
     size_t pending_count() const { return pending_.memory_count(); }
     void input(std::unique_ptr<Event> event, DWORD time) {
@@ -56,6 +93,41 @@ public:
         if (key && key->virtualKeyCode < down_.size()) {
             repeated = down_[key->virtualKeyCode];
             down_[key->virtualKeyCode] = !key->keyUp;
+            if (suppressed_[key->virtualKeyCode]) {
+                if (key->keyUp) suppressed_[key->virtualKeyCode] = false;
+                add_delay(suppressed_delay_, event->time_since_last_event);
+                return;
+            }
+        }
+        add_delay(event->time_since_last_event, suppressed_delay_);
+        suppressed_delay_ = {};
+        if (key && !key->keyUp && !repeated) {
+            const CaptureGesture gesture{modifiers(), key->virtualKeyCode};
+            if (std::find(captures_.begin(), captures_.end(), gesture) != captures_.end()) {
+                if (matched_) flush(false);
+                markers_.erase(std::remove_if(markers_.begin(), markers_.end(), [](const auto& marker) { return marker->ready(); }), markers_.end());
+                if (markers_.size() >= 256) throw PendingInputError();
+                auto marker = std::make_shared<WaitMarker>(gesture, time);
+                bool neutral = !buttons_;
+                for (size_t k = 0; k < down_.size(); ++k) {
+                    if (down_[k] && k != gesture.key && !pending_keys_[k] && !suppressed_[k]) neutral = false;
+                    if (pending_keys_[k] && down_[k]) suppressed_[k] = true;
+                }
+                suppressed_[gesture.key] = true;
+                const auto delay = event->time_since_last_event;
+                flush(true);
+                auto reservation = std::make_unique<MarkerEvent>(marker);
+                reservation->time_since_last_event = delay;
+                auto previous = std::find_if(trigger_times_.begin(), trigger_times_.end(), [&](const auto& value) { return value.first == gesture; });
+                const bool fresh = previous == trigger_times_.end() || static_cast<LONG>(time - previous->second) > 0;
+                if (previous == trigger_times_.end()) trigger_times_.push_back({gesture, time});
+                else if (fresh) previous->second = time;
+                if (!fresh) marker->resolve(nullptr, CaptureResult::Stale);
+                else if (neutral) markers_.push_back(marker);
+                else marker->resolve(nullptr, CaptureResult::HeldInput);
+                sink_({std::move(reservation)});
+                return;
+            }
         }
         if (const auto mouse = dynamic_cast<MouseEvent*>(event.get())) {
             const bool dragging = buttons_ != 0;
@@ -101,6 +173,25 @@ public:
             }
         }
         flush(false);
+        // A modifier can be reused for a genuine interaction while still held
+        // after a capture command. Transfer its ownership back to recorded input
+        // at that interaction, so its later release has a matching press.
+        bool interaction = key != nullptr;
+        if (const auto mouse = dynamic_cast<MouseEvent*>(event.get())) {
+            const DWORD motion = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
+            interaction = buttons_ || (mouse->ActionType & ~motion);
+        }
+        if (interaction) {
+            for (WORD k = 0; k < down_.size(); ++k) {
+                if (!down_[k] || !suppressed_[k] || !modifier(k)) continue;
+                auto press = std::make_unique<KeyboardEvent>();
+                press->virtualKeyCode = k;
+                press->time_since_last_event = event->time_since_last_event;
+                event->time_since_last_event = {};
+                sink_({std::move(press)});
+                suppressed_[k] = false;
+            }
+        }
         sink_({std::move(event)});
     }
     void finish(uint32_t gesture, DWORD cutoff) {
@@ -125,6 +216,7 @@ private:
         return false;
     }
     bool possible_prefix(uint32_t mods) const {
+        for (const auto& gesture : captures_) if (!(mods & ~gesture.modifiers)) return true;
         for (auto gesture : {ControlW, ControlR, ControlAltF12, ControlShiftF12})
             if ((gestures_ & gesture) && !(mods & ~gesture_modifiers(gesture))) return true;
         return false;
@@ -147,6 +239,16 @@ private:
         sink_({nullptr, std::move(resolved), omit_command});
     }
     Sink sink_;
+    static void add_delay(std::chrono::microseconds& target, std::chrono::microseconds value) {
+        if (value.count() < 0 || target.count() < 0 || value.count() > (std::numeric_limits<int64_t>::max)() - target.count())
+            throw PendingInputError();
+        target += value;
+    }
+    std::vector<CaptureGesture> captures_;
+    std::vector<std::shared_ptr<WaitMarker>> markers_;
+    std::vector<std::pair<CaptureGesture, DWORD>> trigger_times_;
+    Keys suppressed_{};
+    std::chrono::microseconds suppressed_delay_{};
     Keys down_{};
     Keys pending_keys_{};
     PendingInput pending_;

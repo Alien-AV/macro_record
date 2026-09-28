@@ -220,7 +220,12 @@ internal sealed class FakeRecordingTransport : IRecordingTransport
     public List<ulong> Stops { get; } = [];
     public List<RecordingStopGestures> StartGestures { get; } = [];
     public List<RecordingStopCommand?> StopCommands { get; } = [];
-    public void Start(ulong sessionId, RecordingStopGestures stopGestures) { if (StartError is not null) throw StartError; Starts.Add(sessionId); StartGestures.Add(stopGestures); }
+    public List<IReadOnlyList<RecordingCaptureGesture>> CaptureGestures { get; } = [];
+    public List<(ulong Session, WaitCondition? Condition, RecordingCaptureGesture Gesture, uint Time)> CapturedWaits { get; } = [];
+    public bool CaptureResult { get; set; } = true;
+    public void Start(ulong sessionId, RecordingStopGestures stopGestures, IReadOnlyList<RecordingCaptureGesture>? captureGestures = null) { if (StartError is not null) throw StartError; Starts.Add(sessionId); StartGestures.Add(stopGestures); CaptureGestures.Add(captureGestures ?? []); }
+    public bool CapturedWait(ulong sessionId, WaitCondition? condition, RecordingCaptureGesture gesture, uint messageTime) { CapturedWaits.Add((sessionId, condition, gesture, messageTime)); return CaptureResult; }
+    public void RejectWait(ulong id, RecordingBoundary reason) => Boundary?.Invoke(id, reason, RecordingStartKeys.None, RecordingStartKeys.None, null);
     public void Stop(ulong sessionId, RecordingStopCommand? command) { if (StopError is not null) throw StopError; Stops.Add(sessionId); StopCommands.Add(command); }
     public void Begin(RecordingSession session, RecordingStartKeys keys = RecordingStartKeys.None, RecordingStartKeys idleReleasedKeys = RecordingStartKeys.None, PointerPosition? origin = null) =>
         Begin(session.Id, keys, idleReleasedKeys, origin);

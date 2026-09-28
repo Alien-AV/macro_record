@@ -85,12 +85,10 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
         pipeline_.process_failure();
         if (message.message == WM_SHUTDOWN_RECORD || message.message == WM_QUIT) break;
         if (message.message == WM_COLLECTOR_WAKE) continue;
-        if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD) {
-            const auto payload = static_cast<uint64_t>(message.lParam);
-            const auto gestures = static_cast<uint32_t>(payload);
-            const auto cutoff = message.message == WM_STOP_RECORD && gestures
-                ? static_cast<DWORD>(payload >> 32) : message.time;
-            commands_.push_back({message.message, static_cast<uint64_t>(message.wParam), cutoff, gestures});
+        if (message.message == WM_START_RECORD || message.message == WM_STOP_RECORD || message.message == WM_CAPTURE_RECORD) {
+            std::unique_ptr<Command> command(reinterpret_cast<Command*>(message.lParam));
+            if (command->kind == WM_START_RECORD || (command->kind == WM_STOP_RECORD && !command->gestures)) command->cutoff = message.time;
+            commands_.push_back(std::move(*command));
         } else {
             TranslateMessage(&message);
             DispatchMessage(&message);
@@ -98,13 +96,16 @@ void RecordEngine::window_main(std::promise<bool> initialized) {
     }
     pipeline_.process_failure();
     if (pipeline_.session()) pipeline_.stop(pipeline_.session());
+    while (PeekMessage(&message, nullptr, WM_START_RECORD, WM_CAPTURE_RECORD, PM_REMOVE)) {
+        if (message.message != WM_COLLECTOR_WAKE) delete reinterpret_cast<Command*>(message.lParam);
+    }
     unregister_raw_input_stuff();
     DestroyWindow(hwnd);
 }
 
 void RecordEngine::advance_boundaries(HWND hwnd) {
     if (commands_.empty()) return;
-    const auto command = commands_.front();
+    const auto& command = commands_.front();
     MSG raw{};
     const auto drained = capture::drain_prefix(command.cutoff,
         [&](DWORD& time) {
@@ -115,14 +116,16 @@ void RecordEngine::advance_boundaries(HWND hwnd) {
             if (PeekMessage(&raw, hwnd, WM_INPUT, WM_INPUT, PM_REMOVE)) DispatchMessage(&raw);
         });
     if (drained) {
-        commands_.pop_front();
         if (command.kind == WM_START_RECORD) {
             POINT position{};
             const bool valid = GetPhysicalCursorPos(&position) != FALSE;
-            pipeline_.start(command.session, command.gestures, {position.x, position.y, valid});
-        } else {
+            pipeline_.start(command.session, command.gestures, {position.x, position.y, valid}, command.captures);
+        } else if (command.kind == WM_STOP_RECORD) {
             pipeline_.stop(command.session, command.gestures, command.cutoff);
+        } else {
+            pipeline_.captured_wait(command.session, command.capture, command.cutoff, std::move(commands_.front().condition));
         }
+        commands_.pop_front();
     }
     // At most 256 raw messages per turn. The fixed cutoff excludes future input,
     // so a sustained device stream cannot continually extend the prefix to drain.
@@ -161,13 +164,26 @@ RecordEngine::~RecordEngine() {
     if (collector_thread_.joinable()) collector_thread_.join();
 }
 
-bool RecordEngine::start_record(uint64_t session_id, uint32_t stop_gestures) const {
-    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_START_RECORD, static_cast<WPARAM>(session_id), stop_gestures);
+bool RecordEngine::post(std::unique_ptr<Command> command) const {
+    if (!ready_ || !command->session || !PostThreadMessage(window_thread_id_, command->kind, 0, reinterpret_cast<LPARAM>(command.get()))) return false;
+    command.release();
+    return true;
+}
+
+bool RecordEngine::start_record(uint64_t session_id, uint32_t stop_gestures, std::vector<capture::CaptureGesture> captures) const {
+    auto command = std::make_unique<Command>(Command{WM_START_RECORD, session_id, 0, stop_gestures});
+    command->captures = std::move(captures);
+    return post(std::move(command));
 }
 
 bool RecordEngine::stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) const {
-    static_assert(sizeof(LPARAM) == sizeof(uint64_t), "Recording command payload requires x64.");
-    const auto payload = (static_cast<uint64_t>(message_time) << 32) | gesture;
-    return ready_ && session_id && PostThreadMessage(window_thread_id_, WM_STOP_RECORD, static_cast<WPARAM>(session_id), static_cast<LPARAM>(payload));
+    return post(std::make_unique<Command>(Command{WM_STOP_RECORD, session_id, message_time, gesture}));
+}
+
+bool RecordEngine::captured_wait(uint64_t session_id, capture::CaptureGesture gesture, DWORD message_time, std::unique_ptr<WaitEvent> condition) const {
+    auto command = std::make_unique<Command>(Command{WM_CAPTURE_RECORD, session_id, message_time, 0});
+    command->capture = gesture;
+    command->condition = std::move(condition);
+    return post(std::move(command));
 }
 }

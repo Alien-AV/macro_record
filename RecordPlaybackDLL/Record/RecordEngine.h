@@ -17,15 +17,23 @@ public:
     RecordEngine(const RecordEngine&) = delete;
     RecordEngine& operator=(const RecordEngine&) = delete;
     bool ready() const { return ready_; }
-    bool start_record(uint64_t session_id, uint32_t stop_gestures) const;
+    bool start_record(uint64_t session_id, uint32_t stop_gestures, std::vector<capture::CaptureGesture> captures) const;
     bool stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) const;
+    bool captured_wait(uint64_t session_id, capture::CaptureGesture gesture, DWORD message_time, std::unique_ptr<WaitEvent> condition) const;
 
 private:
     static constexpr UINT WM_START_RECORD = WM_APP + 1;
     static constexpr UINT WM_STOP_RECORD = WM_APP + 2;
     static constexpr UINT WM_COLLECTOR_WAKE = WM_APP + 3;
-    static constexpr UINT WM_SHUTDOWN_RECORD = WM_APP + 4;
-    struct Command { UINT kind; uint64_t session; DWORD cutoff; uint32_t gestures; };
+    static constexpr UINT WM_CAPTURE_RECORD = WM_APP + 4;
+    static constexpr UINT WM_SHUTDOWN_RECORD = WM_APP + 5;
+    struct Command {
+        UINT kind; uint64_t session; DWORD cutoff; uint32_t gestures;
+        std::vector<capture::CaptureGesture> captures;
+        capture::CaptureGesture capture;
+        std::unique_ptr<WaitEvent> condition;
+    };
+    bool post(std::unique_ptr<Command> command) const;
 
     record_events_callback_t record_events_callback_;
     status_callback_t status_callback_;

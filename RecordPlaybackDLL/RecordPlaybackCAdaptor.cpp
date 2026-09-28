@@ -46,8 +46,30 @@ RECORD_PLAYBACK_DLL_API bool iac_dll_init_v2(iac_dll_record_event_cb_t event_rec
 	return false;
 }
 
-RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures) noexcept { return record_engine_singleton && record_engine_singleton->start_record(session_id, stop_gestures); }
-RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) noexcept { return record_engine_singleton && record_engine_singleton->stop_record(session_id, gesture, message_time); }
+RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures, const uint32_t* capture_gestures, uint32_t capture_count) noexcept {
+    if (!record_engine_singleton || capture_count > 16 || (capture_count && !capture_gestures)) return false;
+    try {
+        std::vector<record_playback::capture::CaptureGesture> captures;
+        for (uint32_t i = 0; i < capture_count; ++i) captures.push_back({capture_gestures[2*i], capture_gestures[2*i+1]});
+        if (!record_playback::capture::valid_capture_gestures(captures, stop_gestures)) return false;
+        return record_engine_singleton->start_record(session_id, stop_gestures, std::move(captures));
+    } catch (...) { return false; }
+}
+RECORD_PLAYBACK_DLL_API bool iac_dll_stop_record(uint64_t session_id, uint32_t gesture, DWORD message_time) noexcept {
+    try { return record_engine_singleton && record_engine_singleton->stop_record(session_id, gesture, message_time); }
+    catch (...) { return false; }
+}
+RECORD_PLAYBACK_DLL_API bool iac_dll_record_captured_wait(uint64_t session_id, uint32_t modifiers, uint32_t key, DWORD message_time, const unsigned char* condition, int size) noexcept {
+    if (!record_engine_singleton || size < 0 || size > 65536 || (size && !condition)) return false;
+    try {
+        std::unique_ptr<WaitEvent> wait;
+        if (size) {
+            wait = std::make_unique<WaitEvent>();
+            if (!wait->condition.ParseFromArray(condition, size) || !WaitEvent::valid(wait->condition)) return false;
+        }
+        return record_engine_singleton->captured_wait(session_id, {modifiers, key}, message_time, std::move(wait));
+    } catch (...) { return false; }
+}
 RECORD_PLAYBACK_DLL_API void iac_dll_record_shutdown() noexcept {
 	record_engine_singleton.reset();
 	c_callback_for_record_event_reporting = nullptr;
