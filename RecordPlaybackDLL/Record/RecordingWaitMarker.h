@@ -19,11 +19,16 @@ public:
         : gesture(gesture), message_time(time), deadline_(std::chrono::steady_clock::now() + timeout) {}
     bool ready() { std::lock_guard<std::mutex> lock(mutex_); return ready_; }
     bool resolve(std::unique_ptr<WaitEvent> event, CaptureResult result) {
+        bool accepted = false;
         { std::lock_guard<std::mutex> lock(mutex_);
           if (ready_) return false;
-          event_ = std::move(event); result_ = result; ready_ = true; }
+          // Expiry belongs to the reservation, even while older FIFO work keeps
+          // the collector from observing it. A late sample cannot revive it.
+          if (std::chrono::steady_clock::now() >= deadline_) result_ = CaptureResult::TimedOut;
+          else { event_ = std::move(event); result_ = result; accepted = true; }
+          ready_ = true; }
         changed_.notify_all();
-        return true;
+        return accepted;
     }
     Resolution await() {
         std::unique_lock<std::mutex> lock(mutex_);

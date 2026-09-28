@@ -177,6 +177,16 @@ TEST(RecordingCapturedWait, NoResponseDeadlineRejectsWithoutWaitingAndIgnoresLat
     EXPECT_FALSE(marker.resolve(condition(), CaptureResult::Inserted));
 }
 
+TEST(RecordingCapturedWait, ExpiredReservationRejectsResolutionBeforeCollectorAwait) {
+    WaitMarker marker(capture_x, 1, std::chrono::milliseconds(0));
+    EXPECT_FALSE(marker.resolve(condition(), CaptureResult::Inserted));
+    EXPECT_TRUE(marker.ready());
+    const auto result = marker.await();
+    EXPECT_EQ(CaptureResult::TimedOut, result.result);
+    EXPECT_FALSE(result.event);
+    EXPECT_FALSE(marker.resolve(condition(), CaptureResult::Inserted));
+}
+
 TEST(RecordingCapturedWait, InvalidOrCollidingSessionConfigurationsFailClosed) {
     const std::vector<std::vector<CaptureGesture>> invalid = {
         {capture_x, capture_x}, {{MOD_CONTROL | MOD_NOREPEAT, 'X'}}, {{MOD_CONTROL, VK_CONTROL}},

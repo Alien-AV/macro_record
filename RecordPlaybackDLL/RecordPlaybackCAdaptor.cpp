@@ -46,7 +46,7 @@ RECORD_PLAYBACK_DLL_API bool iac_dll_init_v2(iac_dll_record_event_cb_t event_rec
 	return false;
 }
 
-RECORD_PLAYBACK_DLL_API bool iac_dll_start_record(uint64_t session_id, uint32_t stop_gestures, const uint32_t* capture_gestures, uint32_t capture_count) noexcept {
+RECORD_PLAYBACK_DLL_API bool iac_dll_start_record_v2(uint64_t session_id, uint32_t stop_gestures, const uint32_t* capture_gestures, uint32_t capture_count) noexcept {
     if (!record_engine_singleton || capture_count > 16 || (capture_count && !capture_gestures)) return false;
     try {
         std::vector<record_playback::capture::CaptureGesture> captures;

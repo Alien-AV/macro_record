@@ -168,7 +168,7 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init_v2", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
-        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record_v2", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
         private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures, uint[] captureGestures, uint captureCount);
         [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_record_captured_wait", CallingConvention = CallingConvention.Cdecl)]
