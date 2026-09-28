@@ -65,8 +65,8 @@ public sealed partial class HiddenFocusTests
             Assert.AreEqual(Visibility.Visible, fields.Coordinates.Visibility);
             fields.X.Text = "-25"; fields.Y.Text = "10"; fields.Rgb.Text = "112233";
             fields.Trigger.SelectedIndex = (int)WaitTrigger.Changes;
-            Assert.AreEqual(Visibility.Collapsed, fields.Rgb.Visibility);
-            Assert.AreEqual(Visibility.Collapsed, fields.NotEqual.Visibility);
+            Assert.AreEqual(Visibility.Visible, fields.Rgb.Visibility);
+            Assert.AreEqual(Visibility.Visible, fields.NotEqual.Visibility);
             fields.Trigger.SelectedIndex = (int)WaitTrigger.IsTrue;
             Assert.IsTrue(editor.TryCommitPendingEdits());
             Assert.AreEqual(-25, ((WaitConditionEvent)macro.Events[0]).Condition.Pixel.X);

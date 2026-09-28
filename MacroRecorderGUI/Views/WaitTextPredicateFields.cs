@@ -12,6 +12,11 @@ internal sealed class WaitTextPredicateFields : StackPanel
     internal readonly TextBox Expected;
     internal readonly ComboBox Comparison, Whitespace;
     internal readonly CheckBox IgnoreCase;
+    private readonly TextBlock _savedPredicateNote = new()
+    {
+        Text = "Changes compares with the first valid runtime text. The saved comparison and expected text are not used by this trigger, but must remain valid so they can be preserved when switching triggers.",
+        TextWrapping = TextWrapping.Wrap, FontSize = 13, Visibility = Visibility.Collapsed
+    };
     public event Action? Changed;
 
     public WaitTextPredicateFields(TextPredicate? predicate)
@@ -27,7 +32,7 @@ internal sealed class WaitTextPredicateFields : StackPanel
             SelectedIndex = Enum.IsDefined(_template.Whitespace) ? (int)_template.Whitespace : -1,
             HorizontalAlignment = HorizontalAlignment.Stretch };
         IgnoreCase = new() { Content = "Ignore text case", IsChecked = _template.IgnoreCase };
-        foreach (var field in new Control[] { Comparison, Expected, Whitespace, IgnoreCase }) Children.Add(field);
+        foreach (var field in new UIElement[] { _savedPredicateNote, Comparison, Expected, Whitespace, IgnoreCase }) Children.Add(field);
         AutomationProperties.SetName(Expected, "Expected text");
         AutomationProperties.SetName(Comparison, "Text comparison");
         AutomationProperties.SetName(Whitespace, "Whitespace");
@@ -50,7 +55,11 @@ internal sealed class WaitTextPredicateFields : StackPanel
 
     public void SetChangesMode(bool changes)
     {
-        Expected.Visibility = Comparison.Visibility = changes ? Visibility.Collapsed : Visibility.Visible;
+        _savedPredicateNote.Visibility = changes ? Visibility.Visible : Visibility.Collapsed;
+        var expectedLabel = changes ? "Saved expected text (not used for Changes)" : "Expected text";
+        var comparisonLabel = changes ? "Saved text comparison (not used for Changes)" : "Text comparison";
+        Expected.Header = expectedLabel; Comparison.Header = comparisonLabel;
+        AutomationProperties.SetName(Expected, expectedLabel); AutomationProperties.SetName(Comparison, comparisonLabel);
     }
 
     public void ApplyStyles(Style field) => Expected.Style = field;

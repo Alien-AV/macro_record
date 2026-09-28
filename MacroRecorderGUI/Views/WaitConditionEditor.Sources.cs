@@ -280,8 +280,7 @@ internal sealed partial class WaitConditionEditor
         if (source >= 2)
         {
             _target.Visibility = source == 2 || source == 3 && RegionCoordinates.SelectedIndex != 0 ? Visibility.Visible : Visibility.Collapsed;
-            Any.Visibility = Visibility.Collapsed;
-            if (!_populating && source != _previousSource) Any.IsChecked = false;
+            UpdateSingleWindowPolicy(true);
             _help.Text = source switch
             {
                 2 => "Accessibility lookup stays within one window. Unsupported text access and incomplete reads are reported; they cannot satisfy a negative condition. Minimum polling: 250 ms.",

@@ -72,6 +72,7 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
             HorizontalContentAlignment = HorizontalAlignment.Stretch });
         Children.Add(_help); Children.Add(_testButton); Children.Add(Feedback);
         Source.SelectionChanged += (_, _) => UpdateFields(); Coordinates.SelectionChanged += (_, _) => UpdateFields(); Trigger.SelectionChanged += (_, _) => UpdateFields();
+        Any.Checked += (_, _) => UpdateFields(); Any.Unchecked += (_, _) => UpdateFields();
         _testButton.Click += async (_, _) => await TestAsync();
         InitializeAdditionalSources(condition);
         Unloaded += (_, _) => CancelTest();
@@ -103,12 +104,9 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
             pixel.Coordinates = (PixelCoordinates)Coordinates.SelectedIndex;
             pixel.Target = pixel.Coordinates == PixelCoordinates.DesktopPhysical ? null : target;
             pixel.X = int.Parse(X.Text, CultureInfo.InvariantCulture); pixel.Y = int.Parse(Y.Text, CultureInfo.InvariantCulture);
-            if (result.Trigger != WaitTrigger.Changes)
-            {
-                var rgb = Rgb.Text.Trim().TrimStart('#');
-                if (rgb.Length != 6) throw new ArgumentException("RGB must contain exactly six hexadecimal digits.");
-                pixel.Rgb = uint.Parse(rgb, NumberStyles.HexNumber, CultureInfo.InvariantCulture); pixel.NotEqual = NotEqual.IsChecked == true;
-            }
+            var rgb = Rgb.Text.Trim().TrimStart('#');
+            if (rgb.Length != 6) throw new ArgumentException("RGB must contain exactly six hexadecimal digits.");
+            pixel.Rgb = uint.Parse(rgb, NumberStyles.HexNumber, CultureInfo.InvariantCulture); pixel.NotEqual = NotEqual.IsChecked == true;
             pixel.Tolerance = uint.Parse(Tolerance.Text, CultureInfo.InvariantCulture);
             if (pixel.Coordinates == PixelCoordinates.ClientLogical) pixel.ReferenceDpi = uint.Parse(Dpi.Text, CultureInfo.InvariantCulture);
             result.Pixel = pixel;
@@ -201,17 +199,26 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
         _pixel.Visibility = Coordinates.Visibility = pixel ? Visibility.Visible : Visibility.Collapsed;
         WindowRule.Visibility = Source.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
         _target.Visibility = Source.SelectedIndex == 0 || pixel && Coordinates.SelectedIndex != 0 ? Visibility.Visible : Visibility.Collapsed;
-        Any.Visibility = pixel ? Visibility.Collapsed : Visibility.Visible;
-        if (pixel && !_populating) Any.IsChecked = false;
+        UpdateSingleWindowPolicy(pixel || Trigger.SelectedIndex == (int)WaitTrigger.Changes);
         Dpi.Visibility = pixel && Coordinates.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
-        Rgb.Visibility = NotEqual.Visibility = Trigger.SelectedIndex == (int)WaitTrigger.Changes ? Visibility.Collapsed : Visibility.Visible;
+        var changes = Trigger.SelectedIndex == (int)WaitTrigger.Changes;
+        var rgbLabel = changes ? "Saved RGB (six hex digits; not used for Changes)" : "Expected RGB (six hex digits)";
+        var colorLabel = changes ? "Saved color is not equal (not used for Changes)" : "Color is not equal";
+        Rgb.Header = rgbLabel; NotEqual.Content = colorLabel;
+        AutomationProperties.SetName(Rgb, rgbLabel); AutomationProperties.SetName(NotEqual, colorLabel);
         _help.Text = pixel ? "Samples one visible screen pixel. Covered or minimized client targets are unavailable. Logical offsets scale with DPI, not window size."
             : "Specify at least one target field. Multiple matches need a narrower selector or Allow any matching window.";
         _help.Text += " Waiting does not focus a window or redirect subsequent input. Timeout or an unavailable target stops playback.";
         if (Trigger.SelectedIndex == (int)WaitTrigger.Changes)
-            _help.Text += pixel ? " Changes compares with the first valid runtime pixel, using the channel tolerance."
+            _help.Text += pixel ? " Changes compares with the first valid runtime pixel, using the channel tolerance. Saved RGB and color comparison are not used by this trigger, but must remain valid for later trigger changes."
                 : " Changes requires Visible or Foreground and a single target; Exists and Absent are not supported for this trigger.";
         UpdateAdditionalSourceFields();
+    }
+    private void UpdateSingleWindowPolicy(bool required)
+    {
+        Any.Visibility = required && Any.IsChecked != true ? Visibility.Collapsed : Visibility.Visible;
+        var label = required ? "Allow any matching window (clear: this source requires one window)" : "Allow any matching window";
+        Any.Content = label; AutomationProperties.SetName(Any, label);
     }
     private void Change()
     {

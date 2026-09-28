@@ -6,6 +6,7 @@ using MacroRecorderGUI.Models;
 using MacroRecorderGUI.ViewModels;
 using MacroRecorderGUI.Views;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using ProtobufGenerated;
 
@@ -59,6 +60,9 @@ public sealed partial class HiddenFocusTests
         CheckSourceRoundTrips();
         CheckSourceDraftValidationAndSwitching();
         await CheckMemoryChangesDraftRepair();
+        await CheckTextChangesDraftRepair();
+        await CheckPixelChangesDraftRepair();
+        CheckSingleWindowDraftRepair();
         CheckSourceRegionSelection();
         await CheckSourceChoiceQueries();
         await CheckSourceQueryCancellation();
@@ -214,6 +218,7 @@ public sealed partial class HiddenFocusTests
         fields.MemoryOptIn.IsChecked = true; await fields.SaveMemoryPolicyAsync();
         await fields.LoadProcessesAsync();
         Assert.AreEqual(1, queries.Calls); Assert.AreEqual(-1, fields.ProcessChoices.SelectedIndex);
+        Assert.AreEqual("Choose running application…", AutomationProperties.GetName(Field<Button>(fields, "_chooseProcess")));
         StringAssert.Contains(fields.Feedback.Text, "inaccessible processes were skipped");
         CollectionAssert.AreEqual(original, fields.Read().ToByteArray(), "Loading a list never chooses a target.");
         fields.MemoryOffsets.Text = "unfinished";
@@ -244,8 +249,17 @@ public sealed partial class HiddenFocusTests
         using var fields = SourceFields(WaitSourceTextTests.Memory(), new(), queries);
         fields.MemoryOptIn.IsChecked = true; await fields.SaveMemoryPolicyAsync();
         var task = fields.LoadProcessesAsync(); await queries.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        var button = Field<Button>(fields, "_chooseProcess");
+        Assert.AreEqual("Cancel choice lookup", button.Content);
+        Assert.AreEqual("Cancel choice lookup", AutomationProperties.GetName(button));
         fields.MemoryExpected.Text = "12";
+        var newer = fields.LoadProcessesAsync();
         await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual("Cancel choice lookup", button.Content, "An older completion must not restore a newer lookup's button.");
+        Assert.AreEqual("Cancel choice lookup", AutomationProperties.GetName(button));
+        fields.CancelTest(); await newer.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual("Choose running application…", button.Content);
+        Assert.AreEqual("Choose running application…", AutomationProperties.GetName(button));
         var expectedFeedback = fields.Feedback.Text;
         queries.PendingProcesses.SetResult(new(ReadStatus.Success, [new("Late", @"C:\Late.exe")]));
         await Task.Yield();
@@ -297,6 +311,15 @@ public sealed partial class HiddenFocusTests
                     Assert.AreEqual("unfinished", fields.MemoryExpected.Text);
                     fields.MemoryExpected.Text = "7";
                 }
+                else
+                {
+                    var predicate = condition.AccessibilityText is not null ? fields.AccessibilityPredicate : fields.OcrPredicate;
+                    predicate.Expected.Text = new string('x', 32769); fields.Trigger.SelectedIndex = (int)WaitTrigger.Changes;
+                    Assert.IsFalse(editor.TryCommitPendingEdits());
+                    Assert.AreEqual(Visibility.Visible, predicate.Expected.Visibility);
+                    Assert.AreEqual(32769, predicate.Expected.Text.Length);
+                    predicate.Expected.Text = "Repaired text";
+                }
                 fields.Timeout.Text = "invalid";
                 Assert.IsFalse(editor.TryCommitPendingEdits()); Assert.AreEqual("invalid", fields.Timeout.Text);
                 fields.Timeout.Text = "31"; Assert.IsTrue(editor.TryCommitPendingEdits());
@@ -305,6 +328,12 @@ public sealed partial class HiddenFocusTests
                 {
                     Assert.AreEqual(WaitTrigger.Changes, ((WaitConditionEvent)macro.Events[0]).Condition.Trigger);
                     Assert.AreEqual("7", ((WaitConditionEvent)macro.Events[0]).Condition.Memory.Expected);
+                }
+                else
+                {
+                    var saved = ((WaitConditionEvent)macro.Events[0]).Condition;
+                    Assert.AreEqual(WaitTrigger.Changes, saved.Trigger);
+                    Assert.AreEqual("Repaired text", (saved.AccessibilityText?.Predicate ?? saved.OcrText.Predicate).Expected);
                 }
                 if (condition.Memory is not null) { fields.MemoryOptIn.IsChecked = true; await fields.SaveMemoryPolicyAsync(); }
                 var run = fields.TestAsync(); await observer.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));

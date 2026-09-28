@@ -134,7 +134,7 @@ internal sealed partial class WaitConditionEditor
         var providerCancellation = new CancellationTokenSource();
         _sourceQuery = deadline;
         _sourceQueryButton = button;
-        button.Content = "Cancel choice lookup";
+        SetSourceQueryButtonLabel(button, "Cancel choice lookup");
         list.Visibility = Visibility.Collapsed;
         if (ReferenceEquals(list, ProcessChoices)) ProcessChoiceWarning.Visibility = Visibility.Collapsed;
         Feedback.Text = "Loading choices… No condition test is running.";
@@ -174,7 +174,7 @@ internal sealed partial class WaitConditionEditor
         finally
         {
             if (ReferenceEquals(_sourceQuery, deadline)) { _sourceQuery = null; _sourceQueryButton = null; }
-            if (!ReferenceEquals(_sourceQueryButton, button) || generation == _sourceQueryGeneration) button.Content = label;
+            if (!ReferenceEquals(_sourceQueryButton, button) || generation == _sourceQueryGeneration) SetSourceQueryButtonLabel(button, label);
             // A timeout can end the UI operation while a provider is finishing.
             // Keep the shared permit until both it and cancellation callbacks end.
             _ = Task.WhenAll(pending, providerCancellation.CancelAsync()).ContinueWith(task =>
@@ -182,6 +182,12 @@ internal sealed partial class WaitConditionEditor
                 _ = task.Exception; providerCancellation.Dispose(); if (ownsSlot) SourceQuerySlot.Release();
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
+    }
+
+    private static void SetSourceQueryButtonLabel(Button button, string label)
+    {
+        button.Content = label;
+        AutomationProperties.SetName(button, label);
     }
 
     partial void CancelAdditionalSourceWork()
