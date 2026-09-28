@@ -102,7 +102,9 @@ public sealed partial class MainWindow
                 return _captureShortcutStatus = "Capture shortcuts could not be saved. " + error.Message
                     + (restored ? " Previous settings remain active." : " Previous shortcut registrations could not be restored. Capture is disabled until shortcut settings are saved successfully.");
             }
-            return "The window is closing.";
+            _captureHotkeys?.DisableUntilReconfigured();
+            SynchronizeRecordingCaptureBindings();
+            return _captureShortcutStatus = "Capture shortcuts could not be saved while closing. Capture is disabled until shortcut settings are saved successfully.";
         }
         _captureConfiguration = configuration;
         if (_closed || _closing) return null;
