@@ -41,7 +41,7 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
         WindowRule = Choice("Window condition", ["Exists", "Visible", "Foreground", "Absent"], (int)(condition.Window?.Test ?? WindowTest.Visible));
         Coordinates = Choice("Pixel coordinates", ["Desktop physical pixels", "Window client physical pixels", "Window client logical offsets"], (int)(condition.Pixel?.Coordinates ?? PixelCoordinates.DesktopPhysical));
         Children.Add(WindowRule); Children.Add(Coordinates);
-        var target = condition.Window?.Target ?? condition.Pixel?.Target ?? new WindowSelector();
+        var target = condition.Window?.Target ?? condition.Pixel?.Target ?? condition.AccessibilityText?.Target ?? condition.OcrText?.Region?.Target ?? new WindowSelector();
         Executable = Field("Full executable path (optional)", target.ExecutablePath);
         Class = Field("Window class (optional)", target.WindowClass);
         Title = Field("Window title (optional)", target.Title);
@@ -83,13 +83,13 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
         var result = _template.Clone();
         // Preserve unsupported imported versions: editing a field cannot silently upgrade semantics.
         result.Trigger = (WaitTrigger)Trigger.SelectedIndex;
-        result.TimeoutUs = Duration(Timeout.Text, 1_000_000);
-        result.StableForUs = Duration(Stability.Text, 1000);
-        result.PollIntervalUs = Duration(Poll.Text, 1000);
+        result.TimeoutUs = Duration(Timeout.Text, 1_000_000, "Timeout");
+        result.StableForUs = Duration(string.IsNullOrWhiteSpace(Stability.Text) ? "0" : Stability.Text, 1000, "Stability");
+        result.PollIntervalUs = Duration(Poll.Text, 1000, "Polling interval");
         var handled = false;
         ReadAdditionalSource(result, ref handled);
         if (handled) { WaitValidation.Validate(result); return result; }
-        var target = (result.Window?.Target ?? result.Pixel?.Target)?.Clone() ?? new WindowSelector();
+        var target = (result.Window?.Target ?? result.Pixel?.Target ?? result.AccessibilityText?.Target ?? result.OcrText?.Region?.Target)?.Clone() ?? new WindowSelector();
         target.ExecutablePath = Executable.Text; target.WindowClass = Class.Text; target.Title = Title.Text;
         target.TitleMatch = (TitleMatch)TitleRule.SelectedIndex; target.IgnoreTitleCase = IgnoreCase.IsChecked == true; target.AnyMatch = Any.IsChecked == true;
         if (Source.SelectedIndex == 0)
@@ -124,7 +124,17 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
         foreach (var pickerButton in _pickerButtons) pickerButton.Style = button;
         ApplyAdditionalSourceStyles(field, button);
     }
-    public void Committed() { IsDirty = false; Feedback.Text = "Condition saved. Undo is available."; }
+    public void Committed()
+    {
+        _populating = true;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Stability.Text)) Stability.Text = "0";
+            NormalizeAdditionalSourceFields();
+        }
+        finally { _populating = false; }
+        IsDirty = false; Feedback.Text = "Condition saved. Undo is available.";
+    }
     public void CancelTest()
     {
         CancelPicker();
@@ -141,10 +151,12 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
     {
         if (_disposed) return;
         CancelPicker();
+        CancelAdditionalSourceWork();
         if (_test is not null) { CancelTest(); return; }
         var generation = ++_testGeneration;
         try
         {
+            ValidateAdditionalSourceTest();
             var condition = Read();
             using var cancel = new CancellationTokenSource(); _test = cancel;
             _testButton.Content = "Cancel condition test";
@@ -152,7 +164,12 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
             var duration = TimeSpan.FromMicroseconds(Math.Min(condition.TimeoutUs, 5_000_000));
             var result = await _runner.RunAsync(condition, duration, cancel.Token, progress => DispatcherQueue.TryEnqueue(() =>
             { if (CurrentTest(cancel, generation)) Feedback.Text = $"{progress.Remaining.TotalSeconds:0.0}s remaining · {progress.Observation}"; }));
-            if (CurrentTest(cancel, generation)) Feedback.Text = (result.Satisfied ? "Satisfied. " : "Not satisfied. ") + result.Detail;
+            if (CurrentTest(cancel, generation))
+            {
+                Feedback.Text = (result.Satisfied ? "Satisfied. " : "Not satisfied. ") + result.Detail;
+                if (!result.Satisfied && condition.OcrText is not null)
+                    Feedback.Text += " Use List installed languages to check the selected language, or review Local OCR installation.";
+            }
         }
         catch (OperationCanceledException) { if (!_disposed && generation == _testGeneration) Feedback.Text = "Condition test cancelled."; }
         catch (Exception error) when (error is ArgumentException or FormatException or OverflowException)
@@ -161,20 +178,23 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
     }
     private bool CurrentTest(CancellationTokenSource test, long generation) =>
         !_disposed && generation == _testGeneration && ReferenceEquals(_test, test) && !test.IsCancellationRequested;
-    private static ulong Duration(string text, decimal multiplier)
+    private static ulong Duration(string text, decimal multiplier, string label)
     {
-        var value = decimal.Parse(text, NumberStyles.Number, CultureInfo.InvariantCulture) * multiplier;
-        if (value < 0 || value > ulong.MaxValue || value != decimal.Truncate(value)) throw new ArgumentException("Enter a nonnegative time with whole microsecond precision.");
+        if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var input)
+            || input < 0 || input > ulong.MaxValue / multiplier)
+            throw new ArgumentException($"{label}: enter a nonnegative time with whole microsecond precision.");
+        var value = input * multiplier;
+        if (value != decimal.Truncate(value)) throw new ArgumentException($"{label}: enter a time with whole microsecond precision.");
         return (ulong)value;
     }
     private void UpdateFields()
     {
         var pixel = Source.SelectedIndex == 1;
-        var triggerCount = pixel ? 3 : 4;
+        var triggerCount = Source.SelectedIndex == 0 ? 4 : 3;
         if (Trigger.Items.Count != triggerCount)
         {
             var selected = Trigger.SelectedIndex;
-            Trigger.ItemsSource = pixel ? new[] { "Is true", "Becomes true", "Changes from starting value" }
+            Trigger.ItemsSource = triggerCount == 3 ? new[] { "Is true", "Becomes true", "Changes from starting value" }
                 : new[] { "Is true", "Becomes true", "Changes from starting value", "New matching window" };
             Trigger.SelectedIndex = selected < triggerCount ? selected : _populating ? -1 : 0;
         }
@@ -226,4 +246,6 @@ internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
     partial void UpdateAdditionalSourceFields();
     partial void ApplyAdditionalSourceStyles(Style field, Style button);
     partial void CancelAdditionalSourceWork();
+    partial void NormalizeAdditionalSourceFields();
+    partial void ValidateAdditionalSourceTest();
 }
