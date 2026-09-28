@@ -3,6 +3,17 @@
 Baseline: `91fb5d8`, pushed to `origin/master` at the user's request.
 Status: delegated implementation; acceptance criteria below are not a delivery claim.
 
+## Integration checkpoints
+
+- Shared wait contracts, standalone Delay wire type and format version 4:
+  integrated at `a6d94b9` after independent review.
+- Bounded Windows accessibility backend: integrated at `8bc3d81` after
+  independent review, including verification against Windows SDK COM signatures.
+- Combined Debug checkpoint at `8bc3d81`: 869 managed and 107 native tests
+  passed. This is not the final full-feature or Release verification.
+- Editor, capture hotkeys/ordered native markers, source forms, remaining
+  observation backends and portable OCR packaging remain in worker/review stages.
+
 ## Requested outcomes
 
 - Represent fixed pauses as understandable Delay steps, not a ubiquitous raw
