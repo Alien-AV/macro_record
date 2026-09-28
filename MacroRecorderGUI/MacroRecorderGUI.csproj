@@ -64,4 +64,5 @@
       DestinationFiles="@(WinUIPublishResource->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
       SkipUnchangedFiles="true" />
   </Target>
+  <Import Project="..\packaging\Ocr.targets" />
 </Project>

@@ -7,6 +7,18 @@
     "gtest",
     "protobuf"
   ],
+  "features": {
+    "portable-ocr": {
+      "description": "Prepare the app-local Tesseract CLI (scripts/Prepare-Ocr.ps1)",
+      "dependencies": [
+        "tesseract",
+        { "name": "curl", "default-features": false },
+        { "name": "libarchive", "default-features": false },
+        { "name": "libwebp", "default-features": false, "features": ["libwebpmux"] },
+        { "name": "tiff", "default-features": false }
+      ]
+    }
+  },
   "overrides": [
     {
       "name": "protobuf",

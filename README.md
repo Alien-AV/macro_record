@@ -24,6 +24,17 @@ The WinUI project uses Windows App SDK 2.4.0 and is configured as an unpackaged 
 
 ## Build and test
 
+Prepare the portable, app-local OCR CLI and pinned English model explicitly
+before the first build (and in CI). This development step downloads/builds the
+pinned dependencies; application startup, ordinary builds and publish do not:
+
+```powershell
+powershell -NoProfile -File scripts/Prepare-Ocr.ps1
+```
+
+See [portable OCR packaging](docs/portable-ocr.md) for pins, licenses, validation,
+toolchain overrides and noninteractive fixture tests.
+
 Restore and verify the managed projects:
 
 ```powershell
@@ -180,7 +191,8 @@ for the historical design and remaining optional capabilities.
 
 Build the complete solution for Release first, then publish a self-contained x64
 directory. Publishing requires the matching native DLL under `x64/Release` and
-fails if it is missing; a managed-only build is not a complete distribution.
+the verified OCR bundle from the preparation step above. It fails if either is
+missing or invalid; a managed-only build is not a complete distribution.
 
 ```powershell
 dotnet publish MacroRecorderGUI/MacroRecorderGUI.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o x64/Release/publish
@@ -192,9 +204,9 @@ Verify packaging without launching the application:
 ./scripts/Test-Publish.ps1 -Configuration Release
 ```
 
-This checks missing-native failures, native DLL and compiled UI resource hashes,
-and self-contained runtime configuration and files in an isolated directory under
-`artifacts`.
+This checks missing-native/OCR and stale-OCR failures, native DLL and compiled UI
+resource hashes, self-contained runtime files, and actual English OCR on an owned
+generated fixture in an isolated directory under `artifacts`.
 
 The publish directory can be copied directly to another machine. To produce the optional Inno Setup installer:
 

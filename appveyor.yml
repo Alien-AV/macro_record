@@ -9,6 +9,7 @@ environment:
 cache:
 - '%USERPROFILE%\.nuget\packages'
 build_script:
+- ps: ./scripts/Prepare-Ocr.ps1
 - cmd: msbuild macro_record.sln /restore /m /p:Configuration=Release /p:Platform=x64 /p:RestorePackagesConfig=true /verbosity:minimal
 test_script:
 - cmd: x64\Release\RecordPlaybackDLLTest.exe

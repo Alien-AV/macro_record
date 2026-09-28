@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "vcpkgBaseline": "f0c8848cde589649bca3ab3649668540403786ce",
+  "triplet": "x64-windows-static",
+  "tesseractVersion": "5.4.1",
+  "tesseractPortTree": "72c4092a52446487c69f9927c5b22a8fddfb638c",
+  "tesseractSourceSha512": "a97a31d1b735930a3e8b17bc2eae24210d8242d31399822f8bc2e9f18903d513cf6d02b2274e2f3ce431183467570b3327e01cbc49dca80e38acb90327cc235e",
+  "modelCommit": "87416418657359cb625c412a48b6e1d6d41c29bd",
+  "modelUrl": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata",
+  "modelSha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+  "modelLicenseUrl": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/LICENSE",
+  "modelLicenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+}

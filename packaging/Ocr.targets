@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <OcrBundleDirectory Condition="'$(OcrBundleDirectory)' == ''">$(MSBuildThisFileDirectory)..\artifacts\ocr</OcrBundleDirectory>
+    <OcrBundleRoot>$([MSBuild]::EnsureTrailingSlash('$(OcrBundleDirectory)'))</OcrBundleRoot>
+    <OcrValidationScript>$(MSBuildThisFileDirectory)..\scripts\Validate-Ocr.ps1</OcrValidationScript>
+  </PropertyGroup>
+  <Target Name="RequirePortableOcr" BeforeTargets="PrepareForBuild;PrepareForPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="!Exists('$(OcrBundleRoot)bundle.json')" Text="OCR bundle missing or invalid: $(OcrBundleRoot). Run powershell -NoProfile -File scripts/Prepare-Ocr.ps1 before building or publishing. Preparation is explicit; no runtime downloads are performed." />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(OcrValidationScript)&quot; -Directory &quot;$(OcrBundleDirectory)&quot;" />
+  </Target>
+  <Target Name="CopyPortableOcrToBuildOutput" AfterTargets="Build" DependsOnTargets="RequirePortableOcr" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <OcrBuildFile Include="$(OcrBundleRoot)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OcrBuildFile)" DestinationFiles="@(OcrBuildFile->'$(TargetDir)ocr\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(OcrValidationScript)&quot; -Directory &quot;$(TargetDir)ocr&quot;" />
+  </Target>
+  <Target Name="IncludePortableOcrInPublish" AfterTargets="ComputeFilesToPublish" DependsOnTargets="RequirePortableOcr">
+    <ItemGroup>
+      <OcrPublishFile Include="$(OcrBundleRoot)**\*" />
+      <ResolvedFileToPublish Include="@(OcrPublishFile)">
+        <RelativePath>ocr\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>IfDifferent</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+  <Target Name="ValidatePublishedOcr" AfterTargets="Publish">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(OcrValidationScript)&quot; -Directory &quot;$(PublishDir)ocr&quot;" />
+  </Target>
+</Project>
