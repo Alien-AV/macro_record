@@ -54,7 +54,51 @@ internal sealed class WindowPixelObserver(IWindowPixelDesktop desktop) : IWaitOb
     }
 }
 
-internal sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitGeometryApi
+internal interface IWaitPixelApi : IWaitGeometryApi
+{
+    bool Revalidate(ObservedWindow window);
+    bool OnMonitor(Point point);
+    nint AcquireScreen();
+    uint ScreenPixel(nint dc, Point point);
+    void ReleaseScreen(nint dc);
+}
+
+internal static class WaitPixelSampler
+{
+    public static PixelObservation Read(PixelCondition condition, ObservedWindow? window, IWaitPixelApi api)
+    {
+        var previousDpi = api.SetContext(new nint(-4));
+        if (previousDpi == 0) return new(0, "", "Physical pixel coordinates are unavailable.");
+        try
+        {
+            var point = new Point { X = condition.X, Y = condition.Y };
+            var identity = "desktop";
+            if (window is not null)
+            {
+                if (!api.Revalidate(window) || !window.Visible || api.Surface(window.Handle) is not { Visible: true, Minimized: false, Cloaked: false })
+                    return new(0, "", "Target is hidden, minimized, cloaked, or has changed; visibility may be unavailable.");
+                if (!WaitPixelGeometry.Resolve(condition, window.Handle, api, out point)) return new(0, "", "Client pixel is out of bounds or its physical rendering transform is unavailable.");
+                if (!WaitPixelGeometry.Uncovered(window.Handle, point, api)) return new(0, "", "The target pixel is covered or occlusion cannot be established.");
+                identity = window.Identity;
+            }
+            if (!api.OnMonitor(point)) return new(0, "", "Pixel lies outside a connected monitor.");
+            var dc = api.AcquireScreen();
+            if (dc == 0) return new(0, "", "Screen sampling is unavailable.");
+            uint color;
+            try { color = api.ScreenPixel(dc, point); }
+            finally { api.ReleaseScreen(dc); }
+            if (color == 0xffffffff) return new(0, "", "Pixel read failed.");
+            if (window is not null && (!api.Revalidate(window) || api.Surface(window.Handle) is not { Visible: true, Minimized: false, Cloaked: false }
+                || !WaitPixelGeometry.Resolve(condition, window.Handle, api, out var after) || after.X != point.X || after.Y != point.Y
+                || !WaitPixelGeometry.Uncovered(window.Handle, point, api)))
+                return new(0, "", "Target changed or became covered during sampling.");
+            return new(((color & 255) << 16) | (color & 0xff00) | ((color >> 16) & 255), identity);
+        }
+        finally { api.SetContext(previousDpi); }
+    }
+}
+
+internal sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitPixelApi
 {
     public WindowObservation FindWindows(WindowSelector selector, CancellationToken token)
     {
@@ -95,43 +139,19 @@ internal sealed class WindowsWaitDesktop : IWindowPixelDesktop, IWaitGeometryApi
         return error is not null ? new([], failure, error) : !completed ? new([], ObservationState.Unavailable, "Window enumeration failed.") : new(windows);
     }
 
-    public PixelObservation ReadPixel(PixelCondition condition, ObservedWindow? window)
-    {
-        var previousDpi = SetThreadDpiAwarenessContext(new nint(-4));
-        if (previousDpi == 0) return new(0, "", "Physical pixel coordinates are unavailable.");
-        try
-        {
-            var point = new Point { X = condition.X, Y = condition.Y };
-            var identity = "desktop";
-            if (window is not null)
-            {
-                if (!Revalidate(window) || !window.Visible || IsIconic(window.Handle)) return new(0, "", "Target is hidden, minimized, or has changed.");
-                if (!WaitPixelGeometry.Resolve(condition, window.Handle, this, out point)) return new(0, "", "Client pixel is out of bounds or its physical rendering transform is unavailable.");
-                if (!WaitPixelGeometry.Uncovered(window.Handle, point, this)) return new(0, "", "The target pixel is covered or occlusion cannot be established.");
-                identity = window.Identity;
-            }
-            if (MonitorFromPoint(point, 0) == 0) return new(0, "", "Pixel lies outside a connected monitor.");
-            var dc = GetDC(0);
-            if (dc == 0) return new(0, "", "Screen sampling is unavailable.");
-            uint color;
-            try { color = GetPixel(dc, point.X, point.Y); }
-            finally { ReleaseDC(0, dc); }
-            if (color == 0xffffffff) return new(0, "", "Pixel read failed.");
-            if (window is not null && (!Revalidate(window) || !IsWindowVisible(window.Handle) || IsIconic(window.Handle)
-                || !WaitPixelGeometry.Resolve(condition, window.Handle, this, out var after) || after.X != point.X || after.Y != point.Y
-                || !WaitPixelGeometry.Uncovered(window.Handle, point, this)))
-                return new(0, "", "Target changed or became covered during sampling.");
-            return new(((color & 255) << 16) | (color & 0xff00) | ((color >> 16) & 255), identity);
-        }
-        finally { SetThreadDpiAwarenessContext(previousDpi); }
-    }
+    public PixelObservation ReadPixel(PixelCondition condition, ObservedWindow? window) => WaitPixelSampler.Read(condition, window, this);
 
-    private static bool Revalidate(ObservedWindow window)
+    bool IWaitPixelApi.Revalidate(ObservedWindow window)
     {
         if (!IsWindow(window.Handle) || GetWindowThreadProcessId(window.Handle, out var pid) == 0 || pid != window.ProcessId) return false;
         using var process = OpenProcess(0x1000, false, pid);
         return !process.IsInvalid && GetProcessTimes(process, out var created, out _, out _, out _) && created == window.ProcessCreated;
     }
+
+    bool IWaitPixelApi.OnMonitor(Point point) => MonitorFromPoint(point, 0) != 0;
+    nint IWaitPixelApi.AcquireScreen() => GetDC(0);
+    uint IWaitPixelApi.ScreenPixel(nint dc, Point point) => GetPixel(dc, point.X, point.Y);
+    void IWaitPixelApi.ReleaseScreen(nint dc) => ReleaseDC(0, dc);
 
     nint IWaitGeometryApi.WindowContext(nint window) => GetWindowDpiAwarenessContext(window);
     nint IWaitGeometryApi.SetContext(nint context) => SetThreadDpiAwarenessContext(context);
