@@ -20,6 +20,13 @@ public sealed partial class MainWindow
         SetMessage(message);
     }
 
+    private async Task InitializeWaitSourcePreferencesAsync()
+    {
+        if (_waitSourcePreferences is null) return;
+        await _waitSourcePreferences.InitializeAsync(_captureLifetime.Token);
+        if (!_closed && !_closing) RefreshShell();
+    }
+
     private async Task InitializeCapturePreferencesAsync()
     {
         if (_capturePreferencesLoaded) return;
@@ -141,7 +148,7 @@ public sealed partial class MainWindow
             }
             return;
         }
-        if (RunActive || _busy || _savingRun || _stopping || _captureCommandPending || _captureSettingsApplying || _libraryVisible
+        if (!WaitSourcesReady || RunActive || _busy || _savingRun || _stopping || _captureCommandPending || _captureSettingsApplying || _libraryVisible
             || ActiveEditor is not { } editor || editor.IsPreviewMode) return;
         try
         {

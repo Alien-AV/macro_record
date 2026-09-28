@@ -32,6 +32,8 @@ public sealed partial class MainWindow : Window
     private ShellDialogs? _dialogs;
     private ShellDialogs Dialogs => _dialogs ??= new ShellDialogs(RootGrid);
     private readonly RunPreferences _preferences;
+    private readonly WaitSourcePreferences? _waitSourcePreferences;
+    private bool WaitSourcesReady => _waitSourcePreferences is null || _waitSourcePreferences.IsLoaded;
     private PlaybackOptions? _runPlaybackOptions;
     private ulong? _runRecordingDelay;
     private string _shortcutStatus = "Global shortcuts register when the main window is activated.";
@@ -53,7 +55,8 @@ public sealed partial class MainWindow : Window
         : this(viewModel, registerGlobalHotkeys, new RunPreferences(new RunPreferenceStore())) { }
 
     internal MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys, RunPreferences preferences,
-        IWaitTargetPicker? waitPicker = null, IWaitCapturePreferenceStore? capturePreferences = null)
+        IWaitTargetPicker? waitPicker = null, IWaitCapturePreferenceStore? capturePreferences = null,
+        WaitSourcePreferences? sourcePreferences = null)
     {
         ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _preferences = preferences ?? throw new ArgumentNullException(nameof(preferences));
@@ -62,6 +65,7 @@ public sealed partial class MainWindow : Window
         _waitPicker = waitPicker ?? new WaitTargetPicker(new WindowsWaitTargetCaptureApi());
         _capturePreferenceStore = capturePreferences ?? new WaitCapturePreferenceStore();
         _loadCapturePreferences = registerGlobalHotkeys || capturePreferences is not null;
+        _waitSourcePreferences = sourcePreferences ?? (registerGlobalHotkeys ? WaitSourcePreferences.Current : null);
         InitializeComponent();
         WindowIcon.Apply(AppWindow);
         ClickAwayFocus.Attach(RootGrid, FocusSurface);
@@ -101,6 +105,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await _preferences.InitializeAsync();
+            await InitializeWaitSourcePreferencesAsync();
             await InitializeCapturePreferencesAsync();
             if (_closed || _closing) return;
             RefreshShell();
@@ -160,7 +165,7 @@ public sealed partial class MainWindow : Window
         RefreshLibraryPlaybackPreferences();
         var macro = ViewModel.ActiveMacro;
         var preview = !_libraryVisible && ActiveEditor?.IsPreviewMode == true;
-        var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping && !_captureSettingsApplying;
+        var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping && !_captureSettingsApplying && WaitSourcesReady;
         PageTitle.Text = _libraryVisible ? "Recordings" : macro?.Name ?? "Your workspace";
         PageTitle.MaxWidth = Math.Max(150, RootGrid.ActualWidth - 450);
         BreadcrumbLibrary.Content = _libraryVisible ? "Your workspace" : "Recordings";
@@ -200,8 +205,8 @@ public sealed partial class MainWindow : Window
         PlaybackSettingsSummary.Text = RunSettingsPresentation.PlaybackSummary(_preferences.IsLoaded, playback);
         PlaybackSettingsSummary.Foreground = Resource(_preferences.IsLoaded && playback.RepeatUntilStopped ? "MacroRedBrush" : "MacroInkBrush");
         PlaybackSafetyNote.Text = preview ? "Preview: original timing · no input" : "Play sends real keyboard and mouse input";
-        PreferenceWarning.Text = _preferences.Warning ?? "";
-        PreferenceWarning.Visibility = _preferences.Warning is null ? Visibility.Collapsed : Visibility.Visible;
+        PreferenceWarning.Text = string.Join(" ", new[] { _preferences.Warning, _waitSourcePreferences?.Warning }.Where(warning => warning is not null));
+        PreferenceWarning.Visibility = PreferenceWarning.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         BackToEditorButton.Visibility = NextActionButton.Visibility = preview ? Visibility.Visible : Visibility.Collapsed;
         PreviewButton.Visibility = _libraryVisible || RunActive ? Visibility.Collapsed : Visibility.Visible;
         PreviewButton.IsEnabled = commandsAvailable && ActiveEditor?.CanPreview == true;
@@ -250,6 +255,7 @@ public sealed partial class MainWindow : Window
     private async Task OperationAsync(Func<Task> action)
     {
         if (_busy || _closed || _closing || RunActive || _savingRun || _stopping || _captureSettingsApplying) return;
+        if (!WaitSourcesReady) { SetMessage("Condition source settings are loading. Try again when they are ready."); return; }
         if (ActiveEditor?.TryCommitPendingEdits() == false)
         {
             SetMessage(ActiveEditor.Status);

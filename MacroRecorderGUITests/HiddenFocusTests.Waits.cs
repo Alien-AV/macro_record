@@ -26,6 +26,7 @@ public sealed partial class HiddenFocusTests
         await CheckWaitPickerControls();
         await CheckWaitCaptureSettings();
         await CheckRecordingCaptureCommands();
+        await CheckWaitSourceStartup();
         CheckWaitTimingLabels();
         CheckWaitInsertionAfterConditionDraft();
         CheckCancelledWaitInsertionPreservesRawDrafts();
