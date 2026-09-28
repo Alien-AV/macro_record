@@ -5,6 +5,10 @@ Delivery evidence is in ux-rework-delivery.md. The selection, stop-chord,
 scroll-access, and first window/pixel wait implementation were completed at
 37e358d; this pass implemented the broader interaction model below.
 
+This is the September 21 accepted proposal. The subsequent refinement supersedes
+its Pause before field with explicit Delay steps; current behavior is documented
+in action-editor.md and wait-authoring-expansion.md.
+
 ## Problems this rework addresses
 
 The following problems motivated the approved proposal. The user records a task

@@ -5,6 +5,11 @@ The full scope is docs/interaction-rework-proposal.md, retaining the approved
 visual design and WinUI framework. This is local-only work; no GitHub writes,
 push, visible app launch, live capture/injection, or live wait observation.
 
+This records the September 21 delivery. The later editor refinement replaces
+the per-action Pause before field with Delay steps, adds a visible Add event menu,
+and hides redundant wide-layout pane switches. See action-editor.md and
+wait-authoring-expansion.md for the current behavior and verification status.
+
 ## Parallel implementation and acceptance
 
 1. Library and run controls: direct explicit Play and adjacent settings on cards

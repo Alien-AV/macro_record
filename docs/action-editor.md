@@ -18,20 +18,27 @@ use an explicit payload and versioned document contents that old players reject.
   the raw subset and unfinished raw drafts for reopening. Delete in the sequence
   targets actions; Delete in Exact input targets raw events. A hidden remembered
   raw subset never becomes the sequence's deletion target.
-- Pause before changes only the first event's delay. Execution time scales the other
+- Fixed gaps appear as selectable Delay steps. Existing leading gaps remain attached
+  to their original raw event until explicitly edited; viewing them does not rewrite
+  the recording. Removing such a Delay zeroes that gap, not the following action.
+  New standalone Delay events also support trailing and delay-only recordings.
+  Execution time scales the internal
   delays using cumulative integer arithmetic, preserving their exact requested
   total, count, and order. A zero-duration action distributes a new duration
   evenly across its internal intervals. A single event has no internal duration.
   Overflowing per-event results are rejected before any mutation.
-- Wait, execution duration and destination fields apply on Enter or leaving the
+- Delay, execution duration and destination fields apply on Enter or leaving the
   field, including clicking blank space. X/Y form one edit, so moving between
   those two fields does not apply a half-entered destination. Commands commit
   these drafts before save, navigation or playback snapshots. Invalid drafts
   retain their text and explanation and block commands or selection changes
   that would otherwise discard them. Exact raw-input editing still requires
   its explicit Apply or Discard command; pending raw edits block commands instead
-  of being silently bypassed. Dialog options and rename still require Apply/Save.
-- Action rows are numbered by group, with intent names, icons and concise
+  of being silently bypassed. Empty optional timing fields normalize to zero on
+  commit; required coordinates and other invalid drafts are not silently zeroed.
+  Dialog options and rename still require Apply/Save.
+- Sequence rows, path labels and the visible count use step numbers, including
+  displayed leading delays, with intent names, icons and concise
   incomplete warnings. Raw event counts, coordinate representation and original
   indices are available in row tooltips and Exact captured input. The macro heading shows
   its name, action count and total time.
@@ -143,17 +150,21 @@ Windows 10 API is used.
 The approved design uses a two-column editor: a compact action sequence on the
 left and selected-action details with an integrated path on the right. The panes
 have bounded independent scrolling, without an outer scrolling page. Narrow
-windows use Sequence/Details navigation and preserve drafts and selection. Exact
+windows use Sequence/Details navigation and preserve drafts and selection. Those
+switches are hidden when both panes are already visible; keyboard pane navigation
+remains available. Exact
 input is a dedicated detail view with an independently bounded event list. A separate
 preview view contains the path, current/next action, held input, segmented
 timeline and scrubber. Its transport never calls the real playback engine.
 Position fields appear only when edits are safe; otherwise a reason is shown.
-Pause before and Execution time retain independent exact values. Single-event
+Delay and Execution time retain independent exact values. Single-event
 actions have no internal execution duration. Wait until is a separate conditional
 action, including at the end of a recording; its unknown duration is not the
-timeout. Ordinary fixed pauses remain delays before input events.
+timeout. Legacy fixed gaps are displayed as Delay steps without rewriting their
+underlying events; newly authored fixed delays have an explicit payload.
 
-Add offers Click, Shortcut, Pointer movement, and Wait until. Mouse/keyboard raw
+The visible Add event menu offers Click, Shortcut, Pointer movement, Delay, and
+Wait until. Mouse/keyboard raw
 construction lives under Advanced. Authored gestures are balanced and undoable;
 they require released inputs at the insertion boundary and do not rewrite
 captured input. One authored pointer movement is an instantaneous report in an
@@ -186,11 +197,14 @@ The user will perform these smoke checks after integration:
    clicks, and drags. Only the virtual pointer and held-input display should
    change. Leave preview for the editor/library and confirm it stops. Do not
    use real Playback for this check.
-5. Change wait and duration independently, including zero duration and six
+5. Select a Delay step and change its duration independently of adjacent action
+   execution time, including zero duration and six
    decimal places. Use Enter, Tab and a click on blank space to apply. Verify
    exact raw totals and unchanged event count/order; Undo. Enter invalid text,
    then try selecting another action or starting Preview: the draft and its
    explanation should remain, and the command should wait for correction.
+   Empty a timing field and click blank space: it should commit zero on the first
+   attempt without restoring the deleted text. Add a trailing Delay, then Undo.
 6. For a complete, consistently absolute macro, enter destination coordinates
    and drag the outlined handle. Verify the inherited click position, connected
    following path, and unchanged following destination. Repeat before a
@@ -233,7 +247,7 @@ The user will perform these smoke checks after integration:
     recordings should show an input summary. Rename using Save and Cancel,
     including a failed save. In the editor, compare the selected movement with
     recording context and select a single incomplete event: its wait must be
-    immediately editable without a misleading zero-duration field. The controller
+    editable as its own Delay step without a misleading zero execution-time field. The controller
     clock should remain readable as its digits change.
 14. Record and Ctrl+Q should begin the configured countdown without a naming form.
     Play and Ctrl+E should start playback preparation without a confirmation form.
