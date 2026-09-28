@@ -4,6 +4,7 @@
 #include "KeyboardEvent.h"
 #include "MouseEvent.h"
 #include "WaitEvent.h"
+#include "DelayEvent.h"
 #include <limits>
 #include <stdexcept>
 
@@ -43,6 +44,14 @@ std::unique_ptr<Event> make_event_from_protobuf_input_event(const protobufGenera
 			wait->condition = serialized_event.waitcondition();
 			wait->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
 			return wait;
+		}
+	case protobufGenerated::ProtobufInputEvent::EventCase::kDelay:
+		{
+			if (!DelayEvent::valid(serialized_event.delay().duration_microseconds())) throw std::invalid_argument("Invalid fixed delay");
+			auto delay = std::make_unique<DelayEvent>();
+			delay->duration = std::chrono::microseconds(serialized_event.delay().duration_microseconds());
+			delay->time_since_last_event = std::chrono::microseconds(serialized_event.timesincelastevent());
+			return delay;
 		}
 	default:
 		throw std::invalid_argument("Missing input event payload");

@@ -81,6 +81,19 @@ struct ProtobufInputEventListDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtobufInputEventListDefaultTypeInternal _ProtobufInputEventList_default_instance_;
+PROTOBUF_CONSTEXPR FixedDelay::FixedDelay(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.duration_microseconds_)*/uint64_t{0u}
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct FixedDelayDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR FixedDelayDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~FixedDelayDefaultTypeInternal() {}
+  union {
+    FixedDelay _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 FixedDelayDefaultTypeInternal _FixedDelay_default_instance_;
 PROTOBUF_CONSTEXPR WaitCondition::WaitCondition(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.semantics_version_)*/0u
@@ -154,9 +167,126 @@ struct PixelConditionDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PixelConditionDefaultTypeInternal _PixelCondition_default_instance_;
+PROTOBUF_CONSTEXPR TextPredicate::TextPredicate(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.expected_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.comparison_)*/0
+  , /*decltype(_impl_.ignore_case_)*/false
+  , /*decltype(_impl_.whitespace_)*/0
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct TextPredicateDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TextPredicateDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TextPredicateDefaultTypeInternal() {}
+  union {
+    TextPredicate _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TextPredicateDefaultTypeInternal _TextPredicate_default_instance_;
+PROTOBUF_CONSTEXPR AccessibilitySelector::AccessibilitySelector(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.automation_id_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.control_type_)*/0u
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct AccessibilitySelectorDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AccessibilitySelectorDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AccessibilitySelectorDefaultTypeInternal() {}
+  union {
+    AccessibilitySelector _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AccessibilitySelectorDefaultTypeInternal _AccessibilitySelector_default_instance_;
+PROTOBUF_CONSTEXPR AccessibilityTextCondition::AccessibilityTextCondition(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.ancestors_)*/{}
+  , /*decltype(_impl_.target_)*/nullptr
+  , /*decltype(_impl_.element_)*/nullptr
+  , /*decltype(_impl_.predicate_)*/nullptr
+  , /*decltype(_impl_.source_)*/0
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct AccessibilityTextConditionDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AccessibilityTextConditionDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AccessibilityTextConditionDefaultTypeInternal() {}
+  union {
+    AccessibilityTextCondition _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AccessibilityTextConditionDefaultTypeInternal _AccessibilityTextCondition_default_instance_;
+PROTOBUF_CONSTEXPR OcrRegion::OcrRegion(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.target_)*/nullptr
+  , /*decltype(_impl_.coordinates_)*/0
+  , /*decltype(_impl_.x_)*/0
+  , /*decltype(_impl_.y_)*/0
+  , /*decltype(_impl_.width_)*/0u
+  , /*decltype(_impl_.height_)*/0u
+  , /*decltype(_impl_.reference_dpi_)*/0u
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct OcrRegionDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OcrRegionDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OcrRegionDefaultTypeInternal() {}
+  union {
+    OcrRegion _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OcrRegionDefaultTypeInternal _OcrRegion_default_instance_;
+PROTOBUF_CONSTEXPR OcrTextCondition::OcrTextCondition(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.language_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.region_)*/nullptr
+  , /*decltype(_impl_.predicate_)*/nullptr
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct OcrTextConditionDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR OcrTextConditionDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~OcrTextConditionDefaultTypeInternal() {}
+  union {
+    OcrTextCondition _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OcrTextConditionDefaultTypeInternal _OcrTextCondition_default_instance_;
+PROTOBUF_CONSTEXPR ModuleAddress::ModuleAddress(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.path_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.file_version_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.offset_)*/uint64_t{0u}
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct ModuleAddressDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ModuleAddressDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ModuleAddressDefaultTypeInternal() {}
+  union {
+    ModuleAddress _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ModuleAddressDefaultTypeInternal _ModuleAddress_default_instance_;
+PROTOBUF_CONSTEXPR MemoryCondition::MemoryCondition(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.pointer_offsets_)*/{}
+  , /*decltype(_impl_._pointer_offsets_cached_byte_size_)*/{0}
+  , /*decltype(_impl_.executable_path_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.expected_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.scalar_type_)*/0
+  , /*decltype(_impl_.comparison_)*/0
+  , /*decltype(_impl_.tolerance_)*/0
+  , /*decltype(_impl_.address_)*/{}
+  , /*decltype(_impl_._cached_size_)*/{}
+  , /*decltype(_impl_._oneof_case_)*/{}} {}
+struct MemoryConditionDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MemoryConditionDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MemoryConditionDefaultTypeInternal() {}
+  union {
+    MemoryCondition _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MemoryConditionDefaultTypeInternal _MemoryCondition_default_instance_;
 }  // namespace protobufGenerated
-static ::_pb::Metadata file_level_metadata_Events_2eproto[8];
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Events_2eproto[4];
+static ::_pb::Metadata file_level_metadata_Events_2eproto[16];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_Events_2eproto[9];
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_Events_2eproto = nullptr;
 
 const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -190,6 +320,7 @@ const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
+  ::_pbi::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEvent, _impl_.Event_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEventList, _internal_metadata_),
@@ -198,6 +329,13 @@ const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::ProtobufInputEventList, _impl_.inputevents_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::FixedDelay, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::FixedDelay, _impl_.duration_microseconds_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::WaitCondition, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -209,6 +347,9 @@ const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::WaitCondition, _impl_.timeout_us_),
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::WaitCondition, _impl_.stable_for_us_),
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::WaitCondition, _impl_.poll_interval_us_),
+  ::_pbi::kInvalidFieldOffsetTag,
+  ::_pbi::kInvalidFieldOffsetTag,
+  ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::WaitCondition, _impl_.condition_),
@@ -248,16 +389,99 @@ const uint32_t TableStruct_Events_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::PixelCondition, _impl_.reference_dpi_),
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::PixelCondition, _impl_.reference_width_),
   PROTOBUF_FIELD_OFFSET(::protobufGenerated::PixelCondition, _impl_.reference_height_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::TextPredicate, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::TextPredicate, _impl_.expected_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::TextPredicate, _impl_.comparison_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::TextPredicate, _impl_.ignore_case_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::TextPredicate, _impl_.whitespace_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilitySelector, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilitySelector, _impl_.automation_id_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilitySelector, _impl_.control_type_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _impl_.target_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _impl_.element_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _impl_.ancestors_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _impl_.source_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::AccessibilityTextCondition, _impl_.predicate_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.coordinates_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.target_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.x_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.y_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.width_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.height_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrRegion, _impl_.reference_dpi_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrTextCondition, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrTextCondition, _impl_.region_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrTextCondition, _impl_.language_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::OcrTextCondition, _impl_.predicate_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ModuleAddress, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ModuleAddress, _impl_.path_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ModuleAddress, _impl_.file_version_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::ModuleAddress, _impl_.offset_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _internal_metadata_),
+  ~0u,  // no _extensions_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_._oneof_case_[0]),
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.executable_path_),
+  ::_pbi::kInvalidFieldOffsetTag,
+  ::_pbi::kInvalidFieldOffsetTag,
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.pointer_offsets_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.scalar_type_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.comparison_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.expected_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.tolerance_),
+  PROTOBUF_FIELD_OFFSET(::protobufGenerated::MemoryCondition, _impl_.address_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent_KeyboardEventType)},
   { 8, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent_MouseEventType)},
   { 20, -1, -1, sizeof(::protobufGenerated::ProtobufInputEvent)},
-  { 31, -1, -1, sizeof(::protobufGenerated::ProtobufInputEventList)},
-  { 38, -1, -1, sizeof(::protobufGenerated::WaitCondition)},
-  { 52, -1, -1, sizeof(::protobufGenerated::WindowSelector)},
-  { 64, -1, -1, sizeof(::protobufGenerated::WindowCondition)},
-  { 72, -1, -1, sizeof(::protobufGenerated::PixelCondition)},
+  { 32, -1, -1, sizeof(::protobufGenerated::ProtobufInputEventList)},
+  { 39, -1, -1, sizeof(::protobufGenerated::FixedDelay)},
+  { 46, -1, -1, sizeof(::protobufGenerated::WaitCondition)},
+  { 63, -1, -1, sizeof(::protobufGenerated::WindowSelector)},
+  { 75, -1, -1, sizeof(::protobufGenerated::WindowCondition)},
+  { 83, -1, -1, sizeof(::protobufGenerated::PixelCondition)},
+  { 99, -1, -1, sizeof(::protobufGenerated::TextPredicate)},
+  { 109, -1, -1, sizeof(::protobufGenerated::AccessibilitySelector)},
+  { 117, -1, -1, sizeof(::protobufGenerated::AccessibilityTextCondition)},
+  { 128, -1, -1, sizeof(::protobufGenerated::OcrRegion)},
+  { 141, -1, -1, sizeof(::protobufGenerated::OcrTextCondition)},
+  { 150, -1, -1, sizeof(::protobufGenerated::ModuleAddress)},
+  { 159, -1, -1, sizeof(::protobufGenerated::MemoryCondition)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -265,63 +489,122 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::protobufGenerated::_ProtobufInputEvent_MouseEventType_default_instance_._instance,
   &::protobufGenerated::_ProtobufInputEvent_default_instance_._instance,
   &::protobufGenerated::_ProtobufInputEventList_default_instance_._instance,
+  &::protobufGenerated::_FixedDelay_default_instance_._instance,
   &::protobufGenerated::_WaitCondition_default_instance_._instance,
   &::protobufGenerated::_WindowSelector_default_instance_._instance,
   &::protobufGenerated::_WindowCondition_default_instance_._instance,
   &::protobufGenerated::_PixelCondition_default_instance_._instance,
+  &::protobufGenerated::_TextPredicate_default_instance_._instance,
+  &::protobufGenerated::_AccessibilitySelector_default_instance_._instance,
+  &::protobufGenerated::_AccessibilityTextCondition_default_instance_._instance,
+  &::protobufGenerated::_OcrRegion_default_instance_._instance,
+  &::protobufGenerated::_OcrTextCondition_default_instance_._instance,
+  &::protobufGenerated::_ModuleAddress_default_instance_._instance,
+  &::protobufGenerated::_MemoryCondition_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_Events_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\014Events.proto\022\021protobufGenerated\"\334\003\n\022Pr"
+  "\n\014Events.proto\022\021protobufGenerated\"\214\004\n\022Pr"
   "otobufInputEvent\022\032\n\022timeSinceLastEvent\030\001"
   " \001(\004\022P\n\rkeyboardEvent\030\002 \001(\01327.protobufGe"
   "nerated.ProtobufInputEvent.KeyboardEvent"
   "TypeH\000\022J\n\nmouseEvent\030\003 \001(\01324.protobufGen"
   "erated.ProtobufInputEvent.MouseEventType"
   "H\000\0229\n\rwaitCondition\030\004 \001(\0132 .protobufGene"
-  "rated.WaitConditionH\000\032:\n\021KeyboardEventTy"
-  "pe\022\026\n\016virtualKeyCode\030\001 \001(\r\022\r\n\005keyUp\030\002 \001("
-  "\010\032\213\001\n\016MouseEventType\022\t\n\001x\030\001 \001(\005\022\t\n\001y\030\002 \001"
-  "(\005\022\022\n\nactionType\030\003 \001(\r\022\025\n\rwheelRotation\030"
-  "\004 \001(\r\022\030\n\020relativePosition\030\005 \001(\010\022\036\n\026mappe"
-  "dToVirtualDesktop\030\006 \001(\010B\007\n\005Event\"T\n\026Prot"
-  "obufInputEventList\022:\n\013inputEvents\030\001 \003(\0132"
-  "%.protobufGenerated.ProtobufInputEvent\"\227"
-  "\002\n\rWaitCondition\022\031\n\021semantics_version\030\001 "
-  "\001(\r\022/\n\007trigger\030\002 \001(\0162\036.protobufGenerated"
-  ".WaitTrigger\022\022\n\ntimeout_us\030\003 \001(\004\022\025\n\rstab"
-  "le_for_us\030\004 \001(\004\022\030\n\020poll_interval_us\030\005 \001("
-  "\004\0224\n\006window\030\006 \001(\0132\".protobufGenerated.Wi"
-  "ndowConditionH\000\0222\n\005pixel\030\007 \001(\0132!.protobu"
-  "fGenerated.PixelConditionH\000B\013\n\tcondition"
-  "\"\260\001\n\016WindowSelector\022\027\n\017executable_path\030\001"
-  " \001(\t\022\024\n\014window_class\030\002 \001(\t\022\r\n\005title\030\003 \001("
-  "\t\0222\n\013title_match\030\004 \001(\0162\035.protobufGenerat"
-  "ed.TitleMatch\022\031\n\021ignore_title_case\030\005 \001(\010"
-  "\022\021\n\tany_match\030\006 \001(\010\"q\n\017WindowCondition\0221"
+  "rated.WaitConditionH\000\022.\n\005delay\030\005 \001(\0132\035.p"
+  "rotobufGenerated.FixedDelayH\000\032:\n\021Keyboar"
+  "dEventType\022\026\n\016virtualKeyCode\030\001 \001(\r\022\r\n\005ke"
+  "yUp\030\002 \001(\010\032\213\001\n\016MouseEventType\022\t\n\001x\030\001 \001(\005\022"
+  "\t\n\001y\030\002 \001(\005\022\022\n\nactionType\030\003 \001(\r\022\025\n\rwheelR"
+  "otation\030\004 \001(\r\022\030\n\020relativePosition\030\005 \001(\010\022"
+  "\036\n\026mappedToVirtualDesktop\030\006 \001(\010B\007\n\005Event"
+  "\"T\n\026ProtobufInputEventList\022:\n\013inputEvent"
+  "s\030\001 \003(\0132%.protobufGenerated.ProtobufInpu"
+  "tEvent\"+\n\nFixedDelay\022\035\n\025duration_microse"
+  "conds\030\001 \001(\004\"\323\003\n\rWaitCondition\022\031\n\021semanti"
+  "cs_version\030\001 \001(\r\022/\n\007trigger\030\002 \001(\0162\036.prot"
+  "obufGenerated.WaitTrigger\022\022\n\ntimeout_us\030"
+  "\003 \001(\004\022\025\n\rstable_for_us\030\004 \001(\004\022\030\n\020poll_int"
+  "erval_us\030\005 \001(\004\0224\n\006window\030\006 \001(\0132\".protobu"
+  "fGenerated.WindowConditionH\000\0222\n\005pixel\030\007 "
+  "\001(\0132!.protobufGenerated.PixelConditionH\000"
+  "\022K\n\022accessibility_text\030\010 \001(\0132-.protobufG"
+  "enerated.AccessibilityTextConditionH\000\0227\n"
+  "\010ocr_text\030\t \001(\0132#.protobufGenerated.OcrT"
+  "extConditionH\000\0224\n\006memory\030\n \001(\0132\".protobu"
+  "fGenerated.MemoryConditionH\000B\013\n\tconditio"
+  "n\"\260\001\n\016WindowSelector\022\027\n\017executable_path\030"
+  "\001 \001(\t\022\024\n\014window_class\030\002 \001(\t\022\r\n\005title\030\003 \001"
+  "(\t\0222\n\013title_match\030\004 \001(\0162\035.protobufGenera"
+  "ted.TitleMatch\022\031\n\021ignore_title_case\030\005 \001("
+  "\010\022\021\n\tany_match\030\006 \001(\010\"q\n\017WindowCondition\022"
+  "1\n\006target\030\001 \001(\0132!.protobufGenerated.Wind"
+  "owSelector\022+\n\004test\030\002 \001(\0162\035.protobufGener"
+  "ated.WindowTest\"\220\002\n\016PixelCondition\0228\n\013co"
+  "ordinates\030\001 \001(\0162#.protobufGenerated.Pixe"
+  "lCoordinates\0221\n\006target\030\002 \001(\0132!.protobufG"
+  "enerated.WindowSelector\022\t\n\001x\030\003 \001(\021\022\t\n\001y\030"
+  "\004 \001(\021\022\013\n\003rgb\030\005 \001(\r\022\021\n\ttolerance\030\006 \001(\r\022\021\n"
+  "\tnot_equal\030\007 \001(\010\022\025\n\rreference_dpi\030\010 \001(\r\022"
+  "\027\n\017reference_width\030\t \001(\r\022\030\n\020reference_he"
+  "ight\030\n \001(\r\"\244\001\n\rTextPredicate\022\020\n\010expected"
+  "\030\001 \001(\t\0225\n\ncomparison\030\002 \001(\0162!.protobufGen"
+  "erated.TextComparison\022\023\n\013ignore_case\030\003 \001"
+  "(\010\0225\n\nwhitespace\030\004 \001(\0162!.protobufGenerat"
+  "ed.TextWhitespace\"D\n\025AccessibilitySelect"
+  "or\022\025\n\rautomation_id\030\001 \001(\t\022\024\n\014control_typ"
+  "e\030\002 \001(\r\"\270\002\n\032AccessibilityTextCondition\0221"
   "\n\006target\030\001 \001(\0132!.protobufGenerated.Windo"
-  "wSelector\022+\n\004test\030\002 \001(\0162\035.protobufGenera"
-  "ted.WindowTest\"\220\002\n\016PixelCondition\0228\n\013coo"
-  "rdinates\030\001 \001(\0162#.protobufGenerated.Pixel"
-  "Coordinates\0221\n\006target\030\002 \001(\0132!.protobufGe"
-  "nerated.WindowSelector\022\t\n\001x\030\003 \001(\021\022\t\n\001y\030\004"
-  " \001(\021\022\013\n\003rgb\030\005 \001(\r\022\021\n\ttolerance\030\006 \001(\r\022\021\n\t"
-  "not_equal\030\007 \001(\010\022\025\n\rreference_dpi\030\010 \001(\r\022\027"
-  "\n\017reference_width\030\t \001(\r\022\030\n\020reference_hei"
-  "ght\030\n \001(\r*I\n\013WaitTrigger\022\013\n\007IS_TRUE\020\000\022\020\n"
-  "\014BECOMES_TRUE\020\001\022\013\n\007CHANGES\020\002\022\016\n\nNEW_WIND"
-  "OW\020\003*%\n\nTitleMatch\022\t\n\005EXACT\020\000\022\014\n\010CONTAIN"
-  "S\020\001*A\n\nWindowTest\022\n\n\006EXISTS\020\000\022\013\n\007VISIBLE"
-  "\020\001\022\016\n\nFOREGROUND\020\002\022\n\n\006ABSENT\020\003*Q\n\020PixelC"
-  "oordinates\022\024\n\020DESKTOP_PHYSICAL\020\000\022\023\n\017CLIE"
-  "NT_PHYSICAL\020\001\022\022\n\016CLIENT_LOGICAL\020\002b\006proto"
-  "3"
+  "wSelector\0229\n\007element\030\002 \001(\0132(.protobufGen"
+  "erated.AccessibilitySelector\022;\n\tancestor"
+  "s\030\003 \003(\0132(.protobufGenerated.Accessibilit"
+  "ySelector\022:\n\006source\030\004 \001(\0162*.protobufGene"
+  "rated.AccessibilityTextSource\0223\n\tpredica"
+  "te\030\005 \001(\0132 .protobufGenerated.TextPredica"
+  "te\"\304\001\n\tOcrRegion\0228\n\013coordinates\030\001 \001(\0162#."
+  "protobufGenerated.PixelCoordinates\0221\n\006ta"
+  "rget\030\002 \001(\0132!.protobufGenerated.WindowSel"
+  "ector\022\t\n\001x\030\003 \001(\021\022\t\n\001y\030\004 \001(\021\022\r\n\005width\030\005 \001"
+  "(\r\022\016\n\006height\030\006 \001(\r\022\025\n\rreference_dpi\030\007 \001("
+  "\r\"\207\001\n\020OcrTextCondition\022,\n\006region\030\001 \001(\0132\034"
+  ".protobufGenerated.OcrRegion\022\020\n\010language"
+  "\030\002 \001(\t\0223\n\tpredicate\030\003 \001(\0132 .protobufGene"
+  "rated.TextPredicate\"C\n\rModuleAddress\022\014\n\004"
+  "path\030\001 \001(\t\022\024\n\014file_version\030\002 \001(\t\022\016\n\006offs"
+  "et\030\003 \001(\004\"\267\002\n\017MemoryCondition\022\027\n\017executab"
+  "le_path\030\001 \001(\t\022\032\n\020absolute_address\030\002 \001(\004H"
+  "\000\0222\n\006module\030\003 \001(\0132 .protobufGenerated.Mo"
+  "duleAddressH\000\022\027\n\017pointer_offsets\030\004 \003(\022\0228"
+  "\n\013scalar_type\030\005 \001(\0162#.protobufGenerated."
+  "MemoryScalarType\0228\n\ncomparison\030\006 \001(\0162$.p"
+  "rotobufGenerated.NumericComparison\022\020\n\010ex"
+  "pected\030\007 \001(\t\022\021\n\ttolerance\030\010 \001(\001B\t\n\007addre"
+  "ss*I\n\013WaitTrigger\022\013\n\007IS_TRUE\020\000\022\020\n\014BECOME"
+  "S_TRUE\020\001\022\013\n\007CHANGES\020\002\022\016\n\nNEW_WINDOW\020\003*%\n"
+  "\nTitleMatch\022\t\n\005EXACT\020\000\022\014\n\010CONTAINS\020\001*A\n\n"
+  "WindowTest\022\n\n\006EXISTS\020\000\022\013\n\007VISIBLE\020\001\022\016\n\nF"
+  "OREGROUND\020\002\022\n\n\006ABSENT\020\003*Q\n\020PixelCoordina"
+  "tes\022\024\n\020DESKTOP_PHYSICAL\020\000\022\023\n\017CLIENT_PHYS"
+  "ICAL\020\001\022\022\n\016CLIENT_LOGICAL\020\002*`\n\016TextCompar"
+  "ison\022\017\n\013TEXT_EQUALS\020\000\022\021\n\rTEXT_CONTAINS\020\001"
+  "\022\023\n\017TEXT_NOT_EQUALS\020\002\022\025\n\021TEXT_NOT_CONTAI"
+  "NS\020\003*B\n\016TextWhitespace\022\027\n\023PRESERVE_WHITE"
+  "SPACE\020\000\022\027\n\023COLLAPSE_WHITESPACE\020\001*S\n\027Acce"
+  "ssibilityTextSource\022\023\n\017ACCESSIBLE_NAME\020\000"
+  "\022\020\n\014TEXT_PATTERN\020\001\022\021\n\rVALUE_PATTERN\020\002*\206\001"
+  "\n\020MemoryScalarType\022\t\n\005UINT8\020\000\022\010\n\004INT8\020\001\022"
+  "\n\n\006UINT16\020\002\022\t\n\005INT16\020\003\022\n\n\006UINT32\020\004\022\t\n\005IN"
+  "T32\020\005\022\n\n\006UINT64\020\006\022\t\n\005INT64\020\007\022\013\n\007FLOAT32\020"
+  "\010\022\013\n\007FLOAT64\020\t*\177\n\021NumericComparison\022\022\n\016N"
+  "UMERIC_EQUALS\020\000\022\026\n\022NUMERIC_NOT_EQUALS\020\001\022"
+  "\010\n\004LESS\020\002\022\021\n\rLESS_OR_EQUAL\020\003\022\013\n\007GREATER\020"
+  "\004\022\024\n\020GREATER_OR_EQUAL\020\005b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Events_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Events_2eproto = {
-    false, false, 1721, descriptor_table_protodef_Events_2eproto,
+    false, false, 3791, descriptor_table_protodef_Events_2eproto,
     "Events.proto",
-    &descriptor_table_Events_2eproto_once, nullptr, 0, 8,
+    &descriptor_table_Events_2eproto_once, nullptr, 0, 16,
     schemas, file_default_instances, TableStruct_Events_2eproto::offsets,
     file_level_metadata_Events_2eproto, file_level_enum_descriptors_Events_2eproto,
     file_level_service_descriptors_Events_2eproto,
@@ -388,6 +671,91 @@ bool PixelCoordinates_IsValid(int value) {
     case 0:
     case 1:
     case 2:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* TextComparison_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Events_2eproto);
+  return file_level_enum_descriptors_Events_2eproto[4];
+}
+bool TextComparison_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* TextWhitespace_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Events_2eproto);
+  return file_level_enum_descriptors_Events_2eproto[5];
+}
+bool TextWhitespace_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* AccessibilityTextSource_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Events_2eproto);
+  return file_level_enum_descriptors_Events_2eproto[6];
+}
+bool AccessibilityTextSource_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* MemoryScalarType_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Events_2eproto);
+  return file_level_enum_descriptors_Events_2eproto[7];
+}
+bool MemoryScalarType_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* NumericComparison_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_Events_2eproto);
+  return file_level_enum_descriptors_Events_2eproto[8];
+}
+bool NumericComparison_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
       return true;
     default:
       return false;
@@ -920,6 +1288,7 @@ class ProtobufInputEvent::_Internal {
   static const ::protobufGenerated::ProtobufInputEvent_KeyboardEventType& keyboardevent(const ProtobufInputEvent* msg);
   static const ::protobufGenerated::ProtobufInputEvent_MouseEventType& mouseevent(const ProtobufInputEvent* msg);
   static const ::protobufGenerated::WaitCondition& waitcondition(const ProtobufInputEvent* msg);
+  static const ::protobufGenerated::FixedDelay& delay(const ProtobufInputEvent* msg);
 };
 
 const ::protobufGenerated::ProtobufInputEvent_KeyboardEventType&
@@ -933,6 +1302,10 @@ ProtobufInputEvent::_Internal::mouseevent(const ProtobufInputEvent* msg) {
 const ::protobufGenerated::WaitCondition&
 ProtobufInputEvent::_Internal::waitcondition(const ProtobufInputEvent* msg) {
   return *msg->_impl_.Event_.waitcondition_;
+}
+const ::protobufGenerated::FixedDelay&
+ProtobufInputEvent::_Internal::delay(const ProtobufInputEvent* msg) {
+  return *msg->_impl_.Event_.delay_;
 }
 void ProtobufInputEvent::set_allocated_keyboardevent(::protobufGenerated::ProtobufInputEvent_KeyboardEventType* keyboardevent) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
@@ -979,6 +1352,21 @@ void ProtobufInputEvent::set_allocated_waitcondition(::protobufGenerated::WaitCo
   }
   // @@protoc_insertion_point(field_set_allocated:protobufGenerated.ProtobufInputEvent.waitCondition)
 }
+void ProtobufInputEvent::set_allocated_delay(::protobufGenerated::FixedDelay* delay) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_Event();
+  if (delay) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(delay);
+    if (message_arena != submessage_arena) {
+      delay = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, delay, submessage_arena);
+    }
+    set_has_delay();
+    _impl_.Event_.delay_ = delay;
+  }
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.ProtobufInputEvent.delay)
+}
 ProtobufInputEvent::ProtobufInputEvent(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
@@ -1011,6 +1399,11 @@ ProtobufInputEvent::ProtobufInputEvent(const ProtobufInputEvent& from)
     case kWaitCondition: {
       _this->_internal_mutable_waitcondition()->::protobufGenerated::WaitCondition::MergeFrom(
           from._internal_waitcondition());
+      break;
+    }
+    case kDelay: {
+      _this->_internal_mutable_delay()->::protobufGenerated::FixedDelay::MergeFrom(
+          from._internal_delay());
       break;
     }
     case EVENT_NOT_SET: {
@@ -1074,6 +1467,12 @@ void ProtobufInputEvent::clear_Event() {
       }
       break;
     }
+    case kDelay: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete _impl_.Event_.delay_;
+      }
+      break;
+    }
     case EVENT_NOT_SET: {
       break;
     }
@@ -1127,6 +1526,14 @@ const char* ProtobufInputEvent::_InternalParse(const char* ptr, ::_pbi::ParseCon
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_waitcondition(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.FixedDelay delay = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 42)) {
+          ptr = ctx->ParseMessage(_internal_mutable_delay(), ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
@@ -1187,6 +1594,13 @@ uint8_t* ProtobufInputEvent::_InternalSerialize(
         _Internal::waitcondition(this).GetCachedSize(), target, stream);
   }
 
+  // .protobufGenerated.FixedDelay delay = 5;
+  if (_internal_has_delay()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(5, _Internal::delay(this),
+        _Internal::delay(this).GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -1230,6 +1644,13 @@ size_t ProtobufInputEvent::ByteSizeLong() const {
           *_impl_.Event_.waitcondition_);
       break;
     }
+    // .protobufGenerated.FixedDelay delay = 5;
+    case kDelay: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *_impl_.Event_.delay_);
+      break;
+    }
     case EVENT_NOT_SET: {
       break;
     }
@@ -1269,6 +1690,11 @@ void ProtobufInputEvent::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, con
     case kWaitCondition: {
       _this->_internal_mutable_waitcondition()->::protobufGenerated::WaitCondition::MergeFrom(
           from._internal_waitcondition());
+      break;
+    }
+    case kDelay: {
+      _this->_internal_mutable_delay()->::protobufGenerated::FixedDelay::MergeFrom(
+          from._internal_delay());
       break;
     }
     case EVENT_NOT_SET: {
@@ -1490,10 +1916,191 @@ void ProtobufInputEventList::InternalSwap(ProtobufInputEventList* other) {
 
 // ===================================================================
 
+class FixedDelay::_Internal {
+ public:
+};
+
+FixedDelay::FixedDelay(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.FixedDelay)
+}
+FixedDelay::FixedDelay(const FixedDelay& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  FixedDelay* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.duration_microseconds_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_impl_.duration_microseconds_ = from._impl_.duration_microseconds_;
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.FixedDelay)
+}
+
+inline void FixedDelay::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.duration_microseconds_){uint64_t{0u}}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+}
+
+FixedDelay::~FixedDelay() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.FixedDelay)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void FixedDelay::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void FixedDelay::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void FixedDelay::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.FixedDelay)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.duration_microseconds_ = uint64_t{0u};
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* FixedDelay::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // uint64 duration_microseconds = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          _impl_.duration_microseconds_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* FixedDelay::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.FixedDelay)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint64 duration_microseconds = 1;
+  if (this->_internal_duration_microseconds() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_duration_microseconds(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.FixedDelay)
+  return target;
+}
+
+size_t FixedDelay::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.FixedDelay)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 duration_microseconds = 1;
+  if (this->_internal_duration_microseconds() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_duration_microseconds());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData FixedDelay::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    FixedDelay::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*FixedDelay::GetClassData() const { return &_class_data_; }
+
+
+void FixedDelay::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<FixedDelay*>(&to_msg);
+  auto& from = static_cast<const FixedDelay&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.FixedDelay)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_duration_microseconds() != 0) {
+    _this->_internal_set_duration_microseconds(from._internal_duration_microseconds());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void FixedDelay::CopyFrom(const FixedDelay& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.FixedDelay)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool FixedDelay::IsInitialized() const {
+  return true;
+}
+
+void FixedDelay::InternalSwap(FixedDelay* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_.duration_microseconds_, other->_impl_.duration_microseconds_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata FixedDelay::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[4]);
+}
+
+// ===================================================================
+
 class WaitCondition::_Internal {
  public:
   static const ::protobufGenerated::WindowCondition& window(const WaitCondition* msg);
   static const ::protobufGenerated::PixelCondition& pixel(const WaitCondition* msg);
+  static const ::protobufGenerated::AccessibilityTextCondition& accessibility_text(const WaitCondition* msg);
+  static const ::protobufGenerated::OcrTextCondition& ocr_text(const WaitCondition* msg);
+  static const ::protobufGenerated::MemoryCondition& memory(const WaitCondition* msg);
 };
 
 const ::protobufGenerated::WindowCondition&
@@ -1503,6 +2110,18 @@ WaitCondition::_Internal::window(const WaitCondition* msg) {
 const ::protobufGenerated::PixelCondition&
 WaitCondition::_Internal::pixel(const WaitCondition* msg) {
   return *msg->_impl_.condition_.pixel_;
+}
+const ::protobufGenerated::AccessibilityTextCondition&
+WaitCondition::_Internal::accessibility_text(const WaitCondition* msg) {
+  return *msg->_impl_.condition_.accessibility_text_;
+}
+const ::protobufGenerated::OcrTextCondition&
+WaitCondition::_Internal::ocr_text(const WaitCondition* msg) {
+  return *msg->_impl_.condition_.ocr_text_;
+}
+const ::protobufGenerated::MemoryCondition&
+WaitCondition::_Internal::memory(const WaitCondition* msg) {
+  return *msg->_impl_.condition_.memory_;
 }
 void WaitCondition::set_allocated_window(::protobufGenerated::WindowCondition* window) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
@@ -1533,6 +2152,51 @@ void WaitCondition::set_allocated_pixel(::protobufGenerated::PixelCondition* pix
     _impl_.condition_.pixel_ = pixel;
   }
   // @@protoc_insertion_point(field_set_allocated:protobufGenerated.WaitCondition.pixel)
+}
+void WaitCondition::set_allocated_accessibility_text(::protobufGenerated::AccessibilityTextCondition* accessibility_text) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_condition();
+  if (accessibility_text) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(accessibility_text);
+    if (message_arena != submessage_arena) {
+      accessibility_text = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, accessibility_text, submessage_arena);
+    }
+    set_has_accessibility_text();
+    _impl_.condition_.accessibility_text_ = accessibility_text;
+  }
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.WaitCondition.accessibility_text)
+}
+void WaitCondition::set_allocated_ocr_text(::protobufGenerated::OcrTextCondition* ocr_text) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_condition();
+  if (ocr_text) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(ocr_text);
+    if (message_arena != submessage_arena) {
+      ocr_text = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, ocr_text, submessage_arena);
+    }
+    set_has_ocr_text();
+    _impl_.condition_.ocr_text_ = ocr_text;
+  }
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.WaitCondition.ocr_text)
+}
+void WaitCondition::set_allocated_memory(::protobufGenerated::MemoryCondition* memory) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_condition();
+  if (memory) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(memory);
+    if (message_arena != submessage_arena) {
+      memory = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, memory, submessage_arena);
+    }
+    set_has_memory();
+    _impl_.condition_.memory_ = memory;
+  }
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.WaitCondition.memory)
 }
 WaitCondition::WaitCondition(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
@@ -1567,6 +2231,21 @@ WaitCondition::WaitCondition(const WaitCondition& from)
     case kPixel: {
       _this->_internal_mutable_pixel()->::protobufGenerated::PixelCondition::MergeFrom(
           from._internal_pixel());
+      break;
+    }
+    case kAccessibilityText: {
+      _this->_internal_mutable_accessibility_text()->::protobufGenerated::AccessibilityTextCondition::MergeFrom(
+          from._internal_accessibility_text());
+      break;
+    }
+    case kOcrText: {
+      _this->_internal_mutable_ocr_text()->::protobufGenerated::OcrTextCondition::MergeFrom(
+          from._internal_ocr_text());
+      break;
+    }
+    case kMemory: {
+      _this->_internal_mutable_memory()->::protobufGenerated::MemoryCondition::MergeFrom(
+          from._internal_memory());
       break;
     }
     case CONDITION_NOT_SET: {
@@ -1625,6 +2304,24 @@ void WaitCondition::clear_condition() {
     case kPixel: {
       if (GetArenaForAllocation() == nullptr) {
         delete _impl_.condition_.pixel_;
+      }
+      break;
+    }
+    case kAccessibilityText: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete _impl_.condition_.accessibility_text_;
+      }
+      break;
+    }
+    case kOcrText: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete _impl_.condition_.ocr_text_;
+      }
+      break;
+    }
+    case kMemory: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete _impl_.condition_.memory_;
       }
       break;
     }
@@ -1712,6 +2409,30 @@ const char* WaitCondition::_InternalParse(const char* ptr, ::_pbi::ParseContext*
         } else
           goto handle_unusual;
         continue;
+      // .protobufGenerated.AccessibilityTextCondition accessibility_text = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 66)) {
+          ptr = ctx->ParseMessage(_internal_mutable_accessibility_text(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.OcrTextCondition ocr_text = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 74)) {
+          ptr = ctx->ParseMessage(_internal_mutable_ocr_text(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.MemoryCondition memory = 10;
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 82)) {
+          ptr = ctx->ParseMessage(_internal_mutable_memory(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -1786,6 +2507,27 @@ uint8_t* WaitCondition::_InternalSerialize(
         _Internal::pixel(this).GetCachedSize(), target, stream);
   }
 
+  // .protobufGenerated.AccessibilityTextCondition accessibility_text = 8;
+  if (_internal_has_accessibility_text()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(8, _Internal::accessibility_text(this),
+        _Internal::accessibility_text(this).GetCachedSize(), target, stream);
+  }
+
+  // .protobufGenerated.OcrTextCondition ocr_text = 9;
+  if (_internal_has_ocr_text()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(9, _Internal::ocr_text(this),
+        _Internal::ocr_text(this).GetCachedSize(), target, stream);
+  }
+
+  // .protobufGenerated.MemoryCondition memory = 10;
+  if (_internal_has_memory()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(10, _Internal::memory(this),
+        _Internal::memory(this).GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -1843,6 +2585,27 @@ size_t WaitCondition::ByteSizeLong() const {
           *_impl_.condition_.pixel_);
       break;
     }
+    // .protobufGenerated.AccessibilityTextCondition accessibility_text = 8;
+    case kAccessibilityText: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *_impl_.condition_.accessibility_text_);
+      break;
+    }
+    // .protobufGenerated.OcrTextCondition ocr_text = 9;
+    case kOcrText: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *_impl_.condition_.ocr_text_);
+      break;
+    }
+    // .protobufGenerated.MemoryCondition memory = 10;
+    case kMemory: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *_impl_.condition_.memory_);
+      break;
+    }
     case CONDITION_NOT_SET: {
       break;
     }
@@ -1891,6 +2654,21 @@ void WaitCondition::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::
           from._internal_pixel());
       break;
     }
+    case kAccessibilityText: {
+      _this->_internal_mutable_accessibility_text()->::protobufGenerated::AccessibilityTextCondition::MergeFrom(
+          from._internal_accessibility_text());
+      break;
+    }
+    case kOcrText: {
+      _this->_internal_mutable_ocr_text()->::protobufGenerated::OcrTextCondition::MergeFrom(
+          from._internal_ocr_text());
+      break;
+    }
+    case kMemory: {
+      _this->_internal_mutable_memory()->::protobufGenerated::MemoryCondition::MergeFrom(
+          from._internal_memory());
+      break;
+    }
     case CONDITION_NOT_SET: {
       break;
     }
@@ -1925,7 +2703,7 @@ void WaitCondition::InternalSwap(WaitCondition* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata WaitCondition::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
-      file_level_metadata_Events_2eproto[4]);
+      file_level_metadata_Events_2eproto[5]);
 }
 
 // ===================================================================
@@ -1958,7 +2736,7 @@ WindowSelector::WindowSelector(const WindowSelector& from)
     _impl_.executable_path_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   if (!from._internal_executable_path().empty()) {
-    _this->_impl_.executable_path_.Set(from._internal_executable_path(), 
+    _this->_impl_.executable_path_.Set(from._internal_executable_path(),
       _this->GetArenaForAllocation());
   }
   _impl_.window_class_.InitDefault();
@@ -1966,7 +2744,7 @@ WindowSelector::WindowSelector(const WindowSelector& from)
     _impl_.window_class_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   if (!from._internal_window_class().empty()) {
-    _this->_impl_.window_class_.Set(from._internal_window_class(), 
+    _this->_impl_.window_class_.Set(from._internal_window_class(),
       _this->GetArenaForAllocation());
   }
   _impl_.title_.InitDefault();
@@ -1974,7 +2752,7 @@ WindowSelector::WindowSelector(const WindowSelector& from)
     _impl_.title_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   if (!from._internal_title().empty()) {
-    _this->_impl_.title_.Set(from._internal_title(), 
+    _this->_impl_.title_.Set(from._internal_title(),
       _this->GetArenaForAllocation());
   }
   ::memcpy(&_impl_.title_match_, &from._impl_.title_match_,
@@ -2315,7 +3093,7 @@ void WindowSelector::InternalSwap(WindowSelector* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata WindowSelector::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
-      file_level_metadata_Events_2eproto[5]);
+      file_level_metadata_Events_2eproto[6]);
 }
 
 // ===================================================================
@@ -2542,7 +3320,7 @@ void WindowCondition::InternalSwap(WindowCondition* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata WindowCondition::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
-      file_level_metadata_Events_2eproto[6]);
+      file_level_metadata_Events_2eproto[7]);
 }
 
 // ===================================================================
@@ -2965,7 +3743,2319 @@ void PixelCondition::InternalSwap(PixelCondition* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata PixelCondition::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
-      file_level_metadata_Events_2eproto[7]);
+      file_level_metadata_Events_2eproto[8]);
+}
+
+// ===================================================================
+
+class TextPredicate::_Internal {
+ public:
+};
+
+TextPredicate::TextPredicate(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.TextPredicate)
+}
+TextPredicate::TextPredicate(const TextPredicate& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  TextPredicate* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.expected_){}
+    , decltype(_impl_.comparison_){}
+    , decltype(_impl_.ignore_case_){}
+    , decltype(_impl_.whitespace_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.expected_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.expected_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_expected().empty()) {
+    _this->_impl_.expected_.Set(from._internal_expected(),
+      _this->GetArenaForAllocation());
+  }
+  ::memcpy(&_impl_.comparison_, &from._impl_.comparison_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.whitespace_) -
+    reinterpret_cast<char*>(&_impl_.comparison_)) + sizeof(_impl_.whitespace_));
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.TextPredicate)
+}
+
+inline void TextPredicate::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.expected_){}
+    , decltype(_impl_.comparison_){0}
+    , decltype(_impl_.ignore_case_){false}
+    , decltype(_impl_.whitespace_){0}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.expected_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.expected_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+TextPredicate::~TextPredicate() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.TextPredicate)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void TextPredicate::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.expected_.Destroy();
+}
+
+void TextPredicate::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void TextPredicate::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.TextPredicate)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.expected_.ClearToEmpty();
+  ::memset(&_impl_.comparison_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.whitespace_) -
+      reinterpret_cast<char*>(&_impl_.comparison_)) + sizeof(_impl_.whitespace_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* TextPredicate::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string expected = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_expected();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.TextPredicate.expected"));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.TextComparison comparison = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_comparison(static_cast<::protobufGenerated::TextComparison>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      // bool ignore_case = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.ignore_case_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.TextWhitespace whitespace = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_whitespace(static_cast<::protobufGenerated::TextWhitespace>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* TextPredicate::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.TextPredicate)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string expected = 1;
+  if (!this->_internal_expected().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_expected().data(), static_cast<int>(this->_internal_expected().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.TextPredicate.expected");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_expected(), target);
+  }
+
+  // .protobufGenerated.TextComparison comparison = 2;
+  if (this->_internal_comparison() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      2, this->_internal_comparison(), target);
+  }
+
+  // bool ignore_case = 3;
+  if (this->_internal_ignore_case() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(3, this->_internal_ignore_case(), target);
+  }
+
+  // .protobufGenerated.TextWhitespace whitespace = 4;
+  if (this->_internal_whitespace() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      4, this->_internal_whitespace(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.TextPredicate)
+  return target;
+}
+
+size_t TextPredicate::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.TextPredicate)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string expected = 1;
+  if (!this->_internal_expected().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_expected());
+  }
+
+  // .protobufGenerated.TextComparison comparison = 2;
+  if (this->_internal_comparison() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_comparison());
+  }
+
+  // bool ignore_case = 3;
+  if (this->_internal_ignore_case() != 0) {
+    total_size += 1 + 1;
+  }
+
+  // .protobufGenerated.TextWhitespace whitespace = 4;
+  if (this->_internal_whitespace() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_whitespace());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData TextPredicate::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    TextPredicate::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*TextPredicate::GetClassData() const { return &_class_data_; }
+
+
+void TextPredicate::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<TextPredicate*>(&to_msg);
+  auto& from = static_cast<const TextPredicate&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.TextPredicate)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_expected().empty()) {
+    _this->_internal_set_expected(from._internal_expected());
+  }
+  if (from._internal_comparison() != 0) {
+    _this->_internal_set_comparison(from._internal_comparison());
+  }
+  if (from._internal_ignore_case() != 0) {
+    _this->_internal_set_ignore_case(from._internal_ignore_case());
+  }
+  if (from._internal_whitespace() != 0) {
+    _this->_internal_set_whitespace(from._internal_whitespace());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void TextPredicate::CopyFrom(const TextPredicate& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.TextPredicate)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool TextPredicate::IsInitialized() const {
+  return true;
+}
+
+void TextPredicate::InternalSwap(TextPredicate* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.expected_, lhs_arena,
+      &other->_impl_.expected_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(TextPredicate, _impl_.whitespace_)
+      + sizeof(TextPredicate::_impl_.whitespace_)
+      - PROTOBUF_FIELD_OFFSET(TextPredicate, _impl_.comparison_)>(
+          reinterpret_cast<char*>(&_impl_.comparison_),
+          reinterpret_cast<char*>(&other->_impl_.comparison_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata TextPredicate::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[9]);
+}
+
+// ===================================================================
+
+class AccessibilitySelector::_Internal {
+ public:
+};
+
+AccessibilitySelector::AccessibilitySelector(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.AccessibilitySelector)
+}
+AccessibilitySelector::AccessibilitySelector(const AccessibilitySelector& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  AccessibilitySelector* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.automation_id_){}
+    , decltype(_impl_.control_type_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.automation_id_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.automation_id_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_automation_id().empty()) {
+    _this->_impl_.automation_id_.Set(from._internal_automation_id(),
+      _this->GetArenaForAllocation());
+  }
+  _this->_impl_.control_type_ = from._impl_.control_type_;
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.AccessibilitySelector)
+}
+
+inline void AccessibilitySelector::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.automation_id_){}
+    , decltype(_impl_.control_type_){0u}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.automation_id_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.automation_id_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+AccessibilitySelector::~AccessibilitySelector() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.AccessibilitySelector)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void AccessibilitySelector::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.automation_id_.Destroy();
+}
+
+void AccessibilitySelector::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void AccessibilitySelector::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.AccessibilitySelector)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.automation_id_.ClearToEmpty();
+  _impl_.control_type_ = 0u;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* AccessibilitySelector::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string automation_id = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_automation_id();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.AccessibilitySelector.automation_id"));
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 control_type = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _impl_.control_type_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* AccessibilitySelector::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.AccessibilitySelector)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string automation_id = 1;
+  if (!this->_internal_automation_id().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_automation_id().data(), static_cast<int>(this->_internal_automation_id().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.AccessibilitySelector.automation_id");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_automation_id(), target);
+  }
+
+  // uint32 control_type = 2;
+  if (this->_internal_control_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(2, this->_internal_control_type(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.AccessibilitySelector)
+  return target;
+}
+
+size_t AccessibilitySelector::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.AccessibilitySelector)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string automation_id = 1;
+  if (!this->_internal_automation_id().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_automation_id());
+  }
+
+  // uint32 control_type = 2;
+  if (this->_internal_control_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_control_type());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AccessibilitySelector::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    AccessibilitySelector::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AccessibilitySelector::GetClassData() const { return &_class_data_; }
+
+
+void AccessibilitySelector::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<AccessibilitySelector*>(&to_msg);
+  auto& from = static_cast<const AccessibilitySelector&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.AccessibilitySelector)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_automation_id().empty()) {
+    _this->_internal_set_automation_id(from._internal_automation_id());
+  }
+  if (from._internal_control_type() != 0) {
+    _this->_internal_set_control_type(from._internal_control_type());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void AccessibilitySelector::CopyFrom(const AccessibilitySelector& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.AccessibilitySelector)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AccessibilitySelector::IsInitialized() const {
+  return true;
+}
+
+void AccessibilitySelector::InternalSwap(AccessibilitySelector* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.automation_id_, lhs_arena,
+      &other->_impl_.automation_id_, rhs_arena
+  );
+  swap(_impl_.control_type_, other->_impl_.control_type_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata AccessibilitySelector::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[10]);
+}
+
+// ===================================================================
+
+class AccessibilityTextCondition::_Internal {
+ public:
+  static const ::protobufGenerated::WindowSelector& target(const AccessibilityTextCondition* msg);
+  static const ::protobufGenerated::AccessibilitySelector& element(const AccessibilityTextCondition* msg);
+  static const ::protobufGenerated::TextPredicate& predicate(const AccessibilityTextCondition* msg);
+};
+
+const ::protobufGenerated::WindowSelector&
+AccessibilityTextCondition::_Internal::target(const AccessibilityTextCondition* msg) {
+  return *msg->_impl_.target_;
+}
+const ::protobufGenerated::AccessibilitySelector&
+AccessibilityTextCondition::_Internal::element(const AccessibilityTextCondition* msg) {
+  return *msg->_impl_.element_;
+}
+const ::protobufGenerated::TextPredicate&
+AccessibilityTextCondition::_Internal::predicate(const AccessibilityTextCondition* msg) {
+  return *msg->_impl_.predicate_;
+}
+AccessibilityTextCondition::AccessibilityTextCondition(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.AccessibilityTextCondition)
+}
+AccessibilityTextCondition::AccessibilityTextCondition(const AccessibilityTextCondition& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  AccessibilityTextCondition* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.ancestors_){from._impl_.ancestors_}
+    , decltype(_impl_.target_){nullptr}
+    , decltype(_impl_.element_){nullptr}
+    , decltype(_impl_.predicate_){nullptr}
+    , decltype(_impl_.source_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_target()) {
+    _this->_impl_.target_ = new ::protobufGenerated::WindowSelector(*from._impl_.target_);
+  }
+  if (from._internal_has_element()) {
+    _this->_impl_.element_ = new ::protobufGenerated::AccessibilitySelector(*from._impl_.element_);
+  }
+  if (from._internal_has_predicate()) {
+    _this->_impl_.predicate_ = new ::protobufGenerated::TextPredicate(*from._impl_.predicate_);
+  }
+  _this->_impl_.source_ = from._impl_.source_;
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.AccessibilityTextCondition)
+}
+
+inline void AccessibilityTextCondition::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.ancestors_){arena}
+    , decltype(_impl_.target_){nullptr}
+    , decltype(_impl_.element_){nullptr}
+    , decltype(_impl_.predicate_){nullptr}
+    , decltype(_impl_.source_){0}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+}
+
+AccessibilityTextCondition::~AccessibilityTextCondition() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.AccessibilityTextCondition)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void AccessibilityTextCondition::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.ancestors_.~RepeatedPtrField();
+  if (this != internal_default_instance()) delete _impl_.target_;
+  if (this != internal_default_instance()) delete _impl_.element_;
+  if (this != internal_default_instance()) delete _impl_.predicate_;
+}
+
+void AccessibilityTextCondition::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void AccessibilityTextCondition::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.AccessibilityTextCondition)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.ancestors_.Clear();
+  if (GetArenaForAllocation() == nullptr && _impl_.target_ != nullptr) {
+    delete _impl_.target_;
+  }
+  _impl_.target_ = nullptr;
+  if (GetArenaForAllocation() == nullptr && _impl_.element_ != nullptr) {
+    delete _impl_.element_;
+  }
+  _impl_.element_ = nullptr;
+  if (GetArenaForAllocation() == nullptr && _impl_.predicate_ != nullptr) {
+    delete _impl_.predicate_;
+  }
+  _impl_.predicate_ = nullptr;
+  _impl_.source_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* AccessibilityTextCondition::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .protobufGenerated.WindowSelector target = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_target(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.AccessibilitySelector element = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          ptr = ctx->ParseMessage(_internal_mutable_element(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // repeated .protobufGenerated.AccessibilitySelector ancestors = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_ancestors(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.AccessibilityTextSource source = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_source(static_cast<::protobufGenerated::AccessibilityTextSource>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.TextPredicate predicate = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 42)) {
+          ptr = ctx->ParseMessage(_internal_mutable_predicate(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* AccessibilityTextCondition::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.AccessibilityTextCondition)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .protobufGenerated.WindowSelector target = 1;
+  if (this->_internal_has_target()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(1, _Internal::target(this),
+        _Internal::target(this).GetCachedSize(), target, stream);
+  }
+
+  // .protobufGenerated.AccessibilitySelector element = 2;
+  if (this->_internal_has_element()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(2, _Internal::element(this),
+        _Internal::element(this).GetCachedSize(), target, stream);
+  }
+
+  // repeated .protobufGenerated.AccessibilitySelector ancestors = 3;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_ancestors_size()); i < n; i++) {
+    const auto& repfield = this->_internal_ancestors(i);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+        InternalWriteMessage(3, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  // .protobufGenerated.AccessibilityTextSource source = 4;
+  if (this->_internal_source() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      4, this->_internal_source(), target);
+  }
+
+  // .protobufGenerated.TextPredicate predicate = 5;
+  if (this->_internal_has_predicate()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(5, _Internal::predicate(this),
+        _Internal::predicate(this).GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.AccessibilityTextCondition)
+  return target;
+}
+
+size_t AccessibilityTextCondition::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.AccessibilityTextCondition)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .protobufGenerated.AccessibilitySelector ancestors = 3;
+  total_size += 1UL * this->_internal_ancestors_size();
+  for (const auto& msg : this->_impl_.ancestors_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+  }
+
+  // .protobufGenerated.WindowSelector target = 1;
+  if (this->_internal_has_target()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.target_);
+  }
+
+  // .protobufGenerated.AccessibilitySelector element = 2;
+  if (this->_internal_has_element()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.element_);
+  }
+
+  // .protobufGenerated.TextPredicate predicate = 5;
+  if (this->_internal_has_predicate()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.predicate_);
+  }
+
+  // .protobufGenerated.AccessibilityTextSource source = 4;
+  if (this->_internal_source() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_source());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AccessibilityTextCondition::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    AccessibilityTextCondition::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AccessibilityTextCondition::GetClassData() const { return &_class_data_; }
+
+
+void AccessibilityTextCondition::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<AccessibilityTextCondition*>(&to_msg);
+  auto& from = static_cast<const AccessibilityTextCondition&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.AccessibilityTextCondition)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_impl_.ancestors_.MergeFrom(from._impl_.ancestors_);
+  if (from._internal_has_target()) {
+    _this->_internal_mutable_target()->::protobufGenerated::WindowSelector::MergeFrom(
+        from._internal_target());
+  }
+  if (from._internal_has_element()) {
+    _this->_internal_mutable_element()->::protobufGenerated::AccessibilitySelector::MergeFrom(
+        from._internal_element());
+  }
+  if (from._internal_has_predicate()) {
+    _this->_internal_mutable_predicate()->::protobufGenerated::TextPredicate::MergeFrom(
+        from._internal_predicate());
+  }
+  if (from._internal_source() != 0) {
+    _this->_internal_set_source(from._internal_source());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void AccessibilityTextCondition::CopyFrom(const AccessibilityTextCondition& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.AccessibilityTextCondition)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AccessibilityTextCondition::IsInitialized() const {
+  return true;
+}
+
+void AccessibilityTextCondition::InternalSwap(AccessibilityTextCondition* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.ancestors_.InternalSwap(&other->_impl_.ancestors_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AccessibilityTextCondition, _impl_.source_)
+      + sizeof(AccessibilityTextCondition::_impl_.source_)
+      - PROTOBUF_FIELD_OFFSET(AccessibilityTextCondition, _impl_.target_)>(
+          reinterpret_cast<char*>(&_impl_.target_),
+          reinterpret_cast<char*>(&other->_impl_.target_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata AccessibilityTextCondition::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[11]);
+}
+
+// ===================================================================
+
+class OcrRegion::_Internal {
+ public:
+  static const ::protobufGenerated::WindowSelector& target(const OcrRegion* msg);
+};
+
+const ::protobufGenerated::WindowSelector&
+OcrRegion::_Internal::target(const OcrRegion* msg) {
+  return *msg->_impl_.target_;
+}
+OcrRegion::OcrRegion(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.OcrRegion)
+}
+OcrRegion::OcrRegion(const OcrRegion& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  OcrRegion* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.target_){nullptr}
+    , decltype(_impl_.coordinates_){}
+    , decltype(_impl_.x_){}
+    , decltype(_impl_.y_){}
+    , decltype(_impl_.width_){}
+    , decltype(_impl_.height_){}
+    , decltype(_impl_.reference_dpi_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_target()) {
+    _this->_impl_.target_ = new ::protobufGenerated::WindowSelector(*from._impl_.target_);
+  }
+  ::memcpy(&_impl_.coordinates_, &from._impl_.coordinates_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.reference_dpi_) -
+    reinterpret_cast<char*>(&_impl_.coordinates_)) + sizeof(_impl_.reference_dpi_));
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.OcrRegion)
+}
+
+inline void OcrRegion::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.target_){nullptr}
+    , decltype(_impl_.coordinates_){0}
+    , decltype(_impl_.x_){0}
+    , decltype(_impl_.y_){0}
+    , decltype(_impl_.width_){0u}
+    , decltype(_impl_.height_){0u}
+    , decltype(_impl_.reference_dpi_){0u}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+}
+
+OcrRegion::~OcrRegion() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.OcrRegion)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void OcrRegion::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  if (this != internal_default_instance()) delete _impl_.target_;
+}
+
+void OcrRegion::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void OcrRegion::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.OcrRegion)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (GetArenaForAllocation() == nullptr && _impl_.target_ != nullptr) {
+    delete _impl_.target_;
+  }
+  _impl_.target_ = nullptr;
+  ::memset(&_impl_.coordinates_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.reference_dpi_) -
+      reinterpret_cast<char*>(&_impl_.coordinates_)) + sizeof(_impl_.reference_dpi_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* OcrRegion::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .protobufGenerated.PixelCoordinates coordinates = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_coordinates(static_cast<::protobufGenerated::PixelCoordinates>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.WindowSelector target = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          ptr = ctx->ParseMessage(_internal_mutable_target(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // sint32 x = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.x_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarintZigZag32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // sint32 y = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          _impl_.y_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarintZigZag32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 width = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
+          _impl_.width_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 height = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
+          _impl_.height_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 reference_dpi = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 56)) {
+          _impl_.reference_dpi_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* OcrRegion::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.OcrRegion)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .protobufGenerated.PixelCoordinates coordinates = 1;
+  if (this->_internal_coordinates() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      1, this->_internal_coordinates(), target);
+  }
+
+  // .protobufGenerated.WindowSelector target = 2;
+  if (this->_internal_has_target()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(2, _Internal::target(this),
+        _Internal::target(this).GetCachedSize(), target, stream);
+  }
+
+  // sint32 x = 3;
+  if (this->_internal_x() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteSInt32ToArray(3, this->_internal_x(), target);
+  }
+
+  // sint32 y = 4;
+  if (this->_internal_y() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteSInt32ToArray(4, this->_internal_y(), target);
+  }
+
+  // uint32 width = 5;
+  if (this->_internal_width() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(5, this->_internal_width(), target);
+  }
+
+  // uint32 height = 6;
+  if (this->_internal_height() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(6, this->_internal_height(), target);
+  }
+
+  // uint32 reference_dpi = 7;
+  if (this->_internal_reference_dpi() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(7, this->_internal_reference_dpi(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.OcrRegion)
+  return target;
+}
+
+size_t OcrRegion::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.OcrRegion)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .protobufGenerated.WindowSelector target = 2;
+  if (this->_internal_has_target()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.target_);
+  }
+
+  // .protobufGenerated.PixelCoordinates coordinates = 1;
+  if (this->_internal_coordinates() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_coordinates());
+  }
+
+  // sint32 x = 3;
+  if (this->_internal_x() != 0) {
+    total_size += ::_pbi::WireFormatLite::SInt32SizePlusOne(this->_internal_x());
+  }
+
+  // sint32 y = 4;
+  if (this->_internal_y() != 0) {
+    total_size += ::_pbi::WireFormatLite::SInt32SizePlusOne(this->_internal_y());
+  }
+
+  // uint32 width = 5;
+  if (this->_internal_width() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_width());
+  }
+
+  // uint32 height = 6;
+  if (this->_internal_height() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_height());
+  }
+
+  // uint32 reference_dpi = 7;
+  if (this->_internal_reference_dpi() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_reference_dpi());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData OcrRegion::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    OcrRegion::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*OcrRegion::GetClassData() const { return &_class_data_; }
+
+
+void OcrRegion::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<OcrRegion*>(&to_msg);
+  auto& from = static_cast<const OcrRegion&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.OcrRegion)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_target()) {
+    _this->_internal_mutable_target()->::protobufGenerated::WindowSelector::MergeFrom(
+        from._internal_target());
+  }
+  if (from._internal_coordinates() != 0) {
+    _this->_internal_set_coordinates(from._internal_coordinates());
+  }
+  if (from._internal_x() != 0) {
+    _this->_internal_set_x(from._internal_x());
+  }
+  if (from._internal_y() != 0) {
+    _this->_internal_set_y(from._internal_y());
+  }
+  if (from._internal_width() != 0) {
+    _this->_internal_set_width(from._internal_width());
+  }
+  if (from._internal_height() != 0) {
+    _this->_internal_set_height(from._internal_height());
+  }
+  if (from._internal_reference_dpi() != 0) {
+    _this->_internal_set_reference_dpi(from._internal_reference_dpi());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void OcrRegion::CopyFrom(const OcrRegion& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.OcrRegion)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool OcrRegion::IsInitialized() const {
+  return true;
+}
+
+void OcrRegion::InternalSwap(OcrRegion* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(OcrRegion, _impl_.reference_dpi_)
+      + sizeof(OcrRegion::_impl_.reference_dpi_)
+      - PROTOBUF_FIELD_OFFSET(OcrRegion, _impl_.target_)>(
+          reinterpret_cast<char*>(&_impl_.target_),
+          reinterpret_cast<char*>(&other->_impl_.target_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata OcrRegion::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[12]);
+}
+
+// ===================================================================
+
+class OcrTextCondition::_Internal {
+ public:
+  static const ::protobufGenerated::OcrRegion& region(const OcrTextCondition* msg);
+  static const ::protobufGenerated::TextPredicate& predicate(const OcrTextCondition* msg);
+};
+
+const ::protobufGenerated::OcrRegion&
+OcrTextCondition::_Internal::region(const OcrTextCondition* msg) {
+  return *msg->_impl_.region_;
+}
+const ::protobufGenerated::TextPredicate&
+OcrTextCondition::_Internal::predicate(const OcrTextCondition* msg) {
+  return *msg->_impl_.predicate_;
+}
+OcrTextCondition::OcrTextCondition(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.OcrTextCondition)
+}
+OcrTextCondition::OcrTextCondition(const OcrTextCondition& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  OcrTextCondition* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.language_){}
+    , decltype(_impl_.region_){nullptr}
+    , decltype(_impl_.predicate_){nullptr}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.language_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.language_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_language().empty()) {
+    _this->_impl_.language_.Set(from._internal_language(),
+      _this->GetArenaForAllocation());
+  }
+  if (from._internal_has_region()) {
+    _this->_impl_.region_ = new ::protobufGenerated::OcrRegion(*from._impl_.region_);
+  }
+  if (from._internal_has_predicate()) {
+    _this->_impl_.predicate_ = new ::protobufGenerated::TextPredicate(*from._impl_.predicate_);
+  }
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.OcrTextCondition)
+}
+
+inline void OcrTextCondition::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.language_){}
+    , decltype(_impl_.region_){nullptr}
+    , decltype(_impl_.predicate_){nullptr}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.language_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.language_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+OcrTextCondition::~OcrTextCondition() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.OcrTextCondition)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void OcrTextCondition::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.language_.Destroy();
+  if (this != internal_default_instance()) delete _impl_.region_;
+  if (this != internal_default_instance()) delete _impl_.predicate_;
+}
+
+void OcrTextCondition::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void OcrTextCondition::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.OcrTextCondition)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.language_.ClearToEmpty();
+  if (GetArenaForAllocation() == nullptr && _impl_.region_ != nullptr) {
+    delete _impl_.region_;
+  }
+  _impl_.region_ = nullptr;
+  if (GetArenaForAllocation() == nullptr && _impl_.predicate_ != nullptr) {
+    delete _impl_.predicate_;
+  }
+  _impl_.predicate_ = nullptr;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* OcrTextCondition::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .protobufGenerated.OcrRegion region = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_region(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // string language = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_language();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.OcrTextCondition.language"));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.TextPredicate predicate = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          ptr = ctx->ParseMessage(_internal_mutable_predicate(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* OcrTextCondition::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.OcrTextCondition)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .protobufGenerated.OcrRegion region = 1;
+  if (this->_internal_has_region()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(1, _Internal::region(this),
+        _Internal::region(this).GetCachedSize(), target, stream);
+  }
+
+  // string language = 2;
+  if (!this->_internal_language().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_language().data(), static_cast<int>(this->_internal_language().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.OcrTextCondition.language");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_language(), target);
+  }
+
+  // .protobufGenerated.TextPredicate predicate = 3;
+  if (this->_internal_has_predicate()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(3, _Internal::predicate(this),
+        _Internal::predicate(this).GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.OcrTextCondition)
+  return target;
+}
+
+size_t OcrTextCondition::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.OcrTextCondition)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string language = 2;
+  if (!this->_internal_language().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_language());
+  }
+
+  // .protobufGenerated.OcrRegion region = 1;
+  if (this->_internal_has_region()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.region_);
+  }
+
+  // .protobufGenerated.TextPredicate predicate = 3;
+  if (this->_internal_has_predicate()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.predicate_);
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData OcrTextCondition::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    OcrTextCondition::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*OcrTextCondition::GetClassData() const { return &_class_data_; }
+
+
+void OcrTextCondition::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<OcrTextCondition*>(&to_msg);
+  auto& from = static_cast<const OcrTextCondition&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.OcrTextCondition)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_language().empty()) {
+    _this->_internal_set_language(from._internal_language());
+  }
+  if (from._internal_has_region()) {
+    _this->_internal_mutable_region()->::protobufGenerated::OcrRegion::MergeFrom(
+        from._internal_region());
+  }
+  if (from._internal_has_predicate()) {
+    _this->_internal_mutable_predicate()->::protobufGenerated::TextPredicate::MergeFrom(
+        from._internal_predicate());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void OcrTextCondition::CopyFrom(const OcrTextCondition& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.OcrTextCondition)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool OcrTextCondition::IsInitialized() const {
+  return true;
+}
+
+void OcrTextCondition::InternalSwap(OcrTextCondition* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.language_, lhs_arena,
+      &other->_impl_.language_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(OcrTextCondition, _impl_.predicate_)
+      + sizeof(OcrTextCondition::_impl_.predicate_)
+      - PROTOBUF_FIELD_OFFSET(OcrTextCondition, _impl_.region_)>(
+          reinterpret_cast<char*>(&_impl_.region_),
+          reinterpret_cast<char*>(&other->_impl_.region_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata OcrTextCondition::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[13]);
+}
+
+// ===================================================================
+
+class ModuleAddress::_Internal {
+ public:
+};
+
+ModuleAddress::ModuleAddress(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.ModuleAddress)
+}
+ModuleAddress::ModuleAddress(const ModuleAddress& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  ModuleAddress* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.path_){}
+    , decltype(_impl_.file_version_){}
+    , decltype(_impl_.offset_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.path_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.path_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_path().empty()) {
+    _this->_impl_.path_.Set(from._internal_path(),
+      _this->GetArenaForAllocation());
+  }
+  _impl_.file_version_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.file_version_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_file_version().empty()) {
+    _this->_impl_.file_version_.Set(from._internal_file_version(),
+      _this->GetArenaForAllocation());
+  }
+  _this->_impl_.offset_ = from._impl_.offset_;
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.ModuleAddress)
+}
+
+inline void ModuleAddress::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.path_){}
+    , decltype(_impl_.file_version_){}
+    , decltype(_impl_.offset_){uint64_t{0u}}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.path_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.path_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  _impl_.file_version_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.file_version_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+ModuleAddress::~ModuleAddress() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.ModuleAddress)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ModuleAddress::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.path_.Destroy();
+  _impl_.file_version_.Destroy();
+}
+
+void ModuleAddress::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void ModuleAddress::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.ModuleAddress)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.path_.ClearToEmpty();
+  _impl_.file_version_.ClearToEmpty();
+  _impl_.offset_ = uint64_t{0u};
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ModuleAddress::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string path = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_path();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.ModuleAddress.path"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string file_version = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_file_version();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.ModuleAddress.file_version"));
+        } else
+          goto handle_unusual;
+        continue;
+      // uint64 offset = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.offset_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ModuleAddress::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.ModuleAddress)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string path = 1;
+  if (!this->_internal_path().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_path().data(), static_cast<int>(this->_internal_path().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.ModuleAddress.path");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_path(), target);
+  }
+
+  // string file_version = 2;
+  if (!this->_internal_file_version().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_file_version().data(), static_cast<int>(this->_internal_file_version().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.ModuleAddress.file_version");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_file_version(), target);
+  }
+
+  // uint64 offset = 3;
+  if (this->_internal_offset() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(3, this->_internal_offset(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.ModuleAddress)
+  return target;
+}
+
+size_t ModuleAddress::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.ModuleAddress)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string path = 1;
+  if (!this->_internal_path().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_path());
+  }
+
+  // string file_version = 2;
+  if (!this->_internal_file_version().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_file_version());
+  }
+
+  // uint64 offset = 3;
+  if (this->_internal_offset() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_offset());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ModuleAddress::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    ModuleAddress::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ModuleAddress::GetClassData() const { return &_class_data_; }
+
+
+void ModuleAddress::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ModuleAddress*>(&to_msg);
+  auto& from = static_cast<const ModuleAddress&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.ModuleAddress)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_path().empty()) {
+    _this->_internal_set_path(from._internal_path());
+  }
+  if (!from._internal_file_version().empty()) {
+    _this->_internal_set_file_version(from._internal_file_version());
+  }
+  if (from._internal_offset() != 0) {
+    _this->_internal_set_offset(from._internal_offset());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ModuleAddress::CopyFrom(const ModuleAddress& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.ModuleAddress)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ModuleAddress::IsInitialized() const {
+  return true;
+}
+
+void ModuleAddress::InternalSwap(ModuleAddress* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.path_, lhs_arena,
+      &other->_impl_.path_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.file_version_, lhs_arena,
+      &other->_impl_.file_version_, rhs_arena
+  );
+  swap(_impl_.offset_, other->_impl_.offset_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ModuleAddress::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[14]);
+}
+
+// ===================================================================
+
+class MemoryCondition::_Internal {
+ public:
+  static const ::protobufGenerated::ModuleAddress& module(const MemoryCondition* msg);
+};
+
+const ::protobufGenerated::ModuleAddress&
+MemoryCondition::_Internal::module(const MemoryCondition* msg) {
+  return *msg->_impl_.address_.module_;
+}
+void MemoryCondition::set_allocated_module(::protobufGenerated::ModuleAddress* module) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_address();
+  if (module) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(module);
+    if (message_arena != submessage_arena) {
+      module = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, module, submessage_arena);
+    }
+    set_has_module();
+    _impl_.address_.module_ = module;
+  }
+  // @@protoc_insertion_point(field_set_allocated:protobufGenerated.MemoryCondition.module)
+}
+MemoryCondition::MemoryCondition(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protobufGenerated.MemoryCondition)
+}
+MemoryCondition::MemoryCondition(const MemoryCondition& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  MemoryCondition* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.pointer_offsets_){from._impl_.pointer_offsets_}
+    , /*decltype(_impl_._pointer_offsets_cached_byte_size_)*/{0}
+    , decltype(_impl_.executable_path_){}
+    , decltype(_impl_.expected_){}
+    , decltype(_impl_.scalar_type_){}
+    , decltype(_impl_.comparison_){}
+    , decltype(_impl_.tolerance_){}
+    , decltype(_impl_.address_){}
+    , /*decltype(_impl_._cached_size_)*/{}
+    , /*decltype(_impl_._oneof_case_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.executable_path_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.executable_path_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_executable_path().empty()) {
+    _this->_impl_.executable_path_.Set(from._internal_executable_path(),
+      _this->GetArenaForAllocation());
+  }
+  _impl_.expected_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.expected_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_expected().empty()) {
+    _this->_impl_.expected_.Set(from._internal_expected(),
+      _this->GetArenaForAllocation());
+  }
+  ::memcpy(&_impl_.scalar_type_, &from._impl_.scalar_type_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.tolerance_) -
+    reinterpret_cast<char*>(&_impl_.scalar_type_)) + sizeof(_impl_.tolerance_));
+  clear_has_address();
+  switch (from.address_case()) {
+    case kAbsoluteAddress: {
+      _this->_internal_set_absolute_address(from._internal_absolute_address());
+      break;
+    }
+    case kModule: {
+      _this->_internal_mutable_module()->::protobufGenerated::ModuleAddress::MergeFrom(
+          from._internal_module());
+      break;
+    }
+    case ADDRESS_NOT_SET: {
+      break;
+    }
+  }
+  // @@protoc_insertion_point(copy_constructor:protobufGenerated.MemoryCondition)
+}
+
+inline void MemoryCondition::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.pointer_offsets_){arena}
+    , /*decltype(_impl_._pointer_offsets_cached_byte_size_)*/{0}
+    , decltype(_impl_.executable_path_){}
+    , decltype(_impl_.expected_){}
+    , decltype(_impl_.scalar_type_){0}
+    , decltype(_impl_.comparison_){0}
+    , decltype(_impl_.tolerance_){0}
+    , decltype(_impl_.address_){}
+    , /*decltype(_impl_._cached_size_)*/{}
+    , /*decltype(_impl_._oneof_case_)*/{}
+  };
+  _impl_.executable_path_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.executable_path_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  _impl_.expected_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.expected_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  clear_has_address();
+}
+
+MemoryCondition::~MemoryCondition() {
+  // @@protoc_insertion_point(destructor:protobufGenerated.MemoryCondition)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void MemoryCondition::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.pointer_offsets_.~RepeatedField();
+  _impl_.executable_path_.Destroy();
+  _impl_.expected_.Destroy();
+  if (has_address()) {
+    clear_address();
+  }
+}
+
+void MemoryCondition::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void MemoryCondition::clear_address() {
+// @@protoc_insertion_point(one_of_clear_start:protobufGenerated.MemoryCondition)
+  switch (address_case()) {
+    case kAbsoluteAddress: {
+      // No need to clear
+      break;
+    }
+    case kModule: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete _impl_.address_.module_;
+      }
+      break;
+    }
+    case ADDRESS_NOT_SET: {
+      break;
+    }
+  }
+  _impl_._oneof_case_[0] = ADDRESS_NOT_SET;
+}
+
+
+void MemoryCondition::Clear() {
+// @@protoc_insertion_point(message_clear_start:protobufGenerated.MemoryCondition)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.pointer_offsets_.Clear();
+  _impl_.executable_path_.ClearToEmpty();
+  _impl_.expected_.ClearToEmpty();
+  ::memset(&_impl_.scalar_type_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.tolerance_) -
+      reinterpret_cast<char*>(&_impl_.scalar_type_)) + sizeof(_impl_.tolerance_));
+  clear_address();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* MemoryCondition::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string executable_path = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_executable_path();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.MemoryCondition.executable_path"));
+        } else
+          goto handle_unusual;
+        continue;
+      // uint64 absolute_address = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _internal_set_absolute_address(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr));
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.ModuleAddress module = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          ptr = ctx->ParseMessage(_internal_mutable_module(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // repeated sint64 pointer_offsets = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedSInt64Parser(_internal_mutable_pointer_offsets(), ptr, ctx);
+          CHK_(ptr);
+        } else if (static_cast<uint8_t>(tag) == 32) {
+          _internal_add_pointer_offsets(::PROTOBUF_NAMESPACE_ID::internal::ReadVarintZigZag64(&ptr));
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.MemoryScalarType scalar_type = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_scalar_type(static_cast<::protobufGenerated::MemoryScalarType>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      // .protobufGenerated.NumericComparison comparison = 6;
+      case 6:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_comparison(static_cast<::protobufGenerated::NumericComparison>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      // string expected = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 58)) {
+          auto str = _internal_mutable_expected();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "protobufGenerated.MemoryCondition.expected"));
+        } else
+          goto handle_unusual;
+        continue;
+      // double tolerance = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 65)) {
+          _impl_.tolerance_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
+          ptr += sizeof(double);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* MemoryCondition::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protobufGenerated.MemoryCondition)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string executable_path = 1;
+  if (!this->_internal_executable_path().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_executable_path().data(), static_cast<int>(this->_internal_executable_path().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.MemoryCondition.executable_path");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_executable_path(), target);
+  }
+
+  // uint64 absolute_address = 2;
+  if (_internal_has_absolute_address()) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(2, this->_internal_absolute_address(), target);
+  }
+
+  // .protobufGenerated.ModuleAddress module = 3;
+  if (_internal_has_module()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(3, _Internal::module(this),
+        _Internal::module(this).GetCachedSize(), target, stream);
+  }
+
+  // repeated sint64 pointer_offsets = 4;
+  {
+    int byte_size = _impl_._pointer_offsets_cached_byte_size_.load(std::memory_order_relaxed);
+    if (byte_size > 0) {
+      target = stream->WriteSInt64Packed(
+          4, _internal_pointer_offsets(), byte_size, target);
+    }
+  }
+
+  // .protobufGenerated.MemoryScalarType scalar_type = 5;
+  if (this->_internal_scalar_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      5, this->_internal_scalar_type(), target);
+  }
+
+  // .protobufGenerated.NumericComparison comparison = 6;
+  if (this->_internal_comparison() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+      6, this->_internal_comparison(), target);
+  }
+
+  // string expected = 7;
+  if (!this->_internal_expected().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_expected().data(), static_cast<int>(this->_internal_expected().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protobufGenerated.MemoryCondition.expected");
+    target = stream->WriteStringMaybeAliased(
+        7, this->_internal_expected(), target);
+  }
+
+  // double tolerance = 8;
+  static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
+  double tmp_tolerance = this->_internal_tolerance();
+  uint64_t raw_tolerance;
+  memcpy(&raw_tolerance, &tmp_tolerance, sizeof(tmp_tolerance));
+  if (raw_tolerance != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(8, this->_internal_tolerance(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protobufGenerated.MemoryCondition)
+  return target;
+}
+
+size_t MemoryCondition::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protobufGenerated.MemoryCondition)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated sint64 pointer_offsets = 4;
+  {
+    size_t data_size = ::_pbi::WireFormatLite::
+      SInt64Size(this->_impl_.pointer_offsets_);
+    if (data_size > 0) {
+      total_size += 1 +
+        ::_pbi::WireFormatLite::Int32Size(static_cast<int32_t>(data_size));
+    }
+    int cached_size = ::_pbi::ToCachedSize(data_size);
+    _impl_._pointer_offsets_cached_byte_size_.store(cached_size,
+                                    std::memory_order_relaxed);
+    total_size += data_size;
+  }
+
+  // string executable_path = 1;
+  if (!this->_internal_executable_path().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_executable_path());
+  }
+
+  // string expected = 7;
+  if (!this->_internal_expected().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_expected());
+  }
+
+  // .protobufGenerated.MemoryScalarType scalar_type = 5;
+  if (this->_internal_scalar_type() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_scalar_type());
+  }
+
+  // .protobufGenerated.NumericComparison comparison = 6;
+  if (this->_internal_comparison() != 0) {
+    total_size += 1 +
+      ::_pbi::WireFormatLite::EnumSize(this->_internal_comparison());
+  }
+
+  // double tolerance = 8;
+  static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
+  double tmp_tolerance = this->_internal_tolerance();
+  uint64_t raw_tolerance;
+  memcpy(&raw_tolerance, &tmp_tolerance, sizeof(tmp_tolerance));
+  if (raw_tolerance != 0) {
+    total_size += 1 + 8;
+  }
+
+  switch (address_case()) {
+    // uint64 absolute_address = 2;
+    case kAbsoluteAddress: {
+      total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_absolute_address());
+      break;
+    }
+    // .protobufGenerated.ModuleAddress module = 3;
+    case kModule: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *_impl_.address_.module_);
+      break;
+    }
+    case ADDRESS_NOT_SET: {
+      break;
+    }
+  }
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData MemoryCondition::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    MemoryCondition::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*MemoryCondition::GetClassData() const { return &_class_data_; }
+
+
+void MemoryCondition::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<MemoryCondition*>(&to_msg);
+  auto& from = static_cast<const MemoryCondition&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protobufGenerated.MemoryCondition)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_impl_.pointer_offsets_.MergeFrom(from._impl_.pointer_offsets_);
+  if (!from._internal_executable_path().empty()) {
+    _this->_internal_set_executable_path(from._internal_executable_path());
+  }
+  if (!from._internal_expected().empty()) {
+    _this->_internal_set_expected(from._internal_expected());
+  }
+  if (from._internal_scalar_type() != 0) {
+    _this->_internal_set_scalar_type(from._internal_scalar_type());
+  }
+  if (from._internal_comparison() != 0) {
+    _this->_internal_set_comparison(from._internal_comparison());
+  }
+  static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
+  double tmp_tolerance = from._internal_tolerance();
+  uint64_t raw_tolerance;
+  memcpy(&raw_tolerance, &tmp_tolerance, sizeof(tmp_tolerance));
+  if (raw_tolerance != 0) {
+    _this->_internal_set_tolerance(from._internal_tolerance());
+  }
+  switch (from.address_case()) {
+    case kAbsoluteAddress: {
+      _this->_internal_set_absolute_address(from._internal_absolute_address());
+      break;
+    }
+    case kModule: {
+      _this->_internal_mutable_module()->::protobufGenerated::ModuleAddress::MergeFrom(
+          from._internal_module());
+      break;
+    }
+    case ADDRESS_NOT_SET: {
+      break;
+    }
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void MemoryCondition::CopyFrom(const MemoryCondition& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protobufGenerated.MemoryCondition)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool MemoryCondition::IsInitialized() const {
+  return true;
+}
+
+void MemoryCondition::InternalSwap(MemoryCondition* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.pointer_offsets_.InternalSwap(&other->_impl_.pointer_offsets_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.executable_path_, lhs_arena,
+      &other->_impl_.executable_path_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.expected_, lhs_arena,
+      &other->_impl_.expected_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MemoryCondition, _impl_.tolerance_)
+      + sizeof(MemoryCondition::_impl_.tolerance_)
+      - PROTOBUF_FIELD_OFFSET(MemoryCondition, _impl_.scalar_type_)>(
+          reinterpret_cast<char*>(&_impl_.scalar_type_),
+          reinterpret_cast<char*>(&other->_impl_.scalar_type_));
+  swap(_impl_.address_, other->_impl_.address_);
+  swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata MemoryCondition::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Events_2eproto_getter, &descriptor_table_Events_2eproto_once,
+      file_level_metadata_Events_2eproto[15]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
@@ -2987,6 +6077,10 @@ template<> PROTOBUF_NOINLINE ::protobufGenerated::ProtobufInputEventList*
 Arena::CreateMaybeMessage< ::protobufGenerated::ProtobufInputEventList >(Arena* arena) {
   return Arena::CreateMessageInternal< ::protobufGenerated::ProtobufInputEventList >(arena);
 }
+template<> PROTOBUF_NOINLINE ::protobufGenerated::FixedDelay*
+Arena::CreateMaybeMessage< ::protobufGenerated::FixedDelay >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::FixedDelay >(arena);
+}
 template<> PROTOBUF_NOINLINE ::protobufGenerated::WaitCondition*
 Arena::CreateMaybeMessage< ::protobufGenerated::WaitCondition >(Arena* arena) {
   return Arena::CreateMessageInternal< ::protobufGenerated::WaitCondition >(arena);
@@ -3002,6 +6096,34 @@ Arena::CreateMaybeMessage< ::protobufGenerated::WindowCondition >(Arena* arena) 
 template<> PROTOBUF_NOINLINE ::protobufGenerated::PixelCondition*
 Arena::CreateMaybeMessage< ::protobufGenerated::PixelCondition >(Arena* arena) {
   return Arena::CreateMessageInternal< ::protobufGenerated::PixelCondition >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::TextPredicate*
+Arena::CreateMaybeMessage< ::protobufGenerated::TextPredicate >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::TextPredicate >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::AccessibilitySelector*
+Arena::CreateMaybeMessage< ::protobufGenerated::AccessibilitySelector >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::AccessibilitySelector >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::AccessibilityTextCondition*
+Arena::CreateMaybeMessage< ::protobufGenerated::AccessibilityTextCondition >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::AccessibilityTextCondition >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::OcrRegion*
+Arena::CreateMaybeMessage< ::protobufGenerated::OcrRegion >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::OcrRegion >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::OcrTextCondition*
+Arena::CreateMaybeMessage< ::protobufGenerated::OcrTextCondition >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::OcrTextCondition >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::ModuleAddress*
+Arena::CreateMaybeMessage< ::protobufGenerated::ModuleAddress >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::ModuleAddress >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protobufGenerated::MemoryCondition*
+Arena::CreateMaybeMessage< ::protobufGenerated::MemoryCondition >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protobufGenerated::MemoryCondition >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

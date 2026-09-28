@@ -2,6 +2,7 @@
 #include "../Common/KeyboardEvent.h"
 #include "../Common/MouseEvent.h"
 #include "../Common/WaitEvent.h"
+#include "../Common/DelayEvent.h"
 #include <array>
 #include <algorithm>
 #include <stdexcept>
@@ -36,6 +37,9 @@ PlaybackResult PlaybackSession::start(std::vector<std::unique_ptr<Event>> events
 			const auto timeout = std::chrono::microseconds(wait->condition.timeout_us());
 			if (timeout > remaining) return PlaybackResult::InvalidInput;
 			remaining -= timeout;
+		} else if (const auto delay = dynamic_cast<const DelayEvent*>(event.get())) {
+			if (!DelayEvent::valid(delay->duration.count()) || delay->duration > remaining) return PlaybackResult::InvalidInput;
+			remaining -= delay->duration;
 		} else if (const auto key = dynamic_cast<const KeyboardEvent*>(event.get())) {
 			if (!key->virtualKeyCode || key->virtualKeyCode >= keys.size()) return PlaybackResult::InvalidInput;
 			keys[key->virtualKeyCode] = !key->keyUp;
@@ -145,7 +149,8 @@ void PlaybackSession::run(std::vector<std::unique_ptr<Event>> events) noexcept {
 	auto outcome = PlaybackResult::Finished;
 	try {
 		// Preserve Ctrl+E startup behavior exactly once, outside the repeated list.
-		if (release_start_modifiers_ && std::any_of(events.begin(), events.end(), [](const auto& event) { return dynamic_cast<const WaitEvent*>(event.get()) == nullptr; })) {
+		if (release_start_modifiers_ && std::any_of(events.begin(), events.end(), [](const auto& event) {
+			return dynamic_cast<const KeyboardEvent*>(event.get()) || dynamic_cast<const MouseEvent*>(event.get()); })) {
 			for (WORD key : {VK_LSHIFT, VK_LCONTROL, VK_LMENU, VK_RSHIFT, VK_RCONTROL, VK_RMENU}) {
 				if (cancelled_) break;
 				KeyboardEvent release;
@@ -165,6 +170,11 @@ void PlaybackSession::run(std::vector<std::unique_ptr<Event>> events) noexcept {
 				const auto remaining = std::chrono::duration_cast<std::chrono::microseconds>((Clock::time_point::max)() - deadline);
 				if (event->time_since_last_event > remaining) throw std::overflow_error("Playback deadline overflow");
 				deadline += event->time_since_last_event;
+				if (const auto delay = dynamic_cast<const DelayEvent*>(event.get())) {
+					if (delay->duration > std::chrono::duration_cast<std::chrono::microseconds>((Clock::time_point::max)() - deadline))
+						throw std::overflow_error("Fixed delay deadline overflow");
+					deadline += delay->duration;
+				}
 				if (deadline > Clock::now()) batch_count = 0;
 				if (!wait_until(deadline) || cancelled_) break;
 				if (const auto wait = dynamic_cast<const WaitEvent*>(event.get())) {
@@ -183,6 +193,7 @@ void PlaybackSession::run(std::vector<std::unique_ptr<Event>> events) noexcept {
 				}
 				// A compound mouse SendInput can insert only a prefix. Account for
 				// attempted downs conservatively, then confirm ups only on success.
+				if (!dynamic_cast<const DelayEvent*>(event.get())) {
 				if (const auto keyboard = dynamic_cast<const KeyboardEvent*>(event.get())) {
 					if (keyboard->virtualKeyCode < keys.size() && !keyboard->keyUp) keys[keyboard->virtualKeyCode] = true;
 				} else if (const auto mouse = dynamic_cast<const MouseEvent*>(event.get())) {
@@ -201,6 +212,7 @@ void PlaybackSession::run(std::vector<std::unique_ptr<Event>> events) noexcept {
 						if (i >= 3 && !(xbuttons & (i == 3 ? XBUTTON1 : XBUTTON2))) continue;
 						if (mouse->ActionType & ups[i]) buttons[i] = false;
 					}
+				}
 				}
 				// Bound overdue-event bursts as well as zero-delay lists, so Windows
 				// input processing/hotkeys can run even while catching up.

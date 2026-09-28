@@ -4,6 +4,7 @@
 #include "../RecordPlaybackDLL/Common/KeyboardEvent.h"
 #include "../RecordPlaybackDLL/Common/MouseEvent.h"
 #include "../RecordPlaybackDLL/Common/DeserializeEvent.h"
+#include "../RecordPlaybackDLL/Common/DelayEvent.h"
 #include <future>
 
 using namespace std::chrono_literals;
@@ -50,6 +51,55 @@ TEST(ConditionalWait, WaitOnlyHasNoStartupReleasesOrSinkCalls) {
     EXPECT_GT(active.remaining_us, 0u);
     EXPECT_EQ(PlaybackResult::Running, session.resolve_wait(id, active.occurrence, true));
     EXPECT_EQ(PlaybackResult::Finished, finished(session, id)); EXPECT_EQ(0, calls);
+}
+
+TEST(FixedDelay, StandalonePreDelayAndDurationNeverInject) {
+    PlaybackSession session([](const Event&) { ADD_FAILURE() << "Delay injected input"; return true; }, true);
+    auto pause = std::make_unique<DelayEvent>(); pause->duration = 35ms; pause->time_since_last_event = 25ms;
+    std::vector<std::unique_ptr<Event>> events; events.push_back(std::move(pause));
+    uint64_t id; const auto start = std::chrono::steady_clock::now();
+    ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    EXPECT_EQ(PlaybackResult::Finished, finished(session, id));
+    EXPECT_GE(std::chrono::steady_clock::now() - start, 60ms);
+}
+
+TEST(FixedDelay, HeldKeyIsPreservedUntilCancellationCleanup) {
+    std::promise<void> pressed; std::atomic<int> releases{0};
+    PlaybackSession session([&](const Event& event) {
+        const auto key = dynamic_cast<const KeyboardEvent*>(&event);
+        if (!key) { ADD_FAILURE() << "Delay reached sink"; return false; }
+        if (key->keyUp) ++releases; else pressed.set_value(); return true;
+    });
+    auto pause = std::make_unique<DelayEvent>(); pause->duration = 1h;
+    std::vector<std::unique_ptr<Event>> events; events.push_back(key_event(false)); events.push_back(std::move(pause)); events.push_back(key_event(true));
+    uint64_t id; ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    ASSERT_EQ(std::future_status::ready, pressed.get_future().wait_for(1s));
+    EXPECT_EQ(0, releases.load());
+    const auto start = std::chrono::steady_clock::now();
+    EXPECT_EQ(PlaybackResult::Cancelled, session.abort(id));
+    EXPECT_LT(std::chrono::steady_clock::now() - start, 500ms); EXPECT_EQ(1, releases.load());
+}
+
+TEST(FixedDelay, WireRoundTripsAndInvalidDurationRejects) {
+    DelayEvent source; source.duration = 123456us; source.time_since_last_event = 42us;
+    const auto decoded = record_playback::deserialize_event(*source.serialize());
+    const auto delay = dynamic_cast<const DelayEvent*>(decoded.get()); ASSERT_NE(nullptr, delay);
+    EXPECT_EQ(123456us, delay->duration); EXPECT_EQ(42us, delay->time_since_last_event);
+    source.duration = 0us; EXPECT_NO_THROW(record_playback::deserialize_event(*source.serialize()));
+    source.duration = 25h; EXPECT_THROW(record_playback::deserialize_event(*source.serialize()), std::invalid_argument);
+}
+
+TEST(FixedDelay, ZeroDurationBatchStillYieldsAndCanBeCancelled) {
+    PlaybackSession session([](const Event&) { ADD_FAILURE(); return true; });
+    std::vector<std::unique_ptr<Event>> events;
+    for (int i = 0; i < 6400; ++i) events.push_back(std::make_unique<DelayEvent>());
+    uint64_t id; const auto start = std::chrono::steady_clock::now();
+    ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), false, id));
+    EXPECT_EQ(PlaybackResult::Finished, finished(session, id));
+    EXPECT_GE(std::chrono::steady_clock::now() - start, 90ms);
+    events.push_back(std::make_unique<DelayEvent>());
+    ASSERT_EQ(PlaybackResult::Running, session.start(std::move(events), true, id));
+    EXPECT_EQ(PlaybackResult::Cancelled, session.abort(id));
 }
 
 TEST(ConditionalWait, NativeDeadlineStopsWithoutObserverAndRejectsLateResponse) {

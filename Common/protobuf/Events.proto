@@ -22,6 +22,7 @@ message ProtobufInputEvent {
      KeyboardEventType keyboardEvent  = 2;
      MouseEventType mouseEvent = 3;
      WaitCondition waitCondition = 4;
+     FixedDelay delay = 5;
   }
 }
 
@@ -29,7 +30,10 @@ message ProtobufInputEventList {
 	repeated ProtobufInputEvent inputEvents = 1;
 }
 
-// Version 1: read-only window/pixel observations; failures always stop playback.
+// Additional duration after timeSinceLastEvent. Never injects input.
+message FixedDelay { uint64 duration_microseconds = 1; }
+
+// Version 1: window/pixel. Version 2: accessibility, OCR, memory.
 message WaitCondition {
   uint32 semantics_version = 1;
   WaitTrigger trigger = 2;
@@ -39,6 +43,9 @@ message WaitCondition {
   oneof condition {
     WindowCondition window = 6;
     PixelCondition pixel = 7;
+    AccessibilityTextCondition accessibility_text = 8;
+    OcrTextCondition ocr_text = 9;
+    MemoryCondition memory = 10;
   }
 }
 enum WaitTrigger { IS_TRUE = 0; BECOMES_TRUE = 1; CHANGES = 2; NEW_WINDOW = 3; }
@@ -69,3 +76,66 @@ message PixelCondition {
   uint32 reference_height = 10;
 }
 enum PixelCoordinates { DESKTOP_PHYSICAL = 0; CLIENT_PHYSICAL = 1; CLIENT_LOGICAL = 2; }
+
+enum TextComparison { TEXT_EQUALS = 0; TEXT_CONTAINS = 1; TEXT_NOT_EQUALS = 2; TEXT_NOT_CONTAINS = 3; }
+enum TextWhitespace { PRESERVE_WHITESPACE = 0; COLLAPSE_WHITESPACE = 1; }
+message TextPredicate {
+  string expected = 1;
+  TextComparison comparison = 2;
+  bool ignore_case = 3;
+  TextWhitespace whitespace = 4;
+}
+message AccessibilitySelector {
+  string automation_id = 1;
+  uint32 control_type = 2;
+}
+enum AccessibilityTextSource { ACCESSIBLE_NAME = 0; TEXT_PATTERN = 1; VALUE_PATTERN = 2; }
+message AccessibilityTextCondition {
+  WindowSelector target = 1;
+  AccessibilitySelector element = 2;
+  // Exact parent chain, nearest ancestor first. At most 16 entries.
+  repeated AccessibilitySelector ancestors = 3;
+  AccessibilityTextSource source = 4;
+  TextPredicate predicate = 5;
+}
+message OcrRegion {
+  PixelCoordinates coordinates = 1;
+  WindowSelector target = 2;
+  sint32 x = 3;
+  sint32 y = 4;
+  uint32 width = 5;
+  uint32 height = 6;
+  uint32 reference_dpi = 7;
+}
+message OcrTextCondition {
+  OcrRegion region = 1;
+  // One installed Tesseract language identifier; no paths or download requests.
+  string language = 2;
+  TextPredicate predicate = 3;
+}
+enum MemoryScalarType {
+  UINT8 = 0; INT8 = 1; UINT16 = 2; INT16 = 3; UINT32 = 4; INT32 = 5;
+  UINT64 = 6; INT64 = 7; FLOAT32 = 8; FLOAT64 = 9;
+}
+enum NumericComparison {
+  NUMERIC_EQUALS = 0; NUMERIC_NOT_EQUALS = 1; LESS = 2; LESS_OR_EQUAL = 3; GREATER = 4; GREATER_OR_EQUAL = 5;
+}
+message ModuleAddress {
+  string path = 1;
+  string file_version = 2;
+  uint64 offset = 3;
+}
+message MemoryCondition {
+  string executable_path = 1;
+  oneof address {
+    uint64 absolute_address = 2;
+    ModuleAddress module = 3;
+  }
+  // Start at base; for each offset: address = read_pointer(address) + offset.
+  repeated sint64 pointer_offsets = 4;
+  MemoryScalarType scalar_type = 5;
+  NumericComparison comparison = 6;
+  // Invariant decimal, preserving exact signed/unsigned 64-bit integer values.
+  string expected = 7;
+  double tolerance = 8;
+}

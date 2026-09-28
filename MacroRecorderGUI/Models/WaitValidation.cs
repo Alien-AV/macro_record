@@ -72,6 +72,7 @@ public static class WaitValidation
                 Validate(wait.Condition);
                 if (keys.Count != 0 || buttons != 0) Fail("Conditional waits require all recorded keys and mouse buttons to be released.");
             }
+            else if (input is DelayEvent delay) DelayEvent.ValidateDuration(delay.DurationMicroseconds);
             else if (input is KeyboardEvent key)
             {
                 if (key.VirtualKeyCode is 0 or > 255) Fail("Invalid virtual key.");

@@ -31,7 +31,7 @@ internal sealed record RecordingDocument
         }
         var document = JsonSerializer.Deserialize<RecordingDocument>(bytes.AsSpan(Magic.Length))
             ?? throw new InvalidDataException("Missing recording document.");
-        if (document.Version is not (2 or 3) || document.Events is null || document.Origins is null)
+        if (document.Version is not (2 or 3 or 4) || document.Events is null || document.Origins is null)
             throw new InvalidDataException("This recording requires a different file-format version.");
         var events = document.ParseEvents();
         ValidateWaits(events, document.Version);
@@ -51,9 +51,9 @@ internal sealed record RecordingDocument
 
     public byte[] Write()
     {
-        var hasWaits = ValidateWaits(ParseEvents());
-        if (!hasWaits && !IsExtended && Origins.Length == 0 && BeforeOriginAdoption is null) return Events.ToArray();
-        var json = JsonSerializer.SerializeToUtf8Bytes(hasWaits ? this with { Version = 3 } : this);
+        var requiredVersion = ValidateWaits(ParseEvents());
+        if (requiredVersion == 1 && !IsExtended && Origins.Length == 0 && BeforeOriginAdoption is null) return Events.ToArray();
+        var json = JsonSerializer.SerializeToUtf8Bytes(this with { Version = Math.Max(Version, requiredVersion) });
         var bytes = new byte[Magic.Length + json.Length];
         Magic.CopyTo(bytes); json.CopyTo(bytes, Magic.Length);
         if (bytes.Length > RecordingLibraryStore.MaximumMacroBytes) throw new InvalidDataException("Macros must be 64 MB or smaller.");
@@ -62,27 +62,36 @@ internal sealed record RecordingDocument
 
     public ProtobufInputEventList ParseEvents() => ProtobufInputEventList.Parser.ParseFrom(Events);
 
-    private static bool ValidateWaits(ProtobufInputEventList events, int version = 3)
+    private static int ValidateWaits(ProtobufInputEventList events, int version = 4)
     {
-        var hasWaits = false;
+        var requiredVersion = 1;
         for (var index = 0; index < events.InputEvents.Count; index++)
         {
-            if (events.InputEvents[index].WaitCondition is not { } wait) continue;
-            if (version < 3)
-                throw new InvalidDataException($"Conditional wait at event {index + 1} requires file-format version 3. Raw protobuf and version-2 recordings cannot contain waits.");
-            try { WaitValidation.Validate(wait); }
+            var input = events.InputEvents[index];
+            if (input.EventCase == ProtobufInputEvent.EventOneofCase.None)
+                throw new InvalidDataException($"Unsupported event payload at event {index + 1}.");
+            var needed = input.Delay is not null || input.WaitCondition is { SemanticsVersion: not 1 } ? 4
+                : input.WaitCondition is not null ? 3 : 1;
+            requiredVersion = Math.Max(requiredVersion, needed);
+            try
+            {
+                if (input.WaitCondition is { } wait) WaitValidation.Validate(wait);
+                if (input.Delay is { } delay) Event.DelayEvent.ValidateDuration(delay.DurationMicroseconds);
+            }
             catch (ArgumentException error)
             { throw new InvalidDataException($"Invalid conditional wait at event {index + 1}: {error.Message}", error); }
-            hasWaits = true;
+            if (version < needed)
+                throw new InvalidDataException($"The action at event {index + 1} requires file-format version {needed}. Raw protobuf and older recordings cannot contain this action.");
         }
-        return hasWaits;
+        return requiredVersion;
     }
 
     public byte[] ExportLegacy()
     {
         var wire = ParseEvents();
-        if (wire.InputEvents.Any(input => input.WaitCondition is not null))
-            throw new InvalidOperationException("Legacy export cannot represent conditional waits. Use the versioned .macro export.");
+        ValidateWaits(wire);
+        if (wire.InputEvents.Any(input => input.WaitCondition is not null || input.Delay is not null))
+            throw new InvalidOperationException("Legacy export cannot represent conditional waits or fixed delay actions. Use the versioned .macro export.");
         PointerPlayback.Validate(Origins, wire.InputEvents.Count, PlaybackPointerOrigin.RecordedStartingPoint);
         // Use stored physical positions and unscaled delays; do not sample or inject input.
         var raw = wire.InputEvents.Select(input => input.Clone()).ToArray();

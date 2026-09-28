@@ -36,6 +36,12 @@ public sealed class PlaybackWorkflow
             var scaled = decimal.Round(input.TimeSinceLastEvent / (decimal)options.Speed, 0, MidpointRounding.AwayFromZero);
             if (scaled > long.MaxValue) throw new ArgumentOutOfRangeException(nameof(options), "A scaled delay is too large to play.");
             input.TimeSinceLastEvent = (ulong)scaled;
+            if (input is DelayEvent delay)
+            {
+                var duration = decimal.Round(delay.DurationMicroseconds / (decimal)options.Speed, 0, MidpointRounding.AwayFromZero);
+                if (duration > DelayEvent.MaximumDurationMicroseconds) throw new ArgumentOutOfRangeException(nameof(options), "A scaled fixed delay exceeds 24 hours.");
+                delay.DurationMicroseconds = (ulong)duration;
+            }
         }
         originSnapshot = originSnapshot.Select(origin =>
         {

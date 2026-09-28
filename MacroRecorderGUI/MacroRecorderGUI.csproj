@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Common\protobuf\csharp\Events.cs" Link="Generated\Events.cs" />
+    <ProjectReference Include="..\MacroRecorder.Waiting\MacroRecorder.Waiting.csproj" />
     <Compile Include="..\Common\StatusEnum.cs" Link="Common\StatusEnum.cs" />
   </ItemGroup>
 
