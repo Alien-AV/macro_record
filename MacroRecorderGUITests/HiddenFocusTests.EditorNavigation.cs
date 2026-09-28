@@ -92,7 +92,6 @@ public sealed partial class HiddenFocusTests
             var anchor = ((RecordedAction)actions.SelectedItem).First;
             var insert = (Action<ActionAuthoringFields>)Call(editor, "PrepareActionInsertion")!;
             var fields = new ActionAuthoringFields(kind, style);
-            fields.Pause.Text = "0.000123";
             fields.Hold.Text = "0.000456";
             fields.ControlKey.IsChecked = true;
             fields.X.Text = "-123"; fields.Y.Text = "456";
@@ -101,18 +100,20 @@ public sealed partial class HiddenFocusTests
             Assert.IsFalse(editor.TryCommitPendingEdits());
             Assert.IsFalse((bool)Call(editor, "HandlePaneKey", VirtualKey.F6, false, false, false)!);
             Call(editor, "SetRawOpen", false); CollectionAssert.AreEqual(before, macro.SnapshotBytes());
-            fields.Pause.Text = "invalid";
-            try { insert(fields); Assert.Fail("An invalid pause must be rejected."); }
-            catch (ArgumentException) { }
+            if (kind == AuthoringKind.PointerMovement) fields.X.Text = "invalid";
+            else if (kind == AuthoringKind.Delay) fields.Delay.Text = "invalid";
+            else fields.Hold.Text = "invalid";
+            try { insert(fields); Assert.Fail("An invalid numeric field must be rejected."); }
+            catch (Exception error) when (error is ArgumentException or FormatException) { }
             CollectionAssert.AreEqual(before, macro.SnapshotBytes());
-            fields.Pause.Text = "0.000123";
+            fields.X.Text = "-123"; fields.Hold.Text = "0.000456"; fields.Delay.Text = "0.000123";
             // Change the projection while the form remains open; its input identity stays stable.
             macro.Editor.SetWait(macro.Editor.Projection.Actions.Last(), 99); Call(editor, "RefreshEditor", false);
             before = macro.SnapshotBytes();
             insert(fields);
             Call(editor, "EndAuthoringDialog"); Call(editor, "RefreshEditor", false);
             var anchorIndex = macro.Events.IndexOf(anchor);
-            Assert.AreEqual(123UL, macro.Events[anchorIndex + 1].TimeSinceLastEvent);
+            Assert.AreEqual(0UL, macro.Events[anchorIndex + 1].TimeSinceLastEvent);
             Assert.IsTrue(macro.Editor.Undo()); Call(editor, "RefreshEditor", false);
             CollectionAssert.AreEqual(before, macro.SnapshotBytes(), "One Undo removes the complete authored action.");
         }

@@ -6,31 +6,34 @@ namespace MacroRecorderGUI.Editor;
 
 public sealed partial class ActionEditor
 {
-    public WaitConditionEvent InsertWait(RecordedAction? after, WaitCondition condition)
+    public WaitConditionEvent InsertWait(RecordedAction? after, WaitCondition condition, InputEvent? afterDelay = null)
     {
         Refresh();
         if (after is not null) RequireCurrent(after);
-        var index = after?.End ?? 0;
+        var index = afterDelay is null ? after?.End ?? 0 : _macro.Events.IndexOf(afterDelay);
+        if (index < 0) throw new ArgumentException("The selected delay is no longer available.");
         var input = new WaitConditionEvent(condition);
         WaitValidation.ValidateSchedule(_macro.Events.Take(index).Append(input));
-        Execute("Insert conditional wait", () =>
-        {
-            _macro.Events.Insert(index, input);
-            _macro.ReplaceSelection([input]);
-            RawSelection = false;
-        });
+        InsertAuthored(after, "Insert conditional wait", [input], afterDelay);
         return input;
     }
 
-    public WaitConditionEvent ReplaceDelayWithWait(RecordedAction action, WaitCondition condition)
+    public WaitConditionEvent ReplaceDelayWithWait(RecordedAction action, WaitCondition condition, InputEvent? leadingDelay = null)
     {
         RequireCurrent(action);
+        var index = leadingDelay is null ? action.Start : _macro.Events.IndexOf(leadingDelay);
+        if (index < 0) throw new ArgumentException("The selected delay is no longer available.");
         var input = new WaitConditionEvent(condition);
-        WaitValidation.ValidateSchedule(_macro.Events.Take(action.Start).Append(input));
+        WaitValidation.ValidateSchedule(_macro.Events.Take(index).Append(input));
         Execute("Replace fixed delay with conditional wait", () =>
         {
-            action.First.TimeSinceLastEvent = 0;
-            _macro.Events.Insert(action.Start, input);
+            if (leadingDelay is null && action.First is DelayEvent delay)
+            {
+                input.TimeSinceLastEvent = delay.TimeSinceLastEvent;
+                _macro.Events.RemoveAt(index);
+            }
+            else (leadingDelay ?? action.First).TimeSinceLastEvent = 0;
+            _macro.Events.Insert(index, input);
             _macro.ReplaceSelection([input]);
             RawSelection = false;
         });

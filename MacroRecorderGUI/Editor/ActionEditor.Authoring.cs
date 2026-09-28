@@ -7,7 +7,7 @@ namespace MacroRecorderGUI.Editor;
 public sealed partial class ActionEditor
 {
     /// <summary>Insert after a current action, or at the beginning when after is null, as one undoable edit.</summary>
-    public IReadOnlyList<InputEvent> InsertClick(RecordedAction? after, ClickDefinition definition)
+    public IReadOnlyList<InputEvent> InsertClick(RecordedAction? after, ClickDefinition definition, InputEvent? afterDelay = null)
     {
         ArgumentNullException.ThrowIfNull(definition);
         var (down, up, data) = definition.Button switch
@@ -25,11 +25,11 @@ public sealed partial class ActionEditor
                 TimeSinceLastEvent = definition.PauseBeforeMicroseconds },
             new MouseEvent(0, 0, up) { MouseData = data, RelativePosition = true, MappedToVirtualDesktop = false,
                 TimeSinceLastEvent = definition.HoldMicroseconds }
-        ]);
+        ], afterDelay);
     }
 
     /// <summary>Press modifiers in Control/Shift/Alt/Windows order and release in reverse order.</summary>
-    public IReadOnlyList<InputEvent> InsertShortcut(RecordedAction? after, ShortcutDefinition definition)
+    public IReadOnlyList<InputEvent> InsertShortcut(RecordedAction? after, ShortcutDefinition definition, InputEvent? afterDelay = null)
     {
         ArgumentNullException.ThrowIfNull(definition);
         const ShortcutModifiers supported = ShortcutModifiers.Control | ShortcutModifiers.Shift | ShortcutModifiers.Alt | ShortcutModifiers.Windows;
@@ -48,11 +48,11 @@ public sealed partial class ActionEditor
         inputs.Add(new KeyboardEvent((VirtualKey)definition.VirtualKeyCode, true) { TimeSinceLastEvent = definition.HoldMicroseconds });
         inputs.AddRange(modifiers.Reverse().Select(key => new KeyboardEvent(key, true)));
         inputs[0].TimeSinceLastEvent = definition.PauseBeforeMicroseconds;
-        return InsertAuthored(after, "Insert shortcut", inputs.ToArray());
+        return InsertAuthored(after, "Insert shortcut", inputs.ToArray(), afterDelay);
     }
 
     /// <summary>Insert an explicit pointer report without changing or interpolating captured input.</summary>
-    public IReadOnlyList<InputEvent> InsertPointerMovement(RecordedAction? after, PointerMovementDefinition definition)
+    public IReadOnlyList<InputEvent> InsertPointerMovement(RecordedAction? after, PointerMovementDefinition definition, InputEvent? afterDelay = null)
     {
         ArgumentNullException.ThrowIfNull(definition);
         if (definition.Space is not (CoordinateSpace.AbsolutePrimary or CoordinateSpace.AbsoluteDesktop or CoordinateSpace.RelativeCounts))
@@ -65,17 +65,22 @@ public sealed partial class ActionEditor
                 MappedToVirtualDesktop = definition.Space == CoordinateSpace.AbsoluteDesktop,
                 TimeSinceLastEvent = definition.PauseBeforeMicroseconds
             }
-        ]);
+        ], afterDelay);
     }
 
-    private IReadOnlyList<InputEvent> InsertAuthored(RecordedAction? after, string description, InputEvent[] inputs)
+    private IReadOnlyList<InputEvent> InsertAuthored(RecordedAction? after, string description, InputEvent[] inputs, InputEvent? afterDelay = null)
     {
         Refresh();
         if (after is not null) RequireCurrent(after);
-        var index = after?.End ?? 0;
+        var index = afterDelay is null ? after?.End ?? 0 : _macro.Events.IndexOf(afterDelay);
+        if (index < 0) throw new ArgumentException("The selected delay is no longer available.");
+        var gap = afterDelay?.TimeSinceLastEvent ?? 0;
+        var firstDelay = checked(inputs[0].TimeSinceLastEvent + gap);
         RequireReleasedInputs(index);
         Execute(description, () =>
         {
+            if (afterDelay is not null) afterDelay.TimeSinceLastEvent = 0;
+            inputs[0].TimeSinceLastEvent = firstDelay;
             for (var offset = 0; offset < inputs.Length; offset++) _macro.Events.Insert(index + offset, inputs[offset]);
             _macro.ReplaceSelection(inputs);
             RawSelection = false;

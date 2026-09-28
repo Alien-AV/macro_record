@@ -75,6 +75,7 @@ public sealed class ActionProjection
         var index = Samples.Count;
         var timeBefore = TotalTime;
         TotalTime += input.TimeSinceLastEvent;
+        if (input is DelayEvent fixedDelay) TotalTime += fixedDelay.DurationMicroseconds;
         var followsOrigin = _originSegmentPending;
         var startsSegment = followsOrigin;
         var renderStartsSegment = false;
@@ -103,6 +104,18 @@ public sealed class ActionProjection
         _renderIndices.Add(RenderSamples.Count); RenderSamples.Add(renderSample); RenderRevision++;
 
         var neutral = _keys.Count == 0 && _buttons == 0;
+        if (input is DelayEvent delay)
+        {
+            if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
+            Actions.Add(new RecordedAction(index, input, timeBefore)
+            {
+                Number = Actions.Count + 1, Count = 1, Kind = ActionKind.Delay, Complete = true,
+                Duration = delay.DurationMicroseconds, Name = "Delay", Detail = "Fixed delay",
+                Description = "Wait, then continue the sequence"
+            });
+            _active = null; _previousMouse = null;
+            return;
+        }
         if (input is WaitConditionEvent wait)
         {
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }

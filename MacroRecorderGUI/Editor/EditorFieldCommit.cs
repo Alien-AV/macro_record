@@ -7,7 +7,8 @@ namespace MacroRecorderGUI.Views;
 
 public sealed partial class MacroTabContent
 {
-    private ActionField? ActionFieldFor(object control) => ReferenceEquals(control, WaitInput) ? ActionField.Wait
+    private ActionField? ActionFieldFor(object control) => ReferenceEquals(control, WaitInput)
+        ? _leadingDelayAnchor is null && Selected?.Kind == ActionKind.Delay ? ActionField.FixedDelay : ActionField.Wait
         : ReferenceEquals(control, DurationInput) ? ActionField.Duration
         : ReferenceEquals(control, DestinationX) ? ActionField.DestinationX
         : ReferenceEquals(control, DestinationY) ? ActionField.DestinationY : null;
@@ -40,13 +41,16 @@ public sealed partial class MacroTabContent
         finally { _committingFields = false; }
     }
 
-    private void ActionField_LosingFocus(UIElement sender, LosingFocusEventArgs e)
+    private void ActionField_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (_navigatingView || IsViewNavigation(e.NewFocusedElement)) return;
+        var next = XamlRoot is null ? null : FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+        if (_navigatingView || IsViewNavigation(next)) return;
         if (ActionFieldFor(sender) is not { } field) return;
         // X/Y are one validation unit. Moving between them must keep both drafts intact.
         if (field is ActionField.DestinationX or ActionField.DestinationY
-            && ActionFieldFor(e.NewFocusedElement) is ActionField.DestinationX or ActionField.DestinationY) return;
+            && ActionFieldFor(next!) is ActionField.DestinationX or ActionField.DestinationY) return;
+        // Rebuilding selection during LosingFocus interrupts WinUI's focus transaction.
+        // Commit only after the field has actually lost focus.
         CommitActionFields(field);
     }
 

@@ -71,7 +71,8 @@ public sealed partial class MacroTabContent
             var root = _rawOpen ? (DependencyObject)RawContent : InspectorScroller;
             if (remembered is not null && Within(remembered, root) && remembered.IsEnabled
                 && remembered.Visibility == Visibility.Visible && remembered.Focus(FocusState.Keyboard)) return;
-            (_rawOpen ? BackToAction : Selected is null ? DetailsNavigation : RawToggle).Focus(FocusState.Keyboard);
+            Control target = _rawOpen ? BackToAction : RawToggle.IsEnabled ? RawToggle : InspectorScroller;
+            target.Focus(FocusState.Keyboard);
         }
         finally { _navigatingView = false; }
     }

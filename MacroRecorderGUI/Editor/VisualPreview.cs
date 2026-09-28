@@ -104,7 +104,7 @@ public sealed class VisualPreview(IList<InputEvent> events, ActionProjection pro
             if (groupSize == 1 && a.Wait > 0)
                 result.Add(new(a.StartTime, a.StartTime + a.Wait, true, i, i));
             var start = groupSize == 1 ? a.StartTime + a.Wait : a.StartTime;
-            result.Add(new(start, actions[last].EndTime, false, i, last));
+            result.Add(new(start, actions[last].EndTime, groupSize == 1 && a.Kind == ActionKind.Delay, i, last));
             through = actions[last].EndTime;
         }
         if (projection.TotalTime > through) result.Add(new(through, projection.TotalTime, true, Math.Max(0, actions.Count - 1), Math.Max(0, actions.Count - 1), Setup: true));

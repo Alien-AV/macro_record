@@ -5,10 +5,17 @@
  <Grid Background="{ThemeResource DesignedEditorSurface}">
   <Grid x:Name="EditorWorkspace" SizeChanged="Workspace_SizeChanged">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-   <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,8">
+   <Grid Margin="12,8" ColumnSpacing="12">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel x:Name="PaneNavigation" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
     <Button x:Name="SequenceNavigation" Content="Sequence" Click="SequenceNavigation_Click" Style="{StaticResource DesignedEditorButton}" ToolTipService.ToolTip="Sequence · F6 switches panes" AutomationProperties.HelpText="F6 switches between Sequence and Details. Selection is retained."/>
     <Button x:Name="DetailsNavigation" Content="Details" Click="DetailsNavigation_Click" Style="{StaticResource DesignedEditorButton}" ToolTipService.ToolTip="Details · F6 switches panes" AutomationProperties.HelpText="F6 switches between Sequence and Details. Drafts are retained."/>
-   </StackPanel>
+    </StackPanel>
+    <Button x:Name="AddAction" Grid.Column="1" Style="{StaticResource DesignedEditorButton}" AutomationProperties.Name="Add event" ToolTipService.ToolTip="Add an event after the selected step">
+     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="13"/><TextBlock Text="Add event"/><FontIcon Glyph="&#xE70D;" FontSize="11"/></StackPanel>
+     <Button.Flyout><MenuFlyout><MenuFlyoutItem Text="Click…" Click="AddClick_Click"/><MenuFlyoutItem Text="Shortcut…" Click="AddShortcut_Click"/><MenuFlyoutItem Text="Pointer movement…" Click="AddMovement_Click"/><MenuFlyoutItem Text="Delay…" Click="AddDelay_Click"/><MenuFlyoutItem Text="Wait until…" Click="AddWait_Click"/><MenuFlyoutSubItem Text="Advanced"><MenuFlyoutItem Text="Mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutItem Text="Replace delay with a condition…" Click="ReplaceDelay_Click"/></MenuFlyoutSubItem></MenuFlyout></Button.Flyout>
+    </Button>
+   </Grid>
    <Grid x:Name="Workspace" Grid.Row="1">
     <Grid.ColumnDefinitions><ColumnDefinition Width="38*"/><ColumnDefinition Width="62*"/></Grid.ColumnDefinitions>
     <Border x:Name="ListPanel" Background="{ThemeResource DesignedEditorPaper}" BorderBrush="{ThemeResource DesignedEditorLine}" BorderThickness="0,0,1,0">
@@ -23,12 +30,18 @@
         ItemContainerStyle="{StaticResource DesignedEditorActionContainer}" ContainerContentChanging="ActionRow_Changing"
         AutomationProperties.Name="Recorded sequence" AutomationProperties.HelpText="Ctrl or Shift selects multiple actions. Delete removes the selected actions.">
         <ListView.ContextFlyout><MenuFlyout>
-         <MenuFlyoutItem Text="Click…" Click="AddClick_Click"/><MenuFlyoutItem Text="Shortcut…" Click="AddShortcut_Click"/><MenuFlyoutItem Text="Pointer movement…" Click="AddMovement_Click"/><MenuFlyoutItem Text="Wait until…" Click="AddWait_Click"/>
-         <MenuFlyoutSubItem Text="Advanced"><MenuFlyoutItem Text="Mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutItem Text="Replace pause with a condition…" Click="ReplaceDelay_Click"/></MenuFlyoutSubItem>
+         <MenuFlyoutItem Text="Click…" Click="AddClick_Click"/><MenuFlyoutItem Text="Shortcut…" Click="AddShortcut_Click"/><MenuFlyoutItem Text="Pointer movement…" Click="AddMovement_Click"/><MenuFlyoutItem Text="Delay…" Click="AddDelay_Click"/><MenuFlyoutItem Text="Wait until…" Click="AddWait_Click"/>
+         <MenuFlyoutSubItem Text="Advanced"><MenuFlyoutItem Text="Mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutItem Text="Replace delay with a condition…" Click="ReplaceDelay_Click"/></MenuFlyoutSubItem>
          <MenuFlyoutSeparator/><MenuFlyoutItem Text="Delete selected actions" Click="DeleteActions_Click"/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/>
         </MenuFlyout></ListView.ContextFlyout>
         <ListView.ItemTemplate><DataTemplate>
-         <Grid ColumnSpacing="10" ToolTipService.ToolTip="{Binding TechnicalSummary}">
+         <StackPanel Spacing="6">
+          <Button Visibility="{Binding LeadingDelayVisibility}" Click="LeadingDelay_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Style="{StaticResource DesignedEditorButton}" AutomationProperties.Name="{Binding LeadingDelayLabel}">
+           <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <FontIcon Glyph="&#xE916;" FontSize="15"/><TextBlock Grid.Column="1" Text="Delay"/><TextBlock Grid.Column="2" Text="{Binding LeadingDelayTime}"/>
+           </Grid>
+          </Button>
+         <Grid ColumnSpacing="10" ToolTipService.ToolTip="{Binding TechnicalSummary}" Tapped="ActionBody_Tapped" Background="Transparent">
           <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="33"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
           <TextBlock Text="{Binding DisplayNumber}" VerticalAlignment="Center" Style="{StaticResource DesignedEditorLabel}"/>
           <Border x:Name="ActionIconTile" Grid.Column="1" Width="33" Height="33" CornerRadius="8" Background="{ThemeResource DesignedEditorRawFill}"><FontIcon x:Name="ActionIcon" Glyph="{Binding Glyph}" FontSize="16" Foreground="{ThemeResource DesignedEditorMuted}"/></Border>
@@ -42,6 +55,7 @@
            <TextBlock Text="{Binding TimingLabel}" HorizontalAlignment="Right" Style="{StaticResource DesignedEditorLabel}"/>
           </StackPanel>
          </Grid>
+         </StackPanel>
         </DataTemplate></ListView.ItemTemplate>
        </ListView>
        <StackPanel x:Name="EmptySequence" Padding="28,45" Spacing="12" Visibility="Collapsed">
@@ -51,13 +65,7 @@
        </StackPanel>
       </Grid>
       <Border Grid.Row="2" Padding="22,12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DesignedEditorLine}">
-       <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <TextBlock x:Name="SelectionScope" Text="Select an action" VerticalAlignment="Center" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}" ToolTipService.ToolTip="Ctrl/Shift to select several actions."/>
-        <Button x:Name="AddAction" Grid.Column="1" Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Add action">
-         <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE710;" FontSize="13"/><TextBlock Text="Add"/></StackPanel>
-         <Button.Flyout><MenuFlyout><MenuFlyoutItem Text="Click…" Click="AddClick_Click"/><MenuFlyoutItem Text="Shortcut…" Click="AddShortcut_Click"/><MenuFlyoutItem Text="Pointer movement…" Click="AddMovement_Click"/><MenuFlyoutItem Text="Wait until…" Click="AddWait_Click"/><MenuFlyoutSubItem Text="Advanced"><MenuFlyoutItem Text="Mouse event" Click="AddMouse_Click"/><MenuFlyoutItem Text="Keyboard event" Click="AddKeyboard_Click"/><MenuFlyoutItem Text="Replace pause with a condition…" Click="ReplaceDelay_Click"/></MenuFlyoutSubItem><MenuFlyoutSeparator/><MenuFlyoutItem Text="Clear all actions" Click="Clear_Click"/></MenuFlyout></Button.Flyout>
-        </Button>
-       </Grid>
       </Border>
      </Grid>
     </Border>
@@ -111,21 +119,19 @@
        </Grid>
        <ContentControl x:Name="ActionFields" Grid.Row="2" HorizontalContentAlignment="Stretch" IsEnabled="False">
         <StackPanel Spacing="8">
-         <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DurationColumn" Width="*"/></Grid.ColumnDefinitions>
-          <StackPanel Spacing="7"><TextBlock Text="Pause before · s" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="WaitInput" Style="{StaticResource DesignedEditorField}" LosingFocus="ActionField_LosingFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Pause before this action in seconds" ToolTipService.ToolTip="Delay before the first event. Enter or leave the field to apply."/></StackPanel>
-          <StackPanel x:Name="DurationFields" Grid.Column="1" Spacing="7"><TextBlock Text="Execution time · s" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DurationInput" Style="{StaticResource DesignedEditorField}" LosingFocus="ActionField_LosingFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Execution time in seconds" ToolTipService.ToolTip="Time from the first event to the last, excluding Pause before. Enter or leave the field to apply."/></StackPanel>
-         </Grid>
+         <StackPanel x:Name="DelayFields" Spacing="7" Visibility="Collapsed"><TextBlock Text="Delay · s" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="WaitInput" Style="{StaticResource DesignedEditorField}" LostFocus="ActionField_LostFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Delay in seconds" ToolTipService.ToolTip="Enter or leave the field to apply. An empty delay becomes zero."/></StackPanel>
+         <StackPanel x:Name="DurationFields" Spacing="7"><TextBlock Text="Execution time · s" TextWrapping="Wrap" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DurationInput" Style="{StaticResource DesignedEditorField}" LostFocus="ActionField_LostFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Execution time in seconds" ToolTipService.ToolTip="Time spent performing this action. Enter or leave the field to apply. An empty duration becomes zero."/></StackPanel>
          <TextBlock x:Name="TimingSummary" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
          <ContentControl x:Name="WaitConditionHost" HorizontalContentAlignment="Stretch" Visibility="Collapsed"/>
          <Button x:Name="ApplyCondition" Content="Apply condition" Click="ApplyCondition_Click" Style="{StaticResource DesignedEditorButton}" Visibility="Collapsed"/>
          <Grid x:Name="DestinationFields" ColumnSpacing="12" Visibility="Collapsed"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-          <StackPanel Spacing="7"><TextBlock Text="Destination X · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationX" Style="{StaticResource DesignedEditorField}" LosingFocus="ActionField_LosingFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Destination X in absolute pixels"/></StackPanel>
-          <StackPanel Grid.Column="1" Spacing="7"><TextBlock Text="Destination Y · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationY" Style="{StaticResource DesignedEditorField}" LosingFocus="ActionField_LosingFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Destination Y in absolute pixels"/></StackPanel>
+          <StackPanel Spacing="7"><TextBlock Text="Destination X · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationX" Style="{StaticResource DesignedEditorField}" LostFocus="ActionField_LostFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Destination X in absolute pixels"/></StackPanel>
+          <StackPanel Grid.Column="1" Spacing="7"><TextBlock Text="Destination Y · px" Style="{StaticResource DesignedEditorLabel}"/><TextBox x:Name="DestinationY" Style="{StaticResource DesignedEditorField}" LostFocus="ActionField_LostFocus" KeyDown="ActionField_KeyDown" AutomationProperties.Name="Destination Y in absolute pixels"/></StackPanel>
          </Grid>
          <Button Style="{StaticResource DesignedEditorButton}" BorderThickness="0" Background="Transparent" Padding="0,3" Content="Timing &amp; position help" AutomationProperties.Name="Timing and position help">
           <Button.Flyout><Flyout><StackPanel MaxWidth="340" Spacing="10">
-           <TextBlock Text="Total = pause before + execution time. A single event has no execution time. Seconds accept up to six decimal places." FontSize="13" TextWrapping="Wrap"/>
-           <TextBlock Text="Pause before changes the first event's delay; execution scales only internal delays. Conditional waits can also appear at the end. Their duration is unknown; a timeout is a maximum." FontSize="13" TextWrapping="Wrap"/>
+           <TextBlock Text="Delay steps control time between actions. Execution time controls time within an action, such as holding a key or moving the pointer. Seconds accept up to six decimal places." FontSize="13" TextWrapping="Wrap"/>
+           <TextBlock Text="Recorded gaps appear as Delay steps without changing the recording. Conditional waits have an unknown duration; their timeout is a maximum." FontSize="13" TextWrapping="Wrap"/>
            <TextBlock x:Name="GeometryNote" FontSize="13" TextWrapping="Wrap"/>
           </StackPanel></Flyout></Button.Flyout>
          </Button>
@@ -147,7 +153,8 @@
         <TextBlock x:Name="TechnicalDetail" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorInk}"/>
         <CheckBox x:Name="ShowSamples" Content="Show path samples" Checked="Samples_Changed" Unchecked="Samples_Changed"/>
         <TextBlock Text="Apply or discard exact input changes before running another command." FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
-        <TextBox x:Name="RawDelay" Header="This event's delay (µs)" Style="{StaticResource DesignedEditorField}"/>
+        <TextBox x:Name="RawDelay" Header="This event's delay (µs)" Style="{StaticResource DesignedEditorField}" LostFocus="RawTime_LostFocus"/>
+        <TextBox x:Name="RawFixedDuration" Header="Delay duration (µs)" Style="{StaticResource DesignedEditorField}" LostFocus="RawTime_LostFocus" Visibility="Collapsed"/>
         <StackPanel x:Name="RawMouseFields" Spacing="6">
          <TextBox x:Name="RawX" Header="Raw X (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawY" Header="Raw Y (pixels or device counts)" Style="{StaticResource DesignedEditorField}"/>
          <TextBox x:Name="RawFlags" Header="Mouse flags (unsigned decimal)" Style="{StaticResource DesignedEditorField}"/><TextBox x:Name="RawData" Header="mouseData (unsigned decimal bits)" Style="{StaticResource DesignedEditorField}"/>
@@ -156,7 +163,7 @@
         <StackPanel x:Name="RawKeyFields" Spacing="6"><TextBox x:Name="RawKey" Header="Virtual-key code (unsigned decimal)" Style="{StaticResource DesignedEditorField}"/><CheckBox x:Name="RawKeyUp" Content="Key up"/></StackPanel>
         <Button x:Name="RawApply" Content="Apply this raw event" Style="{StaticResource DesignedEditorButton}" Click="RawApply_Click" IsEnabled="False"/>
         <Button Content="Discard exact input changes" Style="{StaticResource DesignedEditorButton}" Click="RawDiscard_Click"/>
-        <TextBox x:Name="RawEachDelay" Header="Delay for EACH selected raw event (µs)" Text="5000" Style="{StaticResource DesignedEditorField}"/>
+        <TextBox x:Name="RawEachDelay" Header="Delay for EACH selected raw event (µs)" Text="5000" Style="{StaticResource DesignedEditorField}" LostFocus="RawTime_LostFocus"/>
         <Button Content="Set each selected raw delay" Style="{StaticResource DesignedEditorButton}" Click="RawEach_Click"/>
         <TextBlock Text="Bulk raw delay changes also change the action's duration." FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource DesignedEditorMuted}"/>
         <Expander x:Name="ConversionPanel" Header="Convert path estimate" HorizontalAlignment="Stretch"><StackPanel Spacing="8">

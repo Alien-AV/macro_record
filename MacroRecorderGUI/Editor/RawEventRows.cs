@@ -6,7 +6,8 @@ namespace MacroRecorderGUI.Editor;
 public sealed record RawEventRow(InputEvent Input, int Index)
 {
     public string Label => $"{Index + 1}. {TimeText.Human(Input.TimeSinceLastEvent)} · " + (Input is MouseEvent m
-        ? $"{m.ActionName} · ({m.X}, {m.Y}) {(m.RelativePosition ? "counts" : "px")}" : Input is KeyboardEvent k ? $"{k.KeyName} {(k.KeyUp ? "up" : "down")}" : Input is WaitConditionEvent w ? w.Description : "Input");
+        ? $"{m.ActionName} · ({m.X}, {m.Y}) {(m.RelativePosition ? "counts" : "px")}" : Input is KeyboardEvent k ? $"{k.KeyName} {(k.KeyUp ? "up" : "down")}" : Input is WaitConditionEvent w ? w.Description
+        : Input is DelayEvent delay ? $"Delay · {TimeText.Seconds(delay.DurationMicroseconds)} s" : "Input");
 }
 
 /// <summary>Exact input retains row identities across view switches; capture appends reuse existing rows.</summary>

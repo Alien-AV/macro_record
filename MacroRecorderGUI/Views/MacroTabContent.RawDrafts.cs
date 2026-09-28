@@ -8,7 +8,7 @@ namespace MacroRecorderGUI.Views;
 public sealed partial class MacroTabContent
 {
     private bool _rawEachEdited;
-    private bool HasRawDraft => new Control[] { RawDelay, RawX, RawY, RawFlags, RawData, RawKey, RawRelative, RawDesktop, RawKeyUp }
+    private bool HasRawDraft => new Control[] { RawDelay, RawFixedDuration, RawX, RawY, RawFlags, RawData, RawKey, RawRelative, RawDesktop, RawKeyUp }
         .Any(_rawDrafts.IsEdited);
 
     private bool CanLeaveRawDraft()
@@ -17,7 +17,7 @@ public sealed partial class MacroTabContent
         try
         {
             if (HasRawDraft) _ = ReadRawDraft();
-            if (_rawEachEdited) _ = ulong.Parse(RawEachDelay.Text, CultureInfo.InvariantCulture);
+            if (_rawEachEdited) _ = ReadRawTime(RawEachDelay.Text);
             Status = "Exact input has unapplied changes. Open Exact input and apply or discard them before continuing.";
         }
         catch (Exception error) when (error is ArgumentException or OverflowException or FormatException)
@@ -30,7 +30,12 @@ public sealed partial class MacroTabContent
         if (_rawEvent is not { } input || _macro?.Events.Contains(input) != true)
             throw new ArgumentException("The edited event is no longer available. Discard its draft before continuing.");
         var value = input.OriginalProtobufInputEvent.Clone();
-        if (_rawDrafts.IsEdited(RawDelay)) value.TimeSinceLastEvent = ulong.Parse(RawDelay.Text, CultureInfo.InvariantCulture);
+        if (_rawDrafts.IsEdited(RawDelay)) value.TimeSinceLastEvent = ReadRawTime(RawDelay.Text);
+        if (value.Delay is { } delay && _rawDrafts.IsEdited(RawFixedDuration))
+        {
+            delay.DurationMicroseconds = ReadRawTime(RawFixedDuration.Text);
+            MacroRecorderGUI.Event.DelayEvent.ValidateDuration(delay.DurationMicroseconds);
+        }
         if (value.MouseEvent is { } mouse)
         {
             if (_rawDrafts.IsEdited(RawX)) mouse.X = int.Parse(RawX.Text, CultureInfo.InvariantCulture);
@@ -46,6 +51,13 @@ public sealed partial class MacroTabContent
             if (_rawDrafts.IsEdited(RawKeyUp)) key.KeyUp = RawKeyUp.IsChecked == true;
         }
         return value;
+    }
+
+    private static ulong ReadRawTime(string text) => string.IsNullOrWhiteSpace(text) ? 0 : ulong.Parse(text, CultureInfo.InvariantCulture);
+
+    private void RawTime_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox field && string.IsNullOrWhiteSpace(field.Text)) field.Text = "0";
     }
 
     private void RawDiscard_Click(object sender, RoutedEventArgs e)

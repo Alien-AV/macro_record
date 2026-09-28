@@ -48,10 +48,11 @@ public sealed partial class MacroTabContent
         PreviewStep.Text = a is null ? "NO ACTIONS" : $"ACTION {a.Number:D2} OF {_editor.Projection.Actions.Count}";
         var checkpoint = _preview.Checkpoint(_previewPosition.Time);
         SimulateCondition.Visibility = checkpoint is null ? Visibility.Collapsed : Visibility.Visible;
-        PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Pause before action" : a.Name;
+        PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Delay" : a.Name;
         PreviewDescription.Text = checkpoint is not null ? checkpoint.Description + " · No desktop observation. Choose Simulate satisfied to continue."
             : a is null ? "Record or add input to preview a sequence."
             : _previewFrame.Waiting ? $"{TimeText.Human(a.StartTime + a.Wait - _previewPosition.Time)} until {a.Name}"
+            : a.Kind == ActionKind.Delay ? $"{TimeText.Seconds(BigInteger.Max(0, a.EndTime - _previewPosition.Time))} s remaining"
             : a.Description + (a.Complete ? "" : " · incomplete sequence");
         PreviewNext.Text = _previewFrame.Waiting && a is not null ? "Next · " + a.Name
             : _previewFrame.Next is { } next ? "Next · " + next.Name : "End of sequence";
@@ -94,7 +95,10 @@ public sealed partial class MacroTabContent
                 Background = BrushResource(segment.Waiting ? "WaitTrack" : "Track"),
                 BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(3)
             };
-            var name = segment.Setup ? "Pointer setup pause" : segment.Waiting ? $"Pause before action {segment.FirstAction + 1}"
+            var name = segment.Setup ? "Pointer setup delay"
+                : segment.Waiting && _editor.Projection.Actions[segment.FirstAction].Kind == ActionKind.Delay
+                    && segment.Start >= _editor.Projection.Actions[segment.FirstAction].StartTime + _editor.Projection.Actions[segment.FirstAction].Wait ? "Delay"
+                : segment.Waiting ? $"Delay, then action {segment.FirstAction + 1}"
                 : segment.FirstAction == segment.LastAction ? $"Action {segment.FirstAction + 1} · {_editor.Projection.Actions[segment.FirstAction].Name}"
                 : $"Actions {segment.FirstAction + 1}–{segment.LastAction + 1}";
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, name);
@@ -164,6 +168,7 @@ public sealed partial class MacroTabContent
         _navigatingView = true;
         try
         {
+            PaneNavigation.Visibility = narrow ? Visibility.Visible : Visibility.Collapsed;
             Workspace.ColumnDefinitions[0].Width = new GridLength(narrow ? 1 : 38, GridUnitType.Star);
             Workspace.ColumnDefinitions[1].Width = narrow ? new GridLength(0) : new GridLength(62, GridUnitType.Star);
             Grid.SetColumn(InspectorPanel, narrow ? 0 : 1);
@@ -171,7 +176,7 @@ public sealed partial class MacroTabContent
             InspectorPanel.Visibility = narrow && !_detailsPane ? Visibility.Collapsed : Visibility.Visible;
             ListPanel.BorderThickness = narrow ? new Thickness(0) : new Thickness(0, 0, 1, 0);
             InspectorPanel.Padding = new Thickness(narrow ? 16 : 26, 12, narrow ? 16 : 26, 12);
-            DetailGrid.RowDefinitions[1].Height = new GridLength(Selected?.Kind == ActionKind.Wait ? 0 : 240);
+            DetailGrid.RowDefinitions[1].Height = new GridLength(_leadingDelayAnchor is not null || Selected?.Kind is ActionKind.Wait or ActionKind.Delay ? 0 : 240);
             SequenceNavigation.BorderBrush = BrushResource(_detailsPane ? "Line" : "Blue");
             DetailsNavigation.BorderBrush = BrushResource(_detailsPane ? "Blue" : "Line");
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(SequenceNavigation,

@@ -4,7 +4,7 @@ using MacroRecorderGUI.ViewModels;
 
 namespace MacroRecorderGUI.Editor;
 
-public enum ActionField { Wait, Duration, DestinationX, DestinationY }
+public enum ActionField { Wait, Duration, DestinationX, DestinationY, FixedDelay }
 
 /// <summary>Auto-commit drafts belong to an input identity, not the list's mutable selection.</summary>
 public sealed class ActionFieldEdits(MacroViewModel macro)
@@ -25,6 +25,11 @@ public sealed class ActionFieldEdits(MacroViewModel macro)
     }
 
     public void Change(ActionField field, string text) => _text[field] = text;
+    public void SelectDelay(InputEvent input)
+    {
+        if (ReferenceEquals(_anchor, input)) return;
+        _text.Clear(); _errors.Clear(); _anchor = input;
+    }
     public string Text(ActionField field, string modelText) => _text.GetValueOrDefault(field, modelText);
     public void CancelDestination()
     {
@@ -34,7 +39,7 @@ public sealed class ActionFieldEdits(MacroViewModel macro)
 
     public bool TryCommitAll()
     {
-        foreach (var field in new[] { ActionField.Wait, ActionField.Duration, ActionField.DestinationX })
+        foreach (var field in new[] { ActionField.Wait, ActionField.FixedDelay, ActionField.Duration, ActionField.DestinationX })
             if (!TryCommit(field)) return false;
         return true;
     }
@@ -52,11 +57,15 @@ public sealed class ActionFieldEdits(MacroViewModel macro)
                 throw new ArgumentException("The edited action is no longer available. Undo or select an action before editing.");
             switch (field)
             {
+                case ActionField.FixedDelay:
+                    if (_anchor is not DelayEvent delay) throw new ArgumentException("Select a Delay step.");
+                    editor.SetFixedDelay(delay, checked((ulong)ParseTime(_text[field])));
+                    break;
                 case ActionField.Wait:
-                    editor.SetWait(action, checked((ulong)TimeText.ParseSeconds(_text[field])));
+                    editor.SetLeadingDelay(_anchor!, checked((ulong)ParseTime(_text[field])));
                     break;
                 case ActionField.Duration:
-                    editor.SetDuration(action, TimeText.ParseSeconds(_text[field]));
+                    editor.SetDuration(action, ParseTime(_text[field]));
                     break;
                 case ActionField.DestinationX:
                     var end = editor.Projection.Samples[action.End - 1].Position;
@@ -75,4 +84,7 @@ public sealed class ActionFieldEdits(MacroViewModel macro)
             return false;
         }
     }
+
+    internal static System.Numerics.BigInteger ParseTime(string text) =>
+        string.IsNullOrWhiteSpace(text) ? 0 : TimeText.ParseSeconds(text);
 }

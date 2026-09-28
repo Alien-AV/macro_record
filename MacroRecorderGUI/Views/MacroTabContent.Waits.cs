@@ -15,7 +15,7 @@ public sealed partial class MacroTabContent
 
     private void UpdateConditionInspector(RecordedAction? action, bool reset)
     {
-        var owner = action?.First as WaitConditionEvent;
+        var owner = _leadingDelayAnchor is null ? action?.First as WaitConditionEvent : null;
         if (!ReferenceEquals(owner, _conditionOwner) || reset)
         {
             _conditionEditor?.Dispose(); _conditionEditor = null; _conditionOwner = owner;
@@ -61,12 +61,21 @@ public sealed partial class MacroTabContent
     private async void AddWait_Click(object sender, RoutedEventArgs e) => await AddWaitAsync(replaceDelay: false);
     private async void ReplaceDelay_Click(object sender, RoutedEventArgs e) => await AddWaitAsync(replaceDelay: true);
 
+    /// <summary>Open a captured condition for review, retaining the current insertion anchor until Add.</summary>
+    public Task AddCapturedWaitAsync(WaitCondition condition)
+    {
+        ArgumentNullException.ThrowIfNull(condition);
+        if (!IsEnabled) return Task.CompletedTask;
+        return AddWaitAsync(replaceDelay: false, condition.Clone());
+    }
+
     private Action<WaitCondition>? PrepareWaitInsertion(bool replaceDelay)
     {
         if (_editor is null || _macro is null) return null;
         var editor = _editor;
         var macro = _macro;
         var anchor = (replaceDelay ? Selected : ActionsList.SelectedItems.OfType<RecordedAction>().OrderBy(a => a.Start).LastOrDefault())?.First;
+        var afterDelay = _leadingDelayAnchor;
         if (!TryCommitPendingEdits()) return null;
         if (replaceDelay && anchor is null) { Status = "Select the action whose fixed delay should be replaced."; return null; }
         return condition =>
@@ -78,16 +87,17 @@ public sealed partial class MacroTabContent
             RefreshEditor();
             var selected = anchor is null ? null : editor.Projection.ActionAt(macro.Events.IndexOf(anchor))
                 ?? throw new ArgumentException("The selected action is no longer available. Reopen the wait command.");
-            if (replaceDelay) editor.ReplaceDelayWithWait(selected!, condition); else editor.InsertWait(selected, condition);
+            if (replaceDelay) editor.ReplaceDelayWithWait(selected!, condition, afterDelay); else editor.InsertWait(selected, condition, afterDelay);
+            _leadingDelayAnchor = null;
         };
     }
 
-    private async Task AddWaitAsync(bool replaceDelay)
+    private async Task AddWaitAsync(bool replaceDelay, WaitCondition? initialCondition = null)
     {
         var apply = PrepareWaitInsertion(replaceDelay);
         if (apply is null) return;
         var editor = _editor;
-        using var fields = new WaitConditionEditor(WaitValidation.NewWindow());
+        using var fields = new WaitConditionEditor(initialCondition ?? WaitValidation.NewWindow());
         fields.ApplyStyles((Style)Resources.MergedDictionaries[0]["DesignedEditorField"], (Style)Resources.MergedDictionaries[0]["DesignedEditorButton"]);
         var dialog = new ContentDialog
         {

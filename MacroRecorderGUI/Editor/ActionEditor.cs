@@ -114,12 +114,17 @@ public sealed partial class ActionEditor : IDisposable
     public void SetWait(RecordedAction action, ulong microseconds)
     {
         RequireCurrent(action);
-        Execute("Change wait", () => action.First.TimeSinceLastEvent = microseconds);
+        SetLeadingDelay(action.First, microseconds);
     }
 
     public void SetDuration(RecordedAction action, BigInteger microseconds)
     {
         RequireCurrent(action);
+        if (action.First is DelayEvent fixedDelay)
+        {
+            SetFixedDelay(fixedDelay, checked((ulong)microseconds));
+            return;
+        }
         var count = action.Count - 1;
         if (microseconds < 0 || microseconds > (BigInteger)ulong.MaxValue * count)
             throw new ArgumentException("Duration cannot fit in this action's internal event delays.");
@@ -177,7 +182,7 @@ public sealed partial class ActionEditor : IDisposable
         for (var index = action.End; index < _macro.Events.Count; index++)
         {
             var input = _macro.Events[index];
-            if (input is WaitConditionEvent || following.Count > 0 && (input is KeyboardEvent || input.TimeSinceLastEvent >= ActionProjection.MovementPause)) break;
+            if (input is WaitConditionEvent or DelayEvent || following.Count > 0 && (input is KeyboardEvent || input.TimeSinceLastEvent >= ActionProjection.MovementPause)) break;
             if (input is not MouseEvent mouse) continue;
             if (ActionProjection.HasMove(mouse)) following.Add(mouse);
             if (following.Count > 0 && mouse.ActionType != Common.MouseActionTypeFlags.Move) break;
@@ -220,6 +225,7 @@ public sealed partial class ActionEditor : IDisposable
     {
         if (!_macro.Events.Contains(input) || input.Type != (InputEvent.InputEventType)value.EventCase)
             throw new ArgumentException("Select a current raw event of the same type.");
+        if (value.Delay is { } delay) DelayEvent.ValidateDuration(delay.DurationMicroseconds);
         Execute("Edit raw event", () => Apply(input, value));
     }
 
@@ -290,6 +296,7 @@ public sealed partial class ActionEditor : IDisposable
         }
         else if (input is KeyboardEvent k) { k.VirtualKeyCode = value.KeyboardEvent.VirtualKeyCode; k.KeyUp = value.KeyboardEvent.KeyUp; }
         else if (input is WaitConditionEvent wait) wait.RestoreCondition(value.WaitCondition);
+        else if (input is DelayEvent delay) delay.DurationMicroseconds = value.Delay.DurationMicroseconds;
     }
 
     private void RequireCurrent(RecordedAction action)

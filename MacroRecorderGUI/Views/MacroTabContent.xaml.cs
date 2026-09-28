@@ -87,7 +87,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         DataContextChanged += Context_Changed;
         _refreshTimer.Tick += Refresh_Tick;
         _previewTimer.Tick += Preview_Tick;
-        foreach (var field in new[] { WaitInput, DurationInput, DestinationX, DestinationY, RawDelay, RawX, RawY, RawFlags, RawData, RawKey })
+        foreach (var field in new[] { WaitInput, DurationInput, DestinationX, DestinationY, RawDelay, RawFixedDuration, RawX, RawY, RawFlags, RawData, RawKey })
             field.TextChanging += Draft_Changing;
         foreach (var field in new[] { RawRelative, RawDesktop, RawKeyUp }) { field.Checked += CheckDraft_Changed; field.Unchecked += CheckDraft_Changed; }
         RawEachDelay.TextChanging += (_, _) => _rawEachEdited = true;
@@ -120,7 +120,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _rawEachEdited = false;
         _sync = false;
         _editor = null; _presentation = null; _macro = null; _rawEvent = null;
-        _actionEdits = null; _inspectorSelection = [];
+        _actionEdits = null; _inspectorSelection = []; _leadingDelayAnchor = null;
         _preview = null; _previewFrame = null; _pathAction = null;
         _timelineSegments = []; _heldLabels = []; _previewInitialSpace = CoordinateSpace.Unknown;
         Timeline.Children.Clear(); Timeline.ColumnDefinitions.Clear(); HeldInputs.ItemsSource = null;
@@ -198,6 +198,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         StopPreview(); CancelDrag();
         if (committed)
         {
+            _leadingDelayAnchor = null;
             _editor.SelectActions(ActionsList.SelectedItems.OfType<RecordedAction>());
             _rawSelection = []; _rawEvent = null; _rawDrafts.Clear();
         }
@@ -208,9 +209,9 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     {
         if (_editor is not null && _macro is not null)
         {
-            SelectionScope.Text = ActionsList.SelectedItems.Count > 0 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Select an action";
+            SelectionScope.Text = _leadingDelayAnchor is not null ? "Delay selected" : ActionsList.SelectedItems.Count > 0 ? $"{EditorText.Count(ActionsList.SelectedItems.Count, "action")} selected" : "Select an action";
             DeleteButton.IsEnabled = _rawOpen ? RawList.SelectedItems.Count > 0 : ActionsList.SelectedItems.Count > 0;
-            var deleteScope = _rawOpen ? "Delete selected raw events" : "Delete selected actions";
+            var deleteScope = _rawOpen ? "Delete selected raw events" : _leadingDelayAnchor is not null ? "Delete this delay" : "Delete selected actions";
             ToolTipService.SetToolTip(DeleteButton, deleteScope + " (Delete)");
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(DeleteButton, deleteScope);
         }
@@ -231,7 +232,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (ActionFieldFor(field) is { } actionField)
         {
             _populatingActionFields = true;
-            try { field.Text = _actionEdits?.Text(actionField, text) ?? text; }
+            try
+            {
+                var value = _actionEdits?.Text(actionField, text) ?? text;
+                if (field.Text != value) field.Text = value;
+            }
             finally { _populatingActionFields = false; }
         }
         else _rawDrafts.Populate(field, () => field.Text = text);
@@ -239,6 +244,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void UpdateInspector(bool resetDrafts = false)
     {
         var a = Selected;
+        if (_leadingDelayAnchor is not null)
+        {
+            var index = _macro?.Events.IndexOf(_leadingDelayAnchor) ?? -1;
+            if (a is null || index < a.Start || index >= a.End) _leadingDelayAnchor = null;
+        }
         _actionEdits?.Select(a, resetDrafts);
         _inspectorSelection = ActionsList.SelectedItems.OfType<RecordedAction>().Select(action => action.First).ToArray();
         if (resetDrafts) _rawDrafts.Clear();
@@ -261,10 +271,10 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         InputGlyph.Glyph = a?.Glyph ?? "\uE8A5";
         InputDetail.Text = a?.Description ?? "";
         if (a is null || _editor is null) { UpdateConditionInspector(null, resetDrafts); _sync = true; _rawRows.Close(); _sync = false; LoadRaw(); return; }
-        Field(WaitInput, TimeText.Seconds(a.Wait)); Field(DurationInput, TimeText.Seconds(a.Duration));
+        Field(WaitInput, TimeText.Seconds(_leadingDelayAnchor?.TimeSinceLastEvent ?? (a.First is DelayEvent delay ? delay.DurationMicroseconds : a.Wait)));
+        Field(DurationInput, TimeText.Seconds(a.Duration));
         DurationFields.Visibility = a.CanEditDuration ? Visibility.Visible : Visibility.Collapsed;
-        DurationColumn.Width = new GridLength(a.CanEditDuration ? 1 : 0, GridUnitType.Star);
-        TimingSummary.Text = a.CanEditDuration ? $"{a.Summary} = {a.DisplayTime} total" : $"{a.DisplayTime} pause before";
+        TimingSummary.Text = a.Summary;
         var reason = _editor.GeometryBlockReason(a);
         GeometryNote.Text = reason is null ? "Adjusts the end of this movement."
             : a.Kind is ActionKind.Keys ? "Original key order is preserved."
@@ -277,6 +287,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         ConversionPanel.Visibility = _editor.Projection.HasRelativeMovement ? Visibility.Visible : Visibility.Collapsed;
         if (_rawOpen) PopulateRaw();
         UpdateConditionInspector(a, resetDrafts);
+        UpdateDelayInspector(a);
         ResizeWorkspace();
     }
 
@@ -335,6 +346,11 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
     private void DeleteSelection(bool raw)
     {
         if (_macro is null || _editor is null) return;
+        if (!raw && _leadingDelayAnchor is { } delay)
+        {
+            RunEdit(() => { _editor.SetLeadingDelay(delay, 0); _leadingDelayAnchor = null; }, "Delay deleted. Undo is available.");
+            return;
+        }
         var anchors = ActionsList.SelectedItems.OfType<RecordedAction>().Select(action => action.First).ToArray();
         var inputs = RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input).ToArray();
         RunEdit(() =>
@@ -402,6 +418,8 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             var previous = _rawEvent;
             _rawRows.Refresh(_macro.Events, ActionsList.SelectedItems.OfType<RecordedAction>().OrderBy(a => a.Start).ToArray());
             var selection = enterRaw ? _rawSelection : _editor.RawSelection ? _macro.SelectedEvents.ToArray() : [];
+            var available = _rawRows.Select(row => row.Input).ToHashSet();
+            selection = selection.Where(available.Contains).ToArray();
             if (selection.Length == 0 && (enterRaw || !_editor.RawSelection))
                 selection = _rawRows.FirstOrDefault(row => ReferenceEquals(row.Input, previous)) is { } retained
                     ? [retained.Input] : _rawRows.FirstOrDefault() is { } first ? [first.Input] : [];
@@ -448,11 +466,13 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         RawDelay.IsEnabled = _rawEvent is not null;
         RawMouseFields.Visibility = _rawEvent is MouseEvent ? Visibility.Visible : Visibility.Collapsed;
         RawKeyFields.Visibility = _rawEvent is KeyboardEvent ? Visibility.Visible : Visibility.Collapsed;
+        RawFixedDuration.Visibility = _rawEvent is DelayEvent ? Visibility.Visible : Visibility.Collapsed;
         // Projection regrouping can change an action's first input without changing
         // the exact raw event being edited. Only that event owns these drafts.
         _rawDrafts.Select(_rawEvent);
         if (_rawEvent is null) return;
         Field(RawDelay, _rawEvent.TimeSinceLastEvent.ToString(CultureInfo.InvariantCulture));
+        if (_rawEvent is DelayEvent delay) Field(RawFixedDuration, delay.DurationMicroseconds.ToString(CultureInfo.InvariantCulture));
         RawMouseFields.Visibility = _rawEvent is MouseEvent ? Visibility.Visible : Visibility.Collapsed;
         RawKeyFields.Visibility = _rawEvent is KeyboardEvent ? Visibility.Visible : Visibility.Collapsed;
         if (_rawEvent is MouseEvent m)
@@ -484,7 +504,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         if (HasRawDraft) { CanLeaveRawDraft(); return; }
         try
         {
-            var delay = ulong.Parse(RawEachDelay.Text, CultureInfo.InvariantCulture);
+            var delay = ReadRawTime(RawEachDelay.Text);
             if (!CommitCondition() || !CommitActionFields()) return;
             _editor.SelectRawEvents(RawList.SelectedItems.OfType<RawEventRow>().Select(row => row.Input));
             _macro.ChangeDelaysOnSelected(delay); _rawEachEdited = false;

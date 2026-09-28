@@ -55,7 +55,8 @@ public class EditorSelectionClarityTests
         Assert.IsFalse(frame.HasSelectedPath);
         Assert.AreEqual("No pointer movement in this action", frame.SelectionLabel);
         Assert.AreEqual("1 event", action.EventCountLabel);
-        Assert.AreEqual("1.89s", action.DisplayTime);
+        Assert.AreEqual("0ms", action.DisplayTime);
+        Assert.AreEqual("1.89s", action.LeadingDelayTime);
         Assert.AreEqual("1.890123", TimeText.Seconds(action.Wait));
         Assert.AreEqual(BigInteger.Zero, action.Duration);
         Assert.IsFalse(action.CanEditDuration);
@@ -223,7 +224,7 @@ public class EditorSelectionClarityTests
         if (rawSelection) editor.SelectRawEvents([raw]);
         var selected = macro.SelectedEvents.ToArray();
         Assert.IsTrue(action.CanEditDuration);
-        Assert.AreEqual("1.89s pause before + 303µs execution time", action.Summary);
+        Assert.AreEqual("303µs execution time · starts at 1.890123 s", action.Summary);
         editor.SetWait(action, checked((ulong)TimeText.ParseSeconds("2.123456")));
         editor.Refresh(); action = editor.Projection.Actions[0];
         Assert.AreEqual(2_123_456UL, action.Wait);
