@@ -23,6 +23,7 @@ public sealed partial class HiddenFocusTests
 
     private static async Task CheckWaitControls(MacroRecorderGUI.MainWindow shell)
     {
+        await CheckWaitPickerControls();
         CheckWaitTimingLabels();
         CheckWaitInsertionAfterConditionDraft();
         CheckCancelledWaitInsertionPreservesRawDrafts();

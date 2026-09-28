@@ -8,8 +8,8 @@ using ProtobufGenerated;
 
 namespace MacroRecorderGUI.Views;
 
-/// <summary>Manual, draft-only fields. Observation starts only from Test condition.</summary>
-internal sealed class WaitConditionEditor : StackPanel, IDisposable
+/// <summary>Editable drafts with explicit one-shot picking. Waiting starts only from Test condition.</summary>
+internal sealed partial class WaitConditionEditor : StackPanel, IDisposable
 {
     private readonly WaitCondition _template;
     private readonly WaitRunner _runner;
@@ -27,10 +27,13 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     private readonly TextBlock _help = new() { TextWrapping = TextWrapping.Wrap, FontSize = 13 };
     private readonly TextBlock _sentence = new() { TextWrapping = TextWrapping.Wrap, FontSize = 14 };
 
-    public WaitConditionEditor(WaitCondition condition, WaitRunner? runner = null)
+    public WaitConditionEditor(WaitCondition condition, WaitRunner? runner = null, IWaitTargetPicker? picker = null,
+        Func<TimeSpan, CancellationToken, Task>? pickerDelay = null)
     {
         _template = condition.Clone();
         _runner = runner ?? WaitRunner.Desktop;
+        _picker = picker ?? new WaitTargetPicker(new WindowsWaitTargetCaptureApi());
+        _pickerDelay = pickerDelay ?? Task.Delay;
         Spacing = 10;
         Source = Choice("Wait until", ["A window matches", "A pixel matches"], condition.Pixel is null ? 0 : 1);
         Trigger = Choice("Trigger", ["Is true", "Becomes true", "Changes from starting value", "New matching window"], (int)condition.Trigger);
@@ -47,6 +50,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         Any = Check("Allow any matching window", target.AnyMatch);
         foreach (var control in new UIElement[] { Executable, Class, Title, TitleRule, IgnoreCase, Any }) _target.Children.Add(control);
         Children.Add(_target);
+        _target.Children.Insert(0, CreateWindowPickerButton("Pick hovered window · 3 seconds", ApplyWindowCapture));
         var pixel = condition.Pixel;
         X = Field("Pixel X", (pixel?.X ?? 0).ToString(CultureInfo.InvariantCulture));
         Y = Field("Pixel Y", (pixel?.Y ?? 0).ToString(CultureInfo.InvariantCulture));
@@ -56,6 +60,8 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         Dpi = Field("Reference DPI for logical offsets", (pixel?.ReferenceDpi is > 0 ? pixel.ReferenceDpi : 96).ToString(CultureInfo.InvariantCulture));
         foreach (var control in new UIElement[] { X, Y, Rgb, Tolerance, NotEqual }) _pixel.Children.Add(control);
         Children.Add(_pixel);
+        _pixel.Children.Insert(0, CreatePickerButton("Pick desktop pixel · 3 seconds", WaitCaptureTarget.PointerPixel, ApplyPixelCapture));
+        _pixel.Children.Add(new TextBlock { Text = "Picking a pixel uses its current desktop physical position and RGB. You can edit the captured values afterwards.", TextWrapping = TextWrapping.Wrap, FontSize = 13 });
         Timeout = Field("Timeout · seconds (stop on failure)", (condition.TimeoutUs / 1_000_000m).ToString(CultureInfo.InvariantCulture));
         Stability = Field("Stable for · milliseconds", (condition.StableForUs / 1000m).ToString(CultureInfo.InvariantCulture));
         Poll = Field("Polling interval · milliseconds", (condition.PollIntervalUs / 1000m).ToString(CultureInfo.InvariantCulture));
@@ -67,6 +73,8 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         Children.Add(_help); Children.Add(_testButton); Children.Add(Feedback);
         Source.SelectionChanged += (_, _) => UpdateFields(); Coordinates.SelectionChanged += (_, _) => UpdateFields(); Trigger.SelectionChanged += (_, _) => UpdateFields();
         _testButton.Click += async (_, _) => await TestAsync();
+        InitializeAdditionalSources(condition);
+        Unloaded += (_, _) => CancelTest();
         UpdateFields(); _populating = false; UpdateSentence();
     }
 
@@ -78,6 +86,9 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         result.TimeoutUs = Duration(Timeout.Text, 1_000_000);
         result.StableForUs = Duration(Stability.Text, 1000);
         result.PollIntervalUs = Duration(Poll.Text, 1000);
+        var handled = false;
+        ReadAdditionalSource(result, ref handled);
+        if (handled) { WaitValidation.Validate(result); return result; }
         var target = (result.Window?.Target ?? result.Pixel?.Target)?.Clone() ?? new WindowSelector();
         target.ExecutablePath = Executable.Text; target.WindowClass = Class.Text; target.Title = Title.Text;
         target.TitleMatch = (TitleMatch)TitleRule.SelectedIndex; target.IgnoreTitleCase = IgnoreCase.IsChecked == true; target.AnyMatch = Any.IsChecked == true;
@@ -86,7 +97,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
             var window = result.Window?.Clone() ?? new WindowCondition(); window.Target = target; window.Test = (WindowTest)WindowRule.SelectedIndex;
             result.Window = window;
         }
-        else
+        else if (Source.SelectedIndex == 1)
         {
             var pixel = result.Pixel?.Clone() ?? new PixelCondition();
             pixel.Coordinates = (PixelCoordinates)Coordinates.SelectedIndex;
@@ -102,6 +113,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
             if (pixel.Coordinates == PixelCoordinates.ClientLogical) pixel.ReferenceDpi = uint.Parse(Dpi.Text, CultureInfo.InvariantCulture);
             result.Pixel = pixel;
         }
+        else throw new ArgumentException("Choose a supported condition source.");
         WaitValidation.Validate(result);
         return result;
     }
@@ -109,10 +121,14 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     {
         foreach (var text in new[] { Executable, Class, Title, X, Y, Rgb, Tolerance, Dpi, Timeout, Stability, Poll }) text.Style = field;
         _testButton.Style = button;
+        foreach (var pickerButton in _pickerButtons) pickerButton.Style = button;
+        ApplyAdditionalSourceStyles(field, button);
     }
     public void Committed() { IsDirty = false; Feedback.Text = "Condition saved. Undo is available."; }
     public void CancelTest()
     {
+        CancelPicker();
+        CancelAdditionalSourceWork();
         if (_test is { } test)
         {
             _testGeneration++;
@@ -124,6 +140,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
     internal async Task TestAsync()
     {
         if (_disposed) return;
+        CancelPicker();
         if (_test is not null) { CancelTest(); return; }
         var generation = ++_testGeneration;
         try
@@ -162,8 +179,8 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
             Trigger.SelectedIndex = selected < triggerCount ? selected : _populating ? -1 : 0;
         }
         _pixel.Visibility = Coordinates.Visibility = pixel ? Visibility.Visible : Visibility.Collapsed;
-        WindowRule.Visibility = pixel ? Visibility.Collapsed : Visibility.Visible;
-        _target.Visibility = !pixel || Coordinates.SelectedIndex != 0 ? Visibility.Visible : Visibility.Collapsed;
+        WindowRule.Visibility = Source.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
+        _target.Visibility = Source.SelectedIndex == 0 || pixel && Coordinates.SelectedIndex != 0 ? Visibility.Visible : Visibility.Collapsed;
         Any.Visibility = pixel ? Visibility.Collapsed : Visibility.Visible;
         if (pixel && !_populating) Any.IsChecked = false;
         Dpi.Visibility = pixel && Coordinates.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
@@ -174,6 +191,7 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         if (Trigger.SelectedIndex == (int)WaitTrigger.Changes)
             _help.Text += pixel ? " Changes compares with the first valid runtime pixel, using the channel tolerance."
                 : " Changes requires Visible or Foreground and a single target; Exists and Absent are not supported for this trigger.";
+        UpdateAdditionalSourceFields();
     }
     private void Change()
     {
@@ -202,4 +220,10 @@ internal sealed class WaitConditionEditor : StackPanel, IDisposable
         field.Checked += (_, _) => Change(); field.Unchecked += (_, _) => Change(); return field;
     }
     public void Dispose() { _disposed = true; CancelTest(); }
+
+    partial void InitializeAdditionalSources(WaitCondition condition);
+    partial void ReadAdditionalSource(WaitCondition result, ref bool handled);
+    partial void UpdateAdditionalSourceFields();
+    partial void ApplyAdditionalSourceStyles(Style field, Style button);
+    partial void CancelAdditionalSourceWork();
 }
