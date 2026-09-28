@@ -67,7 +67,13 @@ internal sealed class WaitCapturePreferenceStore(string? path = null) : IWaitCap
     {
         try
         {
-            using var document = JsonDocument.Parse(await File.ReadAllBytesAsync(_path, token));
+            const int maximumBytes = 64 * 1024;
+            await using var stream = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.Read,
+                4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var bytes = new byte[maximumBytes + 1];
+            var length = await stream.ReadAtLeastAsync(bytes, bytes.Length, throwOnEndOfStream: false, cancellationToken: token);
+            if (length > maximumBytes) throw new JsonException("Capture preferences exceed the 64 KiB limit.");
+            using var document = JsonDocument.Parse(bytes.AsMemory(0, length));
             RejectDuplicates(document.RootElement);
             if (document.RootElement.GetProperty("Schema").GetInt32() != 1) throw new JsonException("Unsupported preference version.");
             var configuration = document.RootElement.GetProperty("Capture").Deserialize<WaitCaptureConfiguration>() ?? throw new JsonException();

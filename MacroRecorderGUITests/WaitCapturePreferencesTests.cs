@@ -61,4 +61,19 @@ public sealed class WaitCapturePreferencesTests
         Assert.IsFalse(result.Configuration.Bindings().Any(pair => pair.Binding.Enabled));
         await Assert.ThrowsAsync<Exception>(() => store.SaveAsync(WaitCaptureConfiguration.Default));
     }
+
+    [TestMethod]
+    public async Task ReadIsBoundedAt64KiBAndOversizedValidJsonCannotEnableHotkeys()
+    {
+        var enabled = WaitCaptureConfiguration.Default with { FocusedWindow = WaitCaptureConfiguration.Default.FocusedWindow with { Enabled = true } };
+        var json = JsonSerializer.Serialize(new { Schema = 1, Capture = enabled }).PadRight(64 * 1024, ' ');
+        await File.WriteAllTextAsync(PreferencePath, json);
+        var store = new WaitCapturePreferenceStore(PreferencePath);
+        var exact = await store.LoadAsync(); Assert.IsNull(exact.Warning); Assert.AreEqual(enabled, exact.Configuration);
+        await File.AppendAllTextAsync(PreferencePath, " ");
+        var oversized = await store.LoadAsync();
+        Assert.IsNotNull(oversized.Warning); Assert.AreEqual(WaitCaptureConfiguration.Default, oversized.Configuration);
+        Assert.IsFalse(oversized.Configuration.Bindings().Any(pair => pair.Binding.Enabled));
+        Assert.AreEqual(64 * 1024 + 1, new FileInfo(PreferencePath).Length);
+    }
 }
