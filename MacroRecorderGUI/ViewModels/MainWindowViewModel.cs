@@ -172,20 +172,22 @@ public partial class MainWindowViewModel : ViewModelBase, IMainWindowViewModel, 
             try { _playbackWorkflow.Abort(); }
             catch (PlaybackStoppedException) { }
         }
+        // Failed native shutdown still owns callbacks and must remain retryable.
+        // Join before detaching their destinations or marking teardown complete.
+        RecordEngine.Dispose();
+        PlaybackEngine.Dispose();
         _disposed = true;
         ++_playbackVersion;
         RecordEngine.RecordStatus -= RecordEngineOnRecordStatus;
         RecordEngine.RecordedEvent -= RecordEngineOnRecordedEvent;
         RecordEngine.RecordingEnded -= RecordEngineOnRecordingEnded;
         RecordEngine.RecordingStarted -= RecordEngineOnRecordingStarted;
-        RecordEngine.Dispose();
         foreach (var macro in MacroTabs) { macro.ContentReplaced -= MacroContentReplaced; macro.Dispose(); }
         _pendingRecordingDelays.Clear();
         foreach (var drain in _recordingDrains.Values) drain.Completion.TrySetCanceled();
         _recordingDrains.Clear();
         _recordingClock.Stop();
         _playbackWorkflow.StateChanged -= PlaybackStateChanged;
-        PlaybackEngine.Dispose();
         _playingMacro = null;
         _playbackCompletion = null;
     }

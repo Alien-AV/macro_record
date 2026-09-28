@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using ProtobufGenerated;
@@ -8,25 +9,51 @@ namespace MacroRecorderGUI.Models;
 internal sealed class NativeRecordingTransport : IRecordingTransport
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void InputCallback(nint buffer, int bufferSize, ulong sessionId);
+    internal delegate void InputCallback(nint buffer, int bufferSize, ulong sessionId);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys, int originX, int originY, uint originValid);
+    internal delegate void BoundaryCallback(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys, RecordingStartKeys idleReleasedKeys, int originX, int originY, uint originValid);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void StatusCallback(StatusCode status);
+    internal delegate void StatusCallback(StatusCode status);
 
+    internal interface INativeApi
+    {
+        // Rejected initialization retains no callbacks owned by this caller.
+        bool Initialize(InputCallback input, StatusCallback status, BoundaryCallback boundary);
+        bool Start(ulong sessionId, RecordingStopGestures stopGestures);
+        bool Stop(ulong sessionId, RecordingStopGestures gesture, uint messageTime);
+        void Shutdown(); // A normal return proves both native threads joined.
+    }
+
+    private readonly INativeApi _native;
     private readonly InputCallback _inputCallback;
     private readonly BoundaryCallback _boundaryCallback;
     private readonly StatusCallback _statusCallback;
+    private GCHandle _callbackRoot;
     private bool _disposed;
+    private bool _joined;
+    private ulong _failedSession;
 
-    public NativeRecordingTransport()
+    public NativeRecordingTransport() : this(new NativeApi()) { }
+
+    internal NativeRecordingTransport(INativeApi native)
     {
+        _native = native;
         _inputCallback = OnInput;
-        _boundaryCallback = (id, boundary, heldKeys, idleReleasedKeys, x, y, valid) => Boundary?.Invoke(id, boundary, heldKeys, idleReleasedKeys,
-            valid == 1 ? new PointerPosition(x, y) : null);
-        _statusCallback = status => Status?.Invoke(status);
-        if (!DllInit(_inputCallback, _statusCallback, _boundaryCallback))
-            throw new InvalidOperationException("The native capture thread could not initialize.");
+        _boundaryCallback = OnBoundary;
+        _statusCallback = OnStatus;
+        // Unmanaged function pointers do not root delegates. Retain this owner
+        // even if a caller abandons it after a failed shutdown; only a join releases it.
+        _callbackRoot = GCHandle.Alloc(this);
+        try
+        {
+            if (!_native.Initialize(_inputCallback, _statusCallback, _boundaryCallback))
+                throw new InvalidOperationException("The native capture thread could not initialize.");
+        }
+        catch
+        {
+            _callbackRoot.Free();
+            throw;
+        }
     }
 
     public event Action<ulong, ProtobufInputEvent>? Input;
@@ -36,49 +63,109 @@ internal sealed class NativeRecordingTransport : IRecordingTransport
     public void Start(ulong sessionId, RecordingStopGestures stopGestures)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!DllStartRecord(sessionId, stopGestures)) throw new InvalidOperationException("The capture thread could not start recording.");
+        if (!_native.Start(sessionId, stopGestures)) throw new InvalidOperationException("The capture thread could not start recording.");
     }
 
     public void Stop(ulong sessionId, RecordingStopCommand? command)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!DllStopRecord(sessionId, command?.Gesture ?? RecordingStopGestures.None, command?.MessageTime ?? 0))
+        if (!_native.Stop(sessionId, command?.Gesture ?? RecordingStopGestures.None, command?.MessageTime ?? 0))
             throw new InvalidOperationException("The capture thread could not stop recording.");
     }
 
     private void OnInput(nint buffer, int bufferSize, ulong sessionId)
     {
+        if (sessionId == _failedSession) return;
         try
         {
-            var serialized = new byte[bufferSize];
-            Marshal.Copy(buffer, serialized, 0, bufferSize);
-            Input?.Invoke(sessionId, ProtobufInputEvent.Parser.ParseFrom(serialized));
+            // No single input event can exceed the size of a supported macro.
+            // Check before allocating or touching the borrowed native range.
+            if (buffer == 0 || bufferSize <= 0 || bufferSize > RecordingLibraryStore.MaximumMacroBytes)
+                throw new InvalidDataException("The native capture callback supplied an invalid buffer.");
+            var bytes = new byte[bufferSize];
+            Marshal.Copy(buffer, bytes, 0, bufferSize);
+            var input = ProtobufInputEvent.Parser.ParseFrom(bytes);
+            Input?.Invoke(sessionId, input);
         }
-        catch (InvalidProtocolBufferException)
+        catch (Exception error)
         {
-            Status?.Invoke(StatusCode.ErrorCouldNotProcessInputData);
+            RequestFailedStop(sessionId, error);
+        }
+    }
+
+    private void OnBoundary(ulong sessionId, RecordingBoundary boundary, RecordingStartKeys heldKeys,
+        RecordingStartKeys idleReleasedKeys, int x, int y, uint valid)
+    {
+        // Input/boundary delivery is serialized on the native collector. A failed
+        // callback requests a stop, but cannot complete a session before its real end.
+        var terminal = boundary is RecordingBoundary.Stopped or RecordingBoundary.Failed;
+        if (terminal && sessionId == _failedSession) boundary = RecordingBoundary.Failed;
+        foreach (var handler in Delegate.EnumerateInvocationList(Boundary))
+        {
+            try { handler(sessionId, boundary, heldKeys, idleReleasedKeys, valid == 1 ? new PointerPosition(x, y) : null); }
+            catch (Exception error)
+            {
+                if (!terminal) RequestFailedStop(sessionId, error);
+                else
+                {
+                    Trace.TraceError("Recording completion callback failed: {0}", error);
+                    OnStatus(StatusCode.ErrorCouldNotProcessInputData);
+                    boundary = RecordingBoundary.Failed;
+                }
+            }
+        }
+    }
+
+    private void RequestFailedStop(ulong sessionId, Exception error)
+    {
+        if (sessionId == _failedSession) return;
+        _failedSession = sessionId;
+        Trace.TraceError("Recording callback failed for session {0}: {1}", sessionId, error);
+        try
+        {
+            // Stop only posts a command. Shutdown here would join our own collector.
+            if (!_native.Stop(sessionId, RecordingStopGestures.None, 0))
+                Trace.TraceError("The native capture thread rejected the stop for failed session {0}.", sessionId);
+        }
+        catch (Exception stopError) { Trace.TraceError("Could not request capture stop: {0}", stopError); }
+        OnStatus(StatusCode.ErrorCouldNotProcessInputData);
+    }
+
+    private void OnStatus(StatusCode status)
+    {
+        foreach (var handler in Delegate.EnumerateInvocationList(Status))
+        {
+            try { handler(status); }
+            catch (Exception error) { Trace.TraceError("Recording status callback failed: {0}", error); }
         }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_joined) return;
         _disposed = true;
-        DllShutdown(); // Joins both native threads before callback delegates can be collected.
-        GC.KeepAlive(_inputCallback);
-        GC.KeepAlive(_boundaryCallback);
-        GC.KeepAlive(_statusCallback);
+        _native.Shutdown();
+        _joined = true;
+        _callbackRoot.Free();
     }
 
-    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init_v2", CallingConvention = CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
-    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures);
-    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_stop_record", CallingConvention = CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.I1)]
-    private static extern bool DllStopRecord(ulong sessionId, RecordingStopGestures gesture, uint messageTime);
-    [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_record_shutdown", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void DllShutdown();
+    private sealed class NativeApi : INativeApi
+    {
+        public bool Initialize(InputCallback input, StatusCallback status, BoundaryCallback boundary) => DllInit(input, status, boundary);
+        public bool Start(ulong sessionId, RecordingStopGestures stopGestures) => DllStartRecord(sessionId, stopGestures);
+        public bool Stop(ulong sessionId, RecordingStopGestures gesture, uint messageTime) => DllStopRecord(sessionId, gesture, messageTime);
+        public void Shutdown() => DllShutdown();
+
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_init_v2", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool DllInit(InputCallback input, StatusCallback status, BoundaryCallback boundary);
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_start_record", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool DllStartRecord(ulong sessionId, RecordingStopGestures stopGestures);
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_stop_record", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool DllStopRecord(ulong sessionId, RecordingStopGestures gesture, uint messageTime);
+        [DllImport("RecordPlaybackDLL.dll", EntryPoint = "iac_dll_record_shutdown", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void DllShutdown();
+    }
 }

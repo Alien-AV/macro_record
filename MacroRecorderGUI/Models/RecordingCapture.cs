@@ -10,6 +10,7 @@ public sealed class RecordingCapture : IDisposable
     private readonly Dictionary<ulong, SessionState> _sessions = [];
     private RecordingSession? _requestedSession;
     private bool _disposed;
+    private bool _transportDisposed;
 
     public RecordingCapture(IRecordingTransport transport)
     {
@@ -124,17 +125,16 @@ public sealed class RecordingCapture : IDisposable
                 _requestedSession = null;
             }
 
-            if (boundary == RecordingBoundary.Failed)
+            var error = boundary == RecordingBoundary.Failed
+                ? new InvalidOperationException("The native recorder could not complete capture.") : null;
+            try { Ended?.Invoke(state.Session, error); }
+            catch (Exception callbackError)
             {
-                var error = new InvalidOperationException("The native recorder could not complete capture.");
-                Ended?.Invoke(state.Session, error);
-                state.Session.Fail(error);
+                state.Session.Fail(error is null ? callbackError : new AggregateException(error, callbackError));
+                throw;
             }
-            else
-            {
-                Ended?.Invoke(state.Session, null);
-                state.Session.Complete();
-            }
+            if (error is not null) state.Session.Fail(error);
+            else state.Session.Complete();
         }
     }
 
@@ -142,7 +142,7 @@ public sealed class RecordingCapture : IDisposable
     {
         lock (_gate)
         {
-            if (_disposed) return;
+            if (_transportDisposed) return;
             _disposed = true;
         }
         // Do not hold the state lock while the native collector joins and finishes callbacks.
@@ -151,6 +151,7 @@ public sealed class RecordingCapture : IDisposable
         _transport.Boundary -= OnBoundary;
         lock (_gate)
         {
+            _transportDisposed = true;
             foreach (var state in _sessions.Values) state.Session.Cancel();
             _sessions.Clear();
             _requestedSession = null;
