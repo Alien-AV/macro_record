@@ -70,4 +70,20 @@ public sealed class ExtendedWaitFormatTests
         Assert.Throws<ArgumentException>(() => WaitValidation.Validate(memory));
         Assert.IsFalse(settings.MemoryEnabled);
     }
+
+    [TestMethod]
+    public void DescriptionsIdentifyTargetAndDescribeRuntimeChangesWithoutUnusedExpectedValue()
+    {
+        foreach (var condition in Conditions())
+        {
+            if (condition.Memory is { } memory) memory.Expected = "123456789";
+            if (condition.AccessibilityText is { } text) text.Predicate.Expected = "123456789";
+            if (condition.OcrText is { } ocr) ocr.Predicate.Expected = "123456789";
+            StringAssert.Contains(WaitValidation.Describe(condition), "123456789");
+            condition.Trigger = WaitTrigger.Changes;
+            var description = WaitValidation.Describe(condition);
+            Assert.IsFalse(description.Contains("123456789")); StringAssert.Contains(description, "first valid runtime sample");
+        }
+        StringAssert.Contains(WaitValidation.Describe(MemoryWaitBackendTests.Condition()), "absolute 0x1000");
+    }
 }

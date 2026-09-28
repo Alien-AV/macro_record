@@ -1,6 +1,6 @@
 # Wait library integration contract
 
-Namespace `ProtobufGenerated` is now owned by assembly `MacroRecorder.Waiting`, referenced by the WinUI app. No WinUI dependency in that library. The initial foundation deliberately rejects the newly defined wait sources until their backends and validators are installed.
+Namespace `ProtobufGenerated` is owned by assembly `MacroRecorder.Waiting`, referenced by the WinUI app. The library has no WinUI dependency. It implements window, pixel, accessibility text, local OCR text, and read-only scalar memory conditions, with one shared runner and managed/native validation. No placeholder providers are registered.
 
 ## Fixed Delay (editor contract)
 
@@ -20,12 +20,28 @@ New Delay/new-source saves require document version 4. Window/pixel-only waits r
 
 Local opt-in hook: `MacroRecorder.Waiting.WaitServices.LocalSettings.MemoryEnabled`, default false. Full immutable settings snapshot at `.Options`: `WaitLocalOptions(MemoryEnabled, TesseractExecutablePath, TessdataDirectory)`. Nothing in protobuf can grant these permissions or choose the executable/model directory. The application persists local options through its own WaitSourcePreferences and initializer; the reusable library does not persist settings.
 
-Backend descriptions will be `MacroRecorder.Waiting.WaitValidation.Describe(WaitCondition)`, validation `.Validate`, constructors `.NewAccessibilityText()/.NewOcrText()/.NewMemory()`. These constructors produce editable defaults requiring target completion. Shared runner `.Desktop` is used by playback and explicit Test; Preview must never call it.
+Backend descriptions are `MacroRecorder.Waiting.WaitValidation.Describe(WaitCondition)`, validation `.Validate`, constructors `.NewAccessibilityText()/.NewOcrText()/.NewMemory()`. These constructors produce editable defaults requiring target completion. Shared runner `.Desktop` is used by playback and explicit Test; Preview must never call it. `InputEvent` implements library interface `IWaitScheduleEvent`, so existing `WaitValidation.ValidateSchedule(events, loop)` calls work through the app/test global using without forwarding classes.
 
-## Delegated accessibility backend contract
+## Accessibility backend
 
-Implement public parameterless `WindowsAccessibilityTextBackend : IAccessibilityTextBackend` in `MacroRecorder.Waiting/WindowsAccessibility*.cs`, plus disjoint tests. The foundation defines the interface and DTOs in `ProviderContracts.cs`.
+Public parameterless `WindowsAccessibilityTextBackend : IAccessibilityTextBackend` lives in `MacroRecorder.Waiting/WindowsAccessibility*.cs`. The interface and DTOs live in `ProviderContracts.cs`.
 
 ReadAsync receives transient WaitWindow (HWND, PID, creation identity), definition and cancellation. Success returns complete text and stable element runtime identity; unavailable/error has no usable text. Revalidate window/process before and after lookup/read. Lookup and choice enumeration are scoped to that window, bounded to 512 elements and depth 16. Exact parent selectors are nearest-first. Multiple matches are errors. No automatic name/text fallback. Password controls must not be read. Text limit 32768 UTF-16 characters (request one extra to detect truncation). All UIA calls, releases and subscriptions, if any, stay on one dedicated MTA with finite UIA transaction timeouts; cancellation must not create abandoned workers. Implement GetChoicesAsync for explicit picker use, with labels from identification fields and ancestors. Construction must not touch UIA until explicit reads/choices. Disposal may wait for outstanding work; the runner retains its shared permit until read, cancellation callbacks and disposal all complete.
 
-The coordinator owns cross-worker integration. Do not edit schema, shared contracts, runner, composition, project files, UI or other provider files in the accessibility worker; request any required project references from the coordinator.
+## Explicit choice reads
+
+`WaitServices.GetProcessesAsync(token)` returns `ChoiceResult<ProcessChoice>`; `GetModulesAsync(ProcessChoice, token)` returns `ChoiceResult<ModuleChoice>`; `GetOcrLanguagesAsync(token)` returns `ChoiceResult<string>`; `GetAccessibilityChoicesAsync(WindowSelector, token)` returns `AccessibilityChoicesResult`. All use the shared observation permit and a five-second caller deadline. A timed-out OS call retains the permit until work and cancellation finish. Lists never run on editor selection, Preview, or document import.
+
+`ProcessChoice` carries transient ProcessId, ProcessCreated, and full ExecutablePath. `ModuleChoice` carries full Path, exact FileVersion, BaseAddress, and Size. Module enumeration verifies the selected process identity and never rebinds a replaced PID. Process listing can return Success with verified entries, `IsComplete=false`, and a Detail warning for skipped inaccessible/exited processes. This cannot establish process absence. Whole enumeration failures return Unavailable/Error and must retain the draft. UIA lookup/choices remain complete-or-unavailable.
+
+## Runtime guarantees and deployment
+
+Factory-created observers are owned per occurrence and asynchronously disposed after reads and cancellation callbacks finish. The runner returns timeout/cancellation/terminal results independently of teardown. It retains its permit during teardown and permanently retains it if disposal fails; a diagnostic trace states that restart is required. An injected `IWaitObserver` constructor borrows its observer; callers own that observer's disposal. Provider exceptions, incomplete reads and nonfinite values cannot satisfy negative comparisons.
+
+Memory chains are re-resolved on every sample. At most 16 target-width pointer reads plus one scalar (at most eight bytes) are performed. Signed offset arithmetic, final ranges and the initial module-image range are checked. Logical target + process creation identity is stable across pointer allocation changes. Opt-in is checked before and after every read; revocation stops an already-bound occurrence. There is no atomic multi-read snapshot guarantee.
+
+OCR defaults resolve to `AppContext.BaseDirectory/ocr/tesseract.exe` and `ocr/tessdata`; explicit local settings can override them. The adapter sends a bounded BMP over stdin and reads bounded UTF-8 stdout/stderr from a hidden Tesseract process. No screenshot is written to disk, and no network/download code exists. Missing binaries/models produce an explicit unavailable result. Recognition is bounded to ten seconds per operation; cancellation terminates the helper and retains ownership until process/pipes finish. Captures require one monitor to contain the entire physical region, and client regions must be fully visible/unoccluded. Bounds are rechecked after DPI scaling and capture.
+
+The coordinator owns OCR bundle/install distribution and application-side settings persistence. This branch supplies the actual local adapter without installing global software. Supported unpackaged deployment follows [Microsoft's package-identity restrictions](https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/winrt-api-desktop-app-support#apis-that-require-package-identity) and [Tesseract's documented CLI](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html). Memory APIs follow [ReadProcessMemory](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory), [IsWow64Process2](https://learn.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process2), and [bounded Toolhelp traversal](https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/ns-tlhelp32-processentry32w).
+
+Automated verification uses fake providers/APIs, temporary files, in-memory data, and existing unactivated hidden-window tests. No live desktop capture, real process-memory observation, input injection, global registration, or real user settings are exercised.

@@ -1,7 +1,10 @@
 # Selection, capture, scrolling, and conditional waits
 
-Status: all three regressions and the first window/pixel wait slice integrated
-locally on master through 2e6c741 (2026-09-21), based on c2c0fca.
+Current wait backend (2026-09-28): window, pixel, accessibility text, read-only memory
+with explicit chains, and local OCR are implemented in the reusable library. See
+[the current wait contract](wait-library-contract.md) for source/format/permission
+and deployment details. The regression and verification history below describes
+the earlier 2026-09-21 integration through 2e6c741, based on c2c0fca.
 Reports are local; no GitHub writes or push. No visible application launch or real
 input capture/injection is authorized for development verification.
 
@@ -21,11 +24,11 @@ input capture/injection is authorized for development verification.
 
 ## Conditional-waits delivery
 
-The first usable slice is the shared execution/format/editor foundation plus
-window and pixel conditions. Follow docs/state-waits-proposal.md, reconciled with
-the current versioned .macro codec and origin metadata. Accessibility text, memory,
-and OCR are later phases; no inert provider placeholders should be presented as
-working features.
+The shared execution and format layer supports all five providers, with actual
+read-only backends and explicit unavailable/error results. New text/memory/OCR
+conditions and standalone fixed Delay events require document version 4; existing
+window/pixel waits retain version 3. The original design is preserved in
+`state-waits-proposal.md`; the current API is in `wait-library-contract.md`.
 
 Verify whole-document preflight, old-reader rejection, exact/unknown data
 preservation, undo, cancellation, native deadlines, stale responses, repeated
@@ -42,7 +45,7 @@ commit ranges, inspect overlapping files semantically, run combined Debug/Releas
 managed and native tests, and refresh/verify the published app without launching it.
 Broader UX changes in interaction-rework-proposal.md remain proposals.
 
-## Manual acceptance after delivery
+## Historical 2026-09-21 verification and manual acceptance
 
 The selection/scroll fixes are integrated at bef09bf; capture fixes at
 1574ac0, 00eb6bc, and 7dd5f90; the full wait range runs from 96fc541 through
@@ -82,8 +85,9 @@ application behavior.
   Simulate satisfied / Next; restart a wait-only preview and check its cursor
   does not jump to movement after an unresolved condition.
 - In a disposable target workflow, verify real playback waiting, timeout, and
-  emergency Stop. A wait never brings the target to the foreground. Text/memory/
-  OCR providers and target picking are not part of this first slice.
+  emergency Stop. A wait never brings the target to the foreground. These historical
+  checks covered window/pixel waits; current text/memory/OCR contracts and separate
+  authoring/picker integration are described in `wait-library-contract.md`.
 
 These checks require user-driven visible interaction and were not substituted
 with automated input injection. Hidden-control tests verify state/layout and

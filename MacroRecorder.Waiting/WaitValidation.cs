@@ -194,15 +194,18 @@ public static class WaitValidation
 
     public static string Describe(WaitCondition wait)
     {
-        var target = wait.Window?.Target ?? wait.Pixel?.Target;
+        var target = wait.Window?.Target ?? wait.Pixel?.Target ?? wait.AccessibilityText?.Target ?? wait.OcrText?.Region?.Target;
         var name = target is null ? "desktop" : string.Join(" · ", new[] { target.ExecutablePath, target.WindowClass, target.Title }.Where(s => s.Length > 0));
         var basis = wait.Window is { } window ? $"window {window.Test.ToString().ToLowerInvariant()} · {name}"
             : wait.Pixel is { } pixel ? wait.Trigger == WaitTrigger.Changes
                 ? $"pixel ({pixel.X}, {pixel.Y}) {pixel.Coordinates} differs from its first valid runtime sample by more than {pixel.Tolerance} per channel · {name}"
                 : $"pixel ({pixel.X}, {pixel.Y}) {pixel.Coordinates} {(pixel.NotEqual ? "≠" : "=")} #{pixel.Rgb:X6} ±{pixel.Tolerance} · {name}"
-            : wait.AccessibilityText is { } text ? $"accessibility {text.Source} · {text.Element?.AutomationId} · {text.Predicate?.Comparison} “{text.Predicate?.Expected}”"
-            : wait.OcrText is { } ocr ? $"OCR {ocr.Language} · region ({ocr.Region?.X}, {ocr.Region?.Y}) {ocr.Region?.Width}×{ocr.Region?.Height} · {ocr.Predicate?.Comparison} “{ocr.Predicate?.Expected}”"
-            : wait.Memory is { } memory ? $"memory {memory.ScalarType} {memory.Comparison} {memory.Expected} · {memory.ExecutablePath} · {memory.PointerOffsets.Count} pointer step(s)"
+            : wait.AccessibilityText is { } text ? $"accessibility {text.Source} · {text.Element?.AutomationId} (control {text.Element?.ControlType}) · {TextDescription(text.Predicate, wait.Trigger)} · {name}"
+            : wait.OcrText is { } ocr ? $"OCR {ocr.Language} · {ocr.Region?.Coordinates} region ({ocr.Region?.X}, {ocr.Region?.Y}) {ocr.Region?.Width}×{ocr.Region?.Height} · {TextDescription(ocr.Predicate, wait.Trigger)} · {name}"
+            : wait.Memory is { } memory ? $"memory {memory.ScalarType} "
+                + (wait.Trigger == WaitTrigger.Changes ? $"differs from its first valid runtime sample (tolerance {memory.Tolerance})" : $"{memory.Comparison} {memory.Expected} (tolerance {memory.Tolerance})")
+                + $" · {memory.ExecutablePath} · " + (memory.Module is { } module ? $"{module.Path} [{module.FileVersion}] + 0x{module.Offset:X}" : $"absolute 0x{memory.AbsoluteAddress:X}")
+                + $" · {memory.PointerOffsets.Count} pointer step(s)"
             : "unsupported wait condition";
         return wait.Trigger switch
         {
@@ -213,5 +216,7 @@ public static class WaitValidation
             _ => "Unsupported trigger: " + basis
         };
     }
+    private static string TextDescription(TextPredicate? predicate, WaitTrigger trigger) => trigger == WaitTrigger.Changes
+        ? "text differs from its first valid runtime sample" : $"{predicate?.Comparison} “{predicate?.Expected}”";
     private static void Fail(string message) => throw new ArgumentException(message);
 }

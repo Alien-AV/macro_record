@@ -11,43 +11,37 @@ internal sealed class WindowsMemoryProcessApi : IMemoryProcessApi
     public IMemoryProcess? Bind(string executablePath, CancellationToken token)
     {
         IMemoryProcess? bound = null;
-        var candidates = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(executablePath));
+        var candidates = WindowsMemoryProcess.ProcessIds(Path.GetFileName(executablePath), token);
         try
         {
-            if (candidates.Length > 4096) throw new InvalidOperationException("Process lookup exceeded 4096 candidates.");
             foreach (var candidate in candidates)
             {
                 token.ThrowIfCancellationRequested();
-                var process = WindowsMemoryProcess.Open((uint)candidate.Id);
+                var process = WindowsMemoryProcess.Open(candidate);
                 if (!string.Equals(process.Identity.ExecutablePath, executablePath, StringComparison.OrdinalIgnoreCase)) { process.Dispose(); continue; }
                 if (bound is not null) { process.Dispose(); throw new InvalidOperationException("Multiple process instances match the executable path."); }
                 bound = process;
             }
             var result = bound; bound = null; return result;
         }
-        finally { bound?.Dispose(); foreach (var candidate in candidates) candidate.Dispose(); }
+        finally { bound?.Dispose(); }
     }
 
     internal static ChoiceResult<ProcessChoice> List(Func<bool> permitted, CancellationToken token)
     {
         if (!permitted()) return new(ReadStatus.Error, [], "Enable read-only memory locally to list processes.");
-        var candidates = Process.GetProcesses();
-        try
+        var candidates = WindowsMemoryProcess.ProcessIds(null, token);
+        var choices = new List<ProcessChoice>();
+        var denied = 0;
+        foreach (var candidate in candidates)
         {
-            if (candidates.Length > 4096) return new(ReadStatus.Error, [], "Process listing exceeds 4096 entries.");
-            var choices = new List<ProcessChoice>();
-            var denied = 0;
-            foreach (var candidate in candidates)
-            {
-                token.ThrowIfCancellationRequested();
-                if (!permitted()) return new(ReadStatus.Error, [], "Memory permission was revoked.");
-                try { using var process = WindowsMemoryProcess.Open((uint)candidate.Id, read: false); choices.Add(process.Identity); }
-                catch (Win32Exception) { denied++; }
-            }
-            return new(ReadStatus.Success, choices.OrderBy(p => p.ExecutablePath, StringComparer.OrdinalIgnoreCase).ToArray(),
-                denied == 0 ? "" : $"{denied} inaccessible or exited processes were omitted; this listing cannot establish absence.", denied == 0);
+            token.ThrowIfCancellationRequested();
+            if (!permitted()) return new(ReadStatus.Error, [], "Memory permission was revoked.", false);
+            try { using var process = WindowsMemoryProcess.Open(candidate, read: false); choices.Add(process.Identity); }
+            catch (Win32Exception) { denied++; }
         }
-        finally { foreach (var candidate in candidates) candidate.Dispose(); }
+        return new(ReadStatus.Success, choices.OrderBy(p => p.ExecutablePath, StringComparer.OrdinalIgnoreCase).ToArray(),
+            denied == 0 ? "" : $"{denied} inaccessible or exited processes were omitted; this listing cannot establish absence.", denied == 0);
     }
 }
 
@@ -83,6 +77,24 @@ internal sealed class WindowsMemoryProcess : IMemoryProcess
         && WaitForSingleObject(_handle, 0) == 258
         && GetProcessTimes(_handle, out var created, out _, out _, out _) && created == Identity.ProcessCreated;
 
+    internal static IReadOnlyList<uint> ProcessIds(string? executableName, CancellationToken token)
+    {
+        using var snapshot = CreateToolhelp32Snapshot(0x2, 0);
+        if (snapshot.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error(), "Process enumeration unavailable.");
+        var entry = new ProcessEntry { Size = (uint)Marshal.SizeOf<ProcessEntry>() };
+        if (!Process32First(snapshot, ref entry)) throw new Win32Exception(Marshal.GetLastWin32Error());
+        var ids = new List<uint>(); var visited = 0;
+        do
+        {
+            token.ThrowIfCancellationRequested();
+            if (++visited > 4096) throw new InvalidOperationException("Process enumeration exceeded 4096 entries.");
+            if (executableName is null || string.Equals(executableName, entry.ExeName, StringComparison.OrdinalIgnoreCase)) ids.Add(entry.ProcessId);
+            entry.Size = (uint)Marshal.SizeOf<ProcessEntry>();
+        } while (Process32Next(snapshot, ref entry));
+        if (Marshal.GetLastWin32Error() != 18) throw new Win32Exception(Marshal.GetLastWin32Error(), "Incomplete process enumeration.");
+        return ids;
+    }
+
     public MemoryReadResult Read(ulong address, int count)
     {
         if (count is < 1 or > 8) throw new ArgumentOutOfRangeException(nameof(count));
@@ -117,6 +129,16 @@ internal sealed class WindowsMemoryProcess : IMemoryProcess
 
     public void Dispose() => _handle.Dispose();
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct ProcessEntry
+    {
+        public uint Size, Usage, ProcessId;
+        public nuint DefaultHeapId;
+        public uint ModuleId, Threads, ParentProcessId;
+        public int Priority;
+        public uint Flags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string ExeName;
+    }
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct ModuleEntry
     {
         public uint Size, ModuleId, ProcessId, GlobalUsage, ProcessUsage;
@@ -133,6 +155,8 @@ internal sealed class WindowsMemoryProcess : IMemoryProcess
     [DllImport("kernel32.dll", SetLastError = true)] private static extern uint WaitForSingleObject(SafeProcessHandle process, uint milliseconds);
     [DllImport("kernel32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool ReadProcessMemory(SafeProcessHandle process, nint address, [Out] byte[] buffer, nuint size, out nuint read);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern SafeFileHandle CreateToolhelp32Snapshot(uint flags, uint pid);
+    [DllImport("kernel32.dll", EntryPoint = "Process32FirstW", CharSet = CharSet.Unicode, SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool Process32First(SafeFileHandle snapshot, ref ProcessEntry entry);
+    [DllImport("kernel32.dll", EntryPoint = "Process32NextW", CharSet = CharSet.Unicode, SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool Process32Next(SafeFileHandle snapshot, ref ProcessEntry entry);
     [DllImport("kernel32.dll", EntryPoint = "Module32FirstW", CharSet = CharSet.Unicode, SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool Module32First(SafeFileHandle snapshot, ref ModuleEntry entry);
     [DllImport("kernel32.dll", EntryPoint = "Module32NextW", CharSet = CharSet.Unicode, SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool Module32Next(SafeFileHandle snapshot, ref ModuleEntry entry);
 }

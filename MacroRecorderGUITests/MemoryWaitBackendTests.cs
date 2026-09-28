@@ -206,4 +206,19 @@ public sealed class MemoryWaitBackendTests
         if (valid) ScalarValue.Parse(MemoryScalarType.Float64, expected);
         else Assert.Throws<ArgumentException>(() => ScalarValue.Parse(MemoryScalarType.Float64, expected));
     }
+
+    [TestMethod]
+    [DataRow(false)] [DataRow(true)]
+    public async Task ProcessExitDuringReadAndReadAccessDenialCannotSatisfyNegative(bool denied)
+    {
+        var process = new Process();
+        process.ReadValue = (_, n) =>
+        {
+            if (denied) throw new Win32Exception(5, "denied");
+            process.IsAlive = false; return new(true, new byte[n], n);
+        };
+        await using var observer = new MemoryObserver(new Api(process), () => true);
+        var condition = Condition(); condition.Memory.Comparison = NumericComparison.NumericNotEquals;
+        Assert.AreEqual(ObservationState.Error, (await observer.ObserveAsync(condition, default)).State);
+    }
 }

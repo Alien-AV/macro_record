@@ -21,8 +21,9 @@
   missing or incompatible origins rather than silently misplaying them.
 - Keep the `.macro` extension. Version new document contents so older players
   reject unsupported semantics; continue importing legacy `.macro` files.
-- State-change waits were outside this original pass. Window/pixel waits are
-  now implemented; text, memory and OCR providers remain future work.
+- State-change waits were outside this original pass. Window, pixel, accessibility
+  text, memory and local OCR backends are now implemented in `MacroRecorder.Waiting`;
+  see [the current wait contract](wait-library-contract.md).
 
 ## Verification and coordination
 
@@ -90,7 +91,8 @@ Visible appearance and real hardware interaction remain for the user's smoke tes
 Deletion is recoverable through persistent Local trash; it is not permanent disk
 purging. Origin-aware geometry editing remains deliberately blocked across capture
 segments, and device counts are not converted into screen pixels implicitly.
-Window/pixel conditional waits are implemented; `state-waits-proposal.md` records
-their semantics and future text/memory/OCR plans. `ux-rework-delivery.md` records
+Window, pixel, accessibility text, read-only memory and local OCR conditional waits
+are implemented; `wait-library-contract.md` records current behavior and deployment,
+and `state-waits-proposal.md` preserves the historical design. `ux-rework-delivery.md` records
 the subsequent full interaction rework.
 Everything is local; no GitHub writes or pushes were made.

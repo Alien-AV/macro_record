@@ -98,7 +98,7 @@ recovery copy. The document menu offers explicit **Export legacy .macro**: it
 materializes recorded setup moves for old players and leaves the library document
 unchanged. Ordinary export retains origin metadata and recovery information;
 per-recording playback preferences stay local. Legacy export rejects conditional
-waits rather than dropping them.
+waits and standalone Delay actions rather than dropping them.
 
 ### Editing actions
 
@@ -124,10 +124,18 @@ Precise raw values and technical diagnostics remain available in Exact input.
 ### Wait until
 
 Use **Add → Wait until…** to insert a condition after the selected action, or
-explicitly replace an action's fixed delay with a condition. The first release
-supports window existence/visibility/foreground/absence and pixel color conditions.
-Enter a window selector or pixel coordinates manually; target picking,
-accessibility text, memory values, and OCR remain future work.
+explicitly replace an action's fixed delay with a condition. The reusable
+`MacroRecorder.Waiting` library implements window existence/visibility/foreground/absence,
+pixel colors, accessibility text, local OCR regions, and read-only scalar memory
+comparisons with explicit pointer chains. It has no WinUI dependency.
+
+Memory observation requires local opt-in; importing a macro cannot enable it.
+It binds one process instance, performs exact bounded reads, and stops after
+process exit or permission revocation. It does not write, scan, discover chains,
+inject, or elevate. OCR uses a local Tesseract 5 executable and installed language
+data, with no playback downloads or cloud upload. Missing local OCR components
+produce an explicit unavailable result. See the [current provider and deployment
+contract](docs/wait-library-contract.md) for configuration and resource limits.
 
 The inspector supports condition edits and Undo. The default is a condition that
 is true for 200 ms, with a 30-second timeout. Advanced triggers can require a
@@ -137,10 +145,14 @@ recording or using Preview does not observe the desktop. Preview stops at waits
 until **Simulate satisfied / Next**. Real playback stops if a condition times out
 or fails; waiting never focuses a target window.
 
-Wait-bearing files use document version 3 under the same `.macro` extension.
+Window/pixel-only wait files use document version 3 under the same `.macro` extension.
+Accessibility, OCR, memory and standalone Delay actions require version 4, so
+older players reject unsupported content. Legacy raw and version-2/3 imports
+retain their existing meaning and unknown data.
 Unsupported or malformed conditions are rejected, and playback validates the
-whole schedule before sending input. Waits require released recorded keys/buttons;
-pixel targets do not move when playback uses the current pointer as its origin.
+whole schedule before sending input. Conditional waits require released recorded keys/buttons;
+fixed Delay events preserve held input and remain cancellable, including at zero duration.
+Pixel targets do not move when playback uses the current pointer as its origin.
 See [conditional-wait semantics and limitations](docs/state-waits-proposal.md).
 
 ### Recording and playback controls
@@ -161,7 +173,8 @@ See `docs/direct-run-controls.md` for direct-run behavior and safety,
 `docs/action-editor.md` for editing semantics and manual smoke checks, and
 `docs/design-implementation.md` for the visual specification and verification scope.
 See `docs/library-origin-and-branding.md` for combined regression checks and
-`docs/state-waits-proposal.md` for implemented window/pixel waits and future provider plans.
+`docs/wait-library-contract.md` for current wait providers and `docs/state-waits-proposal.md`
+for the historical design and remaining optional capabilities.
 
 ## Unpackaged distribution
 
@@ -192,6 +205,7 @@ iscc inno-setup-script.iss -DMyPublishDir=x64/Release/publish
 ## Projects
 
 - `MacroRecorderGUI`: .NET 10 WinUI 3 desktop UI.
+- `MacroRecorder.Waiting`: reusable Windows wait runner, schemas, validators, and read-only providers; no WinUI dependency.
 - `MacroRecorderGUITests`: managed behavior tests.
 - `RecordPlaybackDLL`: native recording and playback implementation.
 - `RecordPlaybackDLLTest`: native tests.
