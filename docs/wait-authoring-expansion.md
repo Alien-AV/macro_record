@@ -1,7 +1,8 @@
 # Wait authoring and editor refinement
 
 Baseline: `91fb5d8`, pushed to `origin/master` at the user's request.
-Status: delegated implementation; acceptance criteria below are not a delivery claim.
+Status: implemented, independently reviewed, and integrated. Full-feature
+verification was performed at `e626166`; subsequent report edits do not change code.
 
 ## Integration checkpoints
 
@@ -9,10 +10,62 @@ Status: delegated implementation; acceptance criteria below are not a delivery c
   integrated at `a6d94b9` after independent review.
 - Bounded Windows accessibility backend: integrated at `8bc3d81` after
   independent review, including verification against Windows SDK COM signatures.
-- Combined Debug checkpoint at `8bc3d81`: 869 managed and 107 native tests
-  passed. This is not the final full-feature or Release verification.
-- Editor, capture hotkeys/ordered native markers, source forms, remaining
-  observation backends and portable OCR packaging remain in worker/review stages.
+- Editor and Delay interactions: integrated through `f8b73e7`.
+- Ordered recording markers and read-only capture preflight: integrated through
+  `1feff54` and `41fad6d`.
+- Shared observation backends and lifecycle repairs: integrated through `6dd5ad3`.
+- Pickers, configurable capture shortcuts, local settings and recovery:
+  integrated through `065d3c4`.
+- All five source forms and repairable validation drafts: `b9d1a2f`.
+- Portable OCR, explicit preparation, CI and publish verification: `e626166`.
+
+## Verification and review result
+
+- Full x64 Debug and Release solution builds passed. Each configuration passed
+  **1,062 managed tests and 131 native tests**, with no skipped managed tests.
+- Debug and Release `scripts/Test-Publish.ps1` passed: missing native/OCR sources
+  and stale bundles are rejected; newer corrupted destination files are replaced;
+  native DLL, PRI, eight XBF files, self-contained runtime and OCR hashes match.
+- Main-checkout OCR preparation and generated PNG/BMP/binary-stdin recognition
+  passed. The 43-file bundle is approximately 10.6 MB and depends only on Windows
+  inbox DLLs. No global installation or PATH change is needed.
+- Independent full-range reviews and re-reviews closed every reported finding.
+  Repairs include held-input completeness across Delay, selection/delete scope,
+  capture modifier ordering and timestamp ambiguity, ABI versioning, expiry,
+  stale-callback preflight, failed settings rollback/close recovery, numeric
+  validation parity, OCR termination cleanup, hidden invalid drafts, accessible
+  Cancel labels, and OCR provenance/notice handling.
+- Independent integration audits found no semantic drift or missing wiring.
+  Both editor and source-form hidden regression hooks remain reachable.
+- The existing MSB3851 managed/native Windows SDK target warning remains; there
+  are no new build failures. Physical focus, appearance and live-provider behavior
+  still need the user's manual checks; automated checks are not a substitute.
+
+The release artifact is `x64/Release/publish/MacroRecorderGUI.exe`. Its final
+self-contained copy is rebuilt after committing this report, so build metadata
+corresponds to the delivered revision. No production app is launched during
+verification, and real recordings/preferences are not modified.
+
+## Using the new controls
+
+- Use **Add event** for Click, Shortcut, Pointer movement, Delay, or Wait until;
+  raw event creation remains under Advanced. Legacy leading gaps appear as Delay
+  steps without rewriting the imported stream.
+- Sequence/Details switches appear only when the narrow layout needs them.
+  Empty optional timing fields commit zero on the first blur; other invalid
+  drafts stay visible and repairable.
+- Wait forms offer explicit window/pixel picks, accessible-element choices,
+  two-corner OCR regions, installed languages, and process/module choices.
+- Enable/configure foreground-window, hovered-window and pointer-pixel capture
+  shortcuts in Settings. They default to off. Editing opens a captured draft;
+  recording inserts at an ordered safe boundary without a dialog or chord leak.
+- Read-only memory observation is locally opt-in and cannot be enabled by an
+  imported recording. It supports typed scalars and up to 16 explicit pointer
+  offsets, not scanning, writes, injection or elevation.
+- English OCR is bundled app-locally; other installed language data and engine
+  locations can be configured locally. No runtime downloads or cloud OCR occur.
+- New standalone Delay and extended wait sources require version 4 contents
+  under the existing `.macro` extension; old readers reject them.
 
 ## Requested outcomes
 

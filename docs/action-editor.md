@@ -272,7 +272,8 @@ scroll intent, centered viewport mapping/inversion, direction-cue bounds and
 frame gaps, responsive panel sizes, native caption palette reset/restoration,
 and retaining action/raw drafts across view navigation and projection regrouping.
 Add commands require pending raw edits to be applied or discarded first.
-The native test suite uses fake sinks; no native changes are required here.
+The native test suite uses fake sinks and verifies standalone Delay execution,
+cancellation, held-input preservation and versioned input validation.
 
 `DesktopThemeMonitorTests` also exercises the production settings API bindings:
 on an STA thread it creates an invisible native top-level window, subscribes to

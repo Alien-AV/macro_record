@@ -63,7 +63,7 @@ These tests are noninteractive: native playback tests use fake injection sinks a
 
 The native test project compiles the production C++ model/playback sources into its executable, so owning C++ objects stay within one static CRT. Its DLL reference is build-only: ABI tests load that DLL explicitly and pass only borrowed byte buffers and scalar values. Debug selects Debug vcpkg libraries and `/MTd`; Release selects Release libraries and `/MT`. To verify Debug compilation without executing a Debug test process, build the solution with `/p:Configuration=Debug /p:Platform=x64`.
 
-Playback owns one cancellable session. Short native looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility, except for wait-only schedules; completion/abort releases keys and buttons held by that session. Playback uses a cloned event snapshot, including speed-adjusted delays, so the saved recording is not modified. Finite repeats and repeat-until-stopped share the cancellable countdown and emergency stop. Physical modifier interference during playback remains a separate limitation.
+Playback owns one cancellable session. Short native looping macros have a minimum 5 ms pass interval, and long zero-delay event lists yield after bounded bursts. Modifier keys are released once at session start for playback-hotkey compatibility, except for schedules containing only conditional waits and fixed delays; completion/abort releases keys and buttons held by that session. Playback uses a cloned event snapshot, including speed-adjusted delays, so the saved recording is not modified. Finite repeats and repeat-until-stopped share the cancellable countdown and emergency stop. Physical modifier interference during playback remains a separate limitation.
 
 ## Recording workspace
 
@@ -72,6 +72,12 @@ follow the original polished design. Preview stays inside the app; **Play** send
 real input to other applications after its countdown. Exact raw events and microsecond timing remain available
 behind the simplified action list. Relative mouse traces are device counts, not
 reconstructed screen positions.
+
+The visible **Add event** menu includes standalone Delay and Wait until actions.
+Legacy leading gaps are displayed as Delay steps without rewriting captured data.
+Optional capture-wait shortcuts in Settings work during both recording and
+editing; they are disabled by default. See the [wait authoring delivery](docs/wait-authoring-expansion.md)
+for controls, compatibility and verification details.
 
 Named recordings and drafts are stored under `%LOCALAPPDATA%/MacroRecorder/Recordings`
 with atomic writes and a previous-copy recovery file. The library accepts macros
