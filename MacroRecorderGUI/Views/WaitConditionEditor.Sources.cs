@@ -25,7 +25,7 @@ internal sealed partial class WaitConditionEditor
     internal CheckBox MemoryOptIn = null!;
     internal WaitTextPredicateFields AccessibilityPredicate = null!, OcrPredicate = null!;
     private StackPanel _moduleFields = null!;
-    private TextBlock _memoryPolicy = null!;
+    private TextBlock _memoryPolicy = null!, _memoryComparisonNote = null!;
     private WaitSourcePreferences _sourcePreferences = WaitSourcePreferences.Current;
     private bool _additionalSourcesCreated;
     private int _previousSource;
@@ -193,7 +193,8 @@ internal sealed partial class WaitConditionEditor
         MemoryComparison = Choice("Numeric comparison", ["Equals", "Does not equal", "Less than", "Less than or equal", "Greater than", "Greater than or equal"], (int)_memoryTemplate.Comparison);
         MemoryExpected = SourceField("Expected number (decimal)", _memoryTemplate.Expected);
         MemoryTolerance = SourceField("Floating-point equality tolerance", _memoryTemplate.Tolerance.ToString("R", CultureInfo.InvariantCulture));
-        foreach (var control in new Control[] { MemoryType, MemoryComparison, MemoryExpected, MemoryTolerance }) _memory.Children.Add(control);
+        _memoryComparisonNote = SourceNote("Changes compares with the first valid runtime value. The saved comparison and expected number are not used by this trigger, but must remain valid so they can be preserved when switching triggers.");
+        foreach (var control in new UIElement[] { MemoryType, _memoryComparisonNote, MemoryComparison, MemoryExpected, MemoryTolerance }) _memory.Children.Add(control);
         MemoryType.SelectionChanged += (_, _) => UpdateFields(); MemoryComparison.SelectionChanged += (_, _) => UpdateFields();
         var address = new StackPanel { Spacing = 8 };
         MemoryAddressMode = Choice("Starting address", ["Absolute address", "Module base plus offset"], _memoryTemplate.AddressCase == MemoryCondition.AddressOneofCase.Module ? 1 : 0);
@@ -290,7 +291,11 @@ internal sealed partial class WaitConditionEditor
         }
         var changes = Trigger.SelectedIndex == (int)WaitTrigger.Changes;
         AccessibilityPredicate.SetChangesMode(changes); OcrPredicate.SetChangesMode(changes);
-        MemoryExpected.Visibility = MemoryComparison.Visibility = changes ? Visibility.Collapsed : Visibility.Visible;
+        _memoryComparisonNote.Visibility = changes ? Visibility.Visible : Visibility.Collapsed;
+        var expectedLabel = changes ? "Saved expected number (decimal; not used for Changes)" : "Expected number (decimal)";
+        var comparisonLabel = changes ? "Saved comparison (not used for Changes)" : "Numeric comparison";
+        MemoryExpected.Header = expectedLabel; MemoryComparison.Header = comparisonLabel;
+        AutomationProperties.SetName(MemoryExpected, expectedLabel); AutomationProperties.SetName(MemoryComparison, comparisonLabel);
         // Preserve invalid values visibly so imports and unfinished edits can be repaired.
         MemoryTolerance.Visibility = MemoryType.SelectedIndex >= 8 || MemoryTolerance.Text != "0" ? Visibility.Visible : Visibility.Collapsed;
         _moduleFields.Visibility = MemoryAddressMode.SelectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;

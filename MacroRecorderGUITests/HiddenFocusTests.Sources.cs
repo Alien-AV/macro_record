@@ -58,6 +58,7 @@ public sealed partial class HiddenFocusTests
     {
         CheckSourceRoundTrips();
         CheckSourceDraftValidationAndSwitching();
+        await CheckMemoryChangesDraftRepair();
         CheckSourceRegionSelection();
         await CheckSourceChoiceQueries();
         await CheckSourceQueryCancellation();
@@ -141,6 +142,48 @@ public sealed partial class HiddenFocusTests
         fields.Poll.Text = "100"; fields.MemoryTolerance.Text = "NaN";
         StringAssert.Contains(Assert.ThrowsExactly<ArgumentException>(() => fields.Read()).Message, "tolerance");
         Assert.AreEqual(0, observer.Calls); Assert.AreEqual(0, queries.Calls);
+    }
+
+    private static async Task CheckMemoryChangesDraftRepair()
+    {
+        var condition = WaitSourceTextTests.Memory();
+        condition.Memory.MergeFrom(new byte[] { 0xa0, 0x06, 0x29 });
+        var before = condition.ToByteArray();
+        var observer = new HiddenWaitObserver(); var queries = new SourceQueriesFake();
+        using var fields = SourceFields(condition, observer, queries);
+        fields.MemoryOptIn.IsChecked = true; await fields.SaveMemoryPolicyAsync();
+        foreach (var (type, invalid) in new[] { (MemoryScalarType.Uint64, "unfinished"), (MemoryScalarType.Uint8, "256"), (MemoryScalarType.Float64, "NaN") })
+        {
+            fields.Trigger.SelectedIndex = (int)WaitTrigger.IsTrue;
+            fields.MemoryType.SelectedIndex = (int)type; fields.MemoryExpected.Text = invalid;
+            fields.Trigger.SelectedIndex = (int)WaitTrigger.Changes;
+            Assert.AreEqual(Visibility.Visible, fields.MemoryExpected.Visibility);
+            Assert.AreEqual(Visibility.Visible, fields.MemoryComparison.Visibility);
+            Assert.IsTrue(fields.MemoryExpected.IsEnabled);
+            StringAssert.Contains(fields.MemoryExpected.Header.ToString()!, "not used for Changes");
+            StringAssert.Contains(Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(fields.MemoryExpected), "not used for Changes");
+            Assert.AreEqual(Visibility.Visible, Field<TextBlock>(fields, "_memoryComparisonNote").Visibility);
+            Assert.ThrowsExactly<ArgumentException>(() => fields.Read());
+            await fields.TestAsync();
+            Assert.AreEqual(invalid, fields.MemoryExpected.Text, "Validation cannot replace the saved draft.");
+            Assert.AreEqual(0, observer.Calls, "An invalid saved predicate must fail before any observation.");
+            fields.Source.SelectedIndex = 3; fields.Source.SelectedIndex = 4;
+            Assert.AreEqual(invalid, fields.MemoryExpected.Text);
+            Assert.AreEqual(Visibility.Visible, fields.MemoryExpected.Visibility);
+            fields.MemoryExpected.Text = "7";
+            var repaired = fields.Read();
+            Assert.AreEqual(WaitTrigger.Changes, repaired.Trigger); Assert.AreEqual("7", repaired.Memory.Expected);
+            Assert.AreEqual(Visibility.Visible, fields.MemoryExpected.Visibility, "The repair field must not disappear while typing a valid value.");
+        }
+        fields.MemoryType.SelectedIndex = (int)condition.Memory.ScalarType;
+        fields.Trigger.SelectedIndex = (int)WaitTrigger.IsTrue;
+        fields.Poll.Text = "100";
+        var expected = condition.Clone(); expected.Memory.Expected = "7";
+        CollectionAssert.AreEqual(expected.ToByteArray(), fields.Read().ToByteArray());
+        CollectionAssert.AreEqual(before, condition.ToByteArray());
+        Assert.AreEqual("Expected number (decimal)", fields.MemoryExpected.Header);
+        Assert.AreEqual(Visibility.Collapsed, Field<TextBlock>(fields, "_memoryComparisonNote").Visibility);
+        Assert.AreEqual(0, queries.Calls);
     }
 
     private static void CheckSourceRegionSelection()
@@ -246,10 +289,23 @@ public sealed partial class HiddenFocusTests
                 Field<WaitConditionEditor>(editor, "_conditionEditor").Dispose();
                 typeof(MacroTabContent).GetField("_conditionEditor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(editor, fields);
                 Field<ContentControl>(editor, "WaitConditionHost").Content = fields;
+                if (condition.Memory is not null)
+                {
+                    fields.MemoryExpected.Text = "unfinished"; fields.Trigger.SelectedIndex = (int)WaitTrigger.Changes;
+                    Assert.IsFalse(editor.TryCommitPendingEdits());
+                    Assert.AreEqual(Visibility.Visible, fields.MemoryExpected.Visibility);
+                    Assert.AreEqual("unfinished", fields.MemoryExpected.Text);
+                    fields.MemoryExpected.Text = "7";
+                }
                 fields.Timeout.Text = "invalid";
                 Assert.IsFalse(editor.TryCommitPendingEdits()); Assert.AreEqual("invalid", fields.Timeout.Text);
                 fields.Timeout.Text = "31"; Assert.IsTrue(editor.TryCommitPendingEdits());
                 Assert.AreEqual(31_000_000UL, ((WaitConditionEvent)macro.Events[0]).Condition.TimeoutUs);
+                if (condition.Memory is not null)
+                {
+                    Assert.AreEqual(WaitTrigger.Changes, ((WaitConditionEvent)macro.Events[0]).Condition.Trigger);
+                    Assert.AreEqual("7", ((WaitConditionEvent)macro.Events[0]).Condition.Memory.Expected);
+                }
                 if (condition.Memory is not null) { fields.MemoryOptIn.IsChecked = true; await fields.SaveMemoryPolicyAsync(); }
                 var run = fields.TestAsync(); await observer.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
                 fields.CancelTest(); await run.WaitAsync(TimeSpan.FromSeconds(2));
