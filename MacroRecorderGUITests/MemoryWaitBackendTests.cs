@@ -199,6 +199,23 @@ public sealed class MemoryWaitBackendTests
     }
 
     [TestMethod]
+    [DataRow(MemoryScalarType.Uint8)] [DataRow(MemoryScalarType.Int8)]
+    [DataRow(MemoryScalarType.Uint16)] [DataRow(MemoryScalarType.Int16)]
+    [DataRow(MemoryScalarType.Uint32)] [DataRow(MemoryScalarType.Int32)]
+    [DataRow(MemoryScalarType.Uint64)] [DataRow(MemoryScalarType.Int64)]
+    [DataRow(MemoryScalarType.Float32)] [DataRow(MemoryScalarType.Float64)]
+    public void ScalarNulRejectionMatchesNativeForEveryType(MemoryScalarType type)
+    {
+        ScalarValue.Parse(type, "1");
+        WaitValidation.Validate(Condition(type, "1"));
+        foreach (var expected in new[] { "\01", "1\0", "1\0\0", "1\02" })
+        {
+            Assert.Throws<ArgumentException>(() => ScalarValue.Parse(type, expected));
+            Assert.Throws<ArgumentException>(() => WaitValidation.Validate(Condition(type, expected)));
+        }
+    }
+
+    [TestMethod]
     [DataRow("1e+2", true)] [DataRow("1e-2", true)] [DataRow("+1.0e-2", true)]
     [DataRow("1e+-2", false)] [DataRow("1e++2", false)] [DataRow("1e--2", false)]
     public void FloatingExponentSignRulesMatchNative(string expected, bool valid)

@@ -18,7 +18,8 @@ public readonly record struct ScalarValue(MemoryScalarType Type, decimal Integer
 
     public static ScalarValue Parse(MemoryScalarType type, string value)
     {
-        if (value.Length is 0 or > 128 || value.Any(char.IsWhiteSpace)) throw new ArgumentException("Enter one invariant decimal scalar.");
+        if (value.Length is 0 or > 128 || value.Contains('\0') || value.Any(char.IsWhiteSpace))
+            throw new ArgumentException("Enter one invariant decimal scalar.");
         try
         {
             var culture = CultureInfo.InvariantCulture;

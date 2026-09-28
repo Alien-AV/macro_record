@@ -153,6 +153,23 @@ TEST(ExtendedWait, ScalarSignGrammarMatchesManaged) {
     for (const auto value : { "1e+-2", "1e++2", "1e--2" }) { memory->set_expected(value); EXPECT_FALSE(WaitEvent::valid(event->condition)) << value; }
 }
 
+TEST(ExtendedWait, ScalarNulRejectionMatchesManagedForEveryType) {
+    auto event = wait_event(); event->condition.set_semantics_version(2); event->condition.set_poll_interval_us(100000);
+    auto memory = event->condition.mutable_memory(); memory->set_executable_path("C:\\fake.exe"); memory->set_absolute_address(4096);
+    for (const auto type : { protobufGenerated::UINT8, protobufGenerated::INT8, protobufGenerated::UINT16, protobufGenerated::INT16,
+        protobufGenerated::UINT32, protobufGenerated::INT32, protobufGenerated::UINT64, protobufGenerated::INT64,
+        protobufGenerated::FLOAT32, protobufGenerated::FLOAT64 }) {
+        SCOPED_TRACE(static_cast<int>(type));
+        memory->set_scalar_type(type); memory->set_expected("1");
+        ASSERT_TRUE(WaitEvent::valid(event->condition));
+        for (const auto& value : { std::string("\0" "1", 2), std::string("1\0", 2), std::string("1\0\0", 3), std::string("1\0" "2", 3) }) {
+            memory->set_expected(value);
+            EXPECT_FALSE(WaitEvent::valid(event->condition));
+            EXPECT_THROW(record_playback::deserialize_event(*event->serialize()), std::invalid_argument);
+        }
+    }
+}
+
 TEST(ConditionalWait, NativeDeadlineStopsWithoutObserverAndRejectsLateResponse) {
     std::atomic<int> calls{0}; PlaybackSession session([&](const Event&) { ++calls; return true; });
     auto events = only_wait(50ms); events.push_back(key_event(true));

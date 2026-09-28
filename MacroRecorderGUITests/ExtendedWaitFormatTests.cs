@@ -72,6 +72,23 @@ public sealed class ExtendedWaitFormatTests
     }
 
     [TestMethod]
+    [DataRow("\01")] [DataRow("1\0")] [DataRow("1\0\0")] [DataRow("1\02")]
+    public void NulInAnyMemoryScalarIsRejectedByDocumentReadAndWrite(string expected)
+    {
+        foreach (var type in Enum.GetValues<MemoryScalarType>())
+        {
+            var condition = MemoryWaitBackendTests.Condition(type, expected);
+            var list = new ProtobufInputEventList();
+            list.InputEvents.Add(new ProtobufInputEvent { WaitCondition = condition });
+            var bytes = list.ToByteArray();
+            Assert.Throws<InvalidDataException>(() => new RecordingDocument { Events = bytes }.Write());
+            byte[] imported = [.. "\0MACRO2\n"u8, .. JsonSerializer.SerializeToUtf8Bytes(new
+                { Version = 4, Events = bytes, Origins = Array.Empty<object>() })];
+            Assert.Throws<InvalidDataException>(() => RecordingDocument.Read(imported));
+        }
+    }
+
+    [TestMethod]
     public void DescriptionsIdentifyTargetAndDescribeRuntimeChangesWithoutUnusedExpectedValue()
     {
         foreach (var condition in Conditions())
