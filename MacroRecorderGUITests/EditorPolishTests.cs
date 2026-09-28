@@ -55,8 +55,10 @@ public class EditorPolishTests
         projection.Append(new KeyboardEvent(VirtualKey.Control, true));
         projection.FlushNotifications();
         var move = projection.Actions[0]; var keys = projection.Actions[1];
-        Assert.AreEqual("1. Move pointer", move.Title);
-        Assert.AreEqual("2. Press Ctrl + S", keys.Title);
+        Assert.AreEqual(3, projection.StepCount);
+        Assert.AreEqual("01", move.LeadingDelayNumber);
+        Assert.AreEqual("2. Move pointer", move.Title);
+        Assert.AreEqual("3. Press Ctrl + S", keys.Title);
         Assert.AreEqual(1374, keys.Start);
         StringAssert.Contains(move.TechnicalSummary, "absolute pixels");
         StringAssert.Contains(keys.TechnicalSummary, "4 raw events");

@@ -132,7 +132,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         _rawOpen = false; RawContent.Visibility = Visibility.Collapsed; InspectorScroller.Visibility = Visibility.Visible;
         _rawSelection = []; _detailsPane = false; _actionFocus = _rawFocus = _sequenceFocus = null;
         _display = []; _selectedDisplay = []; PathCanvas.Children.Clear();
-        SummaryText.Text = "0 actions · 0ms";
+        SummaryText.Text = "0 steps · 0ms";
         EmptySequence.Visibility = Visibility.Visible;
         UpdateInspector();
         Status = "";
@@ -166,7 +166,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
             }
         }
         finally { _sync = false; }
-        SummaryText.Text = $"{EditorText.Count(_editor.Projection.Actions.Count, "action")} · {TimeText.Human(_editor.Projection.TotalTime)}";
+        SummaryText.Text = $"{EditorText.Count(_editor.Projection.StepCount, "step")} · {TimeText.Human(_editor.Projection.TotalTime)}";
         if (_macro.Events.OfType<WaitConditionEvent>().Count() is var waitCount && waitCount > 0)
             SummaryText.Text += $" recorded timing + {EditorText.Count(waitCount, "conditional wait")}";
         EmptySequence.Visibility = _macro.Events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -258,7 +258,7 @@ public sealed partial class MacroTabContent : UserControl, IDisposable
         var rawCount = ActionsList.SelectedItems.OfType<RecordedAction>().Sum(action => action.Count);
         RawHeader.Text = a is null ? "Exact input" : $"Exact input · {EditorText.Count(rawCount, "event")}";
         RawToggle.IsEnabled = a is not null;
-        InspectorScope.Text = a is null ? "" : $"Editing action {a.Number} only";
+        InspectorScope.Text = a is null ? "" : $"Editing step {a.StepNumber} only";
         InspectorScope.Visibility = ActionsList.SelectedItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         TechnicalDetail.Text = a is null ? "" : a.TechnicalSummary + $"\nPause before: {TimeText.Seconds(a.Wait)}s · execution time: {TimeText.Seconds(a.Duration)}s";
         ActionWarning.Text = _presentation?.InspectorWarning(a) ?? "";

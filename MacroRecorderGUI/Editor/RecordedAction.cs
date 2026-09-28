@@ -13,6 +13,7 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
 {
     public int Start { get; } = start;
     public int Number { get; internal set; }
+    public int StepNumber { get; internal set; }
     public InputEvent First { get; } = first;
     public int Count { get; internal set; }
     public int MovementCount { get; internal set; }
@@ -45,13 +46,14 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
         internal set => _description = value;
     }
     public IReadOnlyList<string> KeyLabels { get; internal set; } = [];
-    public string DisplayNumber => Number.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+    public string DisplayNumber => StepNumber.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+    public string LeadingDelayNumber => (StepNumber - 1).ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
     public string DisplayTime => Kind == ActionKind.Wait ? "Conditional" : TimeText.Human(Duration);
     public string TimingLabel => Kind == ActionKind.Wait ? "duration varies" : Kind == ActionKind.Delay ? "delay" : "execution";
     public string LeadingDelayTime => TimeText.Human(Wait);
     public string LeadingDelayLabel => $"Delay {TimeText.Seconds(Wait)} seconds, then {Name}";
     public Microsoft.UI.Xaml.Visibility LeadingDelayVisibility => Wait > 0 ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
-    public string Title => $"{Number}. {Name}";
+    public string Title => $"{StepNumber}. {Name}";
     public bool CanEditDuration => Count > 1;
     public string EventCountLabel => EditorText.Count(Count, "event");
     public string Summary => Kind == ActionKind.Wait && First is WaitConditionEvent condition
@@ -75,6 +77,7 @@ public sealed class RecordedAction(int start, InputEvent first, BigInteger start
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Description));
         OnPropertyChanged(nameof(DisplayNumber));
+        OnPropertyChanged(nameof(LeadingDelayNumber));
         OnPropertyChanged(nameof(DisplayTime));
         OnPropertyChanged(nameof(LeadingDelayTime));
         OnPropertyChanged(nameof(LeadingDelayLabel));

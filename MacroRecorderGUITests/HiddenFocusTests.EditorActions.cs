@@ -13,6 +13,7 @@ public sealed partial class HiddenFocusTests
 {
     private static void CheckEditorActions()
     {
+        CheckLeadingDelaySelectionScope();
         using var macro = new MacroViewModel("Editor actions", new FakePlaybackEngine());
         macro.AddEvent(new MouseEvent(10, 20, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 500000 });
         macro.AddEvent(new MouseEvent(30, 40, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 200 });
@@ -113,5 +114,70 @@ public sealed partial class HiddenFocusTests
             Assert.IsFalse(IsWindowVisible(WinRT.Interop.WindowNative.GetWindowHandle(window)));
         }
         finally { window.Close(); }
+    }
+
+    private static void CheckLeadingDelaySelectionScope()
+    {
+        foreach (var width in new[] { 420d, 1200d })
+        {
+            using var macro = new MacroViewModel("Delay selection scope", new FakePlaybackEngine());
+            macro.AddEvent(new MouseEvent(10, 20, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 500000 });
+            macro.AddEvent(new MouseEvent(30, 40, MouseActionTypeFlags.Move) { TimeSinceLastEvent = 600000 });
+            var original = macro.SnapshotBytes();
+            using var editor = new MacroTabContent { DataContext = macro };
+            var window = new Window { Content = editor };
+            try
+            {
+                Call(editor, "Attach"); LayoutControl(editor, width, 650);
+                var actions = Field<ListView>(editor, "ActionsList");
+                Assert.AreEqual(4, macro.Editor.Projection.StepCount);
+                StringAssert.StartsWith(editor.Summary, "4 steps");
+                CollectionAssert.AreEqual(new[] { "02", "04" }, macro.Editor.Projection.Actions.Select(a => a.DisplayNumber).ToArray());
+                CollectionAssert.AreEqual(new[] { "01", "03" }, macro.Editor.Projection.Actions.Select(a => a.LeadingDelayNumber).ToArray());
+                editor.IsPreviewMode = true;
+                Assert.AreEqual("ACTION 01 OF 4", Field<TextBlock>(editor, "PreviewStep").Text);
+                editor.StepPreview();
+                Assert.AreEqual("ACTION 03 OF 4", Field<TextBlock>(editor, "PreviewStep").Text,
+                    "Zero-duration input completes at the end of the first delay; preview then shows the next delay.");
+                editor.IsPreviewMode = false;
+
+                Call(editor, "SelectLeadingDelay", macro.Editor.Projection.Actions[0]);
+                Call(editor, "ActionBody_Tapped", editor, null);
+                Assert.IsNull(Field<InputEvent?>(editor, "_leadingDelayAnchor"));
+                Assert.AreEqual("1 action selected", Field<TextBlock>(editor, "SelectionScope").Text);
+                Assert.AreEqual("Delete selected actions", Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(Field<Button>(editor, "DeleteButton")));
+
+                Call(editor, "SelectLeadingDelay", macro.Editor.Projection.Actions[0]);
+                actions.SelectedItems.Add(macro.Editor.Projection.Actions[1]);
+                Assert.IsNull(Field<InputEvent?>(editor, "_leadingDelayAnchor"), "Extending action selection leaves delay-only deletion scope.");
+                Assert.AreEqual("2 actions selected", Field<TextBlock>(editor, "SelectionScope").Text);
+                Call(editor, "DeleteActions_Click", editor, new RoutedEventArgs());
+                Assert.AreEqual(0, macro.Events.Count, "Action multi-delete removes both inputs, not just the first gap.");
+                Assert.IsTrue(editor.Undo()); CollectionAssert.AreEqual(original, macro.SnapshotBytes());
+
+                Call(editor, "SelectLeadingDelay", macro.Editor.Projection.Actions[0]);
+                Call(editor, "SetRawOpen", true);
+                var raw = Field<ListView>(editor, "RawList");
+                Assert.AreSame(macro.Events[0], ((RawEventRow)raw.SelectedItem).Input);
+                Call(editor, "SelectLeadingDelay", macro.Editor.Projection.Actions[0]);
+                Assert.IsFalse(Field<bool>(editor, "_rawOpen"), "Selecting a Delay opens its details even if Exact input was previously open.");
+                Call(editor, "Delete_Click", Field<Button>(editor, "DeleteButton"), new RoutedEventArgs());
+                Assert.AreEqual(2, macro.Events.Count, "Delete shown as delay-only must not delete its raw input.");
+                Assert.AreEqual(0UL, macro.Events[0].TimeSinceLastEvent);
+                Assert.IsTrue(editor.Undo()); CollectionAssert.AreEqual(original, macro.SnapshotBytes());
+                Call(editor, "SetRawOpen", true);
+                Call(editor, "SetRawOpen", false);
+                actions.SelectedItem = macro.Editor.Projection.Actions[1];
+                Assert.IsNull(Field<InputEvent?>(editor, "_leadingDelayAnchor"));
+                Call(editor, "SetRawOpen", true);
+                Assert.AreSame(macro.Events[1], ((RawEventRow)raw.SelectedItem).Input);
+                Call(editor, "HandleDeleteKey", raw, VirtualKey.Delete, null);
+                Assert.AreEqual(1, macro.Events.Count);
+                Assert.AreEqual(500000UL, macro.Events[0].TimeSinceLastEvent, "Raw Delete must not edit the formerly selected delay.");
+                Assert.IsTrue(editor.Undo()); CollectionAssert.AreEqual(original, macro.SnapshotBytes());
+                Assert.IsFalse(IsWindowVisible(WinRT.Interop.WindowNative.GetWindowHandle(window)));
+            }
+            finally { window.Close(); }
+        }
     }
 }

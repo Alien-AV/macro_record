@@ -45,8 +45,9 @@ public sealed partial class MacroTabContent
             _previewPosition.SeekTime(stop.StartTime + stop.Wait, _editor.Projection.TotalTime);
         _previewFrame = _preview.Seek(_previewPosition.Time);
         var a = _previewFrame.Current;
-        PreviewStep.Text = a is null ? "NO ACTIONS" : $"ACTION {a.Number:D2} OF {_editor.Projection.Actions.Count}";
         var checkpoint = _preview.Checkpoint(_previewPosition.Time);
+        var step = a is null ? 0 : a.StepNumber - (_previewFrame.Waiting && checkpoint is null && a.Wait > 0 ? 1 : 0);
+        PreviewStep.Text = a is null ? "NO ACTIONS" : $"ACTION {step:D2} OF {_editor.Projection.StepCount}";
         SimulateCondition.Visibility = checkpoint is null ? Visibility.Collapsed : Visibility.Visible;
         PreviewTitle.Text = checkpoint is not null ? "Wait until… (simulated)" : a is null ? "Empty recording" : _previewFrame.Waiting ? "Delay" : a.Name;
         PreviewDescription.Text = checkpoint is not null ? checkpoint.Description + " · No desktop observation. Choose Simulate satisfied to continue."
@@ -59,7 +60,7 @@ public sealed partial class MacroTabContent
         var held = _previewFrame.HeldKeys.Select(ActionProjection.KeyName).Concat(_previewFrame.HeldButtons).ToArray();
         if (!_heldLabels.SequenceEqual(held)) { _heldLabels = held; HeldInputs.ItemsSource = held; }
         HeldNote.Text = held.Length == 0 ? "No recorded keys or buttons held" : "Held in the recorded stream";
-        PreviewTiming.Text = $"Recorded timing · {EditorText.Count(_editor.Projection.Actions.Count, "action")}";
+        PreviewTiming.Text = $"Recorded timing · {EditorText.Count(_editor.Projection.StepCount, "action")}";
         if (_editor.Projection.Actions.Count(a => a.Kind == ActionKind.Wait) is var waits && waits > 0)
             PreviewTiming.Text = $"Recorded timing + {EditorText.Count(waits, "conditional wait")}";
         for (var i = 0; i < _timelineSegments.Count; i++)
@@ -98,9 +99,9 @@ public sealed partial class MacroTabContent
             var name = segment.Setup ? "Pointer setup delay"
                 : segment.Waiting && _editor.Projection.Actions[segment.FirstAction].Kind == ActionKind.Delay
                     && segment.Start >= _editor.Projection.Actions[segment.FirstAction].StartTime + _editor.Projection.Actions[segment.FirstAction].Wait ? "Delay"
-                : segment.Waiting ? $"Delay, then action {segment.FirstAction + 1}"
-                : segment.FirstAction == segment.LastAction ? $"Action {segment.FirstAction + 1} · {_editor.Projection.Actions[segment.FirstAction].Name}"
-                : $"Actions {segment.FirstAction + 1}–{segment.LastAction + 1}";
+                : segment.Waiting ? $"Delay, then step {_editor.Projection.Actions[segment.FirstAction].StepNumber}"
+                : segment.FirstAction == segment.LastAction ? $"Step {_editor.Projection.Actions[segment.FirstAction].StepNumber} · {_editor.Projection.Actions[segment.FirstAction].Name}"
+                : $"Steps {_editor.Projection.Actions[segment.FirstAction].StepNumber}–{_editor.Projection.Actions[segment.LastAction].StepNumber}";
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, name);
             ToolTipService.SetToolTip(button, $"{name} · {TimeText.Seconds(segment.Start)}–{TimeText.Seconds(segment.End)} s");
             button.Click += (_, _) =>

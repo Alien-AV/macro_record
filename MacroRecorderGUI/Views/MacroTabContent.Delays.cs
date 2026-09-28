@@ -26,6 +26,7 @@ public sealed partial class MacroTabContent
         _leadingDelayAnchor = anchor;
         _rawEvent = anchor; _rawSelection = [anchor];
         _actionEdits?.SelectDelay(anchor);
+        SetRawOpen(false);
         UpdateInspector();
         ShowPane(true);
     }
@@ -36,6 +37,7 @@ public sealed partial class MacroTabContent
         _leadingDelayAnchor = null;
         _actionEdits?.Select(Selected, reset: true);
         UpdateInspector();
+        UpdateSelectionScope();
     }
 
     private void UpdateDelayInspector(RecordedAction action)

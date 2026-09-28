@@ -24,6 +24,7 @@ public sealed class ActionProjection
     public List<RecordedAction> MouseLandmarks { get; } = [];
     public BigInteger TotalTime { get; private set; }
     public int ProcessedCount => Samples.Count;
+    public int StepCount { get; private set; }
     public int IncompleteActionCount { get; private set; }
     public bool HasRelativeMovement { get; private set; }
     public int MovementSpaceCount => _bounds.Count;
@@ -63,7 +64,7 @@ public sealed class ActionProjection
 
     public void Reset()
     {
-        Actions.Clear(); Samples.Clear(); _originSamples.Clear(); RenderSamples.Clear(); _renderIndices.Clear(); RenderRevision++;
+        Actions.Clear(); StepCount = 0; Samples.Clear(); _originSamples.Clear(); RenderSamples.Clear(); _renderIndices.Clear(); RenderRevision++;
         MouseLandmarks.Clear(); _keys.Clear(); _chord.Clear();
         TotalTime = 0; _buttons = 0; _active = null; _position = null; _previousMouse = null; _segment = 0;
         _bounds.Clear(); IncompleteActionCount = 0; HasRelativeMovement = false; _anomalous = false;
@@ -107,9 +108,9 @@ public sealed class ActionProjection
         if (input is DelayEvent delay)
         {
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
-            Actions.Add(new RecordedAction(index, input, timeBefore)
+            AddAction(new RecordedAction(index, input, timeBefore)
             {
-                Number = Actions.Count + 1, Count = 1, Kind = ActionKind.Delay, Complete = true,
+                Count = 1, Kind = ActionKind.Delay, Complete = true,
                 Duration = delay.DurationMicroseconds, Name = "Delay", Detail = "Fixed delay",
                 Description = "Wait, then continue the sequence"
             });
@@ -119,10 +120,10 @@ public sealed class ActionProjection
         if (input is WaitConditionEvent wait)
         {
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
-            var waitAction = new RecordedAction(index, input, timeBefore) { Number = Actions.Count + 1, Count = 1,
+            var waitAction = new RecordedAction(index, input, timeBefore) { Count = 1,
                 Kind = ActionKind.Wait, Complete = neutral, Name = "Wait until…", Detail = wait.Description,
                 Description = wait.Description };
-            Actions.Add(waitAction);
+            AddAction(waitAction);
             if (!neutral) IncompleteActionCount++;
             _active = null; _previousMouse = null;
             return;
@@ -131,7 +132,7 @@ public sealed class ActionProjection
         if (!continuation)
         {
             if (_active is { } previous) { UpdateKeyLabels(previous); previous.Notify(); }
-            _active = new(index, input, timeBefore) { Number = Actions.Count + 1 };
+            _active = new(index, input, timeBefore);
             _candidate = ActionKind.Raw;
             _moved = false; _chord.Clear(); _button = 0; _wheelTotal = 0; _anomalous = false;
             if (neutral)
@@ -145,7 +146,7 @@ public sealed class ActionProjection
                     { _candidate = ActionKind.Click; _button = button; }
                 }
             }
-            Actions.Add(_active);
+            AddAction(_active);
         }
         var action = _active!;
         if (action.Count > 0 && !action.Complete) IncompleteActionCount--;
@@ -209,6 +210,14 @@ public sealed class ActionProjection
             _ => "Inspect exact captured input"
         };
         if (action.Kind is ActionKind.Click or ActionKind.Drag) MouseLandmarks.Add(action);
+    }
+
+    private void AddAction(RecordedAction action)
+    {
+        action.Number = Actions.Count + 1;
+        StepCount += action.Wait > 0 ? 2 : 1;
+        action.StepNumber = StepCount;
+        Actions.Add(action);
     }
 
     public void FlushNotifications()
