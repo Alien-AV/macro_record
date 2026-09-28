@@ -34,7 +34,7 @@ internal sealed partial class WaitConditionEditor
         CancelTest();
         using var cancellation = new CancellationTokenSource();
         _pick = cancellation; _pickButton = button; _pickLabel = label;
-        button.Content = "Cancel target pick";
+        SetPickerButtonLabel(button, "Cancel target pick");
         try
         {
             // A countdown lets the pointer reach the target without intercepting clicks
@@ -48,7 +48,7 @@ internal sealed partial class WaitConditionEditor
             }
             var capture = _picker.Capture(target);
             if (_disposed || cancellation.IsCancellationRequested || !ReferenceEquals(_pick, cancellation)) return;
-            _pick = null; _pickButton = null; _pickLabel = null; button.Content = label;
+            _pick = null; _pickButton = null; _pickLabel = null; SetPickerButtonLabel(button, label);
             if (!capture.Succeeded) { Feedback.Text = capture.Error ?? "No target was captured."; return; }
             apply(capture);
             Feedback.Text = "Target captured into the draft. Review the fields and apply the condition.";
@@ -59,7 +59,7 @@ internal sealed partial class WaitConditionEditor
         finally
         {
             if (ReferenceEquals(_pick, cancellation))
-            { _pick = null; _pickButton = null; _pickLabel = null; button.Content = label; }
+            { _pick = null; _pickButton = null; _pickLabel = null; SetPickerButtonLabel(button, label); }
         }
     }
 
@@ -67,10 +67,16 @@ internal sealed partial class WaitConditionEditor
     {
         if (_pick is not { } cancellation) return;
         _pick = null;
-        if (_pickButton is { } button) button.Content = _pickLabel;
+        if (_pickButton is { } button) SetPickerButtonLabel(button, _pickLabel!);
         _pickButton = null; _pickLabel = null;
         cancellation.Cancel();
         if (!_disposed) Feedback.Text = "Target pick cancelled.";
+    }
+
+    private static void SetPickerButtonLabel(Button button, string label)
+    {
+        button.Content = label;
+        AutomationProperties.SetName(button, label);
     }
 
     internal void ApplyWindowCapture(WindowSelector target)

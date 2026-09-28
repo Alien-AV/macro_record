@@ -76,7 +76,9 @@ public sealed partial class HiddenFocusTests
         var newPick = restarted.PickAsync(sharedButton, "Pick window", WaitCaptureTarget.HoveredWindow, _ => Assert.Fail());
         await oldPick.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.AreEqual("Cancel target pick", sharedButton.Content, "A cancelled attempt cannot overwrite a newer attempt's button.");
+        Assert.AreEqual("Cancel target pick", Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(sharedButton));
         restarted.CancelTest(); await newPick.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.AreEqual("Pick window", sharedButton.Content); Assert.AreEqual(0, observer.Calls);
+        Assert.AreEqual("Pick window", Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(sharedButton));
     }
 }
