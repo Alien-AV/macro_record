@@ -99,4 +99,24 @@ public sealed class WaitSourcePreferencesTests
         await Task.WhenAll(preferences.SetMemoryEnabledAsync(true), preferences.SetOcrInstallationAsync(@"C:\ocr\tesseract.exe", @"C:\ocr\tessdata"));
         Assert.IsTrue(preferences.Options.MemoryEnabled); Assert.AreEqual(@"C:\ocr\tesseract.exe", preferences.Options.TesseractExecutablePath);
     }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task OversizedEncodedSettingsLeaveStoreAndRuntimeUnchanged(bool escapedUnicode)
+    {
+        var local = new WaitLocalSettings();
+        var preferences = new WaitSourcePreferences(new WaitSourcePreferenceStore(PreferencePath), local);
+        await preferences.SetOcrInstallationAsync(@"C:\ocr\tesseract.exe", @"C:\ocr\tessdata");
+        await preferences.SetMemoryEnabledAsync(true);
+        var previousOptions = local.Options; var previousBytes = await File.ReadAllBytesAsync(PreferencePath);
+        var path = @"C:\" + new string(escapedUnicode ? 'я' : 'a', escapedUnicode ? 7000 : 32764);
+        var error = await Assert.ThrowsExactlyAsync<ArgumentException>(() => preferences.SetOcrInstallationAsync(path, path));
+        StringAssert.Contains(error.Message, "64 KiB");
+        Assert.AreEqual(previousOptions, local.Options); Assert.AreEqual(previousOptions, preferences.Options);
+        CollectionAssert.AreEqual(previousBytes, await File.ReadAllBytesAsync(PreferencePath));
+        var reloaded = new WaitSourcePreferences(new WaitSourcePreferenceStore(PreferencePath), new());
+        await reloaded.InitializeAsync(); Assert.AreEqual(previousOptions, reloaded.Options); Assert.IsNull(reloaded.Warning);
+        Assert.AreEqual(1, _directory.GetFiles().Length);
+    }
 }

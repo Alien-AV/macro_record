@@ -95,9 +95,11 @@ internal sealed class WaitSourcePreferenceStore(string? path = null) : IWaitSour
     public async Task SaveAsync(WaitLocalOptions options, CancellationToken token)
     {
         Validate(options);
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         var document = new { Schema = 1, options.MemoryEnabled, options.TesseractExecutablePath, options.TessdataDirectory };
-        await AtomicFile.WriteAsync(_path, JsonSerializer.SerializeToUtf8Bytes(document), cancellationToken: token);
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(document);
+        if (bytes.Length > 65536) throw new ArgumentException("Local wait settings exceed 64 KiB after encoding. Use shorter OCR installation paths.");
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        await AtomicFile.WriteAsync(_path, bytes, cancellationToken: token);
     }
 
     internal static void Validate(WaitLocalOptions options)
