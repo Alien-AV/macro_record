@@ -79,5 +79,50 @@ public sealed partial class HiddenFocusTests
             if (vm.IsRecording) { var stop = vm.StopRecordingAsync(); transport.End(transport.Starts.Last()); await stop; }
             await window.CloseSafelyAsync(_ => Task.FromResult(false));
         }
+        await CheckRejectedRecordingCaptureCommands();
+    }
+
+    private static async Task CheckRejectedRecordingCaptureCommands()
+    {
+        var transport = new FakeRecordingTransport(); using var vm = new CaptureShellViewModel(transport);
+        var prefs = new RunPreferences(new MemoryRunPreferenceStore()); await prefs.InitializeAsync();
+        var picker = new ScriptedCapturePicker(); var capturePrefs = new MemoryCapturePreferences();
+        var registrations = new HashSet<int>();
+        using var global = new GlobalHotkeys((id, _, _) => registrations.Add(id), registrations.Remove);
+        var window = new MainWindow(vm, false, prefs, picker, capturePrefs);
+        try
+        {
+            typeof(MainWindow).GetField("_globalHotkeys", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(window, global);
+            await (Task)Call(window, "InitializeCapturePreferencesAsync")!;
+            var config = WaitCaptureConfiguration.Default with
+            {
+                PointerPixel = WaitCaptureConfiguration.Default.PointerPixel with { Enabled = true },
+                HoveredWindow = WaitCaptureConfiguration.Default.HoveredWindow with { Enabled = true }
+            };
+            Assert.IsNull(await (Task<string?>)Call(window, "ApplyShortcutSettingsAsync", 0, config)!);
+            var gesture = new RecordingCaptureGesture((uint)config.PointerPixel.Modifiers, (uint)config.PointerPixel.Key);
+            // Deliberately model an obsolete registered callback absent from the
+            // immutable native session snapshot; normal Settings cannot create this drift.
+            vm.RegisteredRecordingCaptures = [gesture];
+            var staleTime = unchecked((uint)Environment.TickCount - 1);
+            Assert.IsTrue(vm.StartRecording()); var id = transport.Starts.Single(); transport.Begin(id);
+            var time = unchecked((uint)Environment.TickCount);
+            Call(window, "CaptureWaitHotkey", WaitCaptureTarget.PointerPixel, time);
+            var currentMarker = transport.CapturedWaits.Single();
+            Assert.IsNotNull(currentMarker.Condition);
+            picker.Calls = 0;
+            Call(window, "CaptureWaitHotkey", WaitCaptureTarget.PointerPixel, staleTime);
+            Call(window, "CaptureWaitHotkey", WaitCaptureTarget.HoveredWindow, time);
+            Assert.AreEqual(0, picker.Calls, "Rejected preflight must precede all target observation.");
+            Assert.HasCount(1, transport.CapturedWaits, "Neither rejected callback may submit or cancel the current marker.");
+            Assert.AreEqual(currentMarker, transport.CapturedWaits.Single());
+            Assert.IsEmpty(vm.RecordingMacro!.Events);
+            Assert.IsFalse(IsWindowVisible(WinRT.Interop.WindowNative.GetWindowHandle(window)));
+        }
+        finally
+        {
+            if (vm.IsRecording) { var stop = vm.StopRecordingAsync(); transport.End(transport.Starts.Last()); await stop; }
+            await window.CloseSafelyAsync(_ => Task.FromResult(false));
+        }
     }
 }

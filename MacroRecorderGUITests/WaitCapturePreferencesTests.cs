@@ -33,14 +33,23 @@ public sealed class WaitCapturePreferencesTests
     [DataRow("null")]
     [DataRow("{}")]
     [DataRow("{\"Schema\":2}")]
+    [DataRow("{\"Schema\":1.5}")]
+    [DataRow("{\"Schema\":2147483648}")]
+    [DataRow("{\"Schema\":-2147483649}")]
+    [DataRow("{\"Schema\":1e100}")]
     [DataRow("{\"Schema\":1,\"Schema\":1,\"Capture\":{}}")]
     [DataRow("{\"Schema\":1,\"Capture\":{\"FocusedWindow\":{\"Enabled\":true}}}")]
-    public async Task MalformedIncompleteAndUnsupportedFilesNeverEnableCapture(string json)
+    public async Task MalformedIncompleteAndUnsupportedFilesStayOffAndRecoverWithExplicitSave(string json)
     {
         await File.WriteAllTextAsync(PreferencePath, json);
-        var result = await new WaitCapturePreferenceStore(PreferencePath).LoadAsync();
+        var store = new WaitCapturePreferenceStore(PreferencePath);
+        var result = await store.LoadAsync();
         Assert.IsNotNull(result.Warning); Assert.AreEqual(WaitCaptureConfiguration.Default, result.Configuration);
         Assert.AreEqual(json, await File.ReadAllTextAsync(PreferencePath));
+        var enabled = WaitCaptureConfiguration.Default with { PointerPixel = WaitCaptureConfiguration.Default.PointerPixel with { Enabled = true } };
+        await store.SaveAsync(enabled);
+        var recovered = await store.LoadAsync();
+        Assert.IsNull(recovered.Warning); Assert.AreEqual(enabled, recovered.Configuration);
     }
 
     [TestMethod]

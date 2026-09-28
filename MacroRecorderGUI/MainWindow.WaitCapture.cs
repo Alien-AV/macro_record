@@ -96,10 +96,11 @@ public sealed partial class MainWindow
         {
             if (!_closed && !_closing)
             {
-                var restored = _captureHotkeys.TryApply(previous, out var restoreError);
+                var restored = _captureHotkeys.TryApply(previous, out _);
+                if (!restored) _captureHotkeys.DisableUntilReconfigured();
                 SynchronizeRecordingCaptureBindings();
                 return _captureShortcutStatus = "Capture shortcuts could not be saved. " + error.Message
-                    + (restored ? " Previous settings remain active." : " " + restoreError);
+                    + (restored ? " Previous settings remain active." : " Previous shortcut registrations could not be restored. Capture is disabled until shortcut settings are saved successfully.");
             }
             return "The window is closing.";
         }
@@ -124,9 +125,11 @@ public sealed partial class MainWindow
         if (ViewModel.IsRecording)
         {
             // Every reserved native marker must be resolved, including failed sampling.
-            var queued = false;
+            var accepted = false; var queued = false;
             try
             {
+                if (!ViewModel.AcceptsRecordingCapture(gesture, messageTime)) return;
+                accepted = true;
                 var captured = _waitPicker.Capture(target);
                 if (!captured.Succeeded) { ReportWaitCaptureStatus(captured.Error ?? "The wait target is unavailable."); return; }
                 var submission = ViewModel.AddCapturedWait(captured.CreateCondition(), gesture, messageTime);
@@ -136,7 +139,7 @@ public sealed partial class MainWindow
             catch (Exception error) { ReportWaitCaptureStatus("The wait target could not be captured. " + error.Message); }
             finally
             {
-                if (!queued)
+                if (accepted && !queued)
                 {
                     try
                     {

@@ -74,6 +74,10 @@ internal sealed class WaitCaptureHotkeys(IWaitCaptureRegistration registration, 
 
     public void DiscardPendingMessages() => _enabledAt = unchecked((messageClock?.Invoke() ?? (uint)Environment.TickCount) + 1);
 
+    // Failed persistence restoration must not leave unsaved shortcuts armed. Keep
+    // every native registration owned so TryApply or Dispose can retry cleanup.
+    public void DisableUntilReconfigured() => _accepting = false;
+
     private static HashSet<HotkeyGesture> Enabled(WaitCaptureConfiguration configuration) =>
         configuration.Bindings().Where(pair => pair.Binding.Enabled).Select(pair => pair.Binding.Gesture).ToHashSet();
 

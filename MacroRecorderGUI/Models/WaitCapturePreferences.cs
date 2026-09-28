@@ -82,7 +82,7 @@ internal sealed class WaitCapturePreferenceStore(string? path = null) : IWaitCap
         }
         catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
         { return new(WaitCaptureConfiguration.Default); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException or OverflowException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException or OverflowException or FormatException)
         { return new(WaitCaptureConfiguration.Default, "Capture shortcuts could not be loaded and are off. Review and save them in Settings."); }
     }
 
