@@ -52,7 +52,7 @@ public sealed partial class HiddenFocusTests
             await process.WaitForExitAsync();
             Assert.Fail("Hidden checks timed out. " + await output + await errors);
         }
-        Assert.AreEqual(0, process.ExitCode, await output + await errors);
+        Assert.AreEqual(0, process.ExitCode, $"Hidden child exited 0x{process.ExitCode:X8}.\n" + await output + await errors);
     }
 
     [STAThread]
@@ -60,14 +60,18 @@ public sealed partial class HiddenFocusTests
     {
         if (args is ["--library-process-check", ..]) return LibraryProcessTests.RunChildAsync(args).GetAwaiter().GetResult();
         if (args is not ["--hidden-focus-check"]) return 2;
+        Checkpoint("Entered hidden child");
         var completion = new TaskCompletionSource();
         try
         {
             WinRT.ComWrappersSupport.InitializeComWrappers();
+            Checkpoint("Starting WinUI");
             Application.Start(_ =>
             {
+                Checkpoint("WinUI dispatcher ready; constructing test app");
                 SynchronizationContext.SetSynchronizationContext(new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
                 new TestApp(completion);
+                Checkpoint("Test app constructed");
             });
             completion.Task.GetAwaiter().GetResult();
             Console.WriteLine("Hidden controls passed; no window shown or activated. Routed focus and physical pointer gestures require an interactive smoke test.");
@@ -76,14 +80,38 @@ public sealed partial class HiddenFocusTests
         catch (Exception error) { Console.Error.WriteLine(error); return 1; }
     }
 
-    private sealed class TestApp(TaskCompletionSource completion) : App
+    private static void Checkpoint(string message)
     {
+        Console.WriteLine($"Hidden check: {message}");
+        Console.Out.Flush();
+    }
+
+    private sealed class TestApp : App
+    {
+        private readonly TaskCompletionSource _completion;
+
+        public TestApp(TaskCompletionSource completion)
+        {
+            _completion = completion;
+            UnhandledException += (_, error) => Console.Error.WriteLine($"Unhandled XAML exception: {error.Message}\n{error.Exception}");
+            Checkpoint("Default PRI: " + Microsoft.Windows.ApplicationModel.Resources.ResourceLoader.GetDefaultResourceFilePath());
+            // Packaged test hosts can pass their identity to this child. WinUI would
+            // then search the host's resources instead of our compiled test output.
+            ResourceManagerRequested += (_, args) =>
+            {
+                Checkpoint("Loading test resource map");
+                args.CustomResourceManager = new Microsoft.Windows.ApplicationModel.Resources.ResourceManager(
+                    Path.Combine(AppContext.BaseDirectory, "MacroRecorderGUITests.pri"));
+            };
+        }
+
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            Checkpoint("Starting control checks");
             DispatcherQueue.GetForCurrentThread().TryEnqueue(async () =>
             {
-                try { await CheckControls(); completion.TrySetResult(); }
-                catch (Exception error) { completion.TrySetException(error); }
+                try { await CheckControls(); _completion.TrySetResult(); }
+                catch (Exception error) { _completion.TrySetException(error); }
                 finally { Exit(); }
             });
         }
@@ -94,10 +122,19 @@ public sealed partial class HiddenFocusTests
 
     private static async Task CheckControls()
     {
+        Checkpoint(nameof(CheckLibraryControls));
         await CheckLibraryControls();
+        Checkpoint(nameof(CheckUxLibraryEditorIntegration));
         await CheckUxLibraryEditorIntegration();
+        Checkpoint(nameof(CheckEditorScrollbars));
         CheckEditorScrollbars();
+        Checkpoint(nameof(CheckEditorNavigationAndAuthoring));
         CheckEditorNavigationAndAuthoring();
+        Checkpoint(nameof(CheckDestinationDraftFailureAndRecovery));
+        CheckDestinationDraftFailureAndRecovery();
+        Checkpoint(nameof(CheckCommittedFieldsSurviveFailedSave));
+        await CheckCommittedFieldsSurviveFailedSave();
+        Checkpoint("Shell field commits, raw drafts, and selection");
         var engine = new FakePlaybackEngine(); var store = new RunTestLibrary();
         using var vm = new MainWindowViewModel(new FakeRecordEngine(), engine, store);
         var macro = vm.ActiveMacro!;
