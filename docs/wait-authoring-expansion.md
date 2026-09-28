@@ -41,10 +41,12 @@ recordings remain readable, unchanged bytes remain unchanged, and edits/undo
 retain origin metadata and unknown fields. Fixed delay must not inject dummy
 keyboard or mouse input, and must remain cancellation-responsive.
 
-Capture-hotkey insertion during recording needs an ordered recording boundary
-and chord suppression, not a UI append racing queued native input. The user has
-been asked whether active-recording insertion is desired; editing-only capture
-must still be fully usable and must reject unsafe states explicitly.
+The user confirmed capture hotkeys must work both during recording and while
+editing. Active insertion needs an ordered recording boundary and chord
+suppression, not a UI append racing queued native input. Capture the target at
+invocation without activating the recorder, insert at a safe released-input
+boundary, and continue capture without a dialog. Idle capture opens an editable
+draft. Reject stale commands and unsafe input-held boundaries explicitly.
 
 ## Coordination and verification
 
