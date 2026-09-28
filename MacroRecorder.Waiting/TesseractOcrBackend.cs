@@ -78,7 +78,33 @@ internal sealed class TesseractOcrBackend(WaitLocalOptions options, IOcrCommand?
     }
 }
 
-internal sealed class LocalOcrCommand : IOcrCommand
+internal interface ILocalOcrProcess : IDisposable
+{
+    bool Start();
+    bool HasExited { get; }
+    int ExitCode { get; }
+    Stream Input { get; }
+    TextReader Output { get; }
+    TextReader Error { get; }
+    void Kill();
+    Task WaitForExitAsync(CancellationToken token);
+}
+
+internal sealed class LocalOcrProcess(ProcessStartInfo start) : ILocalOcrProcess
+{
+    private readonly Process _process = new() { StartInfo = start };
+    public bool Start() => _process.Start();
+    public bool HasExited => _process.HasExited;
+    public int ExitCode => _process.ExitCode;
+    public Stream Input => _process.StandardInput.BaseStream;
+    public TextReader Output => _process.StandardOutput;
+    public TextReader Error => _process.StandardError;
+    public void Kill() => _process.Kill(entireProcessTree: true);
+    public Task WaitForExitAsync(CancellationToken token) => _process.WaitForExitAsync(token);
+    public void Dispose() => _process.Dispose();
+}
+
+internal sealed class LocalOcrCommand(Func<ProcessStartInfo, ILocalOcrProcess>? processFactory = null) : IOcrCommand
 {
     public async Task<OcrCommandResult> RunAsync(string executable, string tessdata, string language, byte[] bitmap, CancellationToken token)
     {
@@ -90,23 +116,30 @@ internal sealed class LocalOcrCommand : IOcrCommand
         };
         foreach (var argument in new[] { "stdin", "stdout", "--tessdata-dir", tessdata, "-l", language, "--psm", "6" }) start.ArgumentList.Add(argument);
         start.Environment["OMP_THREAD_LIMIT"] = "1";
-        using var process = new Process { StartInfo = start };
+        using var process = processFactory?.Invoke(start) ?? new LocalOcrProcess(start);
         token.ThrowIfCancellationRequested();
         if (!process.Start()) throw new InvalidOperationException("Local OCR could not start.");
+        Exception? terminationFailure = null;
         void Kill()
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            try { if (!process.HasExited) process.Kill(); }
             catch (InvalidOperationException) { }
-            catch (System.ComponentModel.Win32Exception error)
-            { Trace.TraceError($"Local OCR termination failed (0x{error.HResult:X8}); retaining observation until the process exits."); }
+            catch (Exception error)
+            {
+                // Tree termination can aggregate failures. No termination failure
+                // may escape a timer callback or bypass process/pipe draining.
+                if (Interlocked.CompareExchange(ref terminationFailure, error, null) is null)
+                    Trace.TraceError($"Local OCR termination failed ({error.GetType().Name}, 0x{error.HResult:X8}); "
+                        + "retaining the observation permit until the process and pipes close. Close the local OCR process or restart the app if it does not exit.");
+            }
         }
         using var registration = token.Register(Kill);
         Task<string>? stdout = null, stderr = null;
         Task? input = null;
         try
         {
-            stdout = ReadBoundedAsync(process.StandardOutput, TextPredicates.MaximumCharacters + 2, Kill);
-            stderr = ReadBoundedAsync(process.StandardError, 8192, Kill);
+            stdout = ReadBoundedAsync(process.Output, TextPredicates.MaximumCharacters + 2, Kill);
+            stderr = ReadBoundedAsync(process.Error, 8192, Kill);
             input = WriteInputAsync(process, bitmap, token);
             await Task.WhenAll(input, stdout, stderr, process.WaitForExitAsync(token)).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
@@ -120,14 +153,17 @@ internal sealed class LocalOcrCommand : IOcrCommand
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             try { await Task.WhenAll(input ?? Task.CompletedTask, stdout ?? Task.FromResult(""), stderr ?? Task.FromResult("")).ConfigureAwait(false); }
             catch { }
+            await registration.DisposeAsync().ConfigureAwait(false);
+            if (terminationFailure is { } failure)
+                throw new InvalidOperationException("Local OCR termination failed. Its process and pipes have now closed; check the local OCR installation and process permissions before retrying.", failure);
         }
     }
-    private static async Task WriteInputAsync(Process process, byte[] bitmap, CancellationToken token)
+    private static async Task WriteInputAsync(ILocalOcrProcess process, byte[] bitmap, CancellationToken token)
     {
-        try { await process.StandardInput.BaseStream.WriteAsync(bitmap, token).ConfigureAwait(false); }
-        finally { process.StandardInput.Close(); }
+        try { await process.Input.WriteAsync(bitmap, token).ConfigureAwait(false); }
+        finally { process.Input.Close(); }
     }
-    private static async Task<string> ReadBoundedAsync(StreamReader reader, int maximum, Action kill)
+    private static async Task<string> ReadBoundedAsync(TextReader reader, int maximum, Action kill)
     {
         var text = new StringBuilder(); var buffer = new char[1024];
         try
