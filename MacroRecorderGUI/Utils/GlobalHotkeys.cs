@@ -14,7 +14,7 @@ public enum HotKeyModifiers : uint
     Windows = 0x0008
 }
 
-public sealed class GlobalHotkeys : IDisposable
+public sealed class GlobalHotkeys : IDisposable, IWaitCaptureRegistration
 {
     private const uint WindowMessageHotKey = 0x0312;
     private const uint NoRepeat = 0x4000;
@@ -85,11 +85,24 @@ public sealed class GlobalHotkeys : IDisposable
     }
 
     public bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action<uint> handler)
+        => AddHotKey(key, modifiers, handler, out _);
+
+    bool IWaitCaptureRegistration.Register(HotkeyGesture gesture, Action<uint> callback, out int id)
+        => AddHotKey(gesture.Key, gesture.Modifiers, callback, out id);
+
+    bool IWaitCaptureRegistration.Unregister(int id)
+    {
+        if (!_handlers.ContainsKey(id)) return true;
+        if (!_unregister(id)) return false;
+        _handlers.Remove(id); _recordingStops.Remove(id); return true;
+    }
+
+    private bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action<uint> handler, out int id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(handler);
 
-        var id = _nextHotKeyId++;
+        id = _nextHotKeyId++;
         if (!_register(id, key, modifiers))
         {
             return false;
