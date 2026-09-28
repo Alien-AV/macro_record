@@ -130,6 +130,8 @@ public sealed partial class HiddenFocusTests
         CheckEditorScrollbars();
         Checkpoint(nameof(CheckEditorNavigationAndAuthoring));
         CheckEditorNavigationAndAuthoring();
+        Checkpoint(nameof(CheckEditorActions));
+        CheckEditorActions();
         Checkpoint(nameof(CheckDestinationDraftFailureAndRecovery));
         CheckDestinationDraftFailureAndRecovery();
         Checkpoint(nameof(CheckCommittedFieldsSurviveFailedSave));
