@@ -58,5 +58,25 @@ public sealed partial class HiddenFocusTests
         pixelExpected.Pixel.X = -500; pixelExpected.Pixel.Y = -40; pixelExpected.Pixel.Rgb = 0x0011ff;
         CollectionAssert.AreEqual(pixelExpected.ToByteArray(), result.ToByteArray());
         Assert.AreEqual(0, observer.Calls);
+
+        var unexpected = new ScriptedCapturePicker { Sample = () => throw new ApplicationException("Fake unexpected picker failure") };
+        using var failed = new WaitConditionEditor(template, new WaitRunner(observer), unexpected, (_, _) => Task.CompletedTask);
+        var failedButton = new Button();
+        await failed.PickAsync(failedButton, "Pick window", WaitCaptureTarget.HoveredWindow, _ => Assert.Fail("Must not apply a failed sample"));
+        StringAssert.Contains(failed.Feedback.Text, "Fake unexpected picker failure");
+        Assert.AreEqual("Pick window", failedButton.Content);
+
+        var firstDelay = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var nextDelay = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); var delays = 0;
+        using var restarted = new WaitConditionEditor(template, new WaitRunner(observer), picker,
+            (_, _) => ++delays == 1 ? firstDelay.Task : nextDelay.Task);
+        var sharedButton = new Button();
+        var oldPick = restarted.PickAsync(sharedButton, "Pick window", WaitCaptureTarget.HoveredWindow, _ => Assert.Fail());
+        restarted.CancelTest();
+        var newPick = restarted.PickAsync(sharedButton, "Pick window", WaitCaptureTarget.HoveredWindow, _ => Assert.Fail());
+        await oldPick.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual("Cancel target pick", sharedButton.Content, "A cancelled attempt cannot overwrite a newer attempt's button.");
+        restarted.CancelTest(); await newPick.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.AreEqual("Pick window", sharedButton.Content); Assert.AreEqual(0, observer.Calls);
     }
 }

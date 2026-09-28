@@ -15,6 +15,7 @@ internal sealed record WaitTargetCapture(WindowSelector? Window = null, Captured
         if (Pixel is { } pixel)
             result.Pixel = new() { Coordinates = PixelCoordinates.DesktopPhysical, X = pixel.X, Y = pixel.Y, Rgb = pixel.Rgb };
         else result.Window.Target = Window!.Clone();
+        WaitValidation.Validate(result);
         return result;
     }
 }

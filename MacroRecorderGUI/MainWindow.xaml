@@ -26,7 +26,7 @@
                     </MenuFlyout></Button.Flyout>
                     <StackPanel Spacing="7"><FontIcon Glyph="&#xE706;" FontSize="21"/><TextBlock Text="Theme" FontSize="10" HorizontalAlignment="Center"/></StackPanel>
                 </Button>
-                <Button Grid.Row="4" Style="{StaticResource MacroRailButtonStyle}" Click="Settings_Click" AutomationProperties.Name="Settings and keyboard shortcuts">
+                <Button x:Name="SettingsButton" Grid.Row="4" Style="{StaticResource MacroRailButtonStyle}" Click="Settings_Click" AutomationProperties.Name="Settings and keyboard shortcuts">
                     <StackPanel Spacing="7"><FontIcon Glyph="&#xE9E9;" FontSize="21"/><TextBlock Text="Settings" FontSize="10" HorizontalAlignment="Center"/></StackPanel>
                 </Button>
             </Grid>

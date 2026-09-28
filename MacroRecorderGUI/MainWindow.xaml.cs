@@ -52,12 +52,16 @@ public sealed partial class MainWindow : Window
     public MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys = true)
         : this(viewModel, registerGlobalHotkeys, new RunPreferences(new RunPreferenceStore())) { }
 
-    internal MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys, RunPreferences preferences)
+    internal MainWindow(MainWindowViewModel viewModel, bool registerGlobalHotkeys, RunPreferences preferences,
+        IWaitTargetPicker? waitPicker = null, IWaitCapturePreferenceStore? capturePreferences = null)
     {
         ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _preferences = preferences ?? throw new ArgumentNullException(nameof(preferences));
         ViewModel.SetEmergencyStopAvailability(false, "The emergency stop shortcut has not registered yet.");
         _registerGlobalHotkeys = registerGlobalHotkeys;
+        _waitPicker = waitPicker ?? new WaitTargetPicker(new WindowsWaitTargetCaptureApi());
+        _capturePreferenceStore = capturePreferences ?? new WaitCapturePreferenceStore();
+        _loadCapturePreferences = registerGlobalHotkeys || capturePreferences is not null;
         InitializeComponent();
         WindowIcon.Apply(AppWindow);
         ClickAwayFocus.Attach(RootGrid, FocusSurface);
@@ -97,6 +101,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await _preferences.InitializeAsync();
+            await InitializeCapturePreferencesAsync();
             if (_closed || _closing) return;
             RefreshShell();
             await ViewModel.InitializeLibraryAsync();
@@ -112,6 +117,7 @@ public sealed partial class MainWindow : Window
     private void AttachActiveEditor()
     {
         var macro = ViewModel.ActiveMacro;
+        if (!ViewModel.IsRecording && !ReferenceEquals(ActiveEditor?.DataContext, macro)) _captureHotkeys?.DiscardPendingMessages();
         if (ActiveEditor is { } previous && !ReferenceEquals(previous.DataContext, macro)) previous.IsPreviewMode = false;
         if (macro is null) { EditorHost.Content = null; return; }
         if (!_editors.TryGetValue(macro, out var editor))
@@ -154,7 +160,7 @@ public sealed partial class MainWindow : Window
         RefreshLibraryPlaybackPreferences();
         var macro = ViewModel.ActiveMacro;
         var preview = !_libraryVisible && ActiveEditor?.IsPreviewMode == true;
-        var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping;
+        var commandsAvailable = !_busy && !RunActive && !_savingRun && !_stopping && !_captureSettingsApplying;
         PageTitle.Text = _libraryVisible ? "Recordings" : macro?.Name ?? "Your workspace";
         PageTitle.MaxWidth = Math.Max(150, RootGrid.ActualWidth - 450);
         BreadcrumbLibrary.Content = _libraryVisible ? "Your workspace" : "Recordings";
@@ -180,6 +186,8 @@ public sealed partial class MainWindow : Window
         UndoButton.IsEnabled = commandsAvailable && ActiveEditor?.CanUndo == true;
         RecordButton.IsEnabled = commandsAvailable && ViewModel.CanRecord && _preferences.IsLoaded;
         RecordingOptionsButton.IsEnabled = commandsAvailable;
+        SettingsButton.IsEnabled = commandsAvailable;
+        ToolTipService.SetToolTip(SettingsButton, RunActive ? "Shortcut settings can be changed after the run ends." : "Settings and keyboard shortcuts");
         ToolTipService.SetToolTip(RecordButton, _preferences.IsLoaded
             ? $"Record a new task (Ctrl+Q) · {_preferences.Recording.CountdownSeconds}s delay. Rename afterwards."
             : "Loading recording options…");
@@ -231,12 +239,17 @@ public sealed partial class MainWindow : Window
     private void ViewModel_StatusMessageRequested(object? sender, string message)
     {
         if (_closed) return;
-        DispatcherQueue.TryEnqueue(() => { if (!_closed) SetMessage(message); });
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_closed) return;
+            if (message.StartsWith("Conditional wait", StringComparison.Ordinal)) ReportWaitCaptureStatus(message);
+            else SetMessage(message);
+        });
     }
 
     private async Task OperationAsync(Func<Task> action)
     {
-        if (_busy || _closed || _closing || RunActive || _savingRun || _stopping) return;
+        if (_busy || _closed || _closing || RunActive || _savingRun || _stopping || _captureSettingsApplying) return;
         if (ActiveEditor?.TryCommitPendingEdits() == false)
         {
             SetMessage(ActiveEditor.Status);
@@ -246,7 +259,7 @@ public sealed partial class MainWindow : Window
         try { await action(); }
         catch (OperationCanceledException) when (_closed || _closing) { }
         catch (Exception error) { if (!_closed) SetMessage(error.Message); }
-        finally { _busy = false; RefreshShell(); }
+        finally { _busy = false; if (!ViewModel.IsRecording) _captureHotkeys?.DiscardPendingMessages(); RefreshShell(); }
     }
     private async Task SaveActiveAsync()
     {
@@ -415,6 +428,7 @@ public sealed partial class MainWindow : Window
     private void BackToEditor_Click(object sender, RoutedEventArgs e)
     {
         if (ActiveEditor is { } editor) editor.IsPreviewMode = false;
+        _captureHotkeys?.DiscardPendingMessages();
         _feedback.Clear(); RefreshShell();
     }
     private void NextAction_Click(object sender, RoutedEventArgs e) { ActiveEditor?.StepPreview(); RefreshShell(); }
@@ -445,9 +459,11 @@ public sealed partial class MainWindow : Window
         if (!_preferences.IsLoaded) { SetMessage("Recording options are loading. Try Record when they are ready."); return; }
         if (!ViewModel.CanRecord || RunActive || _globalHotkeys?.EmergencyStop is null)
         { SetMessage("An emergency stop shortcut must be registered before recording."); return; }
+        if (!PrepareRecordingCaptureBindings()) return;
         var cancellation = _runLifetime.Begin();
         _isRecordingRun = true;
         _runError = null;
+        _captureRunNotice = null;
         _activeRun = cancellation;
         _preparingRun = true; RefreshShell();
         try
@@ -581,7 +597,8 @@ public sealed partial class MainWindow : Window
         {
             var state = RunControllerPresentation.ForRecording(ViewModel.IsRecording, ViewModel.IsFinalizingRecording,
                 _savingRun, ViewModel.RecordingElapsed, ViewModel.RecordedEventCount);
-            return _runError is null ? state : state with { Note = _runError };
+            var note = _runError ?? _captureRunNotice;
+            return note is null ? state : state with { Note = note };
         }
         return RunControllerPresentation.ForPlayback(ViewModel.PlaybackState, _savingRun);
     }
@@ -602,6 +619,7 @@ public sealed partial class MainWindow : Window
         }
         if (_activeRun is { } run) _runLifetime.Complete(run);
         _activeRun = null; _runMacro = null; _runPlaybackOptions = null;
+        _captureHotkeys?.DiscardPendingMessages();
         if (_mainHiddenForRun && !_closed && !_allowClose) AppWindow.Show(false);
         _mainHiddenForRun = false;
     }
@@ -621,6 +639,7 @@ public sealed partial class MainWindow : Window
             _shortcutStatus = recorded && stopped && played ? "Start, stop, and playback shortcuts are registered."
                 : "One or more Ctrl + Q / W / E shortcuts are unavailable. Use the on-screen controls.";
             if (!recorded || !stopped || !played) SetMessage(_shortcutStatus);
+            InitializeCaptureHotkeys();
         }
         catch (Exception error) { ViewModel.SetEmergencyStopAvailability(false, error.Message); _shortcutStatus = error.Message; SetMessage(error.Message); }
     }
@@ -637,9 +656,9 @@ public sealed partial class MainWindow : Window
     {
         var actual = _globalHotkeys?.EmergencyStop;
         var selected = KeyboardShortcuts.EmergencyStopChoices.ToList().FindIndex(choice => Equals(choice, actual));
-        var choice = await Dialogs.SettingsAsync(Math.Max(0, selected),
-            _shortcutStatus + $" Emergency stop: {EmergencyShortcut}.");
-        if (choice is { } index) SetEmergencyShortcut(KeyboardShortcuts.EmergencyStopChoices[index]);
+        await Dialogs.SettingsAsync(Math.Max(0, selected),
+            _shortcutStatus + $" Emergency stop: {EmergencyShortcut}. " + _captureShortcutStatus,
+            _captureConfiguration, ApplyShortcutSettingsAsync);
     });
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
     {
@@ -696,6 +715,8 @@ public sealed partial class MainWindow : Window
         _recordCountdown = null; _runTimer.Stop();
         _controller?.Finish(); _controller = null;
         _themeMonitor?.Dispose(); _themeMonitor = null;
+        _captureLifetime.Cancel();
+        _captureHotkeys?.Dispose(); _captureHotkeys = null;
         _globalHotkeys?.Dispose(); _globalHotkeys = null;
         ViewModel.PropertyChanged -= ViewModel_Changed;
         ViewModel.StatusMessageRequested -= ViewModel_StatusMessageRequested;

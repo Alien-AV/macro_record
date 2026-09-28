@@ -93,4 +93,11 @@ public sealed class WaitTargetPickerTests
             Assert.AreEqual(0, api.Reads);
         }
     }
+
+    [TestMethod]
+    public void InvalidCapturedConditionsFailBeforeSubmissionOrOpeningADialog()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new WaitTargetCapture(Pixel: new(0, 0, uint.MaxValue)).CreateCondition());
+        Assert.ThrowsExactly<ArgumentException>(() => new WaitTargetCapture(Window: new() { ExecutablePath = "relative.exe" }).CreateCondition());
+    }
 }

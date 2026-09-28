@@ -12,6 +12,8 @@ internal sealed partial class WaitConditionEditor
     private readonly Func<TimeSpan, CancellationToken, Task> _pickerDelay;
     private readonly List<Button> _pickerButtons = [];
     private CancellationTokenSource? _pick;
+    private Button? _pickButton;
+    private string? _pickLabel;
 
     private Button CreateWindowPickerButton(string label, Action<WindowSelector> apply) =>
         CreatePickerButton(label, WaitCaptureTarget.HoveredWindow, capture => apply(capture.Window!.Clone()));
@@ -31,7 +33,7 @@ internal sealed partial class WaitConditionEditor
         if (_pick is not null) { CancelPicker(); return; }
         CancelTest();
         using var cancellation = new CancellationTokenSource();
-        _pick = cancellation;
+        _pick = cancellation; _pickButton = button; _pickLabel = label;
         button.Content = "Cancel target pick";
         try
         {
@@ -46,25 +48,28 @@ internal sealed partial class WaitConditionEditor
             }
             var capture = _picker.Capture(target);
             if (_disposed || cancellation.IsCancellationRequested || !ReferenceEquals(_pick, cancellation)) return;
-            _pick = null;
+            _pick = null; _pickButton = null; _pickLabel = null; button.Content = label;
             if (!capture.Succeeded) { Feedback.Text = capture.Error ?? "No target was captured."; return; }
             apply(capture);
             Feedback.Text = "Target captured into the draft. Review the fields and apply the condition.";
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) when (error is InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        catch (Exception error)
         { if (!_disposed && !cancellation.IsCancellationRequested) Feedback.Text = "Target capture is unavailable. " + error.Message; }
         finally
         {
-            if (ReferenceEquals(_pick, cancellation)) _pick = null;
-            button.Content = label;
+            if (ReferenceEquals(_pick, cancellation))
+            { _pick = null; _pickButton = null; _pickLabel = null; button.Content = label; }
         }
     }
 
     private void CancelPicker()
     {
         if (_pick is not { } cancellation) return;
-        _pick = null; cancellation.Cancel();
+        _pick = null;
+        if (_pickButton is { } button) button.Content = _pickLabel;
+        _pickButton = null; _pickLabel = null;
+        cancellation.Cancel();
         if (!_disposed) Feedback.Text = "Target pick cancelled.";
     }
 

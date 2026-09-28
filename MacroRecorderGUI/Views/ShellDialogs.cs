@@ -205,7 +205,8 @@ internal sealed class ShellDialogs(FrameworkElement owner)
         return await ShowAsync(dialog) == ContentDialogResult.Primary ? field.Text.Trim() : null;
     }
 
-    public async Task<int?> SettingsAsync(int shortcutIndex, string registrationStatus)
+    public async Task SettingsAsync(int shortcutIndex, string registrationStatus, WaitCaptureConfiguration captureConfiguration,
+        Func<int, WaitCaptureConfiguration, Task<string?>> apply)
     {
         var content = Body("Keyboard shortcuts", "\uE765", "These shortcuts work while you are using another application.");
         var body = content.Fields;
@@ -218,8 +219,23 @@ internal sealed class ShellDialogs(FrameworkElement owner)
         Row(body, "Emergency stop / cancel", shortcut);
         body.Children.Add(Note(registrationStatus));
         body.Children.Add(Note("Emergency stop also cancels preparation and countdowns. Record and Play start directly; use their adjacent options buttons to change saved settings."));
-        var dialog = Dialog(content, "Save shortcut");
-        return await ShowAsync(dialog) == ContentDialogResult.Primary ? shortcut.SelectedIndex : null;
+        var capture = new WaitCaptureSettingsFields(captureConfiguration);
+        body.Children.Add(capture);
+        var dialog = Dialog(content, "Save shortcuts");
+        dialog.PrimaryButtonClick += async (_, args) =>
+        {
+            var deferral = args.GetDeferral();
+            dialog.IsPrimaryButtonEnabled = false;
+            capture.IsEnabled = shortcut.IsEnabled = false;
+            try
+            {
+                var error = await apply(shortcut.SelectedIndex, capture.Read());
+                if (error is not null) { content.ShowError(error); args.Cancel = true; }
+            }
+            catch (Exception error) { content.ShowError(error.Message); args.Cancel = true; }
+            finally { capture.IsEnabled = shortcut.IsEnabled = dialog.IsPrimaryButtonEnabled = true; deferral.Complete(); }
+        };
+        await ShowAsync(dialog);
     }
 
     public async Task<bool> CloseFailureAsync(string error)
