@@ -87,6 +87,7 @@ public sealed class GlobalHotkeys : IDisposable
     public bool AddHotKey(VirtualKey key, HotKeyModifiers modifiers, Action<uint> handler)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(handler);
 
         var id = _nextHotKeyId++;
         if (!_register(id, key, modifiers))
